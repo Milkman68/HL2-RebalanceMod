@@ -1266,7 +1266,7 @@ void CPropCombineBall::OnHitEntity( CBaseEntity *pHitEntity, float flSpeed, int 
 					}
 
 					DissolveEntity( pHitEntity );
- 					if ( pHitEntity->ClassMatches( "npc_hunter" ) /* || sk_combine_ball_use_new_behavior.GetBool() */ )
+ 					if ( pHitEntity->ClassMatches( "npc_hunter" ) || pHitEntity->ClassMatches( "npc_antlionguard" )  )
 					{
 						 DoExplosion();
 						return;

@@ -39,7 +39,8 @@ private:
 	bool	m_bNeedPump;		// When emptied completely
 	bool	m_bDelayedFire1;	// Fire primary when finished reloading
 	bool	m_bDelayedFire2;	// Fire secondary when finished reloading
-	float m_flSpreadMultiplier;
+	float 	m_flSpreadMultiplier;
+	int 	m_iBurstSize;
 
 public:
 	void	Precache( void );
@@ -61,7 +62,7 @@ public:
 		}
 		if ( pPlayer )
 		{
-			cone = VECTOR_CONE_4DEGREES * m_flSpreadMultiplier;
+			cone = VECTOR_CONE_8DEGREES /* * m_flSpreadMultiplier */; // 4 * 2
 		}
 		else
 		{
@@ -90,7 +91,9 @@ public:
 	void ItemPostFrame( void );
 	void PrimaryAttack( void );
 	void SecondaryAttack( void );
+	void BurstThink( void );
 	void DryFire( void );
+	int	 GetBurstSize( void ) { return 2; }
 
 	void FireNPCPrimaryAttack( CBaseCombatCharacter *pOperator, bool bUseWeaponAngles );
 	void Operator_ForceNPCFire( CBaseCombatCharacter  *pOperator, bool bSecondary );
@@ -513,6 +516,24 @@ void CWeaponShotgun::PrimaryAttack( void )
 //-----------------------------------------------------------------------------
 void CWeaponShotgun::SecondaryAttack( void )
 {
+	m_iBurstSize = GetBurstSize();
+	
+	BurstThink();
+	SetThink( &CWeaponShotgun::BurstThink );
+	
+	m_flNextPrimaryAttack = gpGlobals->curtime + 1.0;
+	m_flNextSecondaryAttack = gpGlobals->curtime + 1.0;
+
+	// Pick up the rest of the burst through the think function.
+	SetNextThink( gpGlobals->curtime + 0.28 );
+}
+//-----------------------------------------------------------------------------
+// Purpose: 
+//
+//
+//-----------------------------------------------------------------------------
+void CWeaponShotgun::BurstThink( void )
+{
 	m_flSpreadMultiplier = 2;
 	// Only the player fires this way so we can cast
 	CBasePlayer *pPlayer = ToBasePlayer( GetOwner() );
@@ -524,11 +545,19 @@ void CWeaponShotgun::SecondaryAttack( void )
 
 	pPlayer->m_nButtons &= ~IN_ATTACK2;
 	// MUST call sound before removing a round from the clip of a CMachineGun
+	
+	//WeaponSound(WPN_DOUBLE);
 	WeaponSound(SINGLE);
 
 	pPlayer->DoMuzzleFlash();
-
-	SendWeaponAnim( ACT_VM_SECONDARYATTACK );
+	if ( m_iBurstSize > 1)
+	{
+		SendWeaponAnim( ACT_VM_SECONDARYATTACK );
+	}
+	else
+	{
+		SendWeaponAnim( ACT_VM_PRIMARYATTACK );
+	}
 
 	// player "shoot" animation
 	pPlayer->SetAnimation( PLAYER_ATTACK1 );
@@ -543,7 +572,7 @@ void CWeaponShotgun::SecondaryAttack( void )
 	// Fire the bullets
 	pPlayer->FireBullets( sk_plr_num_shotgun_pellets.GetInt(), vecSrc, vecAiming, GetBulletSpread(), MAX_TRACE_LENGTH, m_iPrimaryAmmoType, 2 );
 
-	pPlayer->ViewPunch( QAngle( random->RandomFloat( -5, -5 ), random->RandomFloat( -4, 4 ), 0 ) );//bookmark
+	pPlayer->ViewPunch( QAngle( random->RandomFloat( -3, -3 ), random->RandomFloat( -1, 1 ), 0 ) );//bookmark
 
 	pPlayer->SetMuzzleFlashTime( gpGlobals->curtime + 1.0 );
 
@@ -555,16 +584,29 @@ void CWeaponShotgun::SecondaryAttack( void )
 		pPlayer->SetSuitUpdate("!HEV_AMO0", FALSE, 0); 
 	}
 
-/* 	if( m_iClip1 )
+ 	if( m_iClip1 )
 	{
 		// pump so long as some rounds are left.
 		m_bNeedPump = true;
-	} */
-
+	}
+	
 	m_iSecondaryAttacks++;
 	gamestats->Event_WeaponFired( pPlayer, false, GetClassname() );
-}
 	
+	m_iBurstSize--;
+	if( m_iBurstSize == 0 )
+	{
+		// The burst is over!
+		SetThink(NULL);
+
+		// idle immediately to stop the firing animation
+		SetWeaponIdleTime( gpGlobals->curtime );
+		return;
+	}
+
+	SetNextThink( gpGlobals->curtime + GetFireRate() );
+}
+
 //-----------------------------------------------------------------------------
 // Purpose: Override so shotgun can do mulitple reloads in a row
 //-----------------------------------------------------------------------------
@@ -586,7 +628,7 @@ void CWeaponShotgun::ItemPostFrame( void )
 			m_bDelayedFire1 = true;
 		}
 		// If I'm secondary firing and have one round stop reloading and fire
-		else if ((pOwner->m_nButtons & IN_ATTACK2 ) && (m_iClip1 >=1))
+		else if ((pOwner->m_nButtons & IN_ATTACK2 ) && (m_iClip1 >=2))
 		{
 			m_bInReload		= false;
 			m_bNeedPump		= false;
@@ -630,9 +672,15 @@ void CWeaponShotgun::ItemPostFrame( void )
 	if ((m_bDelayedFire2 || pOwner->m_nButtons & IN_ATTACK2)&&(m_flNextPrimaryAttack <= gpGlobals->curtime))
 	{
 		m_bDelayedFire2 = false;
-		if ( (m_iClip1 <= 0 && UsesClipsForAmmo1()) || ( !UsesClipsForAmmo1() && !pOwner->GetAmmoCount(m_iPrimaryAmmoType) ) )
+		
+		if ( (m_iClip1 <= 1 && UsesClipsForAmmo1()))
 		{
-			if (!pOwner->GetAmmoCount(m_iPrimaryAmmoType))
+			// If only one shell is left, do a single shot instead	
+			if ( m_iClip1 == 1 )
+			{
+				PrimaryAttack();
+			}
+			else if (!pOwner->GetAmmoCount(m_iPrimaryAmmoType))
 			{
 				DryFire();
 			}
@@ -641,8 +689,9 @@ void CWeaponShotgun::ItemPostFrame( void )
 				StartReload();
 			}
 		}
+
 		// Fire underwater?
-		else if (pOwner->GetWaterLevel() == 3 && m_bFiresUnderwater == false)
+		else if (GetOwner()->GetWaterLevel() == 3 && m_bFiresUnderwater == false)
 		{
 			WeaponSound(EMPTY);
 			m_flNextPrimaryAttack = gpGlobals->curtime + 0.2;
@@ -651,8 +700,7 @@ void CWeaponShotgun::ItemPostFrame( void )
 		else
 		{
 			// If the firing button was just pressed, reset the firing time
-			CBasePlayer *pPlayer = ToBasePlayer( GetOwner() );
-			if ( pPlayer && pPlayer->m_afButtonPressed & IN_ATTACK )
+			if ( pOwner->m_afButtonPressed & IN_ATTACK )
 			{
 				 m_flNextPrimaryAttack = gpGlobals->curtime;
 			}
@@ -743,9 +791,9 @@ CWeaponShotgun::CWeaponShotgun( void )
 	m_bDelayedFire1 = false;
 	m_bDelayedFire2 = false;
 
-	m_fMinRange1		= 76;
+	m_fMinRange1		= 0;
 	m_fMaxRange1		= 500;
-	m_fMinRange2		= 128;
+	m_fMinRange2		= 0;
 	m_fMaxRange2		= 500;
 }
 

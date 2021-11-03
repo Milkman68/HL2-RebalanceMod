@@ -103,6 +103,7 @@ ConVar hunter_flechette_volley_end_max_delay( "hunter_flechette_volley_end_max_d
 ConVar hunter_flechette_test( "hunter_flechette_test", "0" );
 ConVar hunter_clamp_shots( "hunter_clamp_shots", "1" );
 ConVar hunter_cheap_explosions( "hunter_cheap_explosions", "1" );
+ConVar hunter_flechette_lead_delay( "hunter_flechette_lead_delay", "1.5" );
 
 // Damage received
 ConVar sk_hunter_bullet_damage_scale( "sk_hunter_bullet_damage_scale", "0.6" );
@@ -124,6 +125,7 @@ ConVar hunter_charge( "hunter_charge", "1" );
 ConVar hunter_charge_min_delay( "hunter_charge_min_delay", "10.0" );
 ConVar hunter_charge_pct( "hunter_charge_pct", "25" );
 ConVar hunter_charge_test( "hunter_charge_test", "0" );
+ConVar hunter_charge_turn_speed( "hunter_charge_turn_speed", "15" );
 
 // Vehicle dodging.
 ConVar hunter_dodge_warning( "hunter_dodge_warning", "1.1" );
@@ -1795,6 +1797,7 @@ void CNPC_Hunter::Spawn()
 	{
 		m_BeginFollowDelay.Set( .1 ); // Allow time for strider to spawn
 	}
+	m_bEnableUnplantedShooting = true;
 
 	//if ( !m_pGunFiringSound )
 	//{
@@ -2538,7 +2541,7 @@ void CNPC_Hunter::BuildScheduleTestBits()
 	}
 
 	// Our range attack is uninterruptable for the first few seconds.
-	if ( IsCurSchedule( SCHED_HUNTER_RANGE_ATTACK2, false ) && ( gpGlobals->curtime < m_flShootAllowInterruptTime ) )
+	if ( ( IsCurSchedule( SCHED_HUNTER_RANGE_ATTACK2, false ) || IsCurSchedule( SCHED_HUNTER_RANGE_ATTACK1, false ) ) && ( gpGlobals->curtime < m_flShootAllowInterruptTime ) )
 	{
 		ClearCustomInterruptConditions();
 		SetCustomInterruptCondition( COND_HEAVY_DAMAGE );
@@ -2553,7 +2556,7 @@ void CNPC_Hunter::BuildScheduleTestBits()
 	{
 		if( HasCondition(COND_CAN_RANGE_ATTACK2) && m_flTimeSawEnemyAgain != HUNTER_SEE_ENEMY_TIME_INVALID )
 		{
-			if( (gpGlobals->curtime - m_flTimeSawEnemyAgain) >= 2.0f )
+			if( (gpGlobals->curtime - m_flTimeSawEnemyAgain) >= 0.5f )
 			{
 				// When we're running flank behavior, wait a moment AFTER being able to see the enemy before
 				// breaking my schedule to range attack. This helps assure that the hunter gets well inside
@@ -2838,7 +2841,7 @@ int CNPC_Hunter::SelectCombatSchedule()
 		return SCHED_MOVE_AWAY_FROM_ENEMY;
 	}
 
-	// Sidestep every so often if my enemy is nearby and facing me.
+	// Sidestep every so often if my enemy is nearby and facing me. bookmark
 /*
 	if ( gpGlobals->curtime > m_flNextSideStepTime )
 	{
@@ -2889,10 +2892,10 @@ int CNPC_Hunter::SelectCombatSchedule()
 		return SCHED_ESTABLISH_LINE_OF_FIRE;
 	}
 
-	//if ( HasCondition( COND_ENEMY_OCCLUDED ) && IsCurSchedule( SCHED_RANGE_ATTACK1, false ) )
-	//{
-	//	return SCHED_HUNTER_COMBAT_FACE;
-	//}
+	if ( HasCondition( COND_ENEMY_OCCLUDED ) && IsCurSchedule( SCHED_RANGE_ATTACK1, false ) )
+	{
+		return SCHED_HUNTER_COMBAT_FACE;
+	}
 
  	return SCHED_HUNTER_CHANGE_POSITION;
 }
@@ -3477,7 +3480,7 @@ void CNPC_Hunter::StartTask( const Task_t *pTask )
 
 			// Go straight there!
 			SetActivity( ACT_RESET );
-			SetActivity( ( Activity )ACT_HUNTER_STAGGER );
+			SetActivity( ( Activity )ACT_HUNTER_FLINCH_STICKYBOMB );
 			break;
 		}
 	
@@ -3822,7 +3825,7 @@ void CNPC_Hunter::RunTask( const Task_t *pTask )
 								EmitSound( "NPC_Hunter.ChargeHitWorld" );
 								UTIL_ScreenShake( GetAbsOrigin(), 16.0f, 4.0f, 1.0f, 400.0f, SHAKE_START );
 							}
-							SetIdealActivity( ACT_HUNTER_CHARGE_CRASH );
+							SetIdealActivity( ACT_HUNTER_CHARGE_STOP );
 						}
 					}
 				}
@@ -4094,9 +4097,9 @@ bool CNPC_Hunter::HandleChargeImpact( Vector vecImpact, CBaseEntity *pEntity )
 		// dvs: TODO:
 		//if ( !IsPlayingGesture( ACT_HUNTER_CHARGE_HIT ) )
 		//{
-		//	RestartGesture( ACT_HUNTER_CHARGE_HIT );
+		//	RestartGesture( ACT_HUNTER_CHARGE_HIT ); 
 		//}
-		
+		// bookmark2
 		ChargeDamage( pEntity );
 
 		if ( !pEntity->IsNPC() )
@@ -5858,7 +5861,7 @@ float CNPC_Hunter::MaxYawSpeed()
 		return 0;
 
 	if ( GetActivity() == ACT_HUNTER_CHARGE_RUN )
-		return 15;
+		return hunter_charge_turn_speed.GetFloat();
 
 	if ( GetActivity() == ACT_HUNTER_IDLE_PLANTED )
 		return 0;
@@ -6197,9 +6200,7 @@ bool CNPC_Hunter::ShootFlechette( CBaseEntity *pTargetEntity, bool bSingleShot )
 		Assert( false );
 		return false;
 	}
-
 	int nShotNum = hunter_flechette_volley_size.GetInt() - m_nFlechettesQueued;
-
 	bool bStriderBuster = IsStriderBuster( pTargetEntity );
 
 	// Choose the next muzzle to shoot from.
@@ -6216,11 +6217,30 @@ bool CNPC_Hunter::ShootFlechette( CBaseEntity *pTargetEntity, bool bSingleShot )
 		GetAttachment( gm_nBottomGunAttachment, vecSrc, angMuzzle );
 		DoMuzzleFlash( gm_nBottomGunAttachment );
 	}
+	
+	Vector vecTarget = pTargetEntity->WorldSpaceCenter();
+	
+	// Hunter shot leading.
+	float targetTime;
+	float targetDist;
+	Vector vecAdjustedShot;
+	
+	// Get projectile time to target.
+	targetDist = (vecTarget - vecSrc ).Length();
+	targetTime = targetDist / hunter_flechette_speed.GetFloat();
+	
+	// Get the enemy's velocity devided by how much we want to lag behind.
+	Vector vecVelocity = pTargetEntity->GetAbsVelocity();
+	
+	vecAdjustedShot = vecTarget + ( ( vecVelocity * targetTime ) / hunter_flechette_lead_delay.GetFloat() );
+	
+	// Create a target using the adjusted shot.
+	CAI_BaseNPC *pTarget = CreateCustomTarget( vecAdjustedShot, 100 );
 
 	m_bTopMuzzle = !m_bTopMuzzle;
 
 	Vector vecDir;
-	GetShootDir( vecDir, vecSrc, pTargetEntity, bStriderBuster, nShotNum, bSingleShot );
+	GetShootDir( vecDir, vecSrc, pTarget, bStriderBuster, nShotNum, bSingleShot );
 
 	bool bClamped = false;
 	if ( hunter_clamp_shots.GetBool() )
@@ -7409,7 +7429,7 @@ AI_BEGIN_CUSTOM_NPC( npc_hunter, CNPC_Hunter )
 		"		TASK_SET_FAIL_SCHEDULE					SCHEDULE:SCHED_ESTABLISH_LINE_OF_FIRE"
 		"		TASK_STOP_MOVING						0"
 		"		TASK_HUNTER_BEGIN_FLANK					0"
-		"		TASK_GET_FLANK_ARC_PATH_TO_ENEMY_LOS	30"
+		"		TASK_GET_FLANK_ARC_PATH_TO_ENEMY_LOS	80"
 		"		TASK_HUNTER_ANNOUNCE_FLANK				0"
 		"		TASK_RUN_PATH							0"
 		"		TASK_WAIT_FOR_MOVEMENT					0"
@@ -7418,8 +7438,8 @@ AI_BEGIN_CUSTOM_NPC( npc_hunter, CNPC_Hunter )
 		""
 		"	Interrupts"
 		"		COND_NEW_ENEMY"
-		//"		COND_CAN_RANGE_ATTACK1"
-		//"		COND_CAN_RANGE_ATTACK2"
+		"		COND_CAN_RANGE_ATTACK1"
+		"		COND_CAN_RANGE_ATTACK2"
 		"		COND_CAN_MELEE_ATTACK1"
 		"		COND_CAN_MELEE_ATTACK2"
 		"		COND_ENEMY_DEAD"

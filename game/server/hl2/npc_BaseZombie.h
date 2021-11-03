@@ -20,7 +20,7 @@
 
 #define	ENVELOPE_CONTROLLER		(CSoundEnvelopeController::GetController())
 
-#define ZOMBIE_MELEE_REACH	80
+#define ZOMBIE_MELEE_REACH	75
 
 extern int AE_ZOMBIE_ATTACK_RIGHT;
 extern int AE_ZOMBIE_ATTACK_LEFT;
@@ -72,6 +72,7 @@ enum
 	SCHED_ZOMBIE_WANDER_STANDOFF,
 	SCHED_ZOMBIE_MELEE_ATTACK1,
 	SCHED_ZOMBIE_POST_MELEE_WAIT,
+	SCHED_ZOMBIE_PUNT_STUN,
 
 	LAST_BASE_ZOMBIE_SCHEDULE,
 };
@@ -138,7 +139,7 @@ public:
 	}
 
 	int MeleeAttack1Conditions ( float flDot, float flDist );
-	virtual float GetClawAttackRange() const { return ZOMBIE_MELEE_REACH; }
+	virtual float GetClawAttackRange();
 
 	// No range attacks
 	int RangeAttack1Conditions ( float flDot, float flDist ) { return( 0 ); }

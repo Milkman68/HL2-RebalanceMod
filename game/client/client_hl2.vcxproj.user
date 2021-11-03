@@ -6,4 +6,10 @@
     <LocalDebuggerWorkingDirectory>C:\Program Files (x86)\Steam\steamapps\common\Source SDK Base 2013 Singleplayer\</LocalDebuggerWorkingDirectory>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LocalDebuggerCommand>C:\Program Files (x86)\Steam\steamapps\common\Source SDK Base 2013 Singleplayer\hl2.exe</LocalDebuggerCommand>
+    <LocalDebuggerCommandArguments>-allowdebug -dev -sw -condebug -console -toconsole -game "C:\Program Files (x86)\Steam\steamapps\sourcemods\MyMod"</LocalDebuggerCommandArguments>
+    <LocalDebuggerWorkingDirectory>C:\Program Files (x86)\Steam\steamapps\common\Source SDK Base 2013 Singleplayer\</LocalDebuggerWorkingDirectory>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+  </PropertyGroup>
 </Project>

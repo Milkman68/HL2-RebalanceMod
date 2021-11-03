@@ -72,6 +72,7 @@ CBaseCombatWeapon::CBaseCombatWeapon()
 	m_fMaxRange2		= 1024;
 
 	m_bReloadsSingly	= false;
+	m_bMagazineStyleReloads = false;
 
 	// Defaults to zero
 	m_nViewModelIndex	= 0;
@@ -2154,8 +2155,8 @@ void CBaseCombatWeapon::FinishReload( void )
 		if ( UsesClipsForAmmo1() )
 		{
 			int primary	= MIN( GetMaxClip1() - m_iClip1, pOwner->GetAmmoCount(m_iPrimaryAmmoType));	
-			m_iClip1 += primary;
-			pOwner->RemoveAmmo( primary, m_iPrimaryAmmoType);
+			m_iClip1 = m_bMagazineStyleReloads ? GetMaxClip1() : m_iClip1 + primary;
+			pOwner->RemoveAmmo( m_bMagazineStyleReloads ? 1 : primary, m_iPrimaryAmmoType);
 		}
 
 		// If I use secondary clips, reload secondary
@@ -2544,6 +2545,7 @@ BEGIN_PREDICTION_DATA( CBaseCombatWeapon )
 	DEFINE_FIELD( m_Activity, FIELD_INTEGER ),
 	DEFINE_FIELD( m_fFireDuration, FIELD_FLOAT ),
 	DEFINE_FIELD( m_iszName, FIELD_INTEGER ),		
+	DEFINE_FIELD( m_bMagazineStyleReloads, FIELD_BOOLEAN ),
 	DEFINE_FIELD( m_bFiresUnderwater, FIELD_BOOLEAN ),
 	DEFINE_FIELD( m_bAltFiresUnderwater, FIELD_BOOLEAN ),
 	DEFINE_FIELD( m_fMinRange1, FIELD_FLOAT ),		

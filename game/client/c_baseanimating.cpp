@@ -3301,7 +3301,7 @@ int C_BaseAnimating::InternalDrawModel( int flags )
 
 extern ConVar muzzleflash_light;
 
-void C_BaseAnimating::ProcessMuzzleFlashEvent()
+void C_BaseAnimating::ProcessMuzzleFlashEvent()// bookmark
 {
 	// If we have an attachment, then stick a light on it.
 	if ( muzzleflash_light.GetBool() )
@@ -3309,82 +3309,49 @@ void C_BaseAnimating::ProcessMuzzleFlashEvent()
 		//FIXME: We should really use a named attachment for this
 		if ( m_Attachments.Count() > 0 )
 		{		
-			Vector vAttachment, vAng;//bookmark
+			Vector vAttachment, vAng;
 			QAngle angles;
             GetAttachment( 1, vAttachment, angles ); // set 1 instead "attachment"
 			AngleVectors( angles, &vAng );
 			vAttachment += vAng * 2;
 			
-/* 			C_BaseCombatWeapon *pWeapon = GetActiveWeapon();
-			const char *strWeaponName = pWeapon->GetName();
-			bool B = false;
+			// int	m_iMuzzleFlashColorR;
+			// int	m_iMuzzleFlashColorG;
+			// int	m_iMuzzleFlashColorB;
+			// int m_iMuzzleFlashRadius;
 			
-			if ( !Q_stricmp( strWeaponName, "weapon_ar2" ) && B )
-			{
-				dlight_t *dl = effects->CL_AllocDlight ( index );
-				dl->origin = vAttachment + Vector( 0, 0, 0 );
-				dl->color.r = 227;
-				dl->color.g = 255;
-				dl->color.b = 253;
-				dl->die = gpGlobals->curtime + 0.1f;
-				dl->radius = random->RandomFloat(64.0f, 128.0f);
-				dl->decay = dl->radius / 0.4f;;
+	// Normal
+	//		dl->color.r = 255;
+	//		dl->color.g = 241;
+	//		dl->color.b = 71;
+	
+	// AR2
+	//		dl->color.r = 227;
+	//		dl->color.g = 255;
+	//		dl->color.b = 253;
+			
+			m_iMuzzleFlashRadius = random->RandomFloat(64.0f, 128.0f);
+			
+			
+			dlight_t *dl = effects->CL_AllocDlight ( index );
+			dl->origin = vAttachment + Vector( 0, 0, 0 );
+			dl->color.r = m_iMuzzleFlashColorR;
+			dl->color.g = m_iMuzzleFlashColorG;
+			dl->color.b = m_iMuzzleFlashColorB;
+			dl->die = gpGlobals->curtime + 0.3f;
+			dl->radius = m_iMuzzleFlashRadius;
+			dl->decay = dl->radius / 0.1f;;
 				
-				// Make an elight
-				dlight_t *el = effects->CL_AllocElight( LIGHT_INDEX_MUZZLEFLASH + index );
-				el->origin = vAttachment;
-				el->radius = dl->radius; 
-				el->decay = el->radius / 0.1f;
-				el->die = gpGlobals->curtime + 0.1f;
-				el->color.r = 227;
-				el->color.g = 255;
-				el->color.b = 253;
-				el->color.exponent = 5;
-			}
-			else if ( ( !Q_stricmp( strWeaponName, "weapon_shotgun" ) ) || ( !Q_stricmp( strWeaponName, "weapon_357" ) ) && B )
-			{
-				dlight_t *dl = effects->CL_AllocDlight ( index );
-				dl->origin = vAttachment + Vector( 0, 0, 0 );
-				dl->color.r = 255;
-				dl->color.g = 241;
-				dl->color.b = 71;
-				dl->die = gpGlobals->curtime + 0.1f;
-				dl->radius = random->RandomFloat(64.0f, 128.0f);
-				dl->decay = dl->radius / 0.4f;;
-				
-				// Make an elight
-				dlight_t *el = effects->CL_AllocElight( LIGHT_INDEX_MUZZLEFLASH + index );
-				el->origin = vAttachment;
-				el->radius = dl->radius; 
-				el->decay = el->radius / 0.1f;
-				el->die = gpGlobals->curtime + 0.1f;
-				el->color.r = 255;
-				el->color.g = 241;
-				el->color.b = 71;
-				el->color.exponent = 5;
-			}
-			else */
-			{
-				dlight_t *dl = effects->CL_AllocDlight ( index );
-				dl->origin = vAttachment + Vector( 0, 0, 0 );
-				dl->color.r = 255;
-				dl->color.g = 241;
-				dl->color.b = 71;
-				dl->die = gpGlobals->curtime + 0.3f;
-				dl->radius = random->RandomFloat(64.0f, 128.0f);
-				dl->decay = dl->radius / 0.1f;;
-				
-				// Make an elight
-				dlight_t *el = effects->CL_AllocElight( LIGHT_INDEX_MUZZLEFLASH + index );
-				el->origin = vAttachment;
-				el->radius = dl->radius; 
-				el->decay = el->radius / 0.1f;
-				el->die = gpGlobals->curtime + 0.2f;
-				el->color.r = 255;
-				el->color.g = 241;
-				el->color.b = 71;
-				el->color.exponent = 5;
-			}
+			// Make an elight
+			dlight_t *el = effects->CL_AllocElight( LIGHT_INDEX_MUZZLEFLASH + index );
+			el->origin = vAttachment;
+			el->radius = dl->radius; 
+			el->decay = el->radius / 0.1f;
+			el->die = gpGlobals->curtime + 0.2f;
+			el->color.r = m_iMuzzleFlashColorR;
+			el->color.g = m_iMuzzleFlashColorG;
+			el->color.b = m_iMuzzleFlashColorB;
+			el->color.exponent = 5;
 			
 		}
 	}
@@ -3418,9 +3385,15 @@ void C_BaseAnimating::DoAnimationEvents( CStudioHdr *pStudioHdr )
 		return;
 
 	// add in muzzleflash effect
-	if ( ShouldMuzzleFlash() )
+	if ( ShouldMuzzleFlash() ) // bookmark
 	{
 		DisableMuzzleFlash();
+		
+		DevMsg("FLASH\n");
+		
+		m_iMuzzleFlashColorR = 255;
+		m_iMuzzleFlashColorG = 241;
+		m_iMuzzleFlashColorB = 71;
 		
 		ProcessMuzzleFlashEvent();
 	}
@@ -3584,7 +3557,7 @@ void C_BaseAnimating::DoAnimationEvents( CStudioHdr *pStudioHdr )
 //			isFirstPerson - whether this is coming from an NPC or the player
 // Output : Returns true on success, false on failure.
 //-----------------------------------------------------------------------------
-bool C_BaseAnimating::DispatchMuzzleEffect( const char *options, bool isFirstPerson )
+bool C_BaseAnimating::DispatchMuzzleEffect( const char *options, bool isFirstPerson )//bookmark
 {
 	const char	*p = options;
 	char		token[128];

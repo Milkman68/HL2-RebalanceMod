@@ -410,13 +410,13 @@ bool CNPC_CombineS::IsHeavyDamage( const CTakeDamageInfo &info )
 	if ( info.GetAmmoType() == GetAmmoDef()->Index("SMG1") && random->RandomInt(0,4) > 3 )
 		return true;
 
-/* 	// Shotgun blasts where at least half the pellets hit me are heavy damage
+ 	// Shotgun blasts where at least half the pellets hit me are heavy damage
 	if ( info.GetDamageType() & DMG_BUCKSHOT )
 	{
 		int iHalfMax = sk_plr_dmg_buckshot.GetFloat() * sk_plr_num_shotgun_pellets.GetInt() * 0.5;
 		if ( info.GetDamage() >= iHalfMax )
 			return true;
-	} */
+	} 
 
 	// Rollermine shocks
 	if( (info.GetDamageType() & DMG_SHOCK) && hl2_episodic.GetBool() )

@@ -135,6 +135,7 @@ int CNPC_BaseZombie::ACT_ZOM_FALL;
 
 ConVar	sk_zombie_dmg_one_slash( "sk_zombie_dmg_one_slash","0");
 ConVar	sk_zombie_dmg_both_slash( "sk_zombie_dmg_both_slash","0");
+ConVar	sk_zombie_melee_range( "sk_zombie_melee_range","0");
 
 
 // When a zombie spawns, he will select a 'base' pitch value
@@ -153,7 +154,7 @@ ConVar zombie_decaymin( "zombie_decaymin", "0.1" );
 ConVar zombie_decaymax( "zombie_decaymax", "0.4" );
 
 ConVar zombie_ambushdist( "zombie_ambushdist", "16000" );
-ConVar sk_zombie_chance_of_headcrab_surviving_headshot( "sk_zombie_chance_of_headcrab_surviving_headshot", "50" );
+//ConVar sk_zombie_chance_of_headcrab_surviving_headshot( "sk_zombie_chance_of_headcrab_surviving_headshot", "50" );
 
 //=========================================================
 // For a couple of reasons, we keep a running count of how
@@ -702,9 +703,10 @@ void CNPC_BaseZombie::TraceAttack( const CTakeDamageInfo &info, const Vector &ve
 		infoCopy.ScaleDamage( 0.5f );
 	}  */
 	
-	if ( info.GetDamageType() & DMG_PHYSGUN && !IsRunningDynamicInteraction() )
+/* 	if ( info.GetDamageType() & DMG_PHYSGUN && !IsRunningDynamicInteraction() )
 	{
-		Vector	puntDir = ( info.GetDamageForce() * 250.0f );
+		float m_flPuntforce = IsCurSchedule( SCHED_MELEE_ATTACK1 ) ? 150 : 200;
+		Vector	puntDir = ( info.GetDamageForce() * m_flPuntforce );
 
 		if( info.GetDamage() >= GetHealth() )
 		{
@@ -716,7 +718,7 @@ void CNPC_BaseZombie::TraceAttack( const CTakeDamageInfo &info, const Vector &ve
 		SetGroundEntity( NULL );
 		ApplyAbsVelocityImpulse( puntDir );
 		SetCondition( COND_ZOMBIE_GOT_PUNTED );
-	}
+	} */
 
 	BaseClass::TraceAttack( infoCopy, vecDir, ptr, pAccumulator );
 }
@@ -786,7 +788,7 @@ HeadcrabRelease_t CNPC_BaseZombie::ShouldReleaseHeadcrab( const CTakeDamageInfo 
 		// If I was killed by a bullet...
 		if ( info.GetDamageType() & DMG_BULLET )
 		{
-			if( m_bHeadShot && random->RandomInt( 0, 100 ) >= sk_zombie_chance_of_headcrab_surviving_headshot.GetInt() ) 
+			if( m_bHeadShot /* && random->RandomInt( 0, 100 ) <= sk_zombie_chance_of_headcrab_surviving_headshot.GetInt() */ ) 
 			{
 				if( flDamageThreshold > 0.25 )
 				{
@@ -1702,6 +1704,7 @@ void CNPC_BaseZombie::Spawn( void )
 
 	CapabilitiesAdd( bits_CAP_MOVE_GROUND | bits_CAP_INNATE_MELEE_ATTACK1 );
 	CapabilitiesAdd( bits_CAP_SQUAD );
+	CapabilitiesAdd( bits_CAP_PUNTABLE );
 
 	m_flNextSwat = gpGlobals->curtime;
 	m_flNextSwatScan = gpGlobals->curtime;
@@ -2031,6 +2034,8 @@ int CNPC_BaseZombie::GetSwatActivity( void )
 void CNPC_BaseZombie::GatherConditions( void )
 {
 	ClearCondition( COND_ZOMBIE_LOCAL_MELEE_OBSTRUCTION );
+	
+	SetGroundSpeedMultiplier(5.0);
 
 	BaseClass::GatherConditions();
 
@@ -2083,6 +2088,15 @@ void CNPC_BaseZombie::PrescheduleThink( void )
 	if ( ( m_flBurnDamageResetTime ) && ( gpGlobals->curtime >= m_flBurnDamageResetTime ) )
 	{
 		m_flBurnDamage = 0;
+	}
+	
+	if ( HasCondition( COND_GOT_PUNTED ) )
+	{
+		ClearCondition( COND_GOT_PUNTED );
+		if ( !IsCurSchedule( SCHED_MELEE_ATTACK1 ) )
+		{
+			SetSchedule( SCHED_ZOMBIE_PUNT_STUN );
+		}
 	}
 }
 
@@ -2723,6 +2737,11 @@ void CNPC_BaseZombie::TranslateNavGoal( CBaseEntity *pEnemy, Vector &chasePositi
 	BaseClass::TranslateNavGoal( pEnemy, chasePosition );
 }
 
+
+float CNPC_BaseZombie::GetClawAttackRange()
+{
+	return sk_zombie_melee_range.GetFloat();
+}
 //-----------------------------------------------------------------------------
 //
 // Schedules
@@ -3033,6 +3052,14 @@ AI_BEGIN_CUSTOM_NPC( base_zombie, CNPC_BaseZombie )
 
 		"	Tasks"
 		"		TASK_ZOMBIE_WAIT_POST_MELEE		0"
+	)
+	DEFINE_SCHEDULE
+	(
+		SCHED_ZOMBIE_PUNT_STUN,
+
+		"	Tasks"
+		"		TASK_STOP_MOVING		0"
+		"		TASK_WAIT				0.3"
 	)
 
 AI_END_CUSTOM_NPC()

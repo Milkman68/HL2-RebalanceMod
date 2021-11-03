@@ -974,7 +974,7 @@ void CBounceBomb::SearchThink()
 	SetNextThink( gpGlobals->curtime + 0.1 );
 	StudioFrameAdvance();
 
-	if( m_pConstraint && gpGlobals->curtime - m_flTimeGrabbed >= 1.0f )
+	if( m_pConstraint && gpGlobals->curtime - m_flTimeGrabbed >= 0.35f ) // bookmark
 	{
 		m_OnPulledUp.FireOutput( this, this );
 		SetMineState( MINE_STATE_CAPTIVE );

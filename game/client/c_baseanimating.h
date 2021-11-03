@@ -496,6 +496,10 @@ protected:
 	CIKContext						*m_pIk;
 
 	int								m_iEyeAttachment;
+	int								m_iMuzzleFlashColorR;
+	int								m_iMuzzleFlashColorG;
+	int								m_iMuzzleFlashColorB;
+	int 							m_iMuzzleFlashRadius;
 
 	// Animation playback framerate
 	float							m_flPlaybackRate;

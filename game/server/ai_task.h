@@ -401,10 +401,22 @@ enum sharedtasks_e
 
 		// data for this one is there MINIMUM aceptable distance to the cover.
 		TASK_FIND_FAR_NODE_COVER_FROM_ENEMY,
+		
+		// Find a place to go that can't see to where I am now and where the enemy is now.
+		TASK_FIND_COVER_FROM_ORIGIN_AND_ENEMY,
+		
+		// Fine a place to hide towards the enemy.
+		TASK_FIND_ADVANCING_COVER_TO_ENEMY,
 
 		// Find a place to go that can't see to where I am now.
 		TASK_FIND_COVER_FROM_ORIGIN,
-
+		
+		// Find a place to go that can't see to where I am now within a specfied distance.
+		TASK_FIND_NEAR_COVER_FROM_ORIGIN,
+		
+		// Find a place to go that can't see to where I am now outside a specfied distance.
+		TASK_FIND_FAR_COVER_FROM_ORIGIN,
+		
 		// Unhook from the AI system.
 		TASK_DIE,
 

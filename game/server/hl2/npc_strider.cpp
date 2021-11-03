@@ -73,7 +73,7 @@ ConVar sk_strider_health( "sk_strider_health", "350" );
 ConVar npc_strider_height_adj("npc_strider_height_adj", "0" );
 ConVar strider_eyepositions( "strider_eyepositions", "0" );
 ConVar strider_show_focus( "strider_show_focus", "0" );
-ConVar strider_distributed_fire( "strider_distributed_fire", "1" );
+ConVar strider_distributed_fire( "strider_distributed_fire", "0" );
 ConVar strider_show_cannonlos( "strider_show_cannonlos", "0" );
 ConVar strider_show_weapon_los_z( "strider_show_weapon_los_z", "0" );
 ConVar strider_show_weapon_los_condition( "strider_show_weapon_los_condition", "0" );
@@ -108,6 +108,9 @@ ConVar sk_strider_num_missiles3("sk_strider_num_missiles3", "7");
 
 ConVar strider_missile_suppress_dist( "strider_missile_suppress_dist", "240" );
 ConVar strider_missile_suppress_time( "strider_missile_suppress_time", "3" );
+
+ConVar strider_use_offensive_warp_cannon( "strider_use_offensive_warp_cannon", "1" );
+ConVar strider_offensive_warp_cannon_cooldown( "strider_offensive_warp_cannon_cooldown", "10.0" );
 
 
 //-----------------------------------------------------------------------------
@@ -327,10 +330,12 @@ BEGIN_DATADESC( CNPC_Strider )
 
 	DEFINE_FIELD( m_hRagdoll,				FIELD_EHANDLE ),
 	DEFINE_FIELD( m_hCannonTarget,		FIELD_EHANDLE ),
+	DEFINE_FIELD( m_hLastCannonTarget,		FIELD_EHANDLE ),
 	DEFINE_EMBEDDED( m_AttemptCannonLOSTimer ),
 
 	DEFINE_FIELD( m_flSpeedScale, FIELD_FLOAT ),
 	DEFINE_FIELD( m_flTargetSpeedScale, FIELD_FLOAT ),
+	DEFINE_FIELD( m_flShootCooldown, FIELD_FLOAT ),
 
 	DEFINE_EMBEDDED( m_LowZCorrectionTimer ),
 	DEFINE_FIELD( m_BodyTargetBone,		FIELD_INTEGER ),
@@ -342,6 +347,7 @@ BEGIN_DATADESC( CNPC_Strider )
 	DEFINE_FIELD( m_bDontCrouch, FIELD_BOOLEAN ),
 	DEFINE_FIELD( m_bNoMoveToLOS, FIELD_BOOLEAN ),
 	DEFINE_KEYFIELD( m_bDisableBoneFollowers, FIELD_BOOLEAN, "disablephysics" ),
+	DEFINE_FIELD( m_bUpDateCannonTarget, FIELD_BOOLEAN ),
 
 	DEFINE_FIELD( m_idealHeight, FIELD_FLOAT ),
 	DEFINE_FIELD( m_HeightVelocity, FIELD_FLOAT ),
@@ -499,6 +505,7 @@ void CNPC_Strider::Spawn()
 	SetDefaultEyeOffset();
 	
 	SetNavType( NAV_FLY );
+	AddSpawnFlags( SF_CAN_STOMP_PLAYER );
 	m_flGroundSpeed	= STRIDER_SPEED;
 	m_flSpeedScale = m_flTargetSpeedScale = 1.0;
 	m_NPCState = NPC_STATE_NONE;
@@ -556,12 +563,13 @@ void CNPC_Strider::Spawn()
 	m_EnemyUpdatedTimer.Set( 0 );
 
 	// Don't minigun things farther than 500 feet away. 
-	m_flDistTooFar = 500.0f * 12.0f;
+	//m_flDistTooFar = 500.0f * 12.0f;
 
 	GetEnemies()->SetFreeKnowledgeDuration( strider_free_knowledge.GetFloat() );
 
 	m_hPlayersMissile.Set( NULL );
 	m_flTimeNextHuntSound = gpGlobals->curtime - 1.0f;
+	m_hLastCannonTarget = NULL;
 }
 
 void CNPC_Strider::SetupGlobalModelData()
@@ -982,6 +990,45 @@ void CNPC_Strider::GatherConditions()
 			m_bMinigunUseDirectFire = true;
 		}
 	}
+	
+	//	DevMsg("PART0\n");
+		if ( ( !GetCannonTarget() || m_bUpDateCannonTarget ) && strider_use_offensive_warp_cannon.GetBool() )	
+		{
+			//DevMsg("PART1\n");
+			if ( m_flShootCooldown < gpGlobals->curtime )
+			{
+				//DevMsg("PART2\n");
+				if ( GetEnemy() /* && GetEnemy()->IsPlayer() */ )
+				{
+					//DevMsg("PART3\n");
+					
+					CAI_BaseNPC *pCTarget = CreateCustomTarget( GetEnemies()->LastKnownPosition( GetEnemy() ), 20 );
+					m_flShootCooldown = gpGlobals->curtime + strider_offensive_warp_cannon_cooldown.GetFloat();
+						
+					if ( m_hLastCannonTarget != NULL && pCTarget->GetAbsOrigin() == m_hLastCannonTarget->GetAbsOrigin() )
+					{
+						pCTarget = NULL;
+						//DevMsg("Stopped myself\n");
+					} 
+					
+					if ( pCTarget != NULL )
+					{
+						//DevMsg("PART4\n");
+						
+						// Update the targets position until ready to fire.
+						m_bUpDateCannonTarget = true;
+						
+						m_hCannonTarget = pCTarget;
+						m_AttemptCannonLOSTimer.Force();
+					}
+				}
+			}
+		}
+		else
+		{
+			m_flShootCooldown = gpGlobals->curtime + strider_offensive_warp_cannon_cooldown.GetFloat();
+			DevMsg("Not yet\n");
+		}
 
 	//---------------------------------
 
@@ -1361,6 +1408,9 @@ int CNPC_Strider::SelectSchedule()
 
 	if( HasCondition( COND_CAN_RANGE_ATTACK2 ) )
 	{
+		// We succeded.
+		m_bFailedTwice = false;
+		
 		return SCHED_STRIDER_RANGE_ATTACK2;
 	}
 	else if( m_AttemptCannonLOSTimer.Expired() && HasCondition( COND_STRIDER_HAS_CANNON_TARGET ) )
@@ -1894,7 +1944,7 @@ void CNPC_Strider::HandleAnimEvent( animevent_t *pEvent )
 		}
 		break;
 	case STRIDER_AE_CANNONHIT:
-		CreateConcussiveBlast( m_blastHit, m_blastNormal, this, 2.5 );
+		CreateConcussiveBlast( m_blastHit, m_blastNormal, this, 3.5 );
 		break;
 
 	case STRIDER_AE_SHOOTMINIGUN:
@@ -2425,7 +2475,7 @@ bool CNPC_Strider::IsValidEnemy( CBaseEntity *pTarget )
 		return IsCannonTarget(pTarget);
 	}
 
-	if ( pTarget->IsPlayer() )
+	if ( pTarget->IsPlayer() ) // This dissallows the strider to attack while it's being defended by hunters.
 	{
 		if ( AIGetNumFollowers( this, m_iszHunterClassname ) > 0 )
 			return false;
@@ -2631,10 +2681,11 @@ bool CNPC_Strider::WeaponLOSCondition(const Vector &ownerPos, const Vector &targ
 	Vector vBarrelOffset;
 
 	vRootOffset.x = vRootOffset.y = 0;
+	
 	if ( GetCannonTarget() )
 	{
 		//Assert( targetPos == GetCannonTarget()->GetAbsOrigin() );
-		pTargetEnt = GetCannonTarget();
+		pTargetEnt = GetCannonTarget(); //bookmark2
 		vRootOffset.z = gm_zCannonDist;
 		vBarrelOffset = gm_vLocalRelativePositionCannon;
 	}
@@ -2644,6 +2695,27 @@ bool CNPC_Strider::WeaponLOSCondition(const Vector &ownerPos, const Vector &targ
 		vRootOffset.z = gm_zMinigunDist;
 		vBarrelOffset = gm_vLocalRelativePositionMinigun;
 	}
+	
+	/* if ( !GetCannonTarget() && !HasCondition( COND_STRIDER_MINIGUN_SHOOTING ))
+	{
+		float m_flTime;
+		float m_flShootCooldown = 0;
+    	m_flTime = gpGlobals->curtime - GetEnemies()->LastTimeSeen( GetEnemy() );
+		
+    	if ( m_flTime >= 3 && m_flShootCooldown < gpGlobals->curtime )
+		{
+			if ( GetEnemy() && !HasCondition( COND_SEE_ENEMY ) )
+			{
+				CAI_BaseNPC *pTarget = CreateCustomTarget( GetEnemies()->LastSeenPosition( GetEnemy() ), 0.1 );
+				
+				m_hCannonTarget = pTarget;
+				m_AttemptCannonLOSTimer.Force();
+				
+				//m_hCannonTarget = NULL;
+				m_flShootCooldown = gpGlobals->curtime + 5;
+			}
+		}
+	} */
 
 	trace_t tr;
 	AI_TraceLine( ownerPos + vRootOffset, targetPos, MASK_SHOT, this, COLLISION_GROUP_NONE, &tr);
@@ -4082,7 +4154,8 @@ void CNPC_Strider::FireCannon()
 		DevMsg( "Strider refiring cannon?\n" );
 		return;
 	}
-
+	
+	m_bUpDateCannonTarget = false;
 	m_nextShootTime = gpGlobals->curtime + 5;
 	trace_t tr;
 	Vector vecShootPos;
@@ -4115,7 +4188,7 @@ void CNPC_Strider::CannonHitThink()
 	{
 		bool fAlive = pCannonTarget->IsAlive();
 
-		CreateConcussiveBlast( m_blastHit, m_blastNormal, this, 2.5 );
+		CreateConcussiveBlast( m_blastHit, m_blastNormal, this, 3.5 );
 
 		// If the target was alive, check to make sure it is now dead. If not,
 		// Kill it and warn the designer.
@@ -4134,6 +4207,8 @@ void CNPC_Strider::CannonHitThink()
 
 			pCannonTarget->TakeDamage( info );
 		}
+		// Setup last cannon target
+		m_hLastCannonTarget = m_hCannonTarget;
 		
 		// Clear this guy now that we've shot him
 		m_hCannonTarget = NULL;
@@ -4351,12 +4426,12 @@ void CNPC_Strider::StompHit( int followerBoneIndex )
 	CBaseEntity *pEnemy = GetEnemy();
 	CAI_BaseNPC *pNPC = pEnemy ? pEnemy->MyNPCPointer() : NULL;
 	bool bIsValidTarget = pNPC && pNPC->GetModelPtr();
-	if ( HasSpawnFlags( SF_CAN_STOMP_PLAYER ) )
+	/* if ( HasSpawnFlags( SF_CAN_STOMP_PLAYER ) )
 	{
 		bIsValidTarget = bIsValidTarget || ( pEnemy && pEnemy->IsPlayer() );
-	}
+	} */
 
-	if ( !bIsValidTarget )
+	if ( !bIsValidTarget && !pEnemy->IsPlayer() )
 		return;
 
 	Vector delta;
@@ -4446,7 +4521,21 @@ void CNPC_Strider::FootFX( const Vector &origin )
 	//
 	CSoundEnt::InsertSound( SOUND_DANGER|SOUND_CONTEXT_EXCLUDE_COMBINE, tr.endpos, 512, 1.0f, this );
 }
+//---------------------------------------------------------
+//---------------------------------------------------------
+int CNPC_Strider::SelectFailSchedule( int failedSchedule, int failedTask, AI_TaskFailureCode_t taskFailCode )
+{
+	if( failedSchedule == SCHED_STRIDER_ESTABLISH_LINE_OF_FIRE_CANNON )
+	{
+		
+		m_hLastCannonTarget = m_hCannonTarget;
+		
+		m_bUpDateCannonTarget = false;
+		m_hCannonTarget = NULL;
+	}
 
+	return BaseClass::SelectFailSchedule( failedSchedule, failedTask, taskFailCode );
+}
 //---------------------------------------------------------
 //---------------------------------------------------------
 Vector CNPC_Strider::CalculateStompHitPosition( CBaseEntity *pEnemy )
@@ -5445,6 +5534,7 @@ void CSparkTrail::SparkThink()
 	}
 }
 
+
 BEGIN_DATADESC( CSparkTrail )
 	DEFINE_THINKFUNC( SparkThink ),
 END_DATADESC()
@@ -5549,7 +5639,7 @@ AI_BEGIN_CUSTOM_NPC( npc_strider, CNPC_Strider )
 		"		TASK_STOP_MOVING					0"
 		"		TASK_STRIDER_FACE_CANNON_TARGET		0"
 		"		TASK_SET_ACTIVITY					ACTIVITY:ACT_IDLE"
-		"		TASK_WAIT							1"
+		//"		TASK_WAIT							1"
 		"		TASK_STRIDER_AIM					1.25"
 		"		TASK_STRIDER_FIRE_CANNON			0"
 		"		TASK_WAIT							1"

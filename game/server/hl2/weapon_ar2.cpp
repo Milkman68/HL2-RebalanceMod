@@ -31,9 +31,13 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
+ConVar sk_weapon_ar2_burst_fire( "sk_weapon_ar2_burst_fire", "0" );
+ConVar sk_weapon_ar2_burst_fire_count( "sk_weapon_ar2_burst_fire_count", "0" );
+
 ConVar sk_weapon_ar2_alt_fire_radius( "sk_weapon_ar2_alt_fire_radius", "10" );
 ConVar sk_weapon_ar2_alt_fire_duration( "sk_weapon_ar2_alt_fire_duration", "2" );
 ConVar sk_weapon_ar2_alt_fire_mass( "sk_weapon_ar2_alt_fire_mass", "150" );
+
 ConVar sk_plr_weapon_ar2_alt_fire_speed( "sk_plr_weapon_ar2_alt_fire_speed", "1000" );
 ConVar sk_npc_weapon_ar2_alt_fire_speed( "sk_npc_weapon_ar2_alt_fire_speed", "1000" );
 
@@ -110,16 +114,16 @@ IMPLEMENT_ACTTABLE(CWeaponAR2);
 
 CWeaponAR2::CWeaponAR2( )
 {
-	m_fMinRange1	= 256;
+	//m_bMagazineStyleReloads = true;
+	
+	m_fMinRange1	= 64;
 	m_fMaxRange1	= 1024;
 
-	m_fMinRange2	= 512;
-	m_fMaxRange2	= 1024;
+	m_fMinRange2	= 0;
+	m_fMaxRange2	= 0;
 
 	m_nShotsFired	= 0;
 	m_nVentPose		= -1;
-	
-	//m_iFireMode = FIREMODE_3RNDBURST;
 
 	m_bAltFiresUnderwater = false;
 }
@@ -131,12 +135,29 @@ void CWeaponAR2::Precache( void )
 	UTIL_PrecacheOther( "prop_combine_ball" );
 	UTIL_PrecacheOther( "env_entity_dissolver" );
 }
-
+//-----------------------------------------------------------------------------
+// Purpose: BurstFire
+//-----------------------------------------------------------------------------
+float CWeaponAR2::GetFireRate( void )
+{
+	// For balance reasons i've elected to lower the fire rate for npc's to make ar2 soldiers less oppressive.
+	if( GetOwner() && GetOwner()->IsNPC() )
+	{
+		return 0.16;
+	}
+	return sk_weapon_ar2_burst_fire.GetBool() ? 0.1 : 0.14;
+}
+int	CWeaponAR2::GetBurstSize( void )
+{
+	return sk_weapon_ar2_burst_fire_count.GetInt();
+}
 //-----------------------------------------------------------------------------
 // Purpose: Handle grenade detonate in-air (even when no ammo is left)
 //-----------------------------------------------------------------------------
 void CWeaponAR2::ItemPostFrame( void )
 {
+	m_iFireMode = sk_weapon_ar2_burst_fire.GetBool() ? FIREMODE_3RNDBURST : FIREMODE_FULLAUTO;
+	
 	// See if we need to fire off our secondary round
 	if ( m_bShotDelayed && gpGlobals->curtime > m_flDelayedFire )
 	{

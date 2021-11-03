@@ -62,7 +62,7 @@ enum Capability_t
 	bits_CAP_INNATE_MELEE_ATTACK1	= 0x00080000, // can do a innate melee attack 1
 	bits_CAP_INNATE_MELEE_ATTACK2	= 0x00100000, // can do a innate melee attack 1
 	bits_CAP_USE_WEAPONS			= 0x00200000, // can use weapons (non-innate attacks)
-	//bits_CAP_STRAFE					= 0x00400000, // strafe ( walk/run sideways)
+	bits_CAP_PUNTABLE				= 0x00400000, // can be punted by the gravity gun
 	bits_CAP_ANIMATEDFACE			= 0x00800000, // has animated eyes/face
 	bits_CAP_USE_SHOT_REGULATOR		= 0x01000000, // Uses the shot regulator for range attack1
 	bits_CAP_FRIENDLY_DMG_IMMUNE	= 0x02000000, // don't take damage from npc's that are D_LI

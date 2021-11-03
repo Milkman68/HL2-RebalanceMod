@@ -111,7 +111,8 @@ enum SCOND_t
 	COND_TALKER_RESPOND_TO_QUESTION,
 	
 	COND_NO_CUSTOM_INTERRUPTS,		// Don't call BuildScheduleTestBits for this schedule. Used for schedules that must strictly control their interruptibility.
-
+	
+	COND_GOT_PUNTED,
 	// ======================================
 	// IMPORTANT: This must be the last enum
 	// ======================================

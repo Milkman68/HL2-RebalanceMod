@@ -130,6 +130,7 @@ public:
 
 	bool			IsRunningApproachEnemySchedule();
 	Disposition_t	IRelationType( CBaseEntity *pTarget );
+	int 			CountNumEnemies( int m_iClassname, float m_flMaxdist );
 
 	// -------------
 	// Sounds
@@ -204,7 +205,10 @@ private:
 		SCHED_COMBINE_MOVE_TO_FORCED_GREN_LOS,
 		SCHED_COMBINE_FACE_IDEAL_YAW,
 		SCHED_COMBINE_MOVE_TO_MELEE,
-		SCHED_COMBINE_FLANK_ENEMY,//bookmark
+		SCHED_COMBINE_FLANK_ENEMY,
+		SCHED_COMBINE_SOFT_FLANK_ENEMY,//bookmark
+		SCHED_TAKE_COVER_FROM_ORIGIN_FIRE,
+		SCHED_ESTABLISH_ADVANCING_COVER,
 		NEXT_SCHEDULE,
 	};
 
@@ -274,10 +278,11 @@ private:
 	EHANDLE			m_hForcedGrenadeTarget;
 	bool			m_bShouldPatrol;
 	bool			m_bSlotIndependent;
-	bool			m_bShouldFlank;
+	bool			m_bShouldPursue;
 	bool			m_bCanOccupyExtraSlots;
 	bool			m_bFirstEncounter;// only put on the handsign show in the squad's first encounter.
-	bool			m_bCanFallBack;
+	bool			m_bCantFlee;
+	//bool			m_bCanFallBack;
 
 	// Time Variables
 	float			m_flNextPainSoundTime;
@@ -286,8 +291,10 @@ private:
 	float			m_flNextLostSoundTime;
 	float			m_flAlertPatrolTime;		// When to stop doing alert patrol
 	float			m_flNextAltFireTime;		// Elites only. Next time to begin considering alt-fire attack.
+	float			m_flHangBackTime;
 
 	int				m_nShots;
+	int				m_iNumEnemies;
 	float			m_flShotDelay;
 	float			m_flStopMoveShootTime;
 	float			m_flNextDropGrenadeCheck;

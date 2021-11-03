@@ -39,7 +39,7 @@ public:
 	void	SecondaryAttack( void );
 
 	int		GetMinBurst() { return 5; }
-	int		GetMaxBurst() { return 5; }
+	int		GetMaxBurst() { return 10; }
 
 	virtual void Equip( CBaseCombatCharacter *pOwner );
 	bool	Reload( void );
@@ -52,7 +52,7 @@ public:
 
 	virtual const Vector& GetBulletSpread( void )
 	{
-		static const Vector cone = VECTOR_CONE_3DEGREES;
+		static const Vector cone = VECTOR_CONE_4DEGREES; // 3
 		return cone;
 	}
 
@@ -140,7 +140,7 @@ IMPLEMENT_ACTTABLE(CWeaponSMG1);
 //=========================================================
 CWeaponSMG1::CWeaponSMG1( )
 {
-	m_fMinRange1		= 96;
+	m_fMinRange1		= 0;
 
 	m_fMaxRange1		= 1400;
 

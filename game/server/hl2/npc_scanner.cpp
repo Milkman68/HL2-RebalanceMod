@@ -69,7 +69,7 @@ extern IMaterialSystemHardwareConfig *g_pMaterialSystemHardwareConfig;
 #define SHIELD_SCANNER_PHOTO_FAR_DIST			256
 
 #define SCANNER_FLASH_TIME              1.0
-#define SHIELD_SCANNER_FLASH_TIME       0.5
+#define SHIELD_SCANNER_FLASH_TIME       1.0
 
 #define	SCANNER_NUM_GIBS				6		// Number of gibs in gib file
 
@@ -1435,6 +1435,14 @@ int CNPC_CScanner::SelectSchedule(void)
 	// -------------------------------
 	if ( HasCondition(COND_LIGHT_DAMAGE) || HasCondition(COND_HEAVY_DAMAGE) )
 	{
+		if ( IsCurSchedule( SCHED_CSCANNER_ATTACK_FLASH ) ) 
+		{
+			if ( HasCondition( COND_LIGHT_DAMAGE ) || HasCondition( COND_HEAVY_DAMAGE ) )
+			{
+				m_flNextAttack = gpGlobals->curtime + 1;
+			}
+		}
+		
 		if ( IsHeldByPhyscannon( ) ) 
  			return SCHED_SMALL_FLINCH;
 
@@ -3005,6 +3013,8 @@ AI_BEGIN_CUSTOM_NPC( npc_cscanner, CNPC_CScanner )
 		"	Interrupts"
 		"		COND_NEW_ENEMY"
 		"		COND_ENEMY_DEAD"
+		"		COND_HEAVY_DAMAGE"
+		"		COND_LIGHT_DAMAGE"
 		"		COND_SCANNER_GRABBED_BY_PHYSCANNON"
 	)
 

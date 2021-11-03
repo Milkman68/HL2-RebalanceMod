@@ -149,9 +149,9 @@ CWeaponPistol::CWeaponPistol( void )
 	m_flSoonestPrimaryAttack = gpGlobals->curtime;
 	m_flAccuracyPenalty = 0.0f;
 
-	m_fMinRange1		= 256;
+	m_fMinRange1		= 0;
 	m_fMaxRange1		= 1500;
-	m_fMinRange2		= 256;
+	m_fMinRange2		= 0;
 	m_fMaxRange2		= 200;
 
 	m_bFiresUnderwater	= true;

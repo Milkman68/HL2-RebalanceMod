@@ -2137,7 +2137,7 @@ void CNPC_RollerMine::StickToVehicle( CBaseEntity *pOther )
 	AnnounceArrivalToOthers( pOther );
 
 	// Also, jolt the vehicle sometime in the future
-	g_EventQueue.AddEvent( this, "JoltVehicle", RandomFloat(1.5,3), NULL, NULL );
+	g_EventQueue.AddEvent( this, "JoltVehicle", RandomFloat(1.0,1.5), NULL, NULL );
 }
 
 //-----------------------------------------------------------------------------

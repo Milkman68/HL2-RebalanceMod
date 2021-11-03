@@ -3334,6 +3334,7 @@ void CBaseCombatCharacter::DoMuzzleFlash()
 	if ( pWeapon )
 	{
 		pWeapon->DoMuzzleFlash();
+		DevMsg("FLASH2\n");
 		//NOTENOTE: We do not chain to the base here
 	}
 	else

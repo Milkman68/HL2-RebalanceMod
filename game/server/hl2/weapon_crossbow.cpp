@@ -634,7 +634,7 @@ void CWeaponCrossbow::ItemBusyFrame( void )
 //-----------------------------------------------------------------------------
 void CWeaponCrossbow::ReloadAnimSpeed( void )
 {
-    if ( m_bMustReload != false )
+/*     if ( m_bMustReload != false )
     {
         SetPlaybackRate(0.1f); 
 		DevMsg("It Works!!!");
@@ -643,7 +643,7 @@ void CWeaponCrossbow::ReloadAnimSpeed( void )
     {
         SetPlaybackRate(1.0f);
 		DevMsg("No, no it doesn't");
-    }
+    } */
 }
 //-----------------------------------------------------------------------------
 // Purpose: 

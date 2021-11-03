@@ -357,6 +357,7 @@ public:
 	void			StompHit( int followerBoneIndex );
 
 	void			FootFX( const Vector &origin );
+	int				SelectFailSchedule( int failedSchedule, int failedTask, AI_TaskFailureCode_t taskFailCode );
 	Vector			CalculateStompHitPosition( CBaseEntity *pEnemy );
 	bool			IsLegBoneFollower( CBoneFollower *pFollower );
 	CBoneFollower	*GetBoneFollowerByIndex( int nIndex );
@@ -450,6 +451,7 @@ private:
 	EHANDLE			m_hRagdoll;
 
 	EHANDLE			m_hCannonTarget;
+	EHANDLE			m_hLastCannonTarget;
 	CSimpleSimTimer	m_AttemptCannonLOSTimer;
 
 	float			m_flSpeedScale;
@@ -463,6 +465,7 @@ private:
 	int				m_BodyTargetBone;
 
 	bool			m_bDisableBoneFollowers;
+	bool			m_bUpDateCannonTarget;
 
 	int				m_iVisibleEnemies;
 	float			m_flTargetAcquiredTime;
@@ -472,6 +475,7 @@ private:
 	bool			m_bNoMoveToLOS;
 	bool			m_bFastCrouch;
 	bool			m_bMinigunEnabled;	// If false, minigun disabled by level designer until further notice.
+	bool			m_bFailedTwice;
 
 	float			m_idealHeight;
 	float			m_HeightVelocity;
@@ -493,6 +497,7 @@ private:
 	float			m_flTimePlayerMissileDetected;
 	EHANDLE			m_hPlayersMissile;
 	bool			m_bMinigunUseDirectFire;
+	float			m_flShootCooldown;
 
 	CHandle<SmokeTrail> m_hSmoke;
 

@@ -41,19 +41,19 @@ public:
 	void	Operator_ForceNPCFire( CBaseCombatCharacter  *pOperator, bool bSecondary );
 	void	Operator_HandleAnimEvent( animevent_t *pEvent, CBaseCombatCharacter *pOperator );
 
-	float	GetFireRate( void ) { return 0.14f; }
+	float	GetFireRate( void );
 	
 	// Burst fire
-	//int		GetBurstSize( void ) { return 2; };
+	int		GetBurstSize( void );
 	
-	// the amount of delay we want to have between bursts.
-	//float 	GetBurstCycleRate( void ){ return 0.2f; }
+	// The amount of delay we want to have between bursts.
+	float 	GetBurstCycleRate( void ){ return 0.3f; }
 	
 	// NPC
-	int		GetMinBurst( void ) { return 1; }
-	int		GetMaxBurst( void ) { return 1; }
-	float	GetMinRestTime( void ) { return 0.2f; }
-	float	GetMaxRestTime( void ) { return 0.2f; }
+	int		GetMinBurst( void ) { return 4; }
+	int		GetMaxBurst( void ) { return 4; }
+	float	GetMinRestTime( void ) { return 0.8f; }
+	float	GetMaxRestTime( void ) { return 0.8f; }
 
 	bool	CanHolster( void );
 	bool	Reload( void );

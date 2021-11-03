@@ -1507,11 +1507,68 @@ void CAI_BaseNPC::StartTask( const Task_t *pTask )
 		break;
 
 
+	case TASK_FIND_NEAR_COVER_FROM_ORIGIN:
+	case TASK_FIND_FAR_COVER_FROM_ORIGIN:
 	case TASK_FIND_COVER_FROM_ORIGIN:
 		{
+			float 	flMinDistance 	= ( task == TASK_FIND_FAR_COVER_FROM_ORIGIN ) ? pTask->flTaskData : 0.0;
+			float 	flMaxDistance 	= ( task == TASK_FIND_NEAR_COVER_FROM_ORIGIN ) ? pTask->flTaskData : FLT_MAX;
 			Vector coverPos;
 
-			if ( GetTacticalServices()->FindCoverPos( GetLocalOrigin(), EyePosition(), 0, CoverRadius(), &coverPos ) ) 
+			if ( GetTacticalServices()->FindCoverPos( GetLocalOrigin(), EyePosition(), flMinDistance, flMaxDistance, &coverPos ) ) 
+			{
+				AI_NavGoal_t goal(coverPos, ACT_RUN, AIN_HULL_TOLERANCE);
+				GetNavigator()->SetGoal( goal );
+
+				m_flMoveWaitFinished = gpGlobals->curtime + pTask->flTaskData;
+			}
+			else
+			{
+				// no coverwhatsoever.
+				TaskFail(FAIL_NO_COVER);
+			}
+		}
+
+		break;
+		
+	case TASK_FIND_COVER_FROM_ORIGIN_AND_ENEMY:
+		{
+			float 	flMinDistance 	= 0.0;
+			float 	flMaxDistance 	= FLT_MAX;
+			Vector coverPos;
+			
+			CBaseEntity *pEntity = GetEnemy();
+
+			// Find cover from self if no enemy available
+			if ( pEntity == NULL )
+				pEntity = this;
+
+			if ( ( GetTacticalServices()->FindCoverPos( GetLocalOrigin(), pEntity->EyePosition(), flMinDistance, flMaxDistance, &coverPos ) )  ) 
+			{
+				AI_NavGoal_t goal(coverPos, ACT_RUN, AIN_HULL_TOLERANCE);
+				GetNavigator()->SetGoal( goal );
+
+				m_flMoveWaitFinished = gpGlobals->curtime + pTask->flTaskData;
+			}
+			else
+			{
+				// no coverwhatsoever.
+				TaskFail(FAIL_NO_COVER);
+			}
+		}
+
+		break;
+		
+	case TASK_FIND_ADVANCING_COVER_TO_ENEMY:
+		{
+			Vector coverPos;
+			CBaseEntity *pEntity = GetEnemy();
+
+		// Find cover from self if no enemy available
+		if ( pEntity == NULL )
+			pEntity = this;
+
+			if ( GetTacticalServices()->FindAdvancePos( pEntity->GetAbsOrigin(), pEntity->EyePosition(), 0, CoverRadius(), &coverPos ) ) 
 			{
 				AI_NavGoal_t goal(coverPos, ACT_RUN, AIN_HULL_TOLERANCE);
 				GetNavigator()->SetGoal( goal );

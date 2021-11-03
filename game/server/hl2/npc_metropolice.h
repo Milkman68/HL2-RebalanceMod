@@ -367,6 +367,9 @@ private:
 		SCHED_METROPOLICE_RETURN_TO_PRECHASE,
 		SCHED_METROPOLICE_SMASH_PROP,
 		SCHED_METROPOLICE_BUGBAIT_DISTRACTION,
+		SCHED_METROPOLICE_FLANK_ENEMY,
+		SCHED_METROPOLICE_PUNT_STUN,
+		SCHED_METROPOLICE_OVERWATCH,
 	};
 
 	enum 
@@ -393,6 +396,7 @@ private:
 		TASK_METROPOLICE_WAIT_FOR_SENTENCE,
 		TASK_METROPOLICE_GET_PATH_TO_PRECHASE,
 		TASK_METROPOLICE_CLEAR_PRECHASE,
+		TASK_METROPOLICE_BEGIN_FLANK,
 	};
 
 private:
@@ -425,7 +429,7 @@ private:
 	float			m_flTaskCompletionTime;
 	
 	bool			m_bShouldActivateBaton;
-	bool			m_bCanFallBack;
+	float			m_flHangBackTime;
 	float			m_flBatonDebounceTime;	// Minimum amount of time before turning the baton off
 	float			m_flLastPhysicsFlinchTime;
 	float			m_flLastDamageFlinchTime;

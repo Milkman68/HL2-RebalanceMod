@@ -3963,8 +3963,6 @@ void CBasePlayer::CheckTimeBasedDamage()
 	// only check for time based damage approx. every 2 seconds
 	if ( abs( gpGlobals->curtime - m_tbdPrev ) < 2.0 )
 		return;
-	
-	m_tbdPrev = gpGlobals->curtime;
 
 	for (i = 0; i < CDMG_TIMEBASED; i++)
 	{
@@ -3983,10 +3981,12 @@ void CBasePlayer::CheckTimeBasedDamage()
 			case itbd_Paralyze:
 				// UNDONE - flag movement as half-speed
 				bDuration = PARALYZE_DURATION;
+				m_tbdPrev = gpGlobals->curtime;
 				break;
 			case itbd_NerveGas:
 //				OnTakeDamage(pev, pev, NERVEGAS_DAMAGE, DMG_GENERIC);	
 				bDuration = NERVEGAS_DURATION;
+				m_tbdPrev = gpGlobals->curtime;
 				break;
 //			case itbd_Poison:
 //				OnTakeDamage( CTakeDamageInfo( this, this, POISON_DAMAGE, DMG_GENERIC ) );
@@ -3995,6 +3995,7 @@ void CBasePlayer::CheckTimeBasedDamage()
 			case itbd_Radiation:
 //				OnTakeDamage(pev, pev, RADIATION_DAMAGE, DMG_GENERIC);
 				bDuration = RADIATION_DURATION;
+				m_tbdPrev = gpGlobals->curtime;
 				break;
 			case itbd_DrownRecover:
 				// NOTE: this hack is actually used to RESTORE health
@@ -4006,6 +4007,7 @@ void CBasePlayer::CheckTimeBasedDamage()
 					TakeHealth(idif, DMG_GENERIC);
 					m_idrownrestored += idif;
 				}
+				m_tbdPrev = gpGlobals->curtime;
 				bDuration = 4;	// get up to 5*10 = 50 points back
 				break;
 
@@ -4020,23 +4022,28 @@ void CBasePlayer::CheckTimeBasedDamage()
 					m_nPoisonRestored += nDif;
 				}
 				bDuration = 9;	// get up to 10*10 = 100 points back
+				m_tbdPrev = gpGlobals->curtime;
 				break;
 			}
 
 			case itbd_Acid:
 //				OnTakeDamage(pev, pev, ACID_DAMAGE, DMG_GENERIC);
 				bDuration = ACID_DURATION;
+				m_tbdPrev = gpGlobals->curtime;
 				break;
 			case itbd_SlowBurn:
 //				OnTakeDamage(pev, pev, SLOWBURN_DAMAGE, DMG_GENERIC);
 				bDuration = SLOWBURN_DURATION;
+				m_tbdPrev = gpGlobals->curtime;
 				break;
 			case itbd_SlowFreeze:
 //				OnTakeDamage(pev, pev, SLOWFREEZE_DAMAGE, DMG_GENERIC);
 				bDuration = SLOWFREEZE_DURATION;
+				m_tbdPrev = gpGlobals->curtime;
 				break;
 			default:
 				bDuration = 0;
+				m_tbdPrev = gpGlobals->curtime;
 			}
 
 			if (m_rgbTimeBasedDamage[i])

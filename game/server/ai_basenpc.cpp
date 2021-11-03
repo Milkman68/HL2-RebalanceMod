@@ -888,6 +888,24 @@ int CAI_BaseNPC::OnTakeDamage_Alive( const CTakeDamageInfo &info )
 	
 		NotifyFriendsOfDamage( info.GetAttacker() );
 	}
+	CTakeDamageInfo infoCopy = info;
+	
+	if ( info.GetDamageType() & DMG_PHYSGUN && !IsRunningDynamicInteraction() && ( CapabilitiesGet() & bits_CAP_PUNTABLE ) )
+	{
+		//float m_flPuntforce = IsCurSchedule( SCHED_MELEE_ATTACK1 ) ? 150 : 200;
+		Vector	puntDir = ( info.GetDamageForce() * 200 );
+
+		if( info.GetDamage() >= GetHealth() )
+		{
+			// This blow will be fatal, so scale the damage force
+			// (it's a unit vector) so that the ragdoll will be 
+			// affected.
+			infoCopy.SetDamageForce( info.GetDamageForce() * 3000.0f );
+		}
+		SetGroundEntity( NULL );
+		ApplyAbsVelocityImpulse( puntDir );
+		SetCondition( COND_GOT_PUNTED );
+	}
 
 	// ---------------------------------------------------------------
 	//  Insert a combat sound so that nearby NPCs know I've been hit
@@ -4601,7 +4619,7 @@ void CAI_BaseNPC::CheckFlinches( void )
 	// If we've taken heavy damage, try to do a full schedule flinch
 	if ( HasCondition(COND_HEAVY_DAMAGE) )
  	{
-/* 		// If we've already flinched recently, gesture flinch instead.
+ 		// If we've already flinched recently, gesture flinch instead.
 		if ( HasMemory(bits_MEMORY_FLINCHED) )
 		{
 			// Clear the heavy damage condition so we don't interrupt schedules
@@ -4614,7 +4632,7 @@ void CAI_BaseNPC::CheckFlinches( void )
 			// If we have taken heavy damage, but the current schedule doesn't 
 			// break on that, resort to just playing a gesture flinch.
 			PlayFlinchGesture();
-		} */
+		} 
 
 		// Otherwise, do nothing. The heavy damage will interrupt our schedule and we'll flinch.
 	}

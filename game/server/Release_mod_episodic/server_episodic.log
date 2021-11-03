@@ -1,4 +1,4 @@
-﻿Build started 7/25/2021 3:15:30 PM.
+﻿Build started 10/31/2021 4:12:42 PM.
      1>Project "C:\Users\mario\Desktop\W.F.O.D 2\MyFiles\HL2Mod\MyMod\sp\src\game\server\server_episodic.vcxproj" on node 3 (Build target(s)).
      1>PreBuildEvent:
          if EXIST ..\..\..\game\mod_episodic\bin\.\server.dll for /f "delims=" %%A in ('attrib "..\..\..\game\mod_episodic\bin\.\server.dll"') do set valveTmpIsReadOnly="%%A"
@@ -10,13 +10,196 @@
          :VCEnd
        CustomBuild:
          Running VPC CRC Check - server_episodic.vpc
-         The process cannot access the file because it is being used by another process.
        ClCompile:
-         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /I..\..\common /I..\..\public /I..\..\public\tier0 /I..\..\public\tier1 /I..\..\game\server\generated_proto_mod_episodic /I"..\..\thirdparty\protobuf-2.3.0\src" /I.\ /I..\..\game\shared /I..\..\utils\common /I..\..\game\shared\econ /I..\..\game\server\NextBot /I..\..\game\shared\hl2 /I..\..\game\shared\episodic /I.\hl2 /I.\episodic /Zi /nologo /W4 /WX /MP /O2 /Ob2 /Oi /Ot /Oy- /D VPC /D RAD_TELEMETRY_DISABLED /D WIN32 /D _WIN32 /D NDEBUG /D _WINDOWS /D _USRDLL /D _CRT_SECURE_NO_DEPRECATE /D _CRT_NONSTDC_NO_DEPRECATE /D _ALLOW_RUNTIME_LIBRARY_MISMATCH /D _ALLOW_ITERATOR_DEBUG_LEVEL_MISMATCH /D _ALLOW_MSC_VER_MISMATCH /D _USING_V110_SDK71_ /D _WINDLL /D _MBCS /D COMPILER_MSVC32 /D COMPILER_MSVC32 /D COMPILER_MSVC /D _DLL_EXT=.dll /D DLLNAME=server /D BINK_VIDEO /D AVI_VIDEO /D WMV_VIDEO /D DEV_BUILD /D FRAME_POINTER_OMISSION_DISABLED /D GAME_DLL /D VECTOR /D VERSION_SAFE_STEAM_API_INTERFACES /D PROTECTED_THINGS_ENABLE /D sprintf=use_Q_snprintf_instead_of_sprintf /D strncpy=use_Q_strncpy_instead /D _snprintf=use_Q_snprintf_instead /D fopen=dont_use_fopen /D HL2_DLL /D HL2_EPISODIC /D USES_SAVERESTORE /D _EXTERNAL_DLL_EXT=.dll /D VPCGAMECAPS=VALVE /D "PROJECTDIR=C:\Users\mario\Desktop\W.F.O.D 2\MyFiles\HL2Mod\MyMod\sp\src\game\server" /D _DLL_EXT=.dll /D VPCGAME=valve /D SOURCE1=1 /GF /Gm- /MT /GS /Gy /arch:SSE /fp:fast /Zc:wchar_t /Zc:forScope /GR /Yu"cbase.h" /Fp".\Release_mod_episodic\server.pch" /Fo".\Release_mod_episodic\/" /Fd".\Release_mod_episodic\/vc120.pdb" /Gd /TP /wd4316 /analyze- /FC /errorReport:prompt /Zm200 /d2Zi+ /Gw hl2\basehlcombatweapon.cpp hl2\grenade_ar2.cpp hl2\grenade_homer.cpp hl2\weapon_ar2.cpp
+         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /I..\..\common /I..\..\public /I..\..\public\tier0 /I..\..\public\tier1 /I..\..\game\server\generated_proto_mod_episodic /I"..\..\thirdparty\protobuf-2.3.0\src" /I.\ /I..\..\game\shared /I..\..\utils\common /I..\..\game\shared\econ /I..\..\game\server\NextBot /I..\..\game\shared\hl2 /I..\..\game\shared\episodic /I.\hl2 /I.\episodic /Zi /nologo /W4 /WX /MP /O2 /Ob2 /Oi /Ot /Oy- /D VPC /D RAD_TELEMETRY_DISABLED /D WIN32 /D _WIN32 /D NDEBUG /D _WINDOWS /D _USRDLL /D _CRT_SECURE_NO_DEPRECATE /D _CRT_NONSTDC_NO_DEPRECATE /D _ALLOW_RUNTIME_LIBRARY_MISMATCH /D _ALLOW_ITERATOR_DEBUG_LEVEL_MISMATCH /D _ALLOW_MSC_VER_MISMATCH /D _USING_V110_SDK71_ /D _WINDLL /D _MBCS /D COMPILER_MSVC32 /D COMPILER_MSVC32 /D COMPILER_MSVC /D _DLL_EXT=.dll /D DLLNAME=server /D BINK_VIDEO /D AVI_VIDEO /D WMV_VIDEO /D DEV_BUILD /D FRAME_POINTER_OMISSION_DISABLED /D GAME_DLL /D VECTOR /D VERSION_SAFE_STEAM_API_INTERFACES /D PROTECTED_THINGS_ENABLE /D sprintf=use_Q_snprintf_instead_of_sprintf /D strncpy=use_Q_strncpy_instead /D _snprintf=use_Q_snprintf_instead /D fopen=dont_use_fopen /D HL2_DLL /D HL2_EPISODIC /D USES_SAVERESTORE /D _EXTERNAL_DLL_EXT=.dll /D VPCGAMECAPS=VALVE /D "PROJECTDIR=C:\Users\mario\Desktop\W.F.O.D 2\MyFiles\HL2Mod\MyMod\sp\src\game\server" /D _DLL_EXT=.dll /D VPCGAME=valve /D SOURCE1=1 /GF /Gm- /MT /GS /Gy /arch:SSE /fp:fast /Zc:wchar_t /Zc:forScope /GR /Yu"cbase.h" /Fp".\Release_mod_episodic\server.pch" /Fo".\Release_mod_episodic\/" /Fd".\Release_mod_episodic\/vc120.pdb" /Gd /TP /wd4316 /analyze- /FC /errorReport:prompt /Zm200 /d2Zi+ /Gw ..\..\game\shared\basecombatweapon_shared.cpp ..\..\game\shared\baseplayer_shared.cpp ..\..\game\shared\episodic\achievements_ep2.cpp ..\..\game\shared\hl2\hl2_gamerules.cpp ..\..\game\shared\hl2\survival_gamerules.cpp BaseAnimatingOverlay.cpp CommentarySystem.cpp EntityDissolve.cpp EntityFlame.cpp ai_activity.cpp ai_baseactor.cpp ai_basehumanoid.cpp ai_basenpc.cpp ai_basenpc_flyer.cpp ai_basenpc_flyer_new.cpp ai_basenpc_movement.cpp ai_basenpc_physicsflyer.cpp ai_basenpc_schedule.cpp ai_basenpc_squad.cpp ai_behavior.cpp ai_behavior_assault.cpp ai_behavior_fear.cpp ai_behavior_follow.cpp ai_behavior_lead.cpp ai_behavior_passenger.cpp ai_behavior_rappel.cpp ai_behavior_standoff.cpp ai_blended_movement.cpp ai_concommands.cpp ai_condition.cpp ai_default.cpp ai_event.cpp ai_eventresponse.cpp ai_goalentity.cpp ai_hint.cpp ai_initutils.cpp ai_localnavigator.cpp ai_memory.cpp ai_motor.cpp ai_moveprobe.cpp ai_moveshoot.cpp ai_navigator.cpp ai_network.cpp ai_networkmanager.cpp ai_node.cpp ai_pathfinder.cpp ai_planesolver.cpp ai_playerally.cpp ai_relationship.cpp ai_route.cpp ai_saverestore.cpp ai_schedule.cpp ai_scriptconditions.cpp ai_senses.cpp ai_sentence.cpp ai_speech.cpp ai_speechfilter.cpp ai_squad.cpp ai_squadslot.cpp ai_tacticalservices.cpp ai_task.cpp ai_trackpather.cpp ai_utils.cpp baseanimating.cpp basecombatcharacter.cpp basecombatweapon.cpp baseentity.cpp baseflex.cpp entitylist.cpp episodic\ai_behavior_alyx_injured.cpp episodic\ai_behavior_passenger_companion.cpp episodic\ai_behavior_passenger_zombie.cpp episodic\npc_advisor.cpp episodic\npc_combine_cannon.cpp episodic\npc_hunter.cpp episodic\npc_magnusson.cpp episodic\npc_puppet.cpp episodic\vehicle_jeep_episodic.cpp episodic\weapon_striderbuster.cpp explode.cpp filters.cpp genericactor.cpp genericmonster.cpp h_cycler.cpp hl2\ai_allymanager.cpp hl2\ai_behavior_actbusy.cpp hl2\ai_behavior_functank.cpp hl2\ai_behavior_holster.cpp hl2\ai_behavior_operator.cpp hl2\ai_behavior_police.cpp hl2\ai_spotlight.cpp hl2\antlion_maker.cpp hl2\basehlcombatweapon.cpp hl2\cbasehelicopter.cpp hl2\combine_mine.cpp hl2\env_headcrabcanister.cpp hl2\func_tank.cpp hl2\grenade_ar2.cpp hl2\grenade_bugbait.cpp hl2\grenade_homer.cpp hl2\hl2_ai_network.cpp hl2\hl2_player.cpp hl2\monster_dummy.cpp hl2\npc_BaseZombie.cpp hl2\npc_PoisonZombie.cpp hl2\npc_alyx_episodic.cpp hl2\npc_antlion.cpp hl2\npc_antliongrub.cpp hl2\npc_antlionguard.cpp hl2\npc_apcdriver.cpp hl2\npc_attackchopper.cpp hl2\npc_barnacle.cpp hl2\npc_barney.cpp hl2\npc_basescanner.cpp hl2\npc_breen.cpp hl2\npc_bullseye.cpp hl2\npc_citizen17.cpp hl2\npc_combine.cpp hl2\npc_combinecamera.cpp hl2\npc_combinedropship.cpp hl2\npc_combinegunship.cpp hl2\npc_combines.cpp hl2\npc_cranedriver.cpp hl2\npc_crow.cpp hl2\npc_dog.cpp hl2\npc_eli.cpp hl2\npc_enemyfinder.cpp hl2\npc_fastzombie.cpp hl2\npc_fisherman.cpp hl2\npc_gman.cpp hl2\npc_headcrab.cpp hl2\npc_ichthyosaur.cpp hl2\npc_kleiner.cpp hl2\npc_launcher.cpp hl2\npc_manhack.cpp hl2\npc_metropolice.cpp hl2\npc_missiledefense.cpp hl2\npc_monk.cpp hl2\npc_mossman.cpp hl2\npc_playercompanion.cpp hl2\npc_rollermine.cpp hl2\npc_scanner.cpp hl2\npc_stalker.cpp hl2\npc_strider.cpp hl2\npc_turret_ceiling.cpp hl2\npc_turret_floor.cpp hl2\npc_turret_ground.cpp hl2\npc_vortigaunt_episodic.cpp hl2\npc_zombie.cpp hl2\npc_zombine.cpp hl2\prop_combine_ball.cpp hl2\prop_thumper.cpp hl2\proto_sniper.cpp hl2\vehicle_apc.cpp hl2\vehicle_cannon.cpp hl2\vehicle_crane.cpp hl2\vehicle_jeep.cpp hl2\weapon_357.cpp hl2\weapon_alyxgun.cpp hl2\weapon_annabelle.cpp hl2\weapon_ar2.cpp hl2\weapon_bugbait.cpp hl2\weapon_crossbow.cpp hl2\weapon_crowbar.cpp hl2\weapon_physcannon.cpp hl2\weapon_pistol.cpp hl2\weapon_rpg.cpp hl2\weapon_shotgun.cpp hl2\weapon_smg1.cpp hl2\weapon_stunstick.cpp mapentities.cpp monstermaker.cpp npc_talker.cpp npc_vehicledriver.cpp physics_main.cpp physics_npc_solver.cpp physics_prop_ragdoll.cpp player.cpp props.cpp ragdoll_manager.cpp sceneentity.cpp scripted.cpp scriptedtarget.cpp trains.cpp triggers.cpp vehicle_base.cpp vehicle_baseserver.cpp wcedit.cpp
+         basecombatweapon_shared.cpp
+         baseplayer_shared.cpp
+         achievements_ep2.cpp
+         hl2_gamerules.cpp
+         survival_gamerules.cpp
+         BaseAnimatingOverlay.cpp
+         CommentarySystem.cpp
+         EntityDissolve.cpp
+         EntityFlame.cpp
+         ai_activity.cpp
+         ai_baseactor.cpp
+         ai_basehumanoid.cpp
+         ai_basenpc.cpp
+         ai_basenpc_flyer.cpp
+         ai_basenpc_flyer_new.cpp
+         ai_basenpc_movement.cpp
+         ai_basenpc_physicsflyer.cpp
+         ai_basenpc_schedule.cpp
+         ai_basenpc_squad.cpp
+         ai_behavior.cpp
+         ai_behavior_assault.cpp
+         ai_behavior_fear.cpp
+         ai_behavior_follow.cpp
+         ai_behavior_lead.cpp
+         ai_behavior_passenger.cpp
+         ai_behavior_rappel.cpp
+         ai_behavior_standoff.cpp
+         ai_blended_movement.cpp
+         ai_concommands.cpp
+         ai_condition.cpp
+         ai_default.cpp
+         ai_event.cpp
+         ai_eventresponse.cpp
+         ai_goalentity.cpp
+         ai_hint.cpp
+         ai_initutils.cpp
+         ai_localnavigator.cpp
+         ai_memory.cpp
+         ai_motor.cpp
+         ai_moveprobe.cpp
+         ai_moveshoot.cpp
+         ai_navigator.cpp
+         ai_network.cpp
+         ai_networkmanager.cpp
+         ai_node.cpp
+         ai_pathfinder.cpp
+         ai_planesolver.cpp
+         ai_playerally.cpp
+         ai_relationship.cpp
+         ai_route.cpp
+         ai_saverestore.cpp
+         ai_schedule.cpp
+         ai_scriptconditions.cpp
+         ai_senses.cpp
+         ai_sentence.cpp
+         ai_speech.cpp
+         ai_speechfilter.cpp
+         ai_squad.cpp
+         ai_squadslot.cpp
+         ai_tacticalservices.cpp
+         ai_task.cpp
+         ai_trackpather.cpp
+         ai_utils.cpp
+         baseanimating.cpp
+         basecombatcharacter.cpp
+         basecombatweapon.cpp
+         baseentity.cpp
+         baseflex.cpp
+         entitylist.cpp
+         ai_behavior_alyx_injured.cpp
+         ai_behavior_passenger_companion.cpp
+         ai_behavior_passenger_zombie.cpp
+         npc_advisor.cpp
+         npc_combine_cannon.cpp
+         npc_hunter.cpp
+         npc_magnusson.cpp
+         npc_puppet.cpp
+         vehicle_jeep_episodic.cpp
+         weapon_striderbuster.cpp
+         explode.cpp
+         filters.cpp
+         genericactor.cpp
+         genericmonster.cpp
+         h_cycler.cpp
+         ai_allymanager.cpp
+         ai_behavior_actbusy.cpp
+         ai_behavior_functank.cpp
+         ai_behavior_holster.cpp
+         ai_behavior_operator.cpp
+         ai_behavior_police.cpp
+         ai_spotlight.cpp
+         antlion_maker.cpp
          basehlcombatweapon.cpp
+         cbasehelicopter.cpp
+         combine_mine.cpp
+         env_headcrabcanister.cpp
+         func_tank.cpp
          grenade_ar2.cpp
+         grenade_bugbait.cpp
          grenade_homer.cpp
+         hl2_ai_network.cpp
+         hl2_player.cpp
+         monster_dummy.cpp
+         npc_BaseZombie.cpp
+         npc_PoisonZombie.cpp
+         npc_alyx_episodic.cpp
+         npc_antlion.cpp
+         npc_antliongrub.cpp
+         npc_antlionguard.cpp
+         npc_apcdriver.cpp
+         npc_attackchopper.cpp
+         npc_barnacle.cpp
+         npc_barney.cpp
+         npc_basescanner.cpp
+         npc_breen.cpp
+         npc_bullseye.cpp
+         npc_citizen17.cpp
+         npc_combine.cpp
+         npc_combinecamera.cpp
+         npc_combinedropship.cpp
+         npc_combinegunship.cpp
+         npc_combines.cpp
+         npc_cranedriver.cpp
+         npc_crow.cpp
+         npc_dog.cpp
+         npc_eli.cpp
+         npc_enemyfinder.cpp
+         npc_fastzombie.cpp
+         npc_fisherman.cpp
+         npc_gman.cpp
+         npc_headcrab.cpp
+         npc_ichthyosaur.cpp
+         npc_kleiner.cpp
+         npc_launcher.cpp
+         npc_manhack.cpp
+         npc_metropolice.cpp
+         npc_missiledefense.cpp
+         npc_monk.cpp
+         npc_mossman.cpp
+         npc_playercompanion.cpp
+         npc_rollermine.cpp
+         npc_scanner.cpp
+         npc_stalker.cpp
+         npc_strider.cpp
+         npc_turret_ceiling.cpp
+         npc_turret_floor.cpp
+         npc_turret_ground.cpp
+         npc_vortigaunt_episodic.cpp
+         npc_zombie.cpp
+         npc_zombine.cpp
+         prop_combine_ball.cpp
+         prop_thumper.cpp
+         proto_sniper.cpp
+         vehicle_apc.cpp
+         vehicle_cannon.cpp
+         vehicle_crane.cpp
+         vehicle_jeep.cpp
+         weapon_357.cpp
+         weapon_alyxgun.cpp
+         weapon_annabelle.cpp
          weapon_ar2.cpp
+         weapon_bugbait.cpp
+         weapon_crossbow.cpp
+         weapon_crowbar.cpp
+         weapon_physcannon.cpp
+         weapon_pistol.cpp
+         weapon_rpg.cpp
+         weapon_shotgun.cpp
+         weapon_smg1.cpp
+         weapon_stunstick.cpp
+         mapentities.cpp
+         monstermaker.cpp
+         npc_talker.cpp
+         npc_vehicledriver.cpp
+         physics_main.cpp
+         physics_npc_solver.cpp
+         physics_prop_ragdoll.cpp
+         player.cpp
+         props.cpp
+         ragdoll_manager.cpp
+         sceneentity.cpp
+         scripted.cpp
+         scriptedtarget.cpp
+         trains.cpp
+         triggers.cpp
+         vehicle_base.cpp
+         vehicle_baseserver.cpp
+         wcedit.cpp
        Link:
          C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:".\Release_mod_episodic\\server.dll" /INCREMENTAL:NO /NOLOGO /LIBPATH:..\..\lib\common\. /LIBPATH:..\..\lib\public\. shell32.lib user32.lib advapi32.lib gdi32.lib comdlg32.lib ole32.lib winmm.lib /NODEFAULTLIB:libc /NODEFAULTLIB:libcd /NODEFAULTLIB:libcmtd /MANIFEST:NO /DEBUG /PDB:".\Release_mod_episodic\/server.pdb" /SUBSYSTEM:WINDOWS,"5.01" /OPT:REF /OPT:NOICF /TLBID:1 /DYNAMICBASE:NO /NXCOMPAT /IMPLIB:".\Release_mod_episodic\server.lib" /MACHINE:X86 /SAFESEH:NO  /ignore:4221 /DLL .\Release_mod_episodic\\pointeroverride.obj
          .\Release_mod_episodic\/gamedll_replay.obj
@@ -626,4 +809,4 @@
 
 Build succeeded.
 
-Time Elapsed 00:00:04.97
+Time Elapsed 00:02:31.99

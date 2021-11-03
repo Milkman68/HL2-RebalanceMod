@@ -462,12 +462,14 @@ void CNPC_Manhack::TakeDamageFromPhyscannon( CBasePlayer *pPlayer )
 	// Convert velocity into damage.
 	Vector vel;
 	VPhysicsGetObject()->GetVelocity( &vel, NULL );
+	float flGraceTime = 0;
 	float flSpeed = vel.Length();
 	float flDamage = 0;
 	
-	if ( flSpeed > MANHACK_SMASH_SPEED )
+	if ( flSpeed > MANHACK_SMASH_SPEED && flGraceTime < gpGlobals->curtime )
 	{
-		flDamage = m_iMaxHealth / 2;
+		flGraceTime = gpGlobals->curtime + 0.5;
+		flDamage = m_iMaxHealth / 2.5;
 	}
 
 #if 0
@@ -793,7 +795,7 @@ int	CNPC_Manhack::OnTakeDamage_Alive( const CTakeDamageInfo &info )
 		VectorNormalize( vecDamageDir );
 
 		m_flEngineStallTime = gpGlobals->curtime + 0.25f;
-		m_vForceVelocity = vecDamageDir * info.GetDamage() * 20.0f;
+		m_vForceVelocity = vecDamageDir * info.GetDamage() * 40.0f; // How much knockback to take from bullets
 
 		tdInfo.SetDamageForce( tdInfo.GetDamageForce() * 20 );
 

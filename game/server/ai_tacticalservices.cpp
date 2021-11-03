@@ -137,7 +137,7 @@ bool CAI_TacticalServices::FindCoverPos( const Vector &vNearPos, const Vector &v
 
 	MARK_TASK_EXPENSIVE();
 
-	int node = FindCoverNode( vNearPos, vThreatPos, vThreatEyePos, flMinDist, flMaxDist );
+	int node = FindCoverNode( vNearPos, vThreatPos, vThreatEyePos, flMinDist, flMaxDist, false );
 	
 	if (node == NO_NODE)
 		return false;
@@ -145,7 +145,29 @@ bool CAI_TacticalServices::FindCoverPos( const Vector &vNearPos, const Vector &v
 	*pResult = GetNodePos( node );
 	return true;
 }
+//-------------------------------------
 
+bool CAI_TacticalServices::FindAdvancePos( const Vector &vThreatPos, const Vector &vThreatEyePos, float flMinDist, float flMaxDist, Vector *pResult )
+{
+	return FindAdvancePos( GetLocalOrigin(), vThreatPos, vThreatEyePos, flMinDist, flMaxDist, pResult );
+}
+
+//-------------------------------------
+
+bool CAI_TacticalServices::FindAdvancePos( const Vector &vNearPos, const Vector &vThreatPos, const Vector &vThreatEyePos, float flMinDist, float flMaxDist, Vector *pResult )
+{
+	AI_PROFILE_SCOPE( CAI_TacticalServices_FindAdvancePos );
+
+	MARK_TASK_EXPENSIVE();
+
+	int node = FindCoverNode( vNearPos, vThreatPos, vThreatEyePos, flMinDist, flMaxDist, true );
+	
+	if (node == NO_NODE)
+		return false;
+
+	*pResult = GetNodePos( node );
+	return true;
+}
 //-------------------------------------
 // Checks lateral cover
 //-------------------------------------
@@ -333,12 +355,12 @@ int CAI_TacticalServices::FindBackAwayNode(const Vector &vecThreat )
 
 int CAI_TacticalServices::FindCoverNode(const Vector &vThreatPos, const Vector &vThreatEyePos, float flMinDist, float flMaxDist )
 {
-	return FindCoverNode(GetLocalOrigin(), vThreatPos, vThreatEyePos, flMinDist, flMaxDist );
+	return FindCoverNode(GetLocalOrigin(), vThreatPos, vThreatEyePos, flMinDist, flMaxDist, false );
 }
 
 //-------------------------------------
 
-int CAI_TacticalServices::FindCoverNode(const Vector &vNearPos, const Vector &vThreatPos, const Vector &vThreatEyePos, float flMinDist, float flMaxDist )
+int CAI_TacticalServices::FindCoverNode(const Vector &vNearPos, const Vector &vThreatPos, const Vector &vThreatEyePos, float flMinDist, float flMaxDist, bool m_bIsAdvancing)
 {
 	if ( !CAI_NetworkManager::NetworksLoaded() )
 		return NO_NODE;
@@ -385,7 +407,7 @@ int CAI_TacticalServices::FindCoverNode(const Vector &vNearPos, const Vector &vT
 
 	static int nSearchRandomizer = 0;		// tries to ensure the links are searched in a different order each time;
 
-	// Search until the list is empty
+	// Search until the list is empty bookmark
 	while( list.Count() )
 	{
 		// Get the node that is closest in the number of steps and remove from the list
@@ -466,10 +488,18 @@ int CAI_TacticalServices::FindCoverNode(const Vector &vNearPos, const Vector &vT
 					// the threat in order to take cover from it.
 					float threatDist = (vThreatPos - nodeOrigin).LengthSqr();
 
-					// Now check this node is not too close towards the threat
-					if ( dist < threatDist * 1.5 )
+					// Now check this node is not too close towards the threat bookmark
+					if ( ( ( dist < threatDist * 1.5 ) && !m_bIsAdvancing ) )
 					{
 						list.Insert( AI_NearNode_t(newID, dist) );
+					}
+					
+					float threatDistToNear = (vThreatPos - vNearPos).LengthSqr();
+					// If the distance from the threat to the node is closer than the distance from the threat to me, use the node.
+					// If the distance from me to the node is closer than the distance from me to the threat, use the node.
+					if (  ( ( dist < threatDistToNear ) ) && ( threatDist < threatDistToNear ) && m_bIsAdvancing)
+					{
+						list.Insert( AI_NearNode_t(newID, threatDist) );
 					}
 				}
 				// mark visited

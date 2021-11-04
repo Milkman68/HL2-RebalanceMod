@@ -86,6 +86,7 @@ public:
 
 	inline float					GetPlaybackRate();
 	inline void						SetPlaybackRate( float rate );
+	inline void 					SetGroundSpeedMultiplier( float multiplier = 1.0 );
 
 	inline int GetSequence() { return m_nSequence; }
 	virtual void SetSequence(int nSequence);
@@ -305,6 +306,7 @@ public:
 
 	// animation needs
 	float				m_flGroundSpeed;	// computed linear movement rate for current sequence
+	float				m_flGroundSpeedMultiplier = 1;
 	float				m_flLastEventCheck;	// cycle index of when events were last checked
 
 	virtual void SetLightingOriginRelative( CBaseEntity *pLightingOriginRelative );
@@ -477,6 +479,10 @@ inline float CBaseAnimating::GetPlaybackRate()
 inline void CBaseAnimating::SetPlaybackRate( float rate )
 {
 	m_flPlaybackRate = rate;
+}
+inline void CBaseAnimating::SetGroundSpeedMultiplier( float multiplier )
+{
+	m_flGroundSpeedMultiplier = multiplier;
 }
 
 inline void CBaseAnimating::SetLightingOrigin( CBaseEntity *pLightingOrigin )

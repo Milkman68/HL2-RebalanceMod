@@ -418,6 +418,8 @@ void CNPC_Combine::PostNPCInit()
 //-----------------------------------------------------------------------------
 void CNPC_Combine::GatherConditions()
 {
+	//SetGroundSpeedMultiplier(1.5);
+	
 	BaseClass::GatherConditions();
 
 	ClearCondition( COND_COMBINE_ATTACK_SLOT_AVAILABLE );
@@ -1743,7 +1745,7 @@ int CNPC_Combine::SelectCombatSchedule()
 				
 				m_flHangBackTime = gpGlobals->curtime + random->RandomFloat( 2, 7);
 				OccupyStrategySlot( SQUAD_SLOT_FALLBACK1 );
-				return /* SCHED_COMBINE_TAKE_COVER2 */ SCHED_COMBINE_TAKE_COVER1;
+				return SCHED_COMBINE_TAKE_COVER2;
 			}
 			else
 			{
@@ -1793,6 +1795,14 @@ int CNPC_Combine::SelectCombatSchedule()
 		if ( IsCurSchedule( SCHED_RANGE_ATTACK1 ) )
 		{
 			m_flHangBackTime = gpGlobals->curtime + random->RandomFloat( 2, 3 );
+		}
+		
+		if ( CanGrenadeEnemy() )
+		{
+			if ( OccupyStrategySlot( SQUAD_SLOT_GRENADE1 ) )
+			{
+				return SCHED_RANGE_ATTACK2;
+			}
 		}
 
 		if( GetEnemy() && !(GetEnemy()->GetFlags() & FL_NOTARGET) )
@@ -4086,14 +4096,14 @@ DEFINE_SCHEDULE
  //=========================================================
  // SCHED_COMBINE_TAKE_COVER2
  //=========================================================
-/*  DEFINE_SCHEDULE	
+  DEFINE_SCHEDULE	
  (
  SCHED_COMBINE_TAKE_COVER2  ,
 
  "	Tasks"
  "		TASK_SET_FAIL_SCHEDULE		SCHEDULE:SCHED_COMBINE_TAKECOVER_FAILED"
  "		TASK_STOP_MOVING				0"
- "		TASK_WAIT					0.2"
+ //"		TASK_WAIT					0.2"
  "		TASK_FIND_COVER_FROM_ENEMY	0"
  "		TASK_RUN_PATH				0"
  "		TASK_WAIT_FOR_MOVEMENT		0"
@@ -4101,7 +4111,7 @@ DEFINE_SCHEDULE
  "		TASK_SET_SCHEDULE			SCHEDULE:SCHED_COMBINE_WAIT_IN_COVER"
  ""
  "	Interrupts"
- ) */
+ )
  DEFINE_SCHEDULE
  (
  SCHED_COMBINE_TAKECOVER_FAILED,

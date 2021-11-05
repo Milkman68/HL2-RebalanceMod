@@ -3569,7 +3569,7 @@ bool C_BaseAnimating::DispatchMuzzleEffect( const char *options, bool isFirstPer
 			m_iMuzzleFlashColorG = 255;
 			m_iMuzzleFlashColorB = 253;
 			m_flMuzzleFlashTime  = 0.1;
-			m_iMuzzleFlashRadius = random->RandomFloat(128.0f, 196.0f);
+			m_iMuzzleFlashRadius = random->RandomFloat(64.0f, 128.0f);
 			weaponType = MUZZLEFLASH_COMBINE;
 		}
 		else if ( Q_stricmp( token, "SMG1" ) == 0 )

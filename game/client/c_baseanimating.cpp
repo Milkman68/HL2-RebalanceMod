@@ -3330,8 +3330,6 @@ void C_BaseAnimating::ProcessMuzzleFlashEvent()// bookmark
 	//		dl->color.g = 255;
 	//		dl->color.b = 253;
 			
-			m_iMuzzleFlashRadius = random->RandomFloat(64.0f, 128.0f);
-			
 			
 			dlight_t *dl = effects->CL_AllocDlight ( index );
 			dl->origin = vAttachment + Vector( 0, 0, 0 );
@@ -3340,18 +3338,19 @@ void C_BaseAnimating::ProcessMuzzleFlashEvent()// bookmark
 			dl->color.b = m_iMuzzleFlashColorB;
 			dl->die = gpGlobals->curtime + 0.3f;
 			dl->radius = m_iMuzzleFlashRadius;
-			dl->decay = dl->radius / 0.1f;;
+			dl->decay = dl->radius / m_flMuzzleFlashTime;
+			dl->color.exponent = 3;
 				
 			// Make an elight
 			dlight_t *el = effects->CL_AllocElight( LIGHT_INDEX_MUZZLEFLASH + index );
 			el->origin = vAttachment;
 			el->radius = dl->radius; 
-			el->decay = el->radius / 0.1f;
+			el->decay = el->radius / m_flMuzzleFlashTime;
 			el->die = gpGlobals->curtime + 0.2f;
 			el->color.r = m_iMuzzleFlashColorR;
 			el->color.g = m_iMuzzleFlashColorG;
 			el->color.b = m_iMuzzleFlashColorB;
-			el->color.exponent = 5;
+			el->color.exponent = 3;
 			
 		}
 	}
@@ -3380,23 +3379,6 @@ void C_BaseAnimating::DoAnimationEvents( CStudioHdr *pStudioHdr )
 
 	// If we're invisible, don't draw the muzzle flash
 	bool bIsInvisible = !IsVisible() && !IsViewModel() && !IsMenuModel();
-
-	if ( bIsInvisible && !clienttools->IsInRecordingMode() )
-		return;
-
-	// add in muzzleflash effect
-	if ( ShouldMuzzleFlash() ) // bookmark
-	{
-		DisableMuzzleFlash();
-		
-		DevMsg("FLASH\n");
-		
-		m_iMuzzleFlashColorR = 255;
-		m_iMuzzleFlashColorG = 241;
-		m_iMuzzleFlashColorB = 71;
-		
-		ProcessMuzzleFlashEvent();
-	}
 
 	// If we're invisible, don't process animation events.
 	if ( bIsInvisible )
@@ -3547,6 +3529,17 @@ void C_BaseAnimating::DoAnimationEvents( CStudioHdr *pStudioHdr )
 			FireEvent( GetAbsOrigin(), GetAbsAngles(), pevent[ i ].event, pevent[ i ].pszOptions() );
 		}
 	}
+	if ( bIsInvisible && !clienttools->IsInRecordingMode() )
+	return;
+
+	// add in muzzleflash effect
+	if ( ShouldMuzzleFlash() ) // bookmark
+	{
+		DisableMuzzleFlash();
+		
+		DevMsg("FLASH\n");
+		ProcessMuzzleFlashEvent();
+	}
 
 	m_flPrevEventCycle = flEventCycle;
 }
@@ -3572,22 +3565,47 @@ bool C_BaseAnimating::DispatchMuzzleEffect( const char *options, bool isFirstPer
 		//TODO: Parse the type from a list instead
 		if ( Q_stricmp( token, "COMBINE" ) == 0 )
 		{
+			m_iMuzzleFlashColorR = 227;
+			m_iMuzzleFlashColorG = 255;
+			m_iMuzzleFlashColorB = 253;
+			m_flMuzzleFlashTime  = 0.1;
+			m_iMuzzleFlashRadius = random->RandomFloat(128.0f, 196.0f);
 			weaponType = MUZZLEFLASH_COMBINE;
 		}
 		else if ( Q_stricmp( token, "SMG1" ) == 0 )
 		{
+			m_iMuzzleFlashColorR = 255;
+			m_iMuzzleFlashColorG = 241;
+			m_iMuzzleFlashColorB = 71;
+			m_flMuzzleFlashTime  = 0.1;
+			m_iMuzzleFlashRadius = random->RandomFloat(64.0f, 128.0f);
 			weaponType = MUZZLEFLASH_SMG1;
 		}
 		else if ( Q_stricmp( token, "PISTOL" ) == 0 )
 		{
+			m_iMuzzleFlashColorR = 255;
+			m_iMuzzleFlashColorG = 241;
+			m_iMuzzleFlashColorB = 71;
+			m_flMuzzleFlashTime  = 0.1;
+			m_iMuzzleFlashRadius = random->RandomFloat(64.0f, 128.0f);
 			weaponType = MUZZLEFLASH_PISTOL;
 		}
 		else if ( Q_stricmp( token, "SHOTGUN" ) == 0 )
 		{
+			m_iMuzzleFlashColorR = 255;
+			m_iMuzzleFlashColorG = 241;
+			m_iMuzzleFlashColorB = 71;
+			m_flMuzzleFlashTime  = 0.12;
+			m_iMuzzleFlashRadius = random->RandomFloat(128.0f, 196.0f);
 			weaponType = MUZZLEFLASH_SHOTGUN;
 		}
 		else if ( Q_stricmp( token, "357" ) == 0 )
 		{
+			m_iMuzzleFlashColorR = 255;
+			m_iMuzzleFlashColorG = 241;
+			m_iMuzzleFlashColorB = 71;
+			m_flMuzzleFlashTime  = 0.13;
+			m_iMuzzleFlashRadius = random->RandomFloat(128.0f, 196.0f);
 			weaponType = MUZZLEFLASH_357;
 		}
 		else if ( Q_stricmp( token, "RPG" ) == 0 )

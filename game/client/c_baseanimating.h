@@ -500,6 +500,7 @@ protected:
 	int								m_iMuzzleFlashColorG;
 	int								m_iMuzzleFlashColorB;
 	int 							m_iMuzzleFlashRadius;
+	float							m_flMuzzleFlashTime;
 
 	// Animation playback framerate
 	float							m_flPlaybackRate;

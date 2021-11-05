@@ -413,6 +413,8 @@ public:
 	virtual void DoMuzzleFlash();	// Force a muzzle flash event. Note: this only QUEUES an event, so
 									// ProcessMuzzleFlashEvent will get called later.
 	bool ShouldMuzzleFlash() const;	// Is the muzzle flash event on?
+	void SetMuzzleFlashParams( float Intensity = 1, float Radius = -1, float Time = 0.1 );
+	void SetMuzzleFlashRGB( int R = 255, int G = 241, int B = 71 );
 
 	// This is called to do the actual muzzle flash effect.
 	virtual void ProcessMuzzleFlashEvent();
@@ -501,6 +503,7 @@ protected:
 	int								m_iMuzzleFlashColorB;
 	int 							m_iMuzzleFlashRadius;
 	float							m_flMuzzleFlashTime;
+	float							m_flMuzzleFlashIntensity;
 
 	// Animation playback framerate
 	float							m_flPlaybackRate;

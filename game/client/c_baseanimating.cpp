@@ -3339,7 +3339,7 @@ void C_BaseAnimating::ProcessMuzzleFlashEvent()// bookmark
 			dl->die = gpGlobals->curtime + 0.3f;
 			dl->radius = m_iMuzzleFlashRadius;
 			dl->decay = dl->radius / m_flMuzzleFlashTime;
-			dl->color.exponent = 3;
+			dl->color.exponent = m_flMuzzleFlashIntensity;
 				
 			// Make an elight
 			dlight_t *el = effects->CL_AllocElight( LIGHT_INDEX_MUZZLEFLASH + index );
@@ -3350,7 +3350,7 @@ void C_BaseAnimating::ProcessMuzzleFlashEvent()// bookmark
 			el->color.r = m_iMuzzleFlashColorR;
 			el->color.g = m_iMuzzleFlashColorG;
 			el->color.b = m_iMuzzleFlashColorB;
-			el->color.exponent = 3;
+			el->color.exponent = m_flMuzzleFlashIntensity;
 			
 		}
 	}
@@ -3565,47 +3565,37 @@ bool C_BaseAnimating::DispatchMuzzleEffect( const char *options, bool isFirstPer
 		//TODO: Parse the type from a list instead
 		if ( Q_stricmp( token, "COMBINE" ) == 0 )
 		{
-			m_iMuzzleFlashColorR = 227;
-			m_iMuzzleFlashColorG = 255;
-			m_iMuzzleFlashColorB = 253;
-			m_flMuzzleFlashTime  = 0.1;
-			m_iMuzzleFlashRadius = random->RandomFloat(64.0f, 128.0f);
+			// Blue color
+			SetMuzzleFlashRGB( 227, 255, 253 );
+			SetMuzzleFlashParams();
 			weaponType = MUZZLEFLASH_COMBINE;
 		}
 		else if ( Q_stricmp( token, "SMG1" ) == 0 )
 		{
-			m_iMuzzleFlashColorR = 255;
-			m_iMuzzleFlashColorG = 241;
-			m_iMuzzleFlashColorB = 71;
-			m_flMuzzleFlashTime  = 0.1;
-			m_iMuzzleFlashRadius = random->RandomFloat(64.0f, 128.0f);
+			// Default
+			SetMuzzleFlashRGB();
+			SetMuzzleFlashParams();
 			weaponType = MUZZLEFLASH_SMG1;
 		}
 		else if ( Q_stricmp( token, "PISTOL" ) == 0 )
 		{
-			m_iMuzzleFlashColorR = 255;
-			m_iMuzzleFlashColorG = 241;
-			m_iMuzzleFlashColorB = 71;
-			m_flMuzzleFlashTime  = 0.1;
-			m_iMuzzleFlashRadius = random->RandomFloat(64.0f, 128.0f);
+			// Default
+			SetMuzzleFlashRGB();
+			SetMuzzleFlashParams();
 			weaponType = MUZZLEFLASH_PISTOL;
 		}
 		else if ( Q_stricmp( token, "SHOTGUN" ) == 0 )
 		{
-			m_iMuzzleFlashColorR = 255;
-			m_iMuzzleFlashColorG = 241;
-			m_iMuzzleFlashColorB = 71;
-			m_flMuzzleFlashTime  = 0.12;
-			m_iMuzzleFlashRadius = random->RandomFloat(128.0f, 196.0f);
+			// Longer and bigger flash
+			SetMuzzleFlashRGB();
+			SetMuzzleFlashParams( 1, random->RandomFloat(128.0f, 196.0f), 0.12 );
 			weaponType = MUZZLEFLASH_SHOTGUN;
 		}
 		else if ( Q_stricmp( token, "357" ) == 0 )
 		{
-			m_iMuzzleFlashColorR = 255;
-			m_iMuzzleFlashColorG = 241;
-			m_iMuzzleFlashColorB = 71;
-			m_flMuzzleFlashTime  = 0.13;
-			m_iMuzzleFlashRadius = random->RandomFloat(128.0f, 196.0f);
+			// Longer and bigger flash
+			SetMuzzleFlashRGB();
+			SetMuzzleFlashParams( 1, random->RandomFloat(128.0f, 196.0f), 0.13 );
 			weaponType = MUZZLEFLASH_357;
 		}
 		else if ( Q_stricmp( token, "RPG" ) == 0 )
@@ -3614,6 +3604,9 @@ bool C_BaseAnimating::DispatchMuzzleEffect( const char *options, bool isFirstPer
 		}
 		else
 		{
+			// Default
+			SetMuzzleFlashRGB();
+			SetMuzzleFlashParams();
 			//NOTENOTE: This means you specified an invalid muzzleflash type, check your spelling?
 			Assert( 0 );
 		}
@@ -3655,7 +3648,24 @@ bool C_BaseAnimating::DispatchMuzzleEffect( const char *options, bool isFirstPer
 
 	return true;
 }
-
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+void C_BaseAnimating::SetMuzzleFlashParams( float Intensity, float Radius, float Time )
+{
+	Radius = Radius < 0 ? random->RandomFloat(128.0f, 196.0f) : Radius;
+	
+	m_iMuzzleFlashRadius = Radius;
+	m_flMuzzleFlashTime  = Time;
+	m_flMuzzleFlashIntensity = Intensity;
+}
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+void C_BaseAnimating::SetMuzzleFlashRGB( int R, int G, int B )
+{
+	m_iMuzzleFlashColorR = R;
+	m_iMuzzleFlashColorG = G;
+	m_iMuzzleFlashColorB = B;
+}
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 void MaterialFootstepSound( C_BaseAnimating *pEnt, bool bLeftFoot, float flVolume )

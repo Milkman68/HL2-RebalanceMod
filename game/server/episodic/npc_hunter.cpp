@@ -2875,7 +2875,7 @@ int CNPC_Hunter::SelectCombatSchedule()
 		}
 
 		// Try to be a flanker. //bookmark
-		if ( ( NumHuntersInMySquad() > 1 ) && OccupyStrategySlotRange( SQUAD_SLOT_HUNTER_FLANK_FIRST, SQUAD_SLOT_HUNTER_FLANK_LAST ) )//bookmark
+		if ( /* ( NumHuntersInMySquad() > 1 ) && */ OccupyStrategySlotRange( SQUAD_SLOT_HUNTER_FLANK_FIRST, SQUAD_SLOT_HUNTER_FLANK_LAST ) )//bookmark
 		{
 			return SCHED_HUNTER_FLANK_ENEMY;
 		}

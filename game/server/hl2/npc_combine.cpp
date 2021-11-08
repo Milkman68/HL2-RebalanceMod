@@ -418,7 +418,7 @@ void CNPC_Combine::PostNPCInit()
 //-----------------------------------------------------------------------------
 void CNPC_Combine::GatherConditions()
 {
-	//SetGroundSpeedMultiplier(1.5);
+	SetGroundSpeedMultiplier(1.2);
 	
 	BaseClass::GatherConditions();
 
@@ -2273,7 +2273,7 @@ int CNPC_Combine::TranslateSchedule( int scheduleType )
 			return SCHED_COMBINE_TAKE_COVER_FROM_BEST_SOUND;
 		}
 		break;
-	case SCHED_COMBINE_TAKECOVER_FAILED:
+	case SCHED_COMBINE_TAKECOVER_FAILED: // bookmark
 		{
 			if ( HasCondition( COND_CAN_RANGE_ATTACK1 ) && CanOccupyAttackSlot() )
 			{

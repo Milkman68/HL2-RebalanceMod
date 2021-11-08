@@ -1704,7 +1704,6 @@ void CNPC_BaseZombie::Spawn( void )
 
 	CapabilitiesAdd( bits_CAP_MOVE_GROUND | bits_CAP_INNATE_MELEE_ATTACK1 );
 	CapabilitiesAdd( bits_CAP_SQUAD );
-	CapabilitiesAdd( bits_CAP_PUNTABLE );
 
 	m_flNextSwat = gpGlobals->curtime;
 	m_flNextSwatScan = gpGlobals->curtime;
@@ -2033,9 +2032,16 @@ int CNPC_BaseZombie::GetSwatActivity( void )
 //---------------------------------------------------------
 void CNPC_BaseZombie::GatherConditions( void )
 {
-	ClearCondition( COND_ZOMBIE_LOCAL_MELEE_OBSTRUCTION );
+	if( ( !m_ActBusyBehavior.IsActive() ) && ( !IsCurSchedule( SCHED_RANGE_ATTACK1 ) ) && ( !IsCurSchedule( SCHED_RANGE_ATTACK2 ) ) )
+	{
+		CapabilitiesAdd( bits_CAP_PUNTABLE );
+	}
+	else
+	{
+		CapabilitiesRemove( bits_CAP_PUNTABLE );
+	}
 	
-	SetGroundSpeedMultiplier(5.0);
+	ClearCondition( COND_ZOMBIE_LOCAL_MELEE_OBSTRUCTION );
 
 	BaseClass::GatherConditions();
 

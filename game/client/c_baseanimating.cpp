@@ -3537,7 +3537,7 @@ void C_BaseAnimating::DoAnimationEvents( CStudioHdr *pStudioHdr )
 	{
 		DisableMuzzleFlash();
 		
-		DevMsg("FLASH\n");
+	//	DevMsg("FLASH\n");
 		ProcessMuzzleFlashEvent();
 	}
 
@@ -3566,7 +3566,7 @@ bool C_BaseAnimating::DispatchMuzzleEffect( const char *options, bool isFirstPer
 		if ( Q_stricmp( token, "COMBINE" ) == 0 )
 		{
 			// Blue color
-			SetMuzzleFlashRGB( 227, 255, 253 );
+			SetMuzzleFlashRGB( 201, 255, 253 );
 			SetMuzzleFlashParams();
 			weaponType = MUZZLEFLASH_COMBINE;
 		}

@@ -174,6 +174,7 @@ DEFINE_FIELD( m_flNextDropGrenadeCheck, FIELD_TIME ),
 DEFINE_KEYFIELD( m_iNumGrenades, FIELD_INTEGER, "NumGrenades" ),
 DEFINE_EMBEDDED( m_Sentences ),
 DEFINE_FIELD( m_iVisibleEnemies, FIELD_INTEGER ),
+DEFINE_FIELD( m_flTimeSawEnemyAgain, FIELD_TIME ),
 //							m_AssaultBehavior (auto saved by AI)
 //							m_StandoffBehavior (auto saved by AI)
 //							m_FollowBehavior (auto saved by AI)
@@ -1400,6 +1401,37 @@ void CNPC_Combine::BuildScheduleTestBits( void )
 		ClearCustomInterruptCondition( COND_NEW_ENEMY );
 	}
 	
+	if( !HasCondition(COND_ENEMY_OCCLUDED) )
+	{
+		// m_flTimeSawEnemyAgain always tells us what time I first saw this
+		// enemy again after some period of not seeing them. This is used to
+		// compute how long the enemy has been visible to me THIS TIME. 
+		// Every time I lose sight of the enemy this time is set invalid until
+		// I see the enemy again and record that time.
+		if( m_flTimeSawEnemyAgain == NULL )
+		{
+			m_flTimeSawEnemyAgain = gpGlobals->curtime;
+		}
+	}
+	else
+	{
+		m_flTimeSawEnemyAgain = NULL;
+	}
+	
+	if (  ( IsCurSchedule( SCHED_COMBINE_ESTABLISH_LINE_OF_FIRE, false ) || IsCurSchedule( SCHED_COMBINE_FLANK_ENEMY, false ) ) && GetEnemy() != NULL )//bookmark
+	{
+		if( HasCondition(COND_CAN_RANGE_ATTACK1) && m_flTimeSawEnemyAgain != NULL )
+		{
+			if( (gpGlobals->curtime - m_flTimeSawEnemyAgain) >= 0.5f )
+			{
+				// When we're running flank behavior, wait a moment AFTER being able to see the enemy before
+				// breaking my schedule to range attack. This helps assure that the hunter gets well inside
+				// the room before stopping to attack. Otherwise the Hunter may stop immediately in the doorway
+				// and stop the progress of any hunters behind it.
+				SetCustomInterruptCondition( COND_CAN_RANGE_ATTACK1 );
+			}
+		}
+	}
 
 	if ( IsCurSchedule( SCHED_COMBINE_COMBAT_FAIL ) )
 	{
@@ -2205,7 +2237,7 @@ int CNPC_Combine::SelectScheduleAttack()
 		
 		else if ( ( HasShotgun() == false ) && ( OccupyStrategySlot( SQUAD_SLOT_ATTACK_OCCLUDER ) ) )
 		{
-			CAI_BaseNPC *pTarget = CreateCustomTarget( GetEnemies()->LastSeenPosition( GetEnemy() ), COMBINE_SUPRESSION_TIME );
+			CAI_BaseNPC *pTarget = CreateCustomTarget( GetEnemies()->LastSeenPosition( GetEnemy() ) + GetEnemy()->GetViewOffset()*0.75, COMBINE_SUPRESSION_TIME );
 			AddEntityRelationship( pTarget, IRelationType(pEnemy), IRelationPriority(pEnemy) );
 		}
 	}//bookmark1
@@ -3868,7 +3900,7 @@ DEFINE_SCHEDULE
  "	Interrupts "
  "		COND_NEW_ENEMY"
  "		COND_ENEMY_DEAD"
- "		COND_CAN_RANGE_ATTACK1"
+ //"		COND_CAN_RANGE_ATTACK1"
  "		COND_CAN_RANGE_ATTACK2"
  "		COND_CAN_MELEE_ATTACK1"
  "		COND_CAN_MELEE_ATTACK2"
@@ -4453,7 +4485,7 @@ DEFINE_SCHEDULE//bookmark
 	""
 	"	Interrupts"
 	"		COND_NEW_ENEMY"
-	"		COND_CAN_RANGE_ATTACK1" // Disabling this turns them into monsters.. 
+	//"		COND_CAN_RANGE_ATTACK1" // Disabling this turns them into monsters.. 
 	"		COND_CAN_RANGE_ATTACK2" //bookmark7
 	"		COND_CAN_MELEE_ATTACK1"
 	"		COND_ENEMY_UNREACHABLE"
@@ -4477,7 +4509,7 @@ DEFINE_SCHEDULE//bookmark
 	""
 	"	Interrupts"
 	"		COND_NEW_ENEMY"
-	"		COND_CAN_RANGE_ATTACK1" // Disabling this turns them into monsters.. 
+	//"		COND_CAN_RANGE_ATTACK1" // Disabling this turns them into monsters.. 
 	"		COND_CAN_RANGE_ATTACK2" //bookmark7
 	"		COND_CAN_MELEE_ATTACK1"
 	"		COND_ENEMY_UNREACHABLE"

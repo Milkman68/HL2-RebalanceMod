@@ -52,7 +52,7 @@ public:
 		static Vector vitalAllyCone = VECTOR_CONE_3DEGREES;
 		static Vector cone;
 				
-		CBasePlayer *pPlayer = ToBasePlayer( GetOwner() );
+		//CBasePlayer *pPlayer = ToBasePlayer( GetOwner() );
 
 		if( GetOwner() && (GetOwner()->Classify() == CLASS_PLAYER_ALLY_VITAL) )
 		{
@@ -60,14 +60,14 @@ public:
 			// to be at least as deadly as she would be with her pistol to stay interesting (sjb)
 			return vitalAllyCone;
 		}
-		if ( pPlayer )
-		{
+		// if ( pPlayer )
+		// {
 			cone = VECTOR_CONE_8DEGREES /* * m_flSpreadMultiplier */; // 4 * 2
-		}
-		else
-		{
-			cone = VECTOR_CONE_4DEGREES;	
-		}
+		// }
+		// else
+		// {
+			// cone = VECTOR_CONE_4DEGREES;	
+		// }
 
 		return cone;
 	}
@@ -600,7 +600,7 @@ void CWeaponShotgun::BurstThink( void )
 		SetThink(NULL);
 
 		// idle immediately to stop the firing animation
-		SetWeaponIdleTime( gpGlobals->curtime );
+	//	SetWeaponIdleTime( gpGlobals->curtime );
 		return;
 	}
 

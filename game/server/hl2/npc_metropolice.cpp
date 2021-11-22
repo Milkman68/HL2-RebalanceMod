@@ -194,6 +194,7 @@ BEGIN_DATADESC( CNPC_MetroPolice )
 	DEFINE_FIELD( m_flTaskCompletionTime, FIELD_TIME ),
 	DEFINE_FIELD( m_flLastPhysicsFlinchTime, FIELD_TIME ),
 	DEFINE_FIELD( m_flLastDamageFlinchTime, FIELD_TIME ),
+	DEFINE_FIELD( m_flTimeSawEnemyAgain, FIELD_TIME ),
 
 	DEFINE_FIELD( m_hManhack, FIELD_EHANDLE ),
 	DEFINE_FIELD( m_hBlockingProp, FIELD_EHANDLE ),
@@ -5075,6 +5076,38 @@ void CNPC_MetroPolice::BuildScheduleTestBits( void )
 	{
 		SetCustomInterruptCondition( COND_METROPOLICE_ON_FIRE );
 	}
+	
+	if( !HasCondition(COND_ENEMY_OCCLUDED) )
+	{
+		// m_flTimeSawEnemyAgain always tells us what time I first saw this
+		// enemy again after some period of not seeing them. This is used to
+		// compute how long the enemy has been visible to me THIS TIME. 
+		// Every time I lose sight of the enemy this time is set invalid until
+		// I see the enemy again and record that time.
+		if( m_flTimeSawEnemyAgain == NULL )
+		{
+			m_flTimeSawEnemyAgain = gpGlobals->curtime;
+		}
+	}
+	else
+	{
+		m_flTimeSawEnemyAgain = NULL;
+	}
+	
+	if (  ( IsCurSchedule( SCHED_METROPOLICE_ESTABLISH_LINE_OF_FIRE, false ) || IsCurSchedule( SCHED_METROPOLICE_FLANK_ENEMY, false ) ) && GetEnemy() != NULL )//bookmark
+	{
+		if( HasCondition(COND_CAN_RANGE_ATTACK1) && m_flTimeSawEnemyAgain != NULL )
+		{
+			if( (gpGlobals->curtime - m_flTimeSawEnemyAgain) >= 1.0f )
+			{
+				// When we're running flank behavior, wait a moment AFTER being able to see the enemy before
+				// breaking my schedule to range attack. This helps assure that the hunter gets well inside
+				// the room before stopping to attack. Otherwise the Hunter may stop immediately in the doorway
+				// and stop the progress of any hunters behind it.
+				SetCustomInterruptCondition( COND_CAN_RANGE_ATTACK1 );
+			}
+		}
+	}
 
 /* 	if (IsCurSchedule(SCHED_TAKE_COVER_FROM_ENEMY) || (SCHED_HIDE_AND_RELOAD)  || (SCHED_RANGE_ATTACK1) )//bookmark3
 	{
@@ -5535,7 +5568,7 @@ DEFINE_SCHEDULE
 	"	Interrupts "
 	"		COND_NEW_ENEMY"
 	"		COND_ENEMY_DEAD"
-	"		COND_CAN_RANGE_ATTACK1"
+	//"		COND_CAN_RANGE_ATTACK1"
 	"		COND_CAN_RANGE_ATTACK2"
 	"		COND_CAN_MELEE_ATTACK1"
 	"		COND_CAN_MELEE_ATTACK2"

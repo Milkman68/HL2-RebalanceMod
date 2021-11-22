@@ -2032,7 +2032,7 @@ int CNPC_BaseZombie::GetSwatActivity( void )
 //---------------------------------------------------------
 void CNPC_BaseZombie::GatherConditions( void )
 {
-	if( ( !m_ActBusyBehavior.IsActive() ) && ( !IsCurSchedule( SCHED_RANGE_ATTACK1 ) ) && ( !IsCurSchedule( SCHED_RANGE_ATTACK2 ) ) )
+	if( ( !m_ActBusyBehavior.IsActive() && !IsSlumped()) && ( !IsCurSchedule( SCHED_RANGE_ATTACK1 ) ) && ( !IsCurSchedule( SCHED_RANGE_ATTACK2 ) ) )
 	{
 		CapabilitiesAdd( bits_CAP_PUNTABLE );
 	}

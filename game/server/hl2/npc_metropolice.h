@@ -433,6 +433,7 @@ private:
 	float			m_flBatonDebounceTime;	// Minimum amount of time before turning the baton off
 	float			m_flLastPhysicsFlinchTime;
 	float			m_flLastDamageFlinchTime;
+	float			m_flTimeSawEnemyAgain;
 	
 	// Sentences
 	float			m_flNextPainSoundTime;

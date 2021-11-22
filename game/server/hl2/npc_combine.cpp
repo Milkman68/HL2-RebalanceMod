@@ -1726,11 +1726,11 @@ int CNPC_Combine::SelectCombatSchedule()
 							DevMsg("Hanging Back");
 						}
 							
-						if ( random->RandomInt( 0, 100 ) > 50 )
+						if ( OccupyStrategySlot( SQUAD_SLOT_FLANK1 ) )
 						{
 							return SCHED_COMBINE_FLANK_ENEMY;
 						}
-						else
+						else if ( CanOccupyAttackSlot() )
 						{
 							return SCHED_ESTABLISH_LINE_OF_FIRE;
 						}
@@ -3044,7 +3044,7 @@ bool CNPC_Combine::CanThrowGrenade( const Vector &vecTarget )
 	float flDist;
 	flDist = ( vecTarget - GetAbsOrigin() ).Length();
 
-	if( flDist > 1024 || flDist < 128 )
+	if( flDist > 1024 || flDist < 96 )
 	{
 		// Too close or too far!
 		m_flNextGrenadeCheck = gpGlobals->curtime + 1; // one full second.

@@ -2222,7 +2222,7 @@ int CNPC_Combine::SelectScheduleAttack()
 		float flTime;
 	//	float flDist;
 		
-		CBaseEntity *pEnemy = GetEnemy();
+		//CBaseEntity *pEnemy = GetEnemy();
 		//Vector vecTarget;
 
 
@@ -2235,11 +2235,11 @@ int CNPC_Combine::SelectScheduleAttack()
 			return SCHED_RANGE_ATTACK2;
 		}
 		
-		else if ( ( HasShotgun() == false ) && ( OccupyStrategySlot( SQUAD_SLOT_ATTACK_OCCLUDER ) ) )
+		/* else if ( ( HasShotgun() == false ) && ( OccupyStrategySlot( SQUAD_SLOT_ATTACK_OCCLUDER ) ) )
 		{
 			CAI_BaseNPC *pTarget = CreateCustomTarget( GetEnemies()->LastSeenPosition( GetEnemy() ) + GetEnemy()->GetViewOffset()*0.75, COMBINE_SUPRESSION_TIME );
 			AddEntityRelationship( pTarget, IRelationType(pEnemy), IRelationPriority(pEnemy) );
-		}
+		} */
 	}//bookmark1
 	
 	

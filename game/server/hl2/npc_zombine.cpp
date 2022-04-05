@@ -559,7 +559,7 @@ void CNPC_Zombine::HandleAnimEvent( animevent_t *pEvent )
 
 				pGrenade->SetParent( this, iAttachment );
 
-				pGrenade->SetDamage( 200.0f );
+				pGrenade->SetDamage( 200.0f ); // Add cvar
 				m_hGrenade = pGrenade;
 				
 				EmitSound( "Zombine.ReadyGrenade" );

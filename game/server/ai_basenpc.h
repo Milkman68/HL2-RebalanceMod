@@ -1020,6 +1020,7 @@ public:
 	void				SetEnemy( CBaseEntity *pEnemy, bool bSetCondNewEnemy = true );
 
 	const Vector &		GetEnemyLKP() const;
+	const Vector &		GetEnemyLSP() const;
 	float				GetEnemyLastTimeSeen() const;
 	void				MarkEnemyAsEluded();
 	void				ClearEnemyMemory();

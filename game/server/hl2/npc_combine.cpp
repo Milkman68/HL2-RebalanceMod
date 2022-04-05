@@ -35,6 +35,8 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
+
+ConVar	sk_combine_charge_turrets( "sk_combine_charge_turrets","0.0");
 int g_fCombineQuestion;				// true if an idle grunt asked a question. Cleared when someone answers. YUCK old global from grunt code
 
 #define COMBINE_SKIN_DEFAULT		0
@@ -506,11 +508,10 @@ void CNPC_Combine::PrescheduleThink()
 		}
 	}
 	
-	if (gpGlobals->curtime > m_flRecentDamageTime + 2 /* random->RandomFloat( 2, 7) */ )
+	if (gpGlobals->curtime > m_flRecentDamageTime + 0.7 /* random->RandomFloat( 2, 7) */ )
 	{
 		m_nRecentDamage = 0;
 		m_flRecentDamageTime = 0;
-		//m_bCanFallBack = true;
 	}
 }
 
@@ -1396,11 +1397,6 @@ void CNPC_Combine::BuildScheduleTestBits( void )
 		ClearCustomInterruptCondition( COND_NO_PRIMARY_AMMO );
 	}
 	
-	if ( IsCurSchedule( SCHED_COMBINE_CHARGE_TURRET ) )
-	{
-		ClearCustomInterruptCondition( COND_NEW_ENEMY );
-	}
-	
 	if( !HasCondition(COND_ENEMY_OCCLUDED) )
 	{
 		// m_flTimeSawEnemyAgain always tells us what time I first saw this
@@ -1726,11 +1722,7 @@ int CNPC_Combine::SelectCombatSchedule()
 							DevMsg("Hanging Back");
 						}
 							
-						if ( OccupyStrategySlot( SQUAD_SLOT_FLANK1 ) )
-						{
-							return SCHED_COMBINE_FLANK_ENEMY;
-						}
-						else if ( CanOccupyAttackSlot() )
+						if ( CanOccupyAttackSlot() || IsElite() )
 						{
 							return SCHED_ESTABLISH_LINE_OF_FIRE;
 						}
@@ -1767,7 +1759,7 @@ int CNPC_Combine::SelectCombatSchedule()
 	// ----------------------
 	if ( ( (float)m_nRecentDamage / (float)GetMaxHealth() ) > RECENT_DAMAGE_THRESHOLD )
 	{
-		if ( !IsElite() && m_flHangBackTime < gpGlobals->curtime && IsStrategySlotRangeOccupied( SQUAD_SLOT_FALLBACK1, SQUAD_SLOT_FALLBACK2 )  )
+		if ( !IsElite() /* && m_flHangBackTime < gpGlobals->curtime */ && IsStrategySlotRangeOccupied( SQUAD_SLOT_FALLBACK1, SQUAD_SLOT_FALLBACK2 )  )
 		{
 			if ( GetEnemy() != NULL )
 			{
@@ -1775,9 +1767,9 @@ int CNPC_Combine::SelectCombatSchedule()
 				m_Sentences.Speak( "COMBINE_COVER" );
 				VacateStrategySlot();
 				
-				m_flHangBackTime = gpGlobals->curtime + random->RandomFloat( 2, 7);
+			//	m_flHangBackTime = gpGlobals->curtime + random->RandomFloat( 2, 7);
 				OccupyStrategySlot( SQUAD_SLOT_FALLBACK1 );
-				return SCHED_COMBINE_TAKE_COVER2;
+				return SCHED_COMBINE_TAKE_COVER1;
 			}
 			else
 			{
@@ -1853,12 +1845,8 @@ int CNPC_Combine::SelectCombatSchedule()
 						m_flHangBackTime = gpGlobals->curtime + random->RandomFloat( 4, 6 );
 						DevMsg("Hanging Back");
 					}
-						
-					if ( random->RandomInt( 0, 100 ) > 50 )
-					{
-						return SCHED_COMBINE_FLANK_ENEMY;
-					}
-					else
+							
+					if ( CanOccupyAttackSlot() || IsElite() )
 					{
 						return SCHED_ESTABLISH_LINE_OF_FIRE;
 					}
@@ -2142,10 +2130,14 @@ int CNPC_Combine::SelectScheduleAttack()
 		if ( CanGrenadeEnemy() /* && OccupyStrategySlot( SQUAD_SLOT_GRENADE1 ) */ )//bookmark4
 			return SCHED_RANGE_ATTACK2;
 	
-		if ( CanOccupyAttackSlot() )
+		if ( sk_combine_charge_turrets.GetBool() )
 		{
-    		return SCHED_COMBINE_CHARGE_TURRET;
+			if ( CanOccupyAttackSlot() )
+			{
+				return SCHED_COMBINE_CHARGE_TURRET;
+			} 
 		}
+		
 		m_Sentences.Speak( "COMBINE_COVER" );
     	return SCHED_TAKE_COVER_FROM_ENEMY;
 	}
@@ -2222,7 +2214,7 @@ int CNPC_Combine::SelectScheduleAttack()
 		float flTime;
 	//	float flDist;
 		
-		//CBaseEntity *pEnemy = GetEnemy();
+		CBaseEntity *pEnemy = GetEnemy();
 		//Vector vecTarget;
 
 
@@ -2235,11 +2227,11 @@ int CNPC_Combine::SelectScheduleAttack()
 			return SCHED_RANGE_ATTACK2;
 		}
 		
-		/* else if ( ( HasShotgun() == false ) && ( OccupyStrategySlot( SQUAD_SLOT_ATTACK_OCCLUDER ) ) )
+		else if ( ( HasShotgun() == false ) && ( OccupyStrategySlot( SQUAD_SLOT_ATTACK_OCCLUDER ) ) )
 		{
 			CAI_BaseNPC *pTarget = CreateCustomTarget( GetEnemies()->LastSeenPosition( GetEnemy() ) + GetEnemy()->GetViewOffset()*0.75, COMBINE_SUPRESSION_TIME );
 			AddEntityRelationship( pTarget, IRelationType(pEnemy), IRelationPriority(pEnemy) );
-		} */
+		} 
 	}//bookmark1
 	
 	
@@ -2380,10 +2372,12 @@ int CNPC_Combine::TranslateSchedule( int scheduleType )
 
 			if( IsUsingTacticalVariant( TACTICAL_VARIANT_PRESSURE_ENEMY ) && !IsRunningBehavior() )//bookmark
 			{
-				if( CanOccupyAttackSlot() )
-				{
-					return SCHED_COMBINE_PRESS_ATTACK;
-				}
+				return SCHED_COMBINE_PRESS_ATTACK;
+			}
+			
+			if ( random->RandomInt( 0, 100 ) > 50 )
+			{
+				return SCHED_COMBINE_FLANK_ENEMY;
 			}
 
 			return SCHED_COMBINE_ESTABLISH_LINE_OF_FIRE;
@@ -3054,8 +3048,8 @@ bool CNPC_Combine::CanThrowGrenade( const Vector &vecTarget )
 	// -----------------------
 	// If moving, don't check.
 	// -----------------------
-	if ( m_flGroundSpeed != 0 ) // TODO. Check the effects of turning this off.
-		return false;
+//	if ( m_flGroundSpeed != 0 ) // TODO. Check the effects of turning this off.
+//		return false;
 
 #if 0
 	Vector vecEnemyLKP = GetEnemyLKP();
@@ -3462,8 +3456,8 @@ bool CNPC_Combine::OnBeginMoveAndShoot()
 			return true; // already have the slot I need
 		
 		// Why not just allow the soldiers to move and shoot by default?
-		if( !HasStrategySlotRange( SQUAD_SLOT_GRENADE1, SQUAD_SLOT_ATTACK_OCCLUDER ) )
-			return true;
+		//if( !HasStrategySlotRange( SQUAD_SLOT_GRENADE1, SQUAD_SLOT_ATTACK_OCCLUDER ) )
+		//	return true;
 	}
 	return false;
 }
@@ -4381,7 +4375,7 @@ DEFINE_SCHEDULE
  "		TASK_FACE_ENEMY						0"
  ""
  "	Interrupts"
- "		COND_NEW_ENEMY"
+ //"		COND_NEW_ENEMY"
  "		COND_ENEMY_DEAD"
  "		COND_ENEMY_UNREACHABLE"
  "		COND_CAN_MELEE_ATTACK1"
@@ -4556,8 +4550,6 @@ DEFINE_SCHEDULE
 	"		 TASK_RUN_PATH						0"
 	"		 TASK_WAIT_FOR_MOVEMENT				0"
 	"		 TASK_REMEMBER						MEMORY:INCOVER"
-	"		 TASK_TURN_LEFT						179"
-	"		 TASK_SET_ACTIVITY					ACTIVITY:ACT_IDLE"	// Translated to cover
 	""
 	"	Interrupts"
 	"		COND_NEW_ENEMY"

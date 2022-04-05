@@ -10117,6 +10117,11 @@ const Vector &CAI_BaseNPC::GetEnemyLKP() const
 	return (const_cast<CAI_BaseNPC *>(this))->GetEnemies()->LastKnownPosition( GetEnemy() );
 }
 
+const Vector &CAI_BaseNPC::GetEnemyLSP() const
+{
+	return (const_cast<CAI_BaseNPC *>(this))->GetEnemies()->LastSeenPosition( GetEnemy() );
+}
+
 float CAI_BaseNPC::GetEnemyLastTimeSeen() const
 {
 	return (const_cast<CAI_BaseNPC *>(this))->GetEnemies()->LastTimeSeen( GetEnemy() );

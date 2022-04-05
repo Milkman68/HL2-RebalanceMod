@@ -153,6 +153,12 @@ enum sharedtasks_e
 
 		// Path to a LOS with the enemy's last known position
 		TASK_GET_PATH_TO_ENEMY_LKP_LOS,
+		
+		// Path to node with line of sight to enemy's last SEEN positon, at least flTaskData degrees away from m_vSavePosition from the enemy's POV
+		TASK_GET_FLANK_ARC_PATH_TO_ENEMY_LSP_LOS,
+		
+		// Path to a LOS with the enemy's last SEEN position
+		TASK_GET_PATH_TO_ENEMY_LSP_LOS,
 
 		// Path to the dead enemy's carcass.
 		TASK_GET_PATH_TO_ENEMY_CORPSE,

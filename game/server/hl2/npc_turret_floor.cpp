@@ -37,6 +37,8 @@ const char *GetMassEquivalent(float flMass);
 
 //Debug visualization
 ConVar	g_debug_turret( "g_debug_turret", "0" );
+ConVar	sk_npc_turret_antlion_dmg_multiplier( "sk_npc_turret_antlion_dmg_multiplier", "1.0" );
+ConVar	sk_npc_turret_combine_dmg_multiplier( "sk_npc_turret_combine_dmg_multiplier", "1.0" );
 
 extern ConVar physcannon_tracelength;
 
@@ -1145,7 +1147,7 @@ void CNPC_FloorTurret::Shoot( const Vector &vecSrc, const Vector &vecDirToEnemy,
 		info.m_pAttacker = this;
 		info.m_vecSpread = VECTOR_CONE_PRECALCULATED;
 		info.m_flDistance = MAX_COORD_RANGE;
-		info.m_iAmmoType = m_iAmmoType;
+		info.m_iAmmoType = GetAmmoDef()->Index("CombineTurret"); ;
 	}
 	else
 	{
@@ -1156,7 +1158,7 @@ void CNPC_FloorTurret::Shoot( const Vector &vecSrc, const Vector &vecDirToEnemy,
 		info.m_pAttacker = this;
 		info.m_vecSpread = GetAttackSpread( NULL, GetEnemy() );
 		info.m_flDistance = MAX_COORD_RANGE;
-		info.m_iAmmoType = m_iAmmoType;
+		info.m_iAmmoType = GetAmmoDef()->Index("CombineTurret"); ;
 	}
 
 	FireBullets( info );
@@ -1925,10 +1927,10 @@ float CNPC_FloorTurret::GetAttackDamageScale( CBaseEntity *pVictim )
 	if ( pBCC )
 	{
 		if ( pBCC->Classify() == CLASS_ANTLION )
-			return 1.0;
+			return sk_npc_turret_antlion_dmg_multiplier.GetFloat();
 			
 		if ( pBCC->Classify() == CLASS_COMBINE )
-			return 1.0;
+			return sk_npc_turret_combine_dmg_multiplier.GetFloat();
 	}
 
 	return BaseClass::GetAttackDamageScale( pVictim );

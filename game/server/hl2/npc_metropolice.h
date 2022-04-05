@@ -187,6 +187,9 @@ private:
 	void OnAnimEventPreDeployManhack( void );
 
 	bool HasBaton( void );
+	bool ShouldSwitchToBaton( void );
+	void EquipDefaultWeapon( void );
+	void EquipBaton( void );
 
 	// Normal schedule selection 
 	int SelectCombatSchedule();
@@ -328,6 +331,7 @@ private:
 		COND_METROPOLICE_CHANGE_BATON_STATE,
 		COND_METROPOLICE_PHYSOBJECT_ASSAULT,
 		COND_METROPOLICE_HIT_BY_BUGBAIT,
+		COND_METROPOLICE_SWITCHED_WEAPON,
 
 	};
 
@@ -401,6 +405,8 @@ private:
 
 private:
 
+	float			m_flBatonChaseTime;
+	float			m_flBatonChaseCooldown;
 	int				m_iPistolClips;		// How many clips the cop has in reserve
 	int				m_iManhacks;		// How many manhacks the cop has
 	bool			m_fWeaponDrawn;		// Is my weapon drawn? (ready to use)
@@ -409,6 +415,7 @@ private:
 	CRandSimTimer	m_TimeYieldShootSlot;
 	CSimpleSimTimer m_BatonSwingTimer;
 	CSimpleSimTimer m_NextChargeTimer;
+	
 
 	// All related to burst firing
 	Vector			m_vecBurstTargetPos;
@@ -455,6 +462,7 @@ private:
 	COutputEvent	m_OnCupCopped;
 
 	AIHANDLE		m_hManhack;
+	CHandle<CBaseCombatWeapon>			m_hDefaultWeapon;
 	CHandle<CPhysicsProp>	m_hBlockingProp;
 
 	CAI_ActBusyBehavior		m_ActBusyBehavior;

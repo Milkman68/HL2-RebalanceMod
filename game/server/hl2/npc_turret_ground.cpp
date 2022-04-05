@@ -28,7 +28,7 @@
 #define GROUNDTURRET_RETIRE_TIME	7.0f
 
 ConVar ai_newgroundturret ( "ai_newgroundturret", "0" );
-ConVar sk_combine_turret_fire_rate ( "sk_combine_turret_fire_rate", "0.09" );
+//ConVar sk_combine_ground_turret_fire_rate ( "sk_combine_ground_turret_fire_rate", "0.1" );
 
 
 // memdbgon must be the last include file in a .cpp file!!!
@@ -556,7 +556,7 @@ void CNPC_GroundTurret::Shoot()
 
 	EmitSound( "NPC_FloorTurret.ShotSounds", m_ShotSounds );
 	
-	m_flTimeNextShoot = gpGlobals->curtime + sk_combine_turret_fire_rate.GetFloat();
+	m_flTimeNextShoot = gpGlobals->curtime + 0.1;
 }
 
 //-----------------------------------------------------------------------------

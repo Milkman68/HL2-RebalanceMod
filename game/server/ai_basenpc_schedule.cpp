@@ -2029,6 +2029,89 @@ void CAI_BaseNPC::StartTask( const Task_t *pTask )
 			}
 		}
 		break;
+		
+		case TASK_GET_FLANK_ARC_PATH_TO_ENEMY_LSP_LOS:
+		case TASK_GET_PATH_TO_ENEMY_LSP_LOS:
+		{
+			if ( GetEnemy() == NULL )
+			{
+				TaskFail(FAIL_NO_ENEMY);
+				return;
+			}
+		
+			AI_PROFILE_SCOPE(CAI_BaseNPC_FindLosToEnemy);
+			float flMaxRange = 2000;
+			float flMinRange = 0;
+			
+			if ( GetActiveWeapon() )
+			{
+				flMaxRange = MAX( GetActiveWeapon()->m_fMaxRange1, GetActiveWeapon()->m_fMaxRange2 );
+				flMinRange = MIN( GetActiveWeapon()->m_fMinRange1, GetActiveWeapon()->m_fMinRange2 );
+			}
+			else if ( CapabilitiesGet() & bits_CAP_INNATE_RANGE_ATTACK1 )
+			{
+				flMaxRange = InnateRange1MaxRange();
+				flMinRange = InnateRange1MinRange();
+			}
+
+			//Check against NPC's max range
+			if ( flMaxRange > m_flDistTooFar )
+			{
+				flMaxRange = m_flDistTooFar;
+			}
+
+			Vector vecEnemy 	= GetEnemyLSP();
+			Vector vecEnemyEye	= vecEnemy + GetEnemy()->GetViewOffset();
+
+			Vector posLos;
+			bool found = false;
+
+			if ( /* ( task != TASK_GET_FLANK_RADIUS_PATH_TO_ENEMY_LOS ) && (  */task != TASK_GET_FLANK_ARC_PATH_TO_ENEMY_LSP_LOS /* ) */ )
+			{
+				if ( GetTacticalServices()->FindLateralLos( vecEnemyEye, &posLos ) )
+				{
+					float dist = ( posLos - vecEnemyEye ).Length();
+					if ( dist < flMaxRange && dist > flMinRange )
+						found = true;
+				}
+			}
+			
+			if ( !found )
+			{
+				FlankType_t eFlankType = FLANKTYPE_NONE;
+				Vector vecFlankRefPos = vec3_origin;
+				float flFlankParam = 0;
+			
+				/* if ( task == TASK_GET_FLANK_RADIUS_PATH_TO_ENEMY_LOS )
+				{
+					eFlankType = FLANKTYPE_RADIUS;
+					vecFlankRefPos = m_vSavePosition;
+					flFlankParam = pTask->flTaskData;
+				}
+				else */ if ( task == TASK_GET_FLANK_ARC_PATH_TO_ENEMY_LSP_LOS )
+				{
+					eFlankType = FLANKTYPE_ARC;
+					vecFlankRefPos = m_vSavePosition;
+					flFlankParam = pTask->flTaskData;
+				}
+
+				if ( GetTacticalServices()->FindLos( vecEnemy, vecEnemyEye, flMinRange, flMaxRange, 1.0, eFlankType, vecFlankRefPos, flFlankParam, &posLos ) )
+				{
+					found = true;
+				}
+			}
+
+			if ( !found )
+			{
+				TaskFail( FAIL_NO_SHOOT );
+			}
+			else
+			{
+				// else drop into run task to offer an interrupt
+				m_vInterruptSavePosition = posLos;
+			}
+		}
+		break;
 
 //==================================================
 // TASK_SET_GOAL
@@ -3660,6 +3743,29 @@ void CAI_BaseNPC::RunTask( const Task_t *pTask )
 				ClearTaskInterrupt();
 
 				Vector vecEnemy = ( pTask->iTask == TASK_GET_PATH_TO_ENEMY_LOS ) ? GetEnemy()->GetAbsOrigin() : GetEnemyLKP();
+				AI_NavGoal_t goal( m_vInterruptSavePosition, ACT_RUN, AIN_HULL_TOLERANCE );
+
+				GetNavigator()->SetGoal( goal, AIN_CLEAR_TARGET );
+				GetNavigator()->SetArrivalDirection( vecEnemy - goal.dest );
+			}
+			else
+				TaskInterrupt();
+		}
+		break;
+		
+		case TASK_GET_FLANK_ARC_PATH_TO_ENEMY_LSP_LOS:
+		case TASK_GET_PATH_TO_ENEMY_LSP_LOS:
+		{
+			if ( GetEnemy() == NULL )
+			{
+				TaskFail(FAIL_NO_ENEMY);
+				return;
+			}
+			if ( GetTaskInterrupt() > 0 )
+			{
+				ClearTaskInterrupt();
+
+				Vector vecEnemy = GetEnemyLSP();
 				AI_NavGoal_t goal( m_vInterruptSavePosition, ACT_RUN, AIN_HULL_TOLERANCE );
 
 				GetNavigator()->SetGoal( goal, AIN_CLEAR_TARGET );

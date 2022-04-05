@@ -91,7 +91,7 @@ public:
 	virtual int		WeaponRangeAttack2Condition( float flDot, float flDist );
 
 protected:
-	int m_iBurstSize;
 	int	m_iFireMode;
+	int m_iBurstSize;
 };
 #endif // BASEHLCOMBATWEAPON_H

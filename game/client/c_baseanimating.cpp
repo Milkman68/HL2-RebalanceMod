@@ -3570,6 +3570,13 @@ bool C_BaseAnimating::DispatchMuzzleEffect( const char *options, bool isFirstPer
 			SetMuzzleFlashParams();
 			weaponType = MUZZLEFLASH_COMBINE;
 		}
+		else if ( Q_stricmp( token, "AR2" ) == 0 )
+		{
+			// Blue color
+			SetMuzzleFlashRGB( 201, 255, 253 );
+			SetMuzzleFlashParams();
+			weaponType = MUZZLEFLASH_COMBINE;
+		}
 		else if ( Q_stricmp( token, "SMG1" ) == 0 )
 		{
 			// Default

@@ -323,6 +323,7 @@ BEGIN_DATADESC( CNPC_Citizen )
 	DEFINE_FIELD( 		m_iszOriginalSquad, 		FIELD_STRING ),
 	DEFINE_FIELD( 		m_flTimeJoinedPlayerSquad,	FIELD_TIME ),
 	DEFINE_FIELD( 		m_bWasInPlayerSquad, FIELD_BOOLEAN ),
+	DEFINE_FIELD( 		m_bCasualNotCommandable, FIELD_BOOLEAN ),
 	DEFINE_FIELD( 		m_flTimeLastCloseToPlayer,	FIELD_TIME ),
 	DEFINE_EMBEDDED(	m_AutoSummonTimer ),
 	DEFINE_FIELD(		m_vAutoSummonAnchor, FIELD_POSITION_VECTOR ),

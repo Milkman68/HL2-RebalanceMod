@@ -1,0 +1,9 @@
+# Files to ignore when considering what GIT should commit.
+
+# Ignore everything
+*
+
+# But not these files...
+!.gitignore
+!.md
+!game/

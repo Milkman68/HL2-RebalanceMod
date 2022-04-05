@@ -51,6 +51,7 @@ public:
 	void	ItemBusyFrame( void );
 	void	PrimaryAttack( void );
 	void	SecondaryAttack( void );
+	void	BurstThink( void );
 	void    SecondaryPostFrame( void );
 	void	AddViewKick( void );
 	void	DryFire( void );
@@ -102,6 +103,7 @@ private:
 	float	m_flLastAttackTime;
 	float	m_flAccuracyPenalty;
 	int		m_nNumShotsFired;
+	int		m_iBurstSize;
 };
 
 
@@ -243,8 +245,8 @@ void CWeaponPistol::PrimaryAttack( void )
 	gamestats->Event_WeaponFired( pOwner, true, GetClassname() );
 	
 	// This is for the secondary attack.
-	if ( !m_bInReload && GetIdealActivity() != ACT_VM_DRYFIRE )
-	WeaponSound( SINGLE );
+	//if ( !m_bInReload && GetIdealActivity() != ACT_VM_DRYFIRE )
+	//WeaponSound( SINGLE );
 }
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -255,23 +257,94 @@ void CWeaponPistol::SecondaryAttack( void )
 		return;
 	
 	CBasePlayer *pOwner = ToBasePlayer( GetOwner() );
-	if ( m_iClip1 > 0 )
-	{
-		m_flNextPrimaryAttack = gpGlobals->curtime - 0.14f;
-	}
 	
 	if ( pOwner == NULL )
 	    return;
-
-    if (( pOwner->m_nButtons & IN_ATTACK ) && ( pOwner->m_nButtons & IN_ATTACK2 ))
-		return;
 	
-	if ( gpGlobals->curtime - m_flLastAttackTime >= 0.14f )
-        PrimaryAttack();
-		if ( m_iClip1 > 0 )
-		{
-			m_flNextPrimaryAttack = gpGlobals->curtime + 0.14f;
-		}
+	if (( pOwner->m_nButtons & IN_ATTACK ) && ( pOwner->m_nButtons & IN_ATTACK2 ))
+		return;
+
+    m_iBurstSize = 2;
+	
+	BurstThink();
+	SetThink( &CWeaponPistol::BurstThink );
+	m_flNextSecondaryAttack = gpGlobals->curtime + 0.43;
+
+	// Pick up the rest of the burst through the think function.
+	SetNextThink( gpGlobals->curtime + 0.05 );
+}
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CWeaponPistol::BurstThink( void )
+{
+	// If my clip is empty (and I use clips) start reload
+	if ( UsesClipsForAmmo1() && !m_iClip1 ) 
+	{
+		Reload();
+		return;
+	}
+
+	// Only the player fires this way so we can cast
+	CBasePlayer *pPlayer = ToBasePlayer( GetOwner() );
+
+	if (!pPlayer)
+	{
+		return;
+	}
+
+	pPlayer->DoMuzzleFlash();
+
+	SendWeaponAnim( GetPrimaryAttackActivity() );
+
+	// player "shoot" animation
+	pPlayer->SetAnimation( PLAYER_ATTACK1 );
+
+	FireBulletsInfo_t info;
+	info.m_vecSrc	 = pPlayer->Weapon_ShootPosition( );
+	
+	info.m_vecDirShooting = pPlayer->GetAutoaimVector( AUTOAIM_SCALE_DEFAULT );
+
+	// To make the firing framerate independent, we may have to fire more than one bullet here on low-framerate systems, 
+	// especially if the weapon we're firing has a really fast rate of fire.
+	info.m_iShots = 0;
+	float fireRate = GetFireRate();
+	
+	// MUST call sound before removing a round from the clip of a CMachineGun
+	WeaponSound(SINGLE_NPC);
+	m_flNextPrimaryAttack = m_flNextPrimaryAttack + fireRate;
+	info.m_iShots++;
+
+	// Make sure we don't fire more than the amount in the clip
+	info.m_iShots = MIN( info.m_iShots, m_iClip1 );
+	m_iClip1 -= info.m_iShots;
+
+	info.m_flDistance = MAX_TRACE_LENGTH;
+	info.m_iAmmoType = m_iPrimaryAmmoType;
+	info.m_iTracerFreq = 1;
+	// Fire the bullets
+	info.m_vecSpread = pPlayer->GetAttackSpread( this );
+
+	pPlayer->FireBullets( info );
+
+	if (!m_iClip1 && pPlayer->GetAmmoCount(m_iPrimaryAmmoType) <= 0)
+	{
+		// HEV suit - indicate out of ammo condition
+		pPlayer->SetSuitUpdate("!HEV_AMO0", FALSE, 0); 
+	}
+
+	//Add our view kick in
+	AddViewKick();
+	
+	m_iBurstSize--;
+	if( m_iBurstSize == 0 )
+	{
+		// The burst is over!
+		SetThink(NULL);
+		return;
+	}
+
+	SetNextThink( gpGlobals->curtime + GetFireRate() );
 }
 //-----------------------------------------------------------------------------
 // Purpose: 

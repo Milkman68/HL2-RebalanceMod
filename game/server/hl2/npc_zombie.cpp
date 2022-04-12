@@ -262,6 +262,7 @@ void CZombie::Precache( void )
 void CZombie::Spawn( void )
 {
 	Precache();
+	SetGroundSpeedMultiplier(1.5);
 
 	if( FClassnameIs( this, "npc_zombie" ) )
 	{

@@ -429,7 +429,7 @@ void CNPC_BaseScanner::TraceAttack( const CTakeDamageInfo &info, const Vector &v
 //-----------------------------------------------------------------------------
 // Take damage from being thrown by a physcannon 
 //-----------------------------------------------------------------------------
-#define SCANNER_SMASH_SPEED 300.0	// How fast a scanner must slam into something to take full damage
+#define SCANNER_SMASH_SPEED 250.0	// How fast a scanner must slam into something to take full damage
 void CNPC_BaseScanner::TakeDamageFromPhyscannon( CBasePlayer *pPlayer )
 {
 	CTakeDamageInfo info;
@@ -443,12 +443,12 @@ void CNPC_BaseScanner::TakeDamageFromPhyscannon( CBasePlayer *pPlayer )
 	Vector vel;
 	VPhysicsGetObject()->GetVelocity( &vel, NULL );
 	float flSpeed = vel.Length();
-	float flDamage = 0;
 
-	if ( flSpeed > SCANNER_SMASH_SPEED )
-	{
-		flDamage = m_iMaxHealth / 2;
-	}
+	float flFactor = flSpeed / SCANNER_SMASH_SPEED;
+
+	// Clamp. Don't inflict negative damage or massive damage!
+	flFactor = clamp( flFactor, 0.0f, 2.0f );
+	float flDamage = m_iMaxHealth * flFactor;
 
 #if 0
 	Msg("Doing %f damage for %f speed!\n", flDamage, flSpeed );

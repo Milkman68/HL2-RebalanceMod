@@ -1008,7 +1008,7 @@ float CBaseAnimating::GetIdealAccel( ) const
 {
 	// return ideal max velocity change over 1 second.
 	// tuned for run-walk range of humans
-	return GetIdealSpeed() + 50;
+	return ( GetIdealSpeed() + 50 ) * m_flAccelerationMultiplier;
 }
 
 //-----------------------------------------------------------------------------

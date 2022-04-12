@@ -449,7 +449,7 @@ void CNPC_Manhack::HitPhysicsObject( CBaseEntity *pOther )
 //-----------------------------------------------------------------------------
 // Take damage from being thrown by a physcannon 
 //-----------------------------------------------------------------------------
-#define MANHACK_SMASH_SPEED 300.0	// How fast a manhack must slam into something to take full damage
+#define MANHACK_SMASH_SPEED 500.0	// How fast a manhack must slam into something to take full damage
 void CNPC_Manhack::TakeDamageFromPhyscannon( CBasePlayer *pPlayer )
 {
 	CTakeDamageInfo info;
@@ -462,15 +462,13 @@ void CNPC_Manhack::TakeDamageFromPhyscannon( CBasePlayer *pPlayer )
 	// Convert velocity into damage.
 	Vector vel;
 	VPhysicsGetObject()->GetVelocity( &vel, NULL );
-	float flGraceTime = 0;
 	float flSpeed = vel.Length();
-	float flDamage = 0;
-	
-	if ( flSpeed > MANHACK_SMASH_SPEED && flGraceTime < gpGlobals->curtime )
-	{
-		flGraceTime = gpGlobals->curtime + 0.5;
-		flDamage = m_iMaxHealth / 2.5;
-	}
+
+	float flFactor = flSpeed / MANHACK_SMASH_SPEED;
+
+	// Clamp. Don't inflict negative damage or massive damage!
+	flFactor = clamp( flFactor, 0.0f, 2.0f );
+	float flDamage = m_iMaxHealth * flFactor;
 
 #if 0
 	Msg("Doing %f damage for %f speed!\n", flDamage, flSpeed );

@@ -36,6 +36,7 @@
 
 ConVar g_Language( "g_Language", "0", FCVAR_REPLICATED );
 ConVar sk_autoaim_mode( "sk_autoaim_mode", "1", FCVAR_ARCHIVE | FCVAR_REPLICATED );
+ConVar UseLegacySkillBehavior( "UseLegacySkillBehavior", "1" );
 
 #ifndef CLIENT_DLL
 ConVar log_verbose_enable( "log_verbose_enable", "0", FCVAR_GAMEDLL, "Set to 1 to enable verbose server log on the server." );
@@ -255,12 +256,45 @@ bool CGameRules::CanHavePlayerItem( CBasePlayer *pPlayer, CBaseCombatWeapon *pWe
 void CGameRules::RefreshSkillData ( bool forceUpdate )
 {
 #ifndef CLIENT_DLL
-	if ( !forceUpdate )
+	if ( UseLegacySkillBehavior.GetBool() )
 	{
-		if ( GlobalEntity_IsInTable( "skill.cfg" ) )
-			return;
+		if ( !forceUpdate )
+		{
+			if ( GlobalEntity_IsInTable( "skill.cfg" ) )
+			{
+				GlobalEntity_Add( "skill.cfg", STRING(gpGlobals->mapname), GLOBAL_ON );
+			}
+		}
 	}
-	GlobalEntity_Add( "skill.cfg", STRING(gpGlobals->mapname), GLOBAL_ON );
+	else
+	{
+		if ( !forceUpdate && GetSkillLevel() == 3 && GlobalEntity_IsInTable( "skill_3.cfg" ) )
+		{
+			return;
+		}
+		else
+		{
+			GlobalEntity_Add( "skill_3.cfg", STRING(gpGlobals->mapname), GLOBAL_ON );
+		}
+		
+		if ( !forceUpdate && GetSkillLevel() == 2 && GlobalEntity_IsInTable( "skill_2.cfg" ) )
+		{
+			return;
+		}
+		else
+		{
+			GlobalEntity_Add( "skill_2.cfg", STRING(gpGlobals->mapname), GLOBAL_ON );
+		}
+		
+		if ( !forceUpdate && GetSkillLevel() == 1 && GlobalEntity_IsInTable( "skill_1.cfg" ) )
+		{
+			return;
+		}
+		else
+		{
+			GlobalEntity_Add( "skill_1.cfg", STRING(gpGlobals->mapname), GLOBAL_ON );
+		}
+	}
 
 #if !defined( TF_DLL ) && !defined( DOD_DLL )
 	char	szExec[256];
@@ -273,18 +307,30 @@ void CGameRules::RefreshSkillData ( bool forceUpdate )
 #ifdef HL2_DLL
 	// HL2 current only uses one skill config file that represents MEDIUM skill level and
 	// synthesizes EASY and HARD. (sjb)
-	Q_snprintf( szExec,sizeof(szExec), "exec skill_manifest.cfg\n" );
+	if ( UseLegacySkillBehavior.GetBool() )
+	{
+		Q_snprintf( szExec,sizeof(szExec), "exec skill_manifest.cfg\n" );
+	}
+	else
+	{
+		if ( GetSkillLevel() == 3 )
+		{
+			Q_snprintf( szExec, sizeof(szExec), "exec skill_3.cfg\n" );
+		}
+		
+		if ( GetSkillLevel() == 2 )
+		{
+			Q_snprintf(szExec, sizeof(szExec), "exec skill_2.cfg\n");
+		}
+			
+		if ( GetSkillLevel() == 1 )
+		{
+			Q_snprintf( szExec, sizeof(szExec), "exec skill_1.cfg\n" );
+		}
+	}
 
 	engine->ServerCommand( szExec );
 	engine->ServerExecute();
-#else
-
-#if !defined( TF_DLL ) && !defined( DOD_DLL )
-	Q_snprintf( szExec,sizeof(szExec), "exec skill%d.cfg\n", GetSkillLevel() );
-
-	engine->ServerCommand( szExec );
-	engine->ServerExecute();
-#endif // TF_DLL && DOD_DLL
 
 #endif // HL2_DLL
 #endif // CLIENT_DLL

@@ -268,7 +268,8 @@ void CWeaponPistol::SecondaryAttack( void )
 	
 	BurstThink();
 	SetThink( &CWeaponPistol::BurstThink );
-	m_flNextSecondaryAttack = gpGlobals->curtime + 0.43;
+	m_flNextSecondaryAttack = gpGlobals->curtime + 0.41;
+	m_flNextPrimaryAttack = m_flNextPrimaryAttack + 0.41;
 
 	// Pick up the rest of the burst through the think function.
 	SetNextThink( gpGlobals->curtime + 0.05 );
@@ -281,6 +282,7 @@ void CWeaponPistol::BurstThink( void )
 	// If my clip is empty (and I use clips) start reload
 	if ( UsesClipsForAmmo1() && !m_iClip1 ) 
 	{
+		m_iBurstSize = 0;
 		Reload();
 		return;
 	}
@@ -308,11 +310,9 @@ void CWeaponPistol::BurstThink( void )
 	// To make the firing framerate independent, we may have to fire more than one bullet here on low-framerate systems, 
 	// especially if the weapon we're firing has a really fast rate of fire.
 	info.m_iShots = 0;
-	float fireRate = GetFireRate();
 	
 	// MUST call sound before removing a round from the clip of a CMachineGun
 	WeaponSound(SINGLE_NPC);
-	m_flNextPrimaryAttack = m_flNextPrimaryAttack + fireRate;
 	info.m_iShots++;
 
 	// Make sure we don't fire more than the amount in the clip
@@ -432,13 +432,17 @@ Activity CWeaponPistol::GetPrimaryAttackActivity( void )
 //-----------------------------------------------------------------------------
 bool CWeaponPistol::Reload( void )
 {
-	bool fRet = DefaultReload( GetMaxClip1(), GetMaxClip2(), ACT_VM_RELOAD );
-	if ( fRet )
+	if ( m_iBurstSize < 1 )
 	{
-		WeaponSound( RELOAD );
-		m_flAccuracyPenalty = 0.0f;
+		bool fRet = DefaultReload( GetMaxClip1(), GetMaxClip2(), ACT_VM_RELOAD );
+		if ( fRet )
+		{
+			WeaponSound( RELOAD );
+			m_flAccuracyPenalty = 0.0f;
+		}
+		return fRet;
 	}
-	return fRet;
+	return false;
 }
 
 //-----------------------------------------------------------------------------

@@ -326,7 +326,7 @@ bool CPropCombineBall::CreateVPhysics()
 {
 	SetSolid( SOLID_BBOX );
 
-	float flSize = m_flRadius;
+	float flSize = 0.01;
 
 	SetCollisionBounds( Vector(-flSize, -flSize, -flSize), Vector(flSize, flSize, flSize) );
 	objectparams_t params = g_PhysDefaultObjectParams;

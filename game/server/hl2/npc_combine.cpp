@@ -341,7 +341,7 @@ void CNPC_Combine::Spawn( void )
 	m_flNextPainSoundTime	= 0;
 	m_flNextAlertSoundTime	= 0;
 	m_bShouldPatrol			= false;
-	m_bShouldPursue 		= IsElite() ? false : true;
+	m_bShouldPursue 		= IsElite() ? true : false;
 	m_bCanOccupyExtraSlots  = false;
 	m_bSlotIndependent		= false;
 
@@ -422,6 +422,7 @@ void CNPC_Combine::PostNPCInit()
 void CNPC_Combine::GatherConditions()
 {
 	SetGroundSpeedMultiplier(1.2);
+	//SetAccelerationMultiplier(FLT_MAX);
 	
 	BaseClass::GatherConditions();
 
@@ -1673,7 +1674,7 @@ int CNPC_Combine::SelectCombatSchedule()
 			{
 				// I'm the leader, but I didn't get the job suppressing the enemy. We know this because
 				// This code only runs if the code above didn't assign me SCHED_COMBINE_SUPPRESS.
-				if ( CanOccupyAttackSlot() )
+				if ( CanOccupyAttackSlot() && !IsStrategySlotRangeOccupied( SQUAD_SLOT_GRENADE1, SQUAD_SLOT_GRENADE2 ) )
 				{
 					if ( HasCondition( COND_CAN_RANGE_ATTACK1 ) )
 					{
@@ -1688,10 +1689,10 @@ int CNPC_Combine::SelectCombatSchedule()
 				if( HasCondition(COND_WEAPON_HAS_LOS) && !CanOccupyAttackSlot() )
 				{
 					// If everyone else is attacking and I have line of fire, wait for a chance to cover someone.
-					if( OccupyStrategySlot( SQUAD_SLOT_OVERWATCH ) )
+					/* if( OccupyStrategySlot( SQUAD_SLOT_OVERWATCH ) )
 					{
 						return SCHED_COMBINE_ENTER_OVERWATCH;
-					} 
+					}  */
 					return SCHED_TAKE_COVER_FROM_ENEMY;
 				}
 			}
@@ -1722,7 +1723,7 @@ int CNPC_Combine::SelectCombatSchedule()
 							DevMsg("Hanging Back");
 						}
 							
-						if ( CanOccupyAttackSlot() || IsElite() )
+						if ( ( CanOccupyAttackSlot() || IsElite() ) && !IsStrategySlotRangeOccupied( SQUAD_SLOT_GRENADE1, SQUAD_SLOT_GRENADE2 ) )
 						{
 							return SCHED_ESTABLISH_LINE_OF_FIRE;
 						}
@@ -1759,7 +1760,7 @@ int CNPC_Combine::SelectCombatSchedule()
 	// ----------------------
 	if ( ( (float)m_nRecentDamage / (float)GetMaxHealth() ) > RECENT_DAMAGE_THRESHOLD )
 	{
-		if ( !IsElite() /* && m_flHangBackTime < gpGlobals->curtime */ && IsStrategySlotRangeOccupied( SQUAD_SLOT_FALLBACK1, SQUAD_SLOT_FALLBACK2 )  )
+		if ( !IsElite() /* && m_flHangBackTime < gpGlobals->curtime */ /* && IsStrategySlotRangeOccupied( SQUAD_SLOT_FALLBACK1, SQUAD_SLOT_FALLBACK2 ) */  )
 		{
 			if ( GetEnemy() != NULL )
 			{
@@ -1767,8 +1768,13 @@ int CNPC_Combine::SelectCombatSchedule()
 				m_Sentences.Speak( "COMBINE_COVER" );
 				VacateStrategySlot();
 				
+			//	if ( m_pSquad && m_pSquad->NumMembers() > 1 && OccupyStrategySlot( SQUAD_SLOT_EXCLUSIVE_HANDSIGN ) )
+			//	{
+			//		return SCHED_COMBINE_TAKE_COVER2;
+			//	}
+				
 			//	m_flHangBackTime = gpGlobals->curtime + random->RandomFloat( 2, 7);
-				OccupyStrategySlot( SQUAD_SLOT_FALLBACK1 );
+			//	OccupyStrategySlot( SQUAD_SLOT_FALLBACK1 );
 				return SCHED_COMBINE_TAKE_COVER1;
 			}
 			else
@@ -1846,7 +1852,7 @@ int CNPC_Combine::SelectCombatSchedule()
 						DevMsg("Hanging Back");
 					}
 							
-					if ( CanOccupyAttackSlot() || IsElite() )
+					if ( ( CanOccupyAttackSlot() || IsElite() ) && !IsStrategySlotRangeOccupied( SQUAD_SLOT_GRENADE1, SQUAD_SLOT_GRENADE2 ) )
 					{
 						return SCHED_ESTABLISH_LINE_OF_FIRE;
 					}
@@ -2127,7 +2133,7 @@ int CNPC_Combine::SelectScheduleAttack()
 	{			
 		//if ( GetEnemy() && GetEnemy()->IsPlayer() )
 			
-		if ( CanGrenadeEnemy() /* && OccupyStrategySlot( SQUAD_SLOT_GRENADE1 ) */ )//bookmark4
+		if ( CanGrenadeEnemy()  && OccupyStrategySlot( SQUAD_SLOT_GRENADE1 ) )//bookmark4
 			return SCHED_RANGE_ATTACK2;
 	
 		if ( sk_combine_charge_turrets.GetBool() )
@@ -2214,7 +2220,7 @@ int CNPC_Combine::SelectScheduleAttack()
 		float flTime;
 	//	float flDist;
 		
-		CBaseEntity *pEnemy = GetEnemy();
+		//CBaseEntity *pEnemy = GetEnemy();
 		//Vector vecTarget;
 
 
@@ -2222,16 +2228,16 @@ int CNPC_Combine::SelectScheduleAttack()
 		//Vector enemyEyePos = GetEnemy()->EyePosition();
 
 		//Msg("Time: %f   Dist: %f\n", flTime, flDist );
-		if ( flTime <= COMBINE_GRENADE_FLUSH_TIME /*&& flDist <= COMBINE_GRENADE_FLUSH_DIST*/ && CanGrenadeEnemy( false ) /* && OccupyStrategySlot( SQUAD_SLOT_GRENADE1 ) */ )
+		if ( flTime <= COMBINE_GRENADE_FLUSH_TIME /*&& flDist <= COMBINE_GRENADE_FLUSH_DIST*/ && CanGrenadeEnemy( false ) && OccupyStrategySlot( SQUAD_SLOT_GRENADE1 ) )
 		{
 			return SCHED_RANGE_ATTACK2;
 		}
 		
-		else if ( ( HasShotgun() == false ) && ( OccupyStrategySlot( SQUAD_SLOT_ATTACK_OCCLUDER ) ) )
+		/* else if ( ( HasShotgun() == false ) && ( OccupyStrategySlot( SQUAD_SLOT_ATTACK_OCCLUDER ) ) )
 		{
 			CAI_BaseNPC *pTarget = CreateCustomTarget( GetEnemies()->LastSeenPosition( GetEnemy() ) + GetEnemy()->GetViewOffset()*0.75, COMBINE_SUPRESSION_TIME );
 			AddEntityRelationship( pTarget, IRelationType(pEnemy), IRelationPriority(pEnemy) );
-		} 
+		}  */
 	}//bookmark1
 	
 	
@@ -3894,7 +3900,7 @@ DEFINE_SCHEDULE
  "	Interrupts "
  "		COND_NEW_ENEMY"
  "		COND_ENEMY_DEAD"
- //"		COND_CAN_RANGE_ATTACK1"
+ "		COND_CAN_RANGE_ATTACK1"
  "		COND_CAN_RANGE_ATTACK2"
  "		COND_CAN_MELEE_ATTACK1"
  "		COND_CAN_MELEE_ATTACK2"
@@ -4105,7 +4111,7 @@ DEFINE_SCHEDULE
  //=========================================================
  DEFINE_SCHEDULE	
  (
- SCHED_COMBINE_TAKE_COVER1  ,
+ SCHED_COMBINE_TAKE_COVER1,
 
  "	Tasks"
  "		TASK_SET_FAIL_SCHEDULE		SCHEDULE:SCHED_COMBINE_TAKECOVER_FAILED"
@@ -4124,12 +4130,13 @@ DEFINE_SCHEDULE
  //=========================================================
   DEFINE_SCHEDULE	
  (
- SCHED_COMBINE_TAKE_COVER2  ,
+ SCHED_COMBINE_TAKE_COVER2,
 
  "	Tasks"
  "		TASK_SET_FAIL_SCHEDULE		SCHEDULE:SCHED_COMBINE_TAKECOVER_FAILED"
- "		TASK_STOP_MOVING				0"
- //"		TASK_WAIT					0.2"
+ "		TASK_STOP_MOVING			0"
+ "		TASK_WAIT					0.2"
+ "		TASK_PLAY_SEQUENCE_FACE_ENEMY	ACTIVITY:ACT_SIGNAL_GROUP"
  "		TASK_FIND_COVER_FROM_ENEMY	0"
  "		TASK_RUN_PATH				0"
  "		TASK_WAIT_FOR_MOVEMENT		0"
@@ -4472,7 +4479,7 @@ DEFINE_SCHEDULE//bookmark
 	"		TASK_SET_FAIL_SCHEDULE					SCHEDULE:SCHED_ESTABLISH_LINE_OF_FIRE"
 	"		TASK_STOP_MOVING						0"
 	"		TASK_COMBINE_BEGIN_FLANK				0"
-	"		TASK_GET_FLANK_ARC_PATH_TO_ENEMY_LOS	90"
+	"		TASK_GET_FLANK_ARC_PATH_TO_ENEMY_LOS	60"
 	"		TASK_RUN_PATH							0"
 	"		TASK_WAIT_FOR_MOVEMENT					0"
 	"		TASK_FACE_ENEMY							0"

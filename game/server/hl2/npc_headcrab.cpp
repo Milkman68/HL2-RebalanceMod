@@ -2910,15 +2910,15 @@ float CHeadcrab::MaxYawSpeed ( void )
 	switch ( GetActivity() )
 	{
 	case ACT_IDLE:			
-		return 30;
+		return 15;
 
 	case ACT_RUN:			
 	case ACT_WALK:			
-		return 30;
+		return 15;
 
 	case ACT_TURN_LEFT:
 	case ACT_TURN_RIGHT:
-		return 30;
+		return 10;
 
 	case ACT_RANGE_ATTACK1:
 		{
@@ -2926,7 +2926,7 @@ float CHeadcrab::MaxYawSpeed ( void )
 			if ( pCurTask && pCurTask->iTask == TASK_HEADCRAB_JUMP_FROM_CANISTER )
 				return 15;
 		}
-		return 30;
+		return 0;
 
 	default:
 		return 30;

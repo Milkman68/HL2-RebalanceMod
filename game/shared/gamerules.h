@@ -251,6 +251,7 @@ public:
 
 		if( g_iSkillLevel != oldLevel )
 		{
+			RefreshSkillData(true);
 			OnSkillLevelChanged( g_iSkillLevel );
 		}
 	}

@@ -103,7 +103,7 @@ ConVar hunter_flechette_volley_end_max_delay( "hunter_flechette_volley_end_max_d
 ConVar hunter_flechette_test( "hunter_flechette_test", "0" );
 ConVar hunter_clamp_shots( "hunter_clamp_shots", "1" );
 ConVar hunter_cheap_explosions( "hunter_cheap_explosions", "1" );
-ConVar hunter_flechette_lead_delay( "hunter_flechette_lead_delay", "1.5" );
+//ConVar hunter_flechette_lead_delay( "hunter_flechette_lead_multiplier", "0.5" );
 
 // Damage received
 ConVar sk_hunter_bullet_damage_scale( "sk_hunter_bullet_damage_scale", "0.6" );
@@ -6043,8 +6043,8 @@ void CNPC_Hunter::GetShootDir( Vector &vecDir, const Vector &vecSrc, CBaseEntity
 	Vector vecDelta = pTargetEntity->GetAbsOrigin() - GetAbsOrigin();
 	float flDist = vecDelta.Length();
 
-	if ( !bStriderBuster )
-	{
+//	if ( !bStriderBuster )
+//	{
 		// If we're not firing at a strider buster, miss in an entertaining way for the 
 		// first three shots of each volley.
 		if ( ( nShotNum < 3 ) && ( flDist > 200 ) )
@@ -6087,9 +6087,9 @@ void CNPC_Hunter::GetShootDir( Vector &vecDir, const Vector &vecSrc, CBaseEntity
 			Vector vecDelta = vecTarget - pTargetEntity->GetAbsOrigin();
 			vecTarget = m_vecEnemyLastSeen + vecDelta;
 		}
-	}
-	else
-	{
+//	}
+	//else
+//	{
 		// If we're firing at a striderbuster, lead it.
 		float flSpeed = hunter_flechette_speed.GetFloat();
 		if ( !flSpeed )
@@ -6101,7 +6101,7 @@ void CNPC_Hunter::GetShootDir( Vector &vecDir, const Vector &vecSrc, CBaseEntity
 
 		float flDeltaTime = flDist / flSpeed;
 		vecTarget = vecTarget + flDeltaTime * pTargetEntity->GetSmoothedVelocity();
-	}
+	//}
 
 	vecDir = vecTarget - vecSrc;
 	VectorNormalize( vecDir );
@@ -6200,7 +6200,9 @@ bool CNPC_Hunter::ShootFlechette( CBaseEntity *pTargetEntity, bool bSingleShot )
 		Assert( false );
 		return false;
 	}
+
 	int nShotNum = hunter_flechette_volley_size.GetInt() - m_nFlechettesQueued;
+
 	bool bStriderBuster = IsStriderBuster( pTargetEntity );
 
 	// Choose the next muzzle to shoot from.
@@ -6217,30 +6219,11 @@ bool CNPC_Hunter::ShootFlechette( CBaseEntity *pTargetEntity, bool bSingleShot )
 		GetAttachment( gm_nBottomGunAttachment, vecSrc, angMuzzle );
 		DoMuzzleFlash( gm_nBottomGunAttachment );
 	}
-	
-	Vector vecTarget = pTargetEntity->WorldSpaceCenter();
-	
-	// Hunter shot leading.
-	float targetTime;
-	float targetDist;
-	Vector vecAdjustedShot;
-	
-	// Get projectile time to target.
-	targetDist = (vecTarget - vecSrc ).Length();
-	targetTime = targetDist / hunter_flechette_speed.GetFloat();
-	
-	// Get the enemy's velocity devided by how much we want to lag behind.
-	Vector vecVelocity = pTargetEntity->GetAbsVelocity();
-	
-	vecAdjustedShot = vecTarget + ( ( vecVelocity * targetTime ) / hunter_flechette_lead_delay.GetFloat() );
-	
-	// Create a target using the adjusted shot.
-	CAI_BaseNPC *pTarget = CreateCustomTarget( vecAdjustedShot, 100 );
 
 	m_bTopMuzzle = !m_bTopMuzzle;
 
 	Vector vecDir;
-	GetShootDir( vecDir, vecSrc, pTarget, bStriderBuster, nShotNum, bSingleShot );
+	GetShootDir( vecDir, vecSrc, pTargetEntity, bStriderBuster, nShotNum, bSingleShot );
 
 	bool bClamped = false;
 	if ( hunter_clamp_shots.GetBool() )

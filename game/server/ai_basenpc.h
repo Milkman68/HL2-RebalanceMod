@@ -1785,6 +1785,7 @@ public:
 		CBaseEntity *pAttacker = NULL, bool bFirstShotAccurate = false );
 
 	virtual	bool		ShouldMoveAndShoot( void );
+	virtual	bool		ShouldLeadShootTrajectory( void ) { return true; }
 
 	//---------------------------------
 	//  Damage

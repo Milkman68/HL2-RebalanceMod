@@ -9601,7 +9601,7 @@ Vector CAI_BaseNPC::GetActualShootPosition( const Vector &shootOrigin )
 #endif
 
 	// lead for some fraction of a second.
-	return (vecTargetPosition + ( GetEnemy()->GetSmoothedVelocity() * ai_lead_time.GetFloat() ));
+	return (vecTargetPosition + ( GetEnemy()->GetSmoothedVelocity() * ( ShouldLeadShootTrajectory() ? ai_lead_time.GetFloat() : 1.0 ) ));
 }
 
 //-----------------------------------------------------------------------------

@@ -380,6 +380,9 @@ void CNPC_Combine::Spawn( void )
 	m_flAlertPatrolTime			= 0;
 
 	m_flNextAltFireTime = gpGlobals->curtime;
+	
+	SetGroundSpeedMultiplier(1.2);
+	//SetAccelerationMultiplier(FLT_MAX);
 
 	NPCInit();
 }
@@ -421,9 +424,6 @@ void CNPC_Combine::PostNPCInit()
 //-----------------------------------------------------------------------------
 void CNPC_Combine::GatherConditions()
 {
-	SetGroundSpeedMultiplier(1.2);
-	//SetAccelerationMultiplier(FLT_MAX);
-	
 	BaseClass::GatherConditions();
 
 	ClearCondition( COND_COMBINE_ATTACK_SLOT_AVAILABLE );

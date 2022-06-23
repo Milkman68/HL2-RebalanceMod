@@ -16,6 +16,9 @@
 ConVar sk_dynamic_resupply_modifier1( "sk_dynamic_resupply_modifier1","0.0" );
 ConVar sk_dynamic_resupply_modifier2( "sk_dynamic_resupply_modifier2","0.0" );
 ConVar sk_dynamic_resupply_modifier3( "sk_dynamic_resupply_modifier3","0.0" );
+
+ConVar sk_dynamic_resupply_randomness( "sk_dynamic_resupply_randomness","0.3" );
+
 extern ConVar sk_battery;
 extern ConVar sk_healthkit;
 
@@ -26,7 +29,7 @@ struct DynamicResupplyItems_t
 	const char *sEntityName;
 	const char *sAmmoDef;
 	int			iAmmoCount;
-	float		flFullProbability;	// Probability of spawning if the player meeds all goals
+	float		flFullProbability;	// Probability of spawning if the player meets all goals
 };
 
 struct SpawnInfo_t
@@ -337,10 +340,10 @@ void CItem_DynamicResupply::SpawnFullItem( CItem_DynamicResupply *pMaster, CBase
 			flTotalProb += g_DynamicResupplyAmmoItems[i].flFullProbability;
 			flRatio[i] = flTotalProb;
 		}
-		else
+		/* else
 		{
 			flRatio[i] = -1.0f;
-		}
+		} */
 	}
 
 	if ( flTotalProb == 0.0f )
@@ -358,23 +361,37 @@ void CItem_DynamicResupply::SpawnFullItem( CItem_DynamicResupply *pMaster, CBase
 		}
 
 		// Otherwise, spawn the first ammo item in the list
-		flRatio[0] = 1.0f;
-		flTotalProb = 0.5f; //bookmark
+		//flTotalProb = 1.0f;
 	}
 	
-	float flChoice = random->RandomFloat( 0.0f, flTotalProb ); 
-	for ( i = 0; i < NUM_AMMO_ITEMS; ++i )
+	float flChoice = -1.0;
+	for ( i = 1; i >= 0; ++i )
 	{
-		if ( flChoice <= flRatio[i] )
-		{
-			CBaseEntity::Create( g_DynamicResupplyAmmoItems[i].sEntityName, GetAbsOrigin(), GetAbsAngles(), this );
+		i = random->RandomInt( 0, NUM_AMMO_ITEMS );
+		flChoice = random->RandomFloat( 0.0f, 3.0 );
+		
+		if ( flChoice <= pMaster->m_flDesiredAmmo[i] )
+		{	
+			int iAmmoType = GetAmmoDef()->Index( g_DynamicResupplyAmmoItems[i].sAmmoDef );
+			bool bCanSpawn = pPlayer->Weapon_GetWpnForAmmo( iAmmoType ) != NULL;
 
-			if ( iDebug )
+			if ( bCanSpawn )
 			{
-				Msg("Player is full, spawning %s \n", g_DynamicResupplyAmmoItems[i].sEntityName );
+				CBaseEntity::Create( g_DynamicResupplyAmmoItems[i].sEntityName, GetAbsOrigin(), GetAbsAngles(), this );
+
+				if ( iDebug )
+				{
+					Msg("Player is full, spawning %s \n", g_DynamicResupplyAmmoItems[i].sEntityName );
+				}
+				return;
 			}
-			return;
-		}
+		}/* 
+		
+		// Loop through continuously until we find a hit. DOES NOT WORK AAAAAAAAAAAAAAAAAAAAAAAAAAA
+		if ( i < 0 )
+		{
+			i = NUM_AMMO_ITEMS;
+		} */
 	}
 
 	if ( iDebug )
@@ -433,6 +450,10 @@ void CItem_DynamicResupply::FindPotentialItems( int nCount, DynamicResupplyItems
 //-----------------------------------------------------------------------------
 void CItem_DynamicResupply::ComputeHealthRatios( CItem_DynamicResupply* pMaster, CBasePlayer *pPlayer, int iDebug, SpawnInfo_t *pSpawnInfo )
 {
+	
+	float min = 1.0 - sk_dynamic_resupply_randomness.GetFloat();
+	float max = 1.0 + sk_dynamic_resupply_randomness.GetFloat();
+	
 	for ( int i = 0; i < NUM_HEALTH_ITEMS; i++ )
 	{
 		// Figure out the current level of this resupply type
@@ -442,7 +463,7 @@ void CItem_DynamicResupply::ComputeHealthRatios( CItem_DynamicResupply* pMaster,
 			// Health
 			flMax = pPlayer->GetMaxHealth();
 
-			float flCurrentHealth = pPlayer->GetHealth() + (pSpawnInfo[i].m_iPotentialItems * sk_healthkit.GetFloat());
+			float flCurrentHealth = ( pPlayer->GetHealth() * random->RandomFloat(min, max) ) + (pSpawnInfo[i].m_iPotentialItems * sk_healthkit.GetFloat() );
 			pSpawnInfo[i].m_flCurrentRatio = (flCurrentHealth / flMax);
 		}
 		else if ( i == DS_ARMOR_INDEX )
@@ -456,7 +477,7 @@ void CItem_DynamicResupply::ComputeHealthRatios( CItem_DynamicResupply* pMaster,
 			else
 			{
 				flMax = MAX_NORMAL_BATTERY;
-				float flCurrentArmor = pPlayer->ArmorValue() + (pSpawnInfo[i].m_iPotentialItems * sk_battery.GetFloat());
+				float flCurrentArmor = ( pPlayer->ArmorValue() * random->RandomFloat(min, max) ) + (pSpawnInfo[i].m_iPotentialItems * sk_battery.GetFloat());
 				pSpawnInfo[i].m_flCurrentRatio = (flCurrentArmor / flMax);
 			}
 		}
@@ -499,6 +520,9 @@ float CItem_DynamicResupply::ComputeResupplyModifier( void )//bookmark
 //-----------------------------------------------------------------------------
 void CItem_DynamicResupply::ComputeAmmoRatios( CItem_DynamicResupply* pMaster, CBasePlayer *pPlayer, int iDebug, SpawnInfo_t *pSpawnInfo )
 {
+	float min = 1.0 - sk_dynamic_resupply_randomness.GetFloat();
+	float max = 1.0 + sk_dynamic_resupply_randomness.GetFloat();
+	
 	for ( int i = 0; i < NUM_AMMO_ITEMS; i++ )
 	{
 		// Get the ammodef's
@@ -513,7 +537,7 @@ void CItem_DynamicResupply::ComputeAmmoRatios( CItem_DynamicResupply* pMaster, C
 		else
 		{
 			float flMax = GetAmmoDef()->MaxCarry( iAmmoType );
-			float flCurrentAmmo = pPlayer->GetAmmoCount( iAmmoType );
+			float flCurrentAmmo = pPlayer->GetAmmoCount( iAmmoType ) * random->RandomFloat(min, max);
 			flCurrentAmmo += (pSpawnInfo[i].m_iPotentialItems * g_DynamicResupplyAmmoItems[i].iAmmoCount);
 			pSpawnInfo[i].m_flCurrentRatio = (flCurrentAmmo / flMax);
 		}

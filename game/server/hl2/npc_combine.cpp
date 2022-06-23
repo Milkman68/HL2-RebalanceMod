@@ -1760,7 +1760,7 @@ int CNPC_Combine::SelectCombatSchedule()
 	// ----------------------
 	if ( ( (float)m_nRecentDamage / (float)GetMaxHealth() ) > RECENT_DAMAGE_THRESHOLD )
 	{
-		if ( !IsElite() /* && m_flHangBackTime < gpGlobals->curtime */ /* && IsStrategySlotRangeOccupied( SQUAD_SLOT_FALLBACK1, SQUAD_SLOT_FALLBACK2 ) */  )
+		if ( !IsElite()  && m_flHangBackTime < gpGlobals->curtime   && IsStrategySlotRangeOccupied( SQUAD_SLOT_FALLBACK1, SQUAD_SLOT_FALLBACK2 )   )
 		{
 			if ( GetEnemy() != NULL )
 			{
@@ -1768,13 +1768,13 @@ int CNPC_Combine::SelectCombatSchedule()
 				m_Sentences.Speak( "COMBINE_COVER" );
 				VacateStrategySlot();
 				
-			//	if ( m_pSquad && m_pSquad->NumMembers() > 1 && OccupyStrategySlot( SQUAD_SLOT_EXCLUSIVE_HANDSIGN ) )
+			//	if ( m_pSquad && m_pSquad->NumMembers() > 2 && OccupyStrategySlot( SQUAD_SLOT_EXCLUSIVE_HANDSIGN ) )
 			//	{
 			//		return SCHED_COMBINE_TAKE_COVER2;
 			//	}
 				
-			//	m_flHangBackTime = gpGlobals->curtime + random->RandomFloat( 2, 7);
-			//	OccupyStrategySlot( SQUAD_SLOT_FALLBACK1 );
+				m_flHangBackTime = gpGlobals->curtime + random->RandomFloat( 2, 7);
+				OccupyStrategySlot( SQUAD_SLOT_FALLBACK1 );
 				return SCHED_COMBINE_TAKE_COVER1;
 			}
 			else
@@ -3111,7 +3111,7 @@ bool CNPC_Combine::CheckCanThrowGrenade( const Vector &vecTarget )
 	{
 		// Have to try a high toss. Do I have enough room?
 		trace_t tr;
-		AI_TraceLine( EyePosition(), EyePosition() + Vector( 0, 0, 64 ), MASK_SHOT, this, COLLISION_GROUP_NONE, &tr );
+		AI_TraceLine( EyePosition(), EyePosition() + Vector( 0, 0, 64 ), MASK_SHOT|CONTENTS_GRATE, this, COLLISION_GROUP_NONE, &tr );
 		if( tr.fraction != 1.0 )
 		{
 			return false;
@@ -3190,7 +3190,7 @@ bool CNPC_Combine::CanAltFireEnemy( bool bUseFreeKnowledge )
 	}
 
 	// Trace a hull about the size of the combine ball.
-	UTIL_TraceHull( vShootPosition, vecTarget, mins, maxs, MASK_SHOT, this, COLLISION_GROUP_NONE, &tr );
+	UTIL_TraceHull( vShootPosition, vecTarget, mins, maxs, MASK_SHOT|CONTENTS_GRATE, this, COLLISION_GROUP_NONE, &tr );
 
 	float flLength = (vShootPosition - vecTarget).Length();
 
@@ -3618,8 +3618,8 @@ bool CNPC_Combine::IsRunningApproachEnemySchedule()
 	if( IsCurSchedule( SCHED_COMBINE_FLANK_ENEMY ) )
 		return true;
 	
-	if( IsCurSchedule( SCHED_COMBINE_SOFT_FLANK_ENEMY ) )
-		return true;
+//	if( IsCurSchedule( SCHED_COMBINE_SOFT_FLANK_ENEMY ) )
+//		return true;
 
 	if( IsCurSchedule( SCHED_COMBINE_PRESS_ATTACK, false ) )
 		return true;
@@ -4486,13 +4486,13 @@ DEFINE_SCHEDULE//bookmark
 	""
 	"	Interrupts"
 	"		COND_NEW_ENEMY"
-	//"		COND_CAN_RANGE_ATTACK1" // Disabling this turns them into monsters.. 
-	"		COND_CAN_RANGE_ATTACK2" //bookmark7
+	//"		COND_CAN_RANGE_ATTACK1"
+	"		COND_CAN_RANGE_ATTACK2"
 	"		COND_CAN_MELEE_ATTACK1"
 	"		COND_ENEMY_UNREACHABLE"
 	"		COND_LOST_ENEMY"
 )
-//=========================================================
+/* //=========================================================
 // Move to a less extreme flanking position, then shoot if possible.
 //=========================================================
 DEFINE_SCHEDULE//bookmark
@@ -4515,7 +4515,7 @@ DEFINE_SCHEDULE//bookmark
 	"		COND_CAN_MELEE_ATTACK1"
 	"		COND_ENEMY_UNREACHABLE"
 	"		COND_LOST_ENEMY"
-)
+) */
 //=========================================================
 //
 //=========================================================

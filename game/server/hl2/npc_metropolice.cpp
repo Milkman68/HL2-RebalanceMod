@@ -52,7 +52,7 @@
 #define RECENT_DAMAGE_INTERVAL		3.0f
 #define RECENT_DAMAGE_THRESHOLD		0.2f
 
-#define CHASE_ENEMY_TIME			3.0f
+#define CHASE_ENEMY_TIME			8.0f
 #define CHASE_ENEMY_COOLDOWN		4.0f
 
 #define VEHICLE_PREDICT_ACCELERATION		333.0f
@@ -119,7 +119,7 @@ ConVar	sk_metropolice_health( "sk_metropolice_health","0");
 ConVar	sk_metropolice_simple_health( "sk_metropolice_simple_health","0");
 ConVar	sk_metropolice_stitch_distance( "sk_metropolice_stitch_distance","1000");
 
-ConVar	metropolice_chase_use_follow( "metropolice_chase_use_follow", "0" );
+//ConVar	metropolice_chase_use_follow( "metropolice_chase_use_follow", "1" );
 ConVar  metropolice_move_and_melee("metropolice_move_and_melee", "1" );
 ConVar  metropolice_charge("metropolice_charge", "0" );
 ConVar  metropolice_baton_switch("metropolice_baton_switch", "0" );
@@ -543,6 +543,15 @@ void CNPC_MetroPolice::PrescheduleThink( void )
 	{
 		m_nRecentDamage = 0;
 		m_flRecentDamageTime = 0;
+	}
+	
+	if ( GetEnemy() && GetActiveWeapon() && FClassnameIs( m_hDefaultWeapon, "weapon_stunstick" ) )
+	{
+		SetGroundSpeedMultiplier(1.15);
+	}
+	else
+	{
+		SetGroundSpeedMultiplier(1.0);
 	}
 	
 	/* if ( HasCondition( COND_GOT_PUNTED ) )
@@ -4164,9 +4173,10 @@ int CNPC_MetroPolice::SelectSchedule( void )
 		}
 	}
 	
-	if ( GetEnemy() && GetActiveWeapon() && !FClassnameIs( m_hDefaultWeapon, "weapon_stunstick" ) && metropolice_baton_switch.GetBool() )
+	// Stunstick switching.
+	if ( GetEnemy() && GetActiveWeapon() )
 	{
-		if ( m_flBatonChaseCooldown < gpGlobals->curtime && ShouldSwitchToBaton() )
+		if ( ShouldSwitchToBaton() )
 		{
 			SetCondition( COND_METROPOLICE_SWITCHED_WEAPON );
 			
@@ -4192,8 +4202,8 @@ int CNPC_MetroPolice::SelectSchedule( void )
 		if ( m_bShouldActivateBaton == false && BatonActive() && IsCurSchedule( SCHED_METROPOLICE_DEACTIVATE_BATON ) == false )
 			return SCHED_METROPOLICE_DEACTIVATE_BATON;
 
-		if( metropolice_chase_use_follow.GetBool() )
-		{
+		//if( metropolice_chase_use_follow.GetBool() )
+		//{
 			if( GetEnemy() )
 			{
 				AI_FollowParams_t params;
@@ -4201,7 +4211,7 @@ int CNPC_MetroPolice::SelectSchedule( void )
 				m_FollowBehavior.SetParameters( params );
 				m_FollowBehavior.SetFollowTarget( GetEnemy() );
 			}
-		}
+		//}
 	}
 
 	// See if the player is in our face (unless we're scripting)
@@ -5244,7 +5254,7 @@ void CNPC_MetroPolice::GatherConditions( void )
 	}
 	
 	
-	// NOTE: Overhaul this as a schedule and task.
+	// Switches back to the default weapon after certain conditions are met, but only if the default weapon is not the stunstick.
 	if ( GetEnemy() && GetActiveWeapon() && !FClassnameIs( m_hDefaultWeapon, "weapon_stunstick" ) )
 	{
 		if ( ( m_flBatonChaseTime < gpGlobals->curtime || m_iNumPlayerHits > 0 ) && HasBaton() && GetActivity() != ACT_MELEE_ATTACK1 )
@@ -5258,6 +5268,8 @@ void CNPC_MetroPolice::GatherConditions( void )
 				m_flBatonChaseCooldown = gpGlobals->curtime + CHASE_ENEMY_COOLDOWN;
 				DevMsg("Switched\n");
 				ClearCondition( COND_METROPOLICE_SWITCHED_WEAPON );
+				
+				m_FollowBehavior.SetFollowTarget( NULL );
 			}
 		}
 	}
@@ -5266,19 +5278,19 @@ void CNPC_MetroPolice::GatherConditions( void )
 	{
 		if( IsMoving() && HasCondition(COND_CAN_MELEE_ATTACK1) && HasBaton() )
 		{
-			if ( m_BatonSwingTimer.Expired() )
-			{
-				m_BatonSwingTimer.Set( 1.0, 1.75 );
+			//if ( m_BatonSwingTimer.Expired() )
+			//{
+				//m_BatonSwingTimer.Set( 1.0, 1.75 );
 
 				Activity activity = TranslateActivity( ACT_MELEE_ATTACK_SWING_GESTURE );
 				Assert( activity != ACT_INVALID );
 				AddGesture( activity );
-			}
+			//}
 		}
 	}
 }
 //-----------------------------------------------------------------------------
-// Purpose: 
+// Purpose: Baton switching funtions.
 //-----------------------------------------------------------------------------
 void CNPC_MetroPolice::EquipDefaultWeapon( void )
 {
@@ -5295,14 +5307,26 @@ void CNPC_MetroPolice::EquipBaton( void )
 //-----------------------------------------------------------------------------
 bool CNPC_MetroPolice::ShouldSwitchToBaton( void )
 {
+	if ( !metropolice_baton_switch.GetBool() )
+		return false;
+	
 	if ( HasBaton() )
 		return false;
 	
-	float m_flDistToEnemy = ( GetEnemy()->GetAbsOrigin() - GetAbsOrigin() ).Length();
-	if ( m_flDistToEnemy > 128 )
+	if ( !FClassnameIs( m_hDefaultWeapon, "weapon_stunstick" ) )
 		return false;
 	
-//	if ( HasCondition( COND_NO_PRIMARY_AMMO ) )
+	if ( m_flBatonChaseCooldown < gpGlobals->curtime )
+		return false;
+	
+	if ( IsUnreachable(GetEnemy()) )
+		return false;
+	
+	//float m_flDistToEnemy = ( GetEnemy()->GetAbsOrigin() - GetAbsOrigin() ).Length();
+	//if ( m_flDistToEnemy > 128 )
+		//return false;
+	
+	//if ( HasCondition( COND_ENEMY_OCCLUDED ) )
 	//{
 		if ( OccupyStrategySlot( SQUAD_SLOT_POLICE_CHARGE_ENEMY ) )
 		{

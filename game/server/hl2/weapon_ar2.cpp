@@ -116,11 +116,11 @@ CWeaponAR2::CWeaponAR2( )
 {
 	//m_bMagazineStyleReloads = true;
 	
-	m_fMinRange1	= 64;
-	m_fMaxRange1	= 1024;
+	m_fMinRange1	= 65;
+	m_fMaxRange1	= 2048;
 
-	m_fMinRange2	= 0;
-	m_fMaxRange2	= 0;
+	m_fMinRange2	= 256;
+	m_fMaxRange2	= 1024;
 
 	m_nShotsFired	= 0;
 	m_nVentPose		= -1;

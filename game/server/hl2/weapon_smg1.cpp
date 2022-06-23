@@ -141,8 +141,7 @@ IMPLEMENT_ACTTABLE(CWeaponSMG1);
 CWeaponSMG1::CWeaponSMG1( )
 {
 	m_fMinRange1		= 0;
-
-	m_fMaxRange1		= 1400;
+	m_fMaxRange1		= 1000;
 
 	m_bAltFiresUnderwater = false;
 }
@@ -168,7 +167,7 @@ void CWeaponSMG1::Equip( CBaseCombatCharacter *pOwner )
 	}
 	else
 	{
-		m_fMaxRange1 = 1400;
+		m_fMaxRange1 = 1000;
 	}
 
 	BaseClass::Equip( pOwner );

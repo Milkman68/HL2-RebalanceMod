@@ -32,6 +32,7 @@
 #include "physics_npc_solver.h"
 #include "hl2_gamerules.h"
 #include "decals.h"
+#include "explode.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -66,6 +67,7 @@ const int HEADCRAB_MAX_JUMP_DIST = 256;
 #define HEADCRAB_BURN_SOUND_FREQUENCY 10
 
 ConVar g_debug_headcrab( "g_debug_headcrab", "0", FCVAR_CHEAT );
+ConVar sk_exploding_crabs( "sk_exploding_crabs", "0" );
 
 //------------------------------------
 // Spawnflags
@@ -2501,6 +2503,10 @@ void CHeadcrab::PainSound( const CTakeDamageInfo &info )
 //-----------------------------------------------------------------------------
 void CHeadcrab::DeathSound( const CTakeDamageInfo &info )
 {
+	if ( sk_exploding_crabs.GetBool() )
+	{
+		ExplosionCreate( GetAbsOrigin(), GetAbsAngles(), this, 100, 256, true );
+	}
 	EmitSound( "NPC_HeadCrab.Die" );
 }
 
@@ -2617,6 +2623,10 @@ void CFastHeadcrab::PainSound( const CTakeDamageInfo &info )
 //-----------------------------------------------------------------------------
 void CFastHeadcrab::DeathSound( const CTakeDamageInfo &info )
 {
+	if ( sk_exploding_crabs.GetBool() )
+	{
+		ExplosionCreate( GetAbsOrigin(), GetAbsAngles(), this, 100, 256, true );
+	}
 	EmitSound( "NPC_FastHeadcrab.Die" );
 }
 
@@ -3556,6 +3566,10 @@ void CBlackHeadcrab::PainSound( const CTakeDamageInfo &info )
 //-----------------------------------------------------------------------------
 void CBlackHeadcrab::DeathSound( const CTakeDamageInfo &info )
 {
+	if ( sk_exploding_crabs.GetBool() )
+	{
+		ExplosionCreate( GetAbsOrigin(), GetAbsAngles(), this, 100, 256, true );
+	}
 	EmitSound( "NPC_BlackHeadcrab.Die" );
 }
 

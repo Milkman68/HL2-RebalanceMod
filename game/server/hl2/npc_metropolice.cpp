@@ -3412,14 +3412,14 @@ int CNPC_MetroPolice::SelectCombatSchedule()
 		return SCHED_METROPOLICE_DRAW_PISTOL;
 	}
 
-	if ( !HasBaton() && m_flHangBackTime < gpGlobals->curtime && ((float)m_nRecentDamage / (float)GetMaxHealth()) > RECENT_DAMAGE_THRESHOLD)
+	if ( !HasBaton() /* &&  m_flHangBackTime < gpGlobals->curtime */ && ((float)m_nRecentDamage / (float)GetMaxHealth()) > RECENT_DAMAGE_THRESHOLD)
 	{
 		m_nRecentDamage = 0;
 		m_flRecentDamageTime = 0;
 		m_Sentences.Speak( "METROPOLICE_COVER_HEAVY_DAMAGE", SENTENCE_PRIORITY_MEDIUM, SENTENCE_CRITERIA_NORMAL );
 		
 		VacateStrategySlot();
-		m_flHangBackTime = gpGlobals->curtime + random->RandomFloat( 2, 7);
+		m_flHangBackTime = gpGlobals->curtime + random->RandomFloat( 1, 3);
 		return SCHED_TAKE_COVER_FROM_ENEMY;
 	}
 	
@@ -3483,18 +3483,18 @@ int CNPC_MetroPolice::SelectCombatSchedule()
 		
 		if ( IsCurSchedule( SCHED_RANGE_ATTACK1 ) )
 		{
-			m_flHangBackTime = gpGlobals->curtime + random->RandomFloat( 5, 8 );
+			m_flHangBackTime = gpGlobals->curtime + random->RandomFloat( 1, 3 );
 		}
 		
 		if ( GetEnemy() && !(GetEnemy()->GetFlags() & FL_NOTARGET) )//bookmark
 		{
 			// Charge in and break the enemy's cover!
-			if ( ( TryToEnterPistolSlot( SQUAD_SLOT_ATTACK1 ) || TryToEnterPistolSlot( SQUAD_SLOT_ATTACK2 ) ) && m_flHangBackTime < gpGlobals->curtime )
+			if ( ( TryToEnterPistolSlot( SQUAD_SLOT_ATTACK1 ) || TryToEnterPistolSlot( SQUAD_SLOT_ATTACK2 ) ) /* && m_flHangBackTime < gpGlobals->curtime */ )
 			{
 				return SCHED_ESTABLISH_LINE_OF_FIRE;
 			}
 		}
-		m_flHangBackTime = gpGlobals->curtime + random->RandomFloat( 2, 7);
+		m_flHangBackTime = gpGlobals->curtime + random->RandomFloat( 1, 3);
 		return SCHED_METROPOLICE_OVERWATCH;
 	}
 
@@ -3945,32 +3945,9 @@ void CNPC_MetroPolice::TraceAttack( const CTakeDamageInfo &inputInfo, const Vect
 			m_flLastHitYaw	= lastHitAngles.y;
 		}
 	}
-	
-/* 	if ( info.GetAmmoType() == GetAmmoDef()->Index("Pistol") )
-	{
-		info.ScaleDamage( 1.4f );
-	} */
 
 	BaseClass::TraceAttack( info, vecDir, ptr, pAccumulator );
 }
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
-/* float CNPC_MetroPolice::GetHitgroupDamageMultiplier( int iHitGroup, const CTakeDamageInfo &info )
-{
-	switch( iHitGroup )
-	{
-	case HITGROUP_HEAD:
-		{
-			if ( info.GetAmmoType() == GetAmmoDef()->Index("Pistol") )
-			{
-				return 4.0f;
-			}
-		}
-	}
-
-	return BaseClass::GetHitgroupDamageMultiplier( iHitGroup, info );
-} */
 //-----------------------------------------------------------------------------
 // Determines the best type of flinch anim to play.
 //-----------------------------------------------------------------------------
@@ -5141,7 +5118,7 @@ void CNPC_MetroPolice::BuildScheduleTestBits( void )
 	{
 		if( HasCondition(COND_CAN_RANGE_ATTACK1) && m_flTimeSawEnemyAgain != NULL )
 		{
-			if( (gpGlobals->curtime - m_flTimeSawEnemyAgain) >= 1.0f )
+			if( (gpGlobals->curtime - m_flTimeSawEnemyAgain) >= 0.5f )
 			{
 				// When we're running flank behavior, wait a moment AFTER being able to see the enemy before
 				// breaking my schedule to range attack. This helps assure that the hunter gets well inside
@@ -5151,19 +5128,7 @@ void CNPC_MetroPolice::BuildScheduleTestBits( void )
 			}
 		}
 	}
-
-/* 	if (IsCurSchedule(SCHED_TAKE_COVER_FROM_ENEMY) || (SCHED_HIDE_AND_RELOAD)  || (SCHED_RANGE_ATTACK1) )//bookmark3
-	{
-		ClearCustomInterruptCondition( COND_LIGHT_DAMAGE );
-		ClearCustomInterruptCondition( COND_HEAVY_DAMAGE );
-	}
 	
-	if (HasCondition(COND_NO_PRIMARY_AMMO) || (COND_LOW_PRIMARY_AMMO))
-	{
-		ClearCustomInterruptCondition( COND_LIGHT_DAMAGE );
-		ClearCustomInterruptCondition( COND_HEAVY_DAMAGE );
-	} */
-
 	if ( !IsCurSchedule( SCHED_CHASE_ENEMY ) &&
 		 !IsCurSchedule( SCHED_METROPOLICE_ACTIVATE_BATON ) &&
 		 !IsCurSchedule( SCHED_METROPOLICE_DEACTIVATE_BATON ) &&

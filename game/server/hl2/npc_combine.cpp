@@ -1719,7 +1719,7 @@ int CNPC_Combine::SelectCombatSchedule()
 					
 						if ( !m_bShouldPursue ) // Don't be as aggresive.
 						{
-							m_flHangBackTime = gpGlobals->curtime + random->RandomFloat( 4, 6 );
+							m_flHangBackTime = gpGlobals->curtime + random->RandomFloat( 2, 3 );
 							DevMsg("Hanging Back");
 						}
 							
@@ -1760,7 +1760,7 @@ int CNPC_Combine::SelectCombatSchedule()
 	// ----------------------
 	if ( ( (float)m_nRecentDamage / (float)GetMaxHealth() ) > RECENT_DAMAGE_THRESHOLD )
 	{
-		if ( !IsElite()  && m_flHangBackTime < gpGlobals->curtime   && IsStrategySlotRangeOccupied( SQUAD_SLOT_FALLBACK1, SQUAD_SLOT_FALLBACK2 )   )
+		if ( !IsElite()  && m_flHangBackTime < gpGlobals->curtime && IsStrategySlotRangeOccupied( SQUAD_SLOT_FALLBACK1, SQUAD_SLOT_FALLBACK2 )   )
 		{
 			if ( GetEnemy() != NULL )
 			{
@@ -1773,7 +1773,7 @@ int CNPC_Combine::SelectCombatSchedule()
 			//		return SCHED_COMBINE_TAKE_COVER2;
 			//	}
 				
-				m_flHangBackTime = gpGlobals->curtime + random->RandomFloat( 2, 7);
+				m_flHangBackTime = gpGlobals->curtime + random->RandomFloat( 2, 3 );
 				OccupyStrategySlot( SQUAD_SLOT_FALLBACK1 );
 				return SCHED_COMBINE_TAKE_COVER1;
 			}
@@ -1837,27 +1837,20 @@ int CNPC_Combine::SelectCombatSchedule()
 
 		if( GetEnemy() && !(GetEnemy()->GetFlags() & FL_NOTARGET) )
 		{
-			/* if ( random->RandomInt( 0, 100) > 50 && CanGrenadeEnemy() && OccupyStrategySlot( SQUAD_SLOT_GRENADE1 ) )
+			if ( ( m_flHangBackTime < gpGlobals->curtime ) && CanOccupyAttackSlot() )
 			{
-				return SCHED_RANGE_ATTACK2;		
-			}
-			else
-			{ */
-				if ( ( m_flHangBackTime < gpGlobals->curtime ) && CanOccupyAttackSlot() )
-				{
 					
-					if ( !m_bShouldPursue ) // Don't be as aggresive.
-					{
-						m_flHangBackTime = gpGlobals->curtime + random->RandomFloat( 4, 6 );
-						DevMsg("Hanging Back");
-					}
-							
-					if ( ( CanOccupyAttackSlot() || IsElite() ) && !IsStrategySlotRangeOccupied( SQUAD_SLOT_GRENADE1, SQUAD_SLOT_GRENADE2 ) )
-					{
-						return SCHED_ESTABLISH_LINE_OF_FIRE;
-					}
+				if ( !m_bShouldPursue ) // Don't be as aggresive.
+				{
+					m_flHangBackTime = gpGlobals->curtime + random->RandomFloat( 2, 3 );
+					DevMsg("Hanging Back");
 				}
-			//}
+							
+				if ( ( CanOccupyAttackSlot() || IsElite() ) && !IsStrategySlotRangeOccupied( SQUAD_SLOT_GRENADE1, SQUAD_SLOT_GRENADE2 ) )
+				{
+					return SCHED_ESTABLISH_LINE_OF_FIRE;
+				}
+			}
 		}
 
 		// Otherwise tuck in.
@@ -2177,22 +2170,6 @@ int CNPC_Combine::SelectScheduleAttack()
 	// Can I shoot?
 	if ( HasCondition(COND_CAN_RANGE_ATTACK1) )
 	{
-
-		// JAY: HL1 behavior missing?
-#if 0
-		if ( m_pSquad )
-		{
-			// if the enemy has eluded the squad and a squad member has just located the enemy
-			// and the enemy does not see the squad member, issue a call to the squad to waste a 
-			// little time and give the player a chance to turn.
-			if ( MySquadLeader()->m_fEnemyEluded && !HasConditions ( bits_COND_ENEMY_FACING_ME ) )
-			{
-				MySquadLeader()->m_fEnemyEluded = FALSE;
-				return SCHED_GRUNT_FOUND_ENEMY;
-			}
-		}
-#endif
-
 		// Engage if allowed
 		if ( CanOccupyAttackSlot() )
 		{
@@ -3712,7 +3689,7 @@ int CNPC_Combine::CountNumEnemies( int m_iClassname, float m_flMaxdist )
 		//DevMsg("Attack Slot Occupied\n");
 		return true;
 	}
-	else if ( m_bCanOccupyExtraSlots && !IsStrategySlotRangeOccupied( SQUAD_SLOT_ATTACK3, SQUAD_SLOT_ATTACK4 ) )
+	else if ( ( m_bCanOccupyExtraSlots || GetSquad()->NumMembers() > 5 ) && !IsStrategySlotRangeOccupied( SQUAD_SLOT_ATTACK3, SQUAD_SLOT_ATTACK4 ) )
 	{
 		OccupyStrategySlotRange( SQUAD_SLOT_ATTACK3, SQUAD_SLOT_ATTACK4 );
 		//DevMsg("Extra Attack Slot Occupied\n");
@@ -4569,14 +4546,14 @@ DEFINE_SCHEDULE
  SCHED_ESTABLISH_ADVANCING_COVER,
 
  "	Tasks"
- "		TASK_SET_FAIL_SCHEDULE		SCHEDULE:SCHED_COMBINE_ESTABLISH_LINE_OF_FIRE"
+ "		TASK_SET_FAIL_SCHEDULE		SCHEDULE:SCHED_COMBINE_TAKECOVER_FAILED"
  "		TASK_STOP_MOVING				0"
- "		TASK_WAIT						0.2"
+ "		TASK_WAIT					0.2"
  "		TASK_FIND_ADVANCING_COVER_TO_ENEMY	0"
  "		TASK_RUN_PATH				0"
  "		TASK_WAIT_FOR_MOVEMENT		0"
- //"		TASK_REMEMBER				MEMORY:INCOVER"
- //"		TASK_SET_SCHEDULE			SCHEDULE:SCHED_COMBINE_WAIT_IN_COVER"
+ "		TASK_REMEMBER				MEMORY:INCOVER"
+ "		TASK_SET_SCHEDULE			SCHEDULE:SCHED_COMBINE_WAIT_IN_COVER"
  ""
  "	Interrupts"
  )

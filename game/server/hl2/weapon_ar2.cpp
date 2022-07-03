@@ -41,6 +41,8 @@ ConVar sk_weapon_ar2_alt_fire_mass( "sk_weapon_ar2_alt_fire_mass", "150" );
 ConVar sk_plr_weapon_ar2_alt_fire_speed( "sk_plr_weapon_ar2_alt_fire_speed", "1000" );
 ConVar sk_npc_weapon_ar2_alt_fire_speed( "sk_npc_weapon_ar2_alt_fire_speed", "1000" );
 
+
+extern ConVar sk_realistic_reloading;
 //=========================================================
 //=========================================================
 
@@ -114,7 +116,6 @@ IMPLEMENT_ACTTABLE(CWeaponAR2);
 
 CWeaponAR2::CWeaponAR2( )
 {
-	//m_bMagazineStyleReloads = true;
 	
 	m_fMinRange1	= 65;
 	m_fMaxRange1	= 2048;
@@ -156,6 +157,8 @@ int	CWeaponAR2::GetBurstSize( void )
 //-----------------------------------------------------------------------------
 void CWeaponAR2::ItemPostFrame( void )
 {
+	m_bMagazineStyleReloads = sk_realistic_reloading.GetBool() ? true : false;
+	
 	m_iFireMode = sk_weapon_ar2_burst_fire.GetBool() ? FIREMODE_3RNDBURST : FIREMODE_FULLAUTO;
 	
 	// See if we need to fire off our secondary round

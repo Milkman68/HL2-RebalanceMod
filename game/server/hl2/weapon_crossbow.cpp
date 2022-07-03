@@ -555,34 +555,29 @@ void CWeaponCrossbow::Precache( void )
 // Purpose:
 //-----------------------------------------------------------------------------
 void CWeaponCrossbow::PrimaryAttack( void )
-{
-	bool MyBool;
-	MyBool = true;
-	if ( MyBool )
-	{		
-	    /*if ( m_bInZoom && g_pGameRules->IsMultiplayer() )
-	    {
-//	    	FireSniperBolt();
-	    	FireBolt();
-    	}
-    	else
-     	{*/
-    		FireBolt();
-    	//}
+{	
+	/*if ( m_bInZoom && g_pGameRules->IsMultiplayer() )
+	{
+//	   	FireSniperBolt();
+	   	FireBolt();
+    }
+    else
+     {*/
+    	FireBolt();
+    //}
 
-    	// Signal a reload
-    	m_bMustReload = true;
+    // Signal a reload
+    m_bMustReload = true;
 
-    	SetWeaponIdleTime( gpGlobals->curtime + SequenceDuration( ACT_VM_PRIMARYATTACK ) );
+    SetWeaponIdleTime( gpGlobals->curtime + SequenceDuration( ACT_VM_PRIMARYATTACK ) );
 
-    	CBasePlayer *pPlayer = ToBasePlayer( GetOwner() );
-    	if ( pPlayer )
-    	{
-    		m_iPrimaryAttacks++;
-    		gamestats->Event_WeaponFired( pPlayer, true, GetClassname() );
-    	}
-		//DisCharge();
-	}
+    CBasePlayer *pPlayer = ToBasePlayer( GetOwner() );
+    if ( pPlayer )
+    {
+    	m_iPrimaryAttacks++;
+    	gamestats->Event_WeaponFired( pPlayer, true, GetClassname() );
+    }
+	//DisCharge();
 }
 
 //-----------------------------------------------------------------------------

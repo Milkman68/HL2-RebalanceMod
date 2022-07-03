@@ -47,11 +47,13 @@
 #include "weapon_physcannon.h"
 #include "ammodef.h"
 #include "vehicle_base.h"
+#include "explode.h"
  
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
 extern ConVar sk_npc_head;
+extern ConVar sk_exploding_crabs;
 
 #define ZOMBIE_BULLET_DAMAGE_SCALE 0.5f
 
@@ -2318,6 +2320,11 @@ void CNPC_BaseZombie::Event_Killed( const CTakeDamageInfo &info )
 
 		// Big blood splat
 		UTIL_BloodSpray( WorldSpaceCenter(), vecDamageDir, BLOOD_COLOR_YELLOW, 8, FX_BLOODSPRAY_CLOUD );
+	}
+	
+	if ( ( !m_fIsHeadless ) && sk_exploding_crabs.GetBool() )
+	{
+		ExplosionCreate( EyePosition(), GetAbsAngles(), this, 100, 256, true );
 	}
 
    	BaseClass::Event_Killed( info );

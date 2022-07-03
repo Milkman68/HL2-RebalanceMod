@@ -246,7 +246,7 @@ public:
 protected:
 
 	CSoundPatch	*m_pMoanSound;
-
+	
 	bool	m_fIsTorso;			// is this is a half-zombie?
 	bool	m_fIsHeadless;		// is this zombie headless
 

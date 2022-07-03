@@ -23,6 +23,8 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
+extern ConVar 	sk_realistic_reloading;
+
 //-----------------------------------------------------------------------------
 // CWeapon357
 //-----------------------------------------------------------------------------
@@ -33,6 +35,8 @@ class CWeapon357 : public CBaseHLCombatWeapon
 public:
 
 	CWeapon357( void );
+	
+	void	ItemPostFrame( void ) { BaseClass::ItemPostFrame(); m_bMagazineStyleReloads = sk_realistic_reloading.GetBool() ? true : false; };
 
 	void	PrimaryAttack( void );
 	void	Operator_HandleAnimEvent( animevent_t *pEvent, CBaseCombatCharacter *pOperator );

@@ -432,8 +432,6 @@ void CNPC_CScanner::Event_Killed( const CTakeDamageInfo &info )
 		}
 	}
 	Gib();
-	//float expDamage = 20;
-	//ExplosionCreate( WorldSpaceCenter(), GetLocalAngles(), this, expDamage, 128, true );//bookmark
 }
 
 

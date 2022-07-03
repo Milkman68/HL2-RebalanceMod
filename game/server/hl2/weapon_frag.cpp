@@ -32,6 +32,9 @@ ConVar sk_plr_grenade_throw_speed("sk_plr_grenade_throw_speed", "1200");
 
 ConVar sk_plr_grenade_timer("sk_plr_grenade_timer", "3");
 
+ConVar sk_plr_grenade_is_cookable("sk_plr_grenade_is_cookable", "1");
+ConVar sk_plr_grenade_cook_grace_period("sk_plr_grenade_cook_grace_period", "1.0");
+
 //-----------------------------------------------------------------------------
 // Fragmentation grenades
 //-----------------------------------------------------------------------------
@@ -64,13 +67,21 @@ private:
 	void	ThrowGrenade( CBasePlayer *pPlayer );
 	void	RollGrenade( CBasePlayer *pPlayer );
 	void	LobGrenade( CBasePlayer *pPlayer );
+	void	BlipSound() { EmitSound( "Grenade.Blip" ); }
+	void	BlipThink();
+	void	SetTimer();
 	// check a throw from vecSrc.  If not valid, move the position back along the line to vecEye
 	void	CheckThrowPosition( CBasePlayer *pPlayer, const Vector &vecEye, Vector &vecSrc );
 
 	bool	m_bRedraw;	//Draw the weapon again after throwing a grenade
 	
+	float	m_flNextBlipTime;
+	float	m_flWarnAITime;
+	float	m_flCookTime;
+	float	m_flDetonateTime;
 	int		m_AttackPaused;
 	bool	m_fDrawbackFinished;
+	bool	m_bHasWarnedAI;
 
 	DECLARE_ACTTABLE();
 
@@ -82,6 +93,11 @@ BEGIN_DATADESC( CWeaponFrag )
 	DEFINE_FIELD( m_bRedraw, FIELD_BOOLEAN ),
 	DEFINE_FIELD( m_AttackPaused, FIELD_INTEGER ),
 	DEFINE_FIELD( m_fDrawbackFinished, FIELD_BOOLEAN ),
+	DEFINE_FIELD( m_bHasWarnedAI, FIELD_BOOLEAN ),
+	DEFINE_FIELD( m_flNextBlipTime, FIELD_TIME ),
+	DEFINE_FIELD( m_flWarnAITime, FIELD_TIME ),
+	DEFINE_FIELD( m_flCookTime, FIELD_TIME ),
+	DEFINE_FIELD( m_flDetonateTime, FIELD_TIME ),
 END_DATADESC()
 
 acttable_t	CWeaponFrag::m_acttable[] = 
@@ -111,12 +127,14 @@ CWeaponFrag::CWeaponFrag() :
 //-----------------------------------------------------------------------------
 void CWeaponFrag::Precache( void )
 {
-	BaseClass::Precache();
+	PrecacheScriptSound( "Grenade.Blip" );
 
 	UTIL_PrecacheOther( "npc_grenade_frag" );
 
 	PrecacheScriptSound( "WeaponFrag.Throw" );
 	PrecacheScriptSound( "WeaponFrag.Roll" );
+	
+	BaseClass::Precache();
 }
 
 //-----------------------------------------------------------------------------
@@ -126,6 +144,8 @@ bool CWeaponFrag::Deploy( void )
 {
 	m_bRedraw = false;
 	m_fDrawbackFinished = false;
+	m_bHasWarnedAI = false;
+	m_flDetonateTime = 0;
 
 	return BaseClass::Deploy();
 }
@@ -138,6 +158,8 @@ bool CWeaponFrag::Holster( CBaseCombatWeapon *pSwitchingTo )
 {
 	m_bRedraw = false;
 	m_fDrawbackFinished = false;
+	m_bHasWarnedAI = false;
+	m_flDetonateTime = 0;
 
 	return BaseClass::Holster( pSwitchingTo );
 }
@@ -267,6 +289,12 @@ void CWeaponFrag::SecondaryAttack( void )
 	{
 		pPlayer->SwitchToNextBestWeapon( this );
 	}
+	
+	if ( sk_plr_grenade_is_cookable.GetBool() )
+	{
+		SetTimer();
+		m_flCookTime = gpGlobals->curtime;
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -303,6 +331,12 @@ void CWeaponFrag::PrimaryAttack( void )
 	{
 		pPlayer->SwitchToNextBestWeapon( this );
 	}
+	
+	if ( sk_plr_grenade_is_cookable.GetBool() )
+	{
+		SetTimer();
+		m_flCookTime = gpGlobals->curtime;
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -319,10 +353,16 @@ void CWeaponFrag::DecrementAmmo( CBaseCombatCharacter *pOwner )
 //-----------------------------------------------------------------------------
 void CWeaponFrag::ItemPostFrame( void )
 {
+	CBasePlayer *pOwner = ToBasePlayer( GetOwner() );
+	
+	if ( pOwner && m_flDetonateTime < gpGlobals->curtime + sk_plr_grenade_cook_grace_period.GetFloat() && m_flDetonateTime != 0 )
+	{
+		pOwner->m_nButtons &= ~IN_ATTACK;
+		pOwner->m_nButtons &= ~IN_ATTACK2;
+	}
+	
 	if( m_fDrawbackFinished )
 	{
-		CBasePlayer *pOwner = ToBasePlayer( GetOwner() );
-
 		if (pOwner)
 		{
 			switch( m_AttackPaused )
@@ -391,6 +431,7 @@ void CWeaponFrag::CheckThrowPosition( CBasePlayer *pPlayer, const Vector &vecEye
 //-----------------------------------------------------------------------------
 void CWeaponFrag::ThrowGrenade( CBasePlayer *pPlayer )
 {
+	float m_flCookTimeCurrent = sk_plr_grenade_is_cookable.GetBool() ? gpGlobals->curtime - m_flCookTime : 0;
 	Vector	vecEye = pPlayer->EyePosition();
 	Vector	vForward, vRight;
 
@@ -403,7 +444,7 @@ void CWeaponFrag::ThrowGrenade( CBasePlayer *pPlayer )
 	Vector vecThrow;
 	pPlayer->GetVelocity( &vecThrow, NULL );
 	vecThrow += vForward * sk_plr_grenade_throw_speed.GetFloat();
-	Fraggrenade_Create( vecSrc, vec3_angle, vecThrow, AngularImpulse(600,random->RandomInt(-1200,1200),0), pPlayer, sk_plr_grenade_timer.GetFloat(), false );
+	Fraggrenade_PlayerCreate( vecSrc, vec3_angle, vecThrow, AngularImpulse(600,random->RandomInt(-1200,1200),0), pPlayer, sk_plr_grenade_timer.GetFloat() - m_flCookTimeCurrent, m_flNextBlipTime, m_flWarnAITime );
 
 	m_bRedraw = true;
 
@@ -419,6 +460,7 @@ void CWeaponFrag::ThrowGrenade( CBasePlayer *pPlayer )
 //-----------------------------------------------------------------------------
 void CWeaponFrag::LobGrenade( CBasePlayer *pPlayer )
 {
+	float m_flCookTimeCurrent = sk_plr_grenade_is_cookable.GetBool() ? gpGlobals->curtime - m_flCookTime : 0;
 	Vector	vecEye = pPlayer->EyePosition();
 	Vector	vForward, vRight;
 
@@ -429,7 +471,7 @@ void CWeaponFrag::LobGrenade( CBasePlayer *pPlayer )
 	Vector vecThrow;
 	pPlayer->GetVelocity( &vecThrow, NULL );
 	vecThrow += vForward * sk_plr_grenade_lob_speed.GetFloat() + Vector( 0, 0, 50 );
-	Fraggrenade_Create( vecSrc, vec3_angle, vecThrow, AngularImpulse(200,random->RandomInt(-600,600),0), pPlayer, sk_plr_grenade_timer.GetFloat(), false );
+	Fraggrenade_PlayerCreate( vecSrc, vec3_angle, vecThrow, AngularImpulse(200,random->RandomInt(-600,600),0), pPlayer, sk_plr_grenade_timer.GetFloat() - m_flCookTimeCurrent, m_flNextBlipTime, m_flWarnAITime );
 
 	WeaponSound( WPN_DOUBLE );
 
@@ -445,6 +487,7 @@ void CWeaponFrag::LobGrenade( CBasePlayer *pPlayer )
 //-----------------------------------------------------------------------------
 void CWeaponFrag::RollGrenade( CBasePlayer *pPlayer )
 {
+	float m_flCookTimeCurrent = sk_plr_grenade_is_cookable.GetBool() ? gpGlobals->curtime - m_flCookTime : 0;
 	// BUGBUG: Hardcoded grenade width of 4 - better not change the model :)
 	Vector vecSrc;
 	pPlayer->CollisionProp()->NormalizedToWorldSpace( Vector( 0.5f, 0.5f, 0.0f ), &vecSrc );
@@ -473,7 +516,7 @@ void CWeaponFrag::RollGrenade( CBasePlayer *pPlayer )
 	QAngle orientation(0,pPlayer->GetLocalAngles().y,-90);
 	// roll it
 	AngularImpulse rotSpeed(0,0,720);
-	Fraggrenade_Create( vecSrc, orientation, vecThrow, rotSpeed, pPlayer, sk_plr_grenade_timer.GetFloat(), false );
+	Fraggrenade_PlayerCreate( vecSrc, orientation, vecThrow, rotSpeed, pPlayer, sk_plr_grenade_timer.GetFloat() - m_flCookTimeCurrent, m_flNextBlipTime, m_flWarnAITime );
 
 	WeaponSound( SPECIAL1 );
 
@@ -481,5 +524,56 @@ void CWeaponFrag::RollGrenade( CBasePlayer *pPlayer )
 
 	m_iPrimaryAttacks++;
 	gamestats->Event_WeaponFired( pPlayer, true, GetClassname() );
+}
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CWeaponFrag::SetTimer()
+{
+	// These should be shared between this and the grenade itself for parity.
+	m_flNextBlipTime = gpGlobals->curtime + FRAG_GRENADE_BLIP_FREQUENCY;
+	m_flWarnAITime = gpGlobals->curtime + ( sk_plr_grenade_timer.GetFloat() - FRAG_GRENADE_WARN_TIME );
+	
+	m_flDetonateTime = gpGlobals->curtime + sk_plr_grenade_timer.GetFloat();
+	
+	BlipSound();
+	
+	SetThink( &CWeaponFrag::BlipThink );
+	SetNextThink( gpGlobals->curtime );
+}
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CWeaponFrag::BlipThink()
+{
+	if ( m_bRedraw )
+	{
+		m_bHasWarnedAI = false;
+		m_flDetonateTime = 0;
+		return;
+	}
+	
+	if( !m_bHasWarnedAI && gpGlobals->curtime >= m_flWarnAITime )
+	{
+		
+	#if !defined( CLIENT_DLL )
+		CSoundEnt::InsertSound ( SOUND_DANGER, GetAbsOrigin(), 400, 1.5, this );
+	#endif
+	
+		m_bHasWarnedAI = true;
+	}
+	if( gpGlobals->curtime > m_flNextBlipTime )
+	{
+		BlipSound();		
+		if( m_bHasWarnedAI )
+		{
+			m_flNextBlipTime = gpGlobals->curtime + FRAG_GRENADE_BLIP_FAST_FREQUENCY;
+		}
+		else
+		{
+			m_flNextBlipTime = gpGlobals->curtime + FRAG_GRENADE_BLIP_FREQUENCY;
+		}
+	}
+	SetNextThink( gpGlobals->curtime + 0.1 );
 }
 

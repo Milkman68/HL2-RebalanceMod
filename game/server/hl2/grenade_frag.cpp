@@ -16,11 +16,7 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-#define FRAG_GRENADE_BLIP_FREQUENCY			1.0f
-#define FRAG_GRENADE_BLIP_FAST_FREQUENCY	0.3f
-
 #define FRAG_GRENADE_GRACE_TIME_AFTER_PICKUP 1.5f
-#define FRAG_GRENADE_WARN_TIME 1.5f
 
 const float GRENADE_COEFFICIENT_OF_RESTITUTION = 0.2f;
 
@@ -64,16 +60,19 @@ public:
 #endif 
 
 	void	InputSetTimer( inputdata_t &inputdata );
+	
+	float	m_flNextBlipTime;
 
 protected:
 	CHandle<CSprite>		m_pMainGlow;
 	CHandle<CSpriteTrail>	m_pGlowTrail;
 
-	float	m_flNextBlipTime;
 	bool	m_inSolid;
 	bool	m_combineSpawned;
 	bool	m_punted;
 };
+
+extern ConVar sk_plr_grenade_is_cookable;
 
 LINK_ENTITY_TO_CLASS( npc_grenade_frag, CGrenadeFrag );
 
@@ -127,8 +126,11 @@ void CGrenadeFrag::Spawn( void )
 	SetCollisionGroup( COLLISION_GROUP_WEAPON );
 	CreateVPhysics();
 
-	BlipSound();
-	m_flNextBlipTime = gpGlobals->curtime + FRAG_GRENADE_BLIP_FREQUENCY;
+	if ( !sk_plr_grenade_is_cookable.GetBool() || !GetOwnerEntity()->IsPlayer() ) 
+	{ 
+		BlipSound();
+		m_flNextBlipTime = gpGlobals->curtime + FRAG_GRENADE_BLIP_FREQUENCY;
+	}
 
 	AddSolidFlags( FSOLID_NOT_STANDABLE );
 
@@ -426,6 +428,22 @@ CBaseGrenade *Fraggrenade_Create( const Vector &position, const QAngle &angles, 
 	pGrenade->SetThrower( ToBaseCombatCharacter( pOwner ) );
 	pGrenade->m_takedamage = DAMAGE_EVENTS_ONLY;
 	pGrenade->SetCombineSpawned( combineSpawned );
+
+	return pGrenade;
+}
+
+CBaseGrenade *Fraggrenade_PlayerCreate( const Vector &position, const QAngle &angles, const Vector &velocity, const AngularImpulse &angVelocity, CBaseEntity *pOwner, float timer, float nextblip, float warnAItime )
+{
+	// Don't set the owner here, or the player can't interact with grenades he's thrown
+	CGrenadeFrag *pGrenade = (CGrenadeFrag *)CBaseEntity::Create( "npc_grenade_frag", position, angles, pOwner );
+	
+	pGrenade->SetTimer( timer, timer - FRAG_GRENADE_WARN_TIME );
+	pGrenade->SetVelocity( velocity, angVelocity );
+	pGrenade->SetThrower( ToBaseCombatCharacter( pOwner ) );
+	pGrenade->m_takedamage = DAMAGE_EVENTS_ONLY;
+	pGrenade->SetCombineSpawned( false );
+	pGrenade->m_flNextBlipTime = sk_plr_grenade_is_cookable.GetBool() ? nextblip : pGrenade->m_flNextBlipTime;
+	pGrenade->m_flWarnAITime = sk_plr_grenade_is_cookable.GetBool() ? warnAItime : pGrenade->m_flWarnAITime;
 
 	return pGrenade;
 }

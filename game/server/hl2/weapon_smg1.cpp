@@ -21,7 +21,9 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-extern ConVar    sk_plr_dmg_smg1_grenade;	
+extern ConVar   sk_plr_dmg_smg1_grenade;	
+extern ConVar 	sk_realistic_reloading;
+
 ConVar sk_smg1_grenade_speed( "sk_smg1_grenade_speed", "1000.0" );
 
 class CWeaponSMG1 : public CHLSelectFireMachineGun
@@ -34,12 +36,16 @@ public:
 
 	DECLARE_SERVERCLASS();
 	
+	void	ItemPostFrame( void ) { BaseClass::ItemPostFrame(); m_bMagazineStyleReloads = sk_realistic_reloading.GetBool() ? true : false; };
+	
 	void	Precache( void );
 	void	AddViewKick( void );
 	void	SecondaryAttack( void );
 
 	int		GetMinBurst() { return 5; }
 	int		GetMaxBurst() { return 10; }
+	//float 	GetBurstCycleRate( void ){ return 0.055; }
+	//int		GetBurstSize( void ){ return 3.0; }
 
 	virtual void Equip( CBaseCombatCharacter *pOwner );
 	bool	Reload( void );
@@ -142,6 +148,8 @@ CWeaponSMG1::CWeaponSMG1( )
 {
 	m_fMinRange1		= 0;
 	m_fMaxRange1		= 1000;
+	
+	//m_iFireMode = FIREMODE_3RNDBURST;
 
 	m_bAltFiresUnderwater = false;
 }

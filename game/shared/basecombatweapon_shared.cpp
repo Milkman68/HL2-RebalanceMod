@@ -60,6 +60,8 @@ ConVar tf_weapon_criticals_bucket_bottom( "tf_weapon_criticals_bucket_bottom", "
 ConVar tf_weapon_criticals_bucket_default( "tf_weapon_criticals_bucket_default", "300.0", FCVAR_REPLICATED | FCVAR_CHEAT );
 #endif // TF
 
+ConVar sk_realistic_reloading( "sk_realistic_reloading", "0" );
+
 CBaseCombatWeapon::CBaseCombatWeapon()
 {
 	// Constructor must call this
@@ -2154,9 +2156,17 @@ void CBaseCombatWeapon::FinishReload( void )
 		// If I use primary clips, reload primary
 		if ( UsesClipsForAmmo1() )
 		{
-			int primary	= MIN( GetMaxClip1() - m_iClip1, pOwner->GetAmmoCount(m_iPrimaryAmmoType));	
-			m_iClip1 = m_bMagazineStyleReloads ? GetMaxClip1() : m_iClip1 + primary;
-			pOwner->RemoveAmmo( m_bMagazineStyleReloads ? 1 : primary, m_iPrimaryAmmoType);
+			int primary = min( GetMaxClip1() - m_iClip1, pOwner->GetAmmoCount( m_iPrimaryAmmoType ) );	
+			if ( pOwner->GetAmmoCount( m_iPrimaryAmmoType ) >= GetMaxClip1() )
+			{
+				m_iClip1 = m_bMagazineStyleReloads ? GetMaxClip1() : m_iClip1 + primary;
+				pOwner->RemoveAmmo( m_bMagazineStyleReloads ? GetMaxClip1() : primary, m_iPrimaryAmmoType );
+			}
+			else
+			{
+				m_iClip1 = pOwner->GetAmmoCount( m_iPrimaryAmmoType );
+				pOwner->RemoveAmmo( GetMaxClip1(), m_iPrimaryAmmoType );
+			}
 		}
 
 		// If I use secondary clips, reload secondary

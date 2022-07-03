@@ -143,11 +143,18 @@ acttable_t	CWeaponPistol::m_acttable[] =
 
 IMPLEMENT_ACTTABLE( CWeaponPistol );
 
+extern ConVar sk_realistic_reloading;
+
 //-----------------------------------------------------------------------------
 // Purpose: Constructor
 //-----------------------------------------------------------------------------
 CWeaponPistol::CWeaponPistol( void )
 {
+	if ( sk_realistic_reloading.GetBool() )
+	{
+		m_bMagazineStyleReloads = true;
+	}
+	
 	m_flSoonestPrimaryAttack = gpGlobals->curtime;
 	m_flAccuracyPenalty = 0.0f;
 
@@ -268,8 +275,8 @@ void CWeaponPistol::SecondaryAttack( void )
 	
 	BurstThink();
 	SetThink( &CWeaponPistol::BurstThink );
-	m_flNextSecondaryAttack = gpGlobals->curtime + 0.41;
-	m_flNextPrimaryAttack = m_flNextPrimaryAttack + 0.41;
+	m_flNextSecondaryAttack = gpGlobals->curtime + 0.35;
+	m_flNextPrimaryAttack = m_flNextPrimaryAttack + 0.35;
 
 	// Pick up the rest of the burst through the think function.
 	SetNextThink( gpGlobals->curtime + 0.05 );
@@ -389,6 +396,13 @@ void CWeaponPistol::ItemBusyFrame( void )
 void CWeaponPistol::ItemPostFrame( void )
 {
 	BaseClass::ItemPostFrame();
+	
+	m_bMagazineStyleReloads = sk_realistic_reloading.GetBool() ? true : false;
+	
+	if ( sk_realistic_reloading.GetBool() )
+	{
+		m_bMagazineStyleReloads = true;
+	}
 
 	if ( m_bInReload )
 		return;

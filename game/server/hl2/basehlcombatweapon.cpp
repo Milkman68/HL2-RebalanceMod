@@ -340,17 +340,20 @@ void CHLSelectFireMachineGun::PrimaryAttack( void )
 		break;
 
 	case FIREMODE_3RNDBURST:
-		m_iBurstSize = GetBurstSize();
-		
-		// Call the think function directly so that the first round gets fired immediately.
-		BurstThink();
-		SetThink( &CHLSelectFireMachineGun::BurstThink );
-		m_flNextPrimaryAttack = gpGlobals->curtime + GetBurstCycleRate();
-		m_flNextSecondaryAttack = gpGlobals->curtime + GetBurstCycleRate();
+		if ( m_iBurstSize < 1)
+		{
+			m_iBurstSize = GetBurstSize();
+			
+			// Call the think function directly so that the first round gets fired immediately.
+			BurstThink();
+			SetThink( &CHLSelectFireMachineGun::BurstThink );
+			m_flNextPrimaryAttack = gpGlobals->curtime + GetBurstCycleRate();
+			m_flNextSecondaryAttack = gpGlobals->curtime + GetBurstCycleRate();
 
-		// Pick up the rest of the burst through the think function.
-		SetNextThink( gpGlobals->curtime + GetFireRate() );
-		break;
+			// Pick up the rest of the burst through the think function.
+			SetNextThink( gpGlobals->curtime + GetFireRate() );
+			break;
+		}
 	}
 
 	CBasePlayer *pOwner = ToBasePlayer( GetOwner() );
@@ -411,7 +414,10 @@ void CHLSelectFireMachineGun::BurstThink( void )
 	
 	// Abort here to handle burst and auto fire modes
 	if ( (UsesClipsForAmmo1() && m_iClip1 == 0) || ( !UsesClipsForAmmo1() && !pPlayer->GetAmmoCount(m_iPrimaryAmmoType) ) )
+	{
+		m_iBurstSize = 0;
 		return;
+	}
 
 	m_nShotsFired++;
 

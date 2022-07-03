@@ -65,6 +65,7 @@ ConVar player_throwforce( "player_throwforce", "1000" );
 ConVar physcannon_dmg_glass( "physcannon_dmg_glass", "15" );
 ConVar physcannon_right_turrets( "physcannon_right_turrets", "0" );
 
+extern ConVar hl2_fear_style_movement;
 extern ConVar hl2_normspeed;
 extern ConVar hl2_walkspeed;
 
@@ -2426,9 +2427,11 @@ bool CWeaponPhysCannon::AttachObject( CBaseEntity *pObject, const Vector &vPosit
 		HapticSetConstantForce(pOwner,clamp(m_grabController.GetLoadWeight()*0.05,1,5)*Vector(0,-1,0));
 #endif
 		pOwner->EnableSprint( false );
+		
+		bool m_bFearSprint = hl2_fear_style_movement.GetBool();
 
 		float	loadWeight = ( 1.0f - GetLoadPercentage() );
-		float	maxSpeed = hl2_walkspeed.GetFloat() + ( ( hl2_normspeed.GetFloat() - hl2_walkspeed.GetFloat() ) * loadWeight );
+		float	maxSpeed = hl2_walkspeed.GetFloat() + ( (  ( m_bFearSprint ? hl2_walkspeed.GetFloat() : hl2_normspeed.GetFloat() ) - hl2_walkspeed.GetFloat() ) * loadWeight );
 
 		//Msg( "Load perc: %f -- Movement speed: %f/%f\n", loadWeight, maxSpeed, hl2_normspeed.GetFloat() );
 		pOwner->SetMaxSpeed( maxSpeed );
@@ -2875,7 +2878,15 @@ void CWeaponPhysCannon::DetachObject( bool playSound, bool wasLaunched )
 	if( pOwner != NULL )
 	{
 		pOwner->EnableSprint( true );
-		pOwner->SetMaxSpeed( hl2_normspeed.GetFloat() );
+		
+		if ( !hl2_fear_style_movement.GetBool() )
+		{
+			pOwner->SetMaxSpeed( hl2_normspeed.GetFloat() );
+		}
+		else
+		{
+			pOwner->SetMaxSpeed( hl2_walkspeed.GetFloat() );
+		}
 		
 		if( wasLaunched )
 		{

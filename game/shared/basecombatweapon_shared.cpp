@@ -2156,16 +2156,25 @@ void CBaseCombatWeapon::FinishReload( void )
 		// If I use primary clips, reload primary
 		if ( UsesClipsForAmmo1() )
 		{
-			int primary = min( GetMaxClip1() - m_iClip1, pOwner->GetAmmoCount( m_iPrimaryAmmoType ) );	
-			if ( pOwner->GetAmmoCount( m_iPrimaryAmmoType ) >= GetMaxClip1() )
+			if ( sk_realistic_reloading.GetBool() )
 			{
-				m_iClip1 = m_bMagazineStyleReloads ? GetMaxClip1() : m_iClip1 + primary;
-				pOwner->RemoveAmmo( m_bMagazineStyleReloads ? GetMaxClip1() : primary, m_iPrimaryAmmoType );
+				int primary = min( GetMaxClip1() - m_iClip1, pOwner->GetAmmoCount( m_iPrimaryAmmoType ) );	
+				if ( pOwner->GetAmmoCount( m_iPrimaryAmmoType ) >= GetMaxClip1() )
+				{
+					m_iClip1 = m_bMagazineStyleReloads ? GetMaxClip1() : m_iClip1 + primary;
+					pOwner->RemoveAmmo( m_bMagazineStyleReloads ? GetMaxClip1() : primary, m_iPrimaryAmmoType );
+				}
+				else
+				{
+					m_iClip1 = pOwner->GetAmmoCount( m_iPrimaryAmmoType );
+					pOwner->RemoveAmmo( GetMaxClip1(), m_iPrimaryAmmoType );
+				}
 			}
 			else
 			{
-				m_iClip1 = pOwner->GetAmmoCount( m_iPrimaryAmmoType );
-				pOwner->RemoveAmmo( GetMaxClip1(), m_iPrimaryAmmoType );
+				int primary	= MIN( GetMaxClip1() - m_iClip1, pOwner->GetAmmoCount(m_iPrimaryAmmoType));	
+				m_iClip1 += primary;
+				pOwner->RemoveAmmo( primary, m_iPrimaryAmmoType);
 			}
 		}
 

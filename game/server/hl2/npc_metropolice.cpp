@@ -768,6 +768,7 @@ void CNPC_MetroPolice::Spawn( void )
 	m_flChasePlayerTime = 0;
 	m_vecPreChaseOrigin = vec3_origin;
 	m_flPreChaseYaw = 0;
+	SetGroundSpeedMultiplier(1.2);
 
 	SetUse( &CNPC_MetroPolice::PrecriminalUse );
 
@@ -1276,7 +1277,7 @@ void CNPC_MetroPolice::OnUpdateShotRegulator( )
 	else if ( Weapon_OwnsThisType( "weapon_shotgun" ) )
 	{
 		GetShotRegulator()->SetBurstShotCountRange(GetActiveWeapon()->GetMinBurst(), GetActiveWeapon()->GetMaxBurst() );
-		GetShotRegulator()->SetRestInterval( 1.4, 1.8 );
+		GetShotRegulator()->SetRestInterval( 0.6, 1.2 );
 	}
 }
 
@@ -3227,8 +3228,8 @@ int CNPC_MetroPolice::SelectRangeAttackSchedule()
 	}
 
 	// Range attack if we're able
-	//if( TryToEnterPistolSlot( SQUAD_SLOT_ATTACK1 ) || TryToEnterPistolSlot( SQUAD_SLOT_ATTACK2 ) )
-	//	return SCHED_RANGE_ATTACK1;
+	if( ( TryToEnterPistolSlot( SQUAD_SLOT_ATTACK1 ) || TryToEnterPistolSlot( SQUAD_SLOT_ATTACK2 ) ) && gpGlobals->curtime - m_flTimeSawEnemyAgain >= 0.5f)
+		return SCHED_RANGE_ATTACK1;
 	
 	// We're not in a shoot slot... so we've allowed someone else to grab it
 	m_LastShootSlot = SQUAD_SLOT_NONE;
@@ -3419,7 +3420,7 @@ int CNPC_MetroPolice::SelectCombatSchedule()
 		m_Sentences.Speak( "METROPOLICE_COVER_HEAVY_DAMAGE", SENTENCE_PRIORITY_MEDIUM, SENTENCE_CRITERIA_NORMAL );
 		
 		VacateStrategySlot();
-		m_flHangBackTime = gpGlobals->curtime + random->RandomFloat( 1, 3);
+		//m_flHangBackTime = gpGlobals->curtime + random->RandomFloat( 1, 3);
 		return SCHED_TAKE_COVER_FROM_ENEMY;
 	}
 	
@@ -3481,10 +3482,10 @@ int CNPC_MetroPolice::SelectCombatSchedule()
 			return SCHED_METROPOLICE_DEPLOY_MANHACK;
 		}
 		
-		if ( IsCurSchedule( SCHED_RANGE_ATTACK1 ) )
-		{
-			m_flHangBackTime = gpGlobals->curtime + random->RandomFloat( 1, 3 );
-		}
+		//if ( IsCurSchedule( SCHED_RANGE_ATTACK1 ) )
+		//{
+			//m_flHangBackTime = gpGlobals->curtime + random->RandomFloat( 1, 3 );
+		//}
 		
 		if ( GetEnemy() && !(GetEnemy()->GetFlags() & FL_NOTARGET) )//bookmark
 		{
@@ -3494,7 +3495,7 @@ int CNPC_MetroPolice::SelectCombatSchedule()
 				return SCHED_ESTABLISH_LINE_OF_FIRE;
 			}
 		}
-		m_flHangBackTime = gpGlobals->curtime + random->RandomFloat( 1, 3);
+		//m_flHangBackTime = gpGlobals->curtime + random->RandomFloat( 1, 3);
 		return SCHED_METROPOLICE_OVERWATCH;
 	}
 
@@ -4334,6 +4335,11 @@ int CNPC_MetroPolice::SelectFailSchedule( int failedSchedule, int failedTask, AI
 	{
 		return SCHED_METROPOLICE_ESTABLISH_LINE_OF_FIRE;
 	}
+	
+	if( failedSchedule == SCHED_TAKE_COVER_FROM_ENEMY )
+	{
+		return SCHED_TAKE_COVER_FROM_ENEMY;
+	}
 
 	return BaseClass::SelectFailSchedule( failedSchedule, failedTask, taskFailCode );
 }
@@ -4486,10 +4492,13 @@ bool CNPC_MetroPolice::OnBeginMoveAndShoot()
 		if( HasStrategySlotRange( SQUAD_SLOT_ATTACK1, SQUAD_SLOT_ATTACK2 ) )
 			return true; // already have the slot I need
 		
-		if ( IsCurSchedule( SCHED_TAKE_COVER_FROM_ENEMY ) )
+		if( IsCurSchedule( SCHED_ESTABLISH_LINE_OF_FIRE ) )
 			return true;
-
-		if( OccupyStrategySlotRange( SQUAD_SLOT_ATTACK1, SQUAD_SLOT_ATTACK2 ) )
+		
+		if( IsCurSchedule( SCHED_METROPOLICE_FLANK_ENEMY ) )
+			return true;
+		
+		if ( IsCurSchedule( SCHED_TAKE_COVER_FROM_ENEMY ) )
 			return true;
 	}
 
@@ -5278,7 +5287,7 @@ bool CNPC_MetroPolice::ShouldSwitchToBaton( void )
 	if ( HasBaton() )
 		return false;
 	
-	if ( !FClassnameIs( m_hDefaultWeapon, "weapon_stunstick" ) )
+	if ( FClassnameIs( m_hDefaultWeapon, "weapon_stunstick" ) )
 		return false;
 	
 	if ( m_flBatonChaseCooldown < gpGlobals->curtime )
@@ -5287,9 +5296,9 @@ bool CNPC_MetroPolice::ShouldSwitchToBaton( void )
 	if ( IsUnreachable(GetEnemy()) )
 		return false;
 	
-	//float m_flDistToEnemy = ( GetEnemy()->GetAbsOrigin() - GetAbsOrigin() ).Length();
-	//if ( m_flDistToEnemy > 128 )
-		//return false;
+	float m_flDistToEnemy = ( GetEnemy()->GetAbsOrigin() - GetAbsOrigin() ).Length();
+	if ( m_flDistToEnemy > 128 )
+		return false;
 	
 	//if ( HasCondition( COND_ENEMY_OCCLUDED ) )
 	//{
@@ -5649,7 +5658,7 @@ DEFINE_SCHEDULE
 	"		COND_CAN_MELEE_ATTACK1"
 	"		COND_CAN_MELEE_ATTACK2"
 	"		COND_HEAR_DANGER"
-	"		COND_HEAVY_DAMAGE"
+	//"		COND_HEAVY_DAMAGE"
 );
 
 
@@ -6173,7 +6182,7 @@ DEFINE_SCHEDULE
  SCHED_METROPOLICE_OVERWATCH,
 
  "	Tasks"
- "		TASK_WAIT_FACE_ENEMY		10"
+ "		TASK_WAIT_FACE_ENEMY		5"
  ""
  "	Interrupts"
  "		COND_CAN_RANGE_ATTACK1"

@@ -1717,11 +1717,11 @@ int CNPC_Combine::SelectCombatSchedule()
 					if ( ( m_flHangBackTime < gpGlobals->curtime ) && CanOccupyAttackSlot() )
 					{
 					
-						if ( !m_bShouldPursue ) // Don't be as aggresive.
+/* 						if ( m_bShouldPursue ) // Don't be as aggresive.
 						{
-							m_flHangBackTime = gpGlobals->curtime + random->RandomFloat( 2, 3 );
+							//m_flHangBackTime = gpGlobals->curtime + random->RandomFloat( 2, 3 );
 							DevMsg("Hanging Back");
-						}
+						} */
 							
 						if ( ( CanOccupyAttackSlot() || IsElite() ) && !IsStrategySlotRangeOccupied( SQUAD_SLOT_GRENADE1, SQUAD_SLOT_GRENADE2 ) )
 						{
@@ -1773,7 +1773,7 @@ int CNPC_Combine::SelectCombatSchedule()
 			//		return SCHED_COMBINE_TAKE_COVER2;
 			//	}
 				
-				m_flHangBackTime = gpGlobals->curtime + random->RandomFloat( 2, 3 );
+				//m_flHangBackTime = gpGlobals->curtime + random->RandomFloat( 2, 3 );
 				OccupyStrategySlot( SQUAD_SLOT_FALLBACK1 );
 				return SCHED_COMBINE_TAKE_COVER1;
 			}
@@ -1824,7 +1824,7 @@ int CNPC_Combine::SelectCombatSchedule()
 		
 		if ( IsCurSchedule( SCHED_RANGE_ATTACK1 ) )
 		{
-			m_flHangBackTime = gpGlobals->curtime + random->RandomFloat( 2, 3 );
+			//m_flHangBackTime = gpGlobals->curtime + random->RandomFloat( 2, 3 );
 		}
 		
 		if ( CanGrenadeEnemy() )
@@ -3432,7 +3432,10 @@ bool CNPC_Combine::OnBeginMoveAndShoot()
 {
 	if ( BaseClass::OnBeginMoveAndShoot() )
 	{
-		if( IsCurSchedule( SCHED_MOVE_AWAY ) )
+		if( IsCurSchedule( SCHED_ESTABLISH_LINE_OF_FIRE ) )
+			return true;
+		
+		if( IsCurSchedule( SCHED_COMBINE_FLANK_ENEMY ) )
 			return true;
 		
 		if( HasStrategySlotRange( SQUAD_SLOT_ATTACK1, SQUAD_SLOT_ATTACK2 ) )
@@ -3465,7 +3468,7 @@ WeaponProficiency_t CNPC_Combine::CalcWeaponProficiency( CBaseCombatWeapon *pWea
 		}
 		else
 		{
-			return WEAPON_PROFICIENCY_GOOD;
+			return WEAPON_PROFICIENCY_AVERAGE;
 		}
 	}
 	else if( FClassnameIs( pWeapon, "weapon_shotgun" )	)
@@ -3954,7 +3957,7 @@ DEFINE_SCHEDULE
  "	Interrupts"
  "		COND_CAN_MELEE_ATTACK1"
  "		COND_CAN_MELEE_ATTACK2"
- "		COND_HEAVY_DAMAGE"
+ //"		COND_HEAVY_DAMAGE"
  "		COND_HEAR_DANGER"
  "		COND_HEAR_MOVE_AWAY"
  )
@@ -4456,7 +4459,7 @@ DEFINE_SCHEDULE//bookmark
 	"		TASK_SET_FAIL_SCHEDULE					SCHEDULE:SCHED_ESTABLISH_LINE_OF_FIRE"
 	"		TASK_STOP_MOVING						0"
 	"		TASK_COMBINE_BEGIN_FLANK				0"
-	"		TASK_GET_FLANK_ARC_PATH_TO_ENEMY_LOS	60"
+	"		TASK_GET_FLANK_ARC_PATH_TO_ENEMY_LOS	40"
 	"		TASK_RUN_PATH							0"
 	"		TASK_WAIT_FOR_MOVEMENT					0"
 	"		TASK_FACE_ENEMY							0"

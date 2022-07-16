@@ -3616,7 +3616,10 @@ void CNPC_AntlionGuard::PrescheduleThink( void )
 	// Put danger sounds out in front of us
 	for ( int i = 0; i < 3; i++ )
 	{
-		CSoundEnt::InsertSound( SOUND_DANGER, WorldSpaceCenter() + ( BodyDirection3D() * 128 * (i+1) ), 128, 0.1f, this );		
+		CSoundEnt::InsertSound( SOUND_DANGER, WorldSpaceCenter() + ( BodyDirection3D() * 128 * (i+1) ), 128, 0.1f, this );	
+		
+		// Tell antlions to GET OUT OF THE WAY!
+		CSoundEnt::InsertSound( SOUND_THUMPER, WorldSpaceCenter() + ( BodyDirection3D() * 128 * (i+1) ), 128, 0.1f, this );	
 	}
 
 #if ANTLIONGUARD_BLOOD_EFFECTS

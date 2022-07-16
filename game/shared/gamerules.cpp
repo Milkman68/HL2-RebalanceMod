@@ -313,6 +313,13 @@ void CGameRules::RefreshSkillData ( bool forceUpdate )
 	}
 	else
 	{
+		// Execute the default skill.cfg no matter what.
+		Q_snprintf( szExec, sizeof(szExec), "exec skill.cfg\n" );
+		
+		// Episodic file takes precedence
+		Q_snprintf( szExec, sizeof(szExec), "exec skill_episodic.cfg\n" );
+	
+		
 		if ( GetSkillLevel() == 3 )
 		{
 			Q_snprintf( szExec, sizeof(szExec), "exec skill_3.cfg\n" );

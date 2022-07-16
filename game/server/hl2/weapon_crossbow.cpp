@@ -39,6 +39,8 @@
 extern ConVar sk_plr_dmg_crossbow;
 extern ConVar sk_npc_dmg_crossbow;
 
+ConVar sk_npc_head_crossbow("sk_npc_head_crossbow", "3" );
+
 ConVar sk_crossbow_air_velocity("sk_crossbow_air_velocity", "2500" ); //2500
 ConVar sk_crossbow_water_velocity("sk_crossbow_water_velocity", "1500" ); //1500
 
@@ -229,9 +231,81 @@ void CCrossbowBolt::BoltTouch( CBaseEntity *pOther )
 		}
 #endif//HL2_EPISODIC
 
+		float m_flDamage = sk_plr_dmg_crossbow.GetFloat();
+		
+		// MODIFIED MAPBASE CODE BELOW!!
+		CBaseAnimating *pOtherAnimating = pOther->GetBaseAnimating();
+		if (pOtherAnimating && pOtherAnimating->GetModelPtr() && pOtherAnimating->GetModelPtr()->numbones() > 1)
+		{
+			// Iterate through all bones.
+			int iClosestBone = -1;
+			float flCurDistSqr = Square(128.0f);
+			matrix3x4_t bonetoworld;
+			Vector vecBonePos;
+			for (int i = 0; i < pOtherAnimating->GetModelPtr()->numbones(); i++)
+			{
+				pOtherAnimating->GetBoneTransform( i, bonetoworld );
+				MatrixPosition( bonetoworld, vecBonePos );
+
+				float flDist = vecBonePos.DistToSqr(GetLocalOrigin());
+				if (flDist < flCurDistSqr)
+				{
+					iClosestBone = i;
+					flCurDistSqr = flDist;
+				}
+			}
+			
+			// Does the target even have bones?
+			if (iClosestBone != -1)
+			{
+				// Compare the hit bone with the head bone. If we have a hit, deal headshot damage.
+				bool iHead = 
+				iClosestBone == pOtherAnimating->LookupBone( "ValveBiped.Bip01_Head1" ) ||
+				iClosestBone == pOtherAnimating->LookupBone( "ValveBiped.Bip01_Spine4" ) ||
+				iClosestBone == pOtherAnimating->LookupBone( "ValveBiped.Bip01_Neck1" );
+				
+				// (For Metropolice)
+				bool iHeadHack = iClosestBone == pOtherAnimating->LookupBone( "ValveBiped.forward" );
+				
+				bool iHeadZombie = 
+				
+				// So. Many. Bones.
+				
+				// PoisonZombie.
+				( pOtherAnimating->LookupBone( "ValveBiped.HC_BodyCube" ) == iClosestBone	) ||
+				
+				// FastZombite.
+				( pOtherAnimating->LookupBone( "ValveBiped.HC_HeadCube" ) 	== iClosestBone) ||
+				( pOtherAnimating->LookupBone( "ValveBiped.HC_BodyCube" ) 	== iClosestBone) ||
+				( pOtherAnimating->LookupBone( "ValveBiped.HC_BoneLB" ) 	== iClosestBone) ||
+				( pOtherAnimating->LookupBone( "ValveBiped.HC_BoneRB" ) 	== iClosestBone) ||
+				( pOtherAnimating->LookupBone( "ValveBiped.HC_BoneLF" ) 	== iClosestBone) ||
+				( pOtherAnimating->LookupBone( "ValveBiped.HC_BoneRF" ) 	== iClosestBone) ||
+				
+				// ClassicZombie. (I have no idea if this works with Zombines.)
+				( pOtherAnimating->LookupBone( "ValveBiped.HC_Body_Bone" )	 	== iClosestBone) ||
+				( pOtherAnimating->LookupBone( "ValveBiped.HC_Head_Bone" ) 		== iClosestBone) ||
+				( pOtherAnimating->LookupBone( "ValveBiped.HC_ThighL_Bone" ) 	== iClosestBone) ||
+				( pOtherAnimating->LookupBone( "ValveBiped.HC_ThighR_Bone" ) 	== iClosestBone) ||
+				( pOtherAnimating->LookupBone( "ValveBiped.HC_UpperArmL_Bone" ) == iClosestBone) ||
+				( pOtherAnimating->LookupBone( "ValveBiped.HC_UpperArmR_Bone" ) == iClosestBone);
+				
+				
+				
+				if ( iHead || iHeadHack || iHeadZombie )
+				{
+					m_flDamage *= sk_npc_head_crossbow.GetFloat();
+				}
+				
+				DevMsg("iClosestBone (%i)\n", iClosestBone );
+				
+				tr.physicsbone = pOtherAnimating->GetPhysicsBone(iClosestBone);
+			}
+		}
+
 		if( GetOwnerEntity() && GetOwnerEntity()->IsPlayer() && pOther->IsNPC() )
 		{
-			CTakeDamageInfo	dmgInfo( this, GetOwnerEntity(), sk_plr_dmg_crossbow.GetFloat(), DMG_BULLET | DMG_NEVERGIB );
+			CTakeDamageInfo	dmgInfo( this, GetOwnerEntity(), m_flDamage, DMG_BULLET | DMG_NEVERGIB );
 			dmgInfo.AdjustPlayerDamageInflictedForSkillLevel();
 			CalculateMeleeDamageForce( &dmgInfo, vecNormalizedVel, tr.endpos, 0.7f );
 			dmgInfo.SetDamagePosition( tr.endpos );
@@ -760,7 +834,7 @@ void CWeaponCrossbow::FireBolt( void )
 		pOwner->SetSuitUpdate("!HEV_AMO0", FALSE, 0);
 	}
 
-	m_flNextPrimaryAttack = m_flNextSecondaryAttack	= gpGlobals->curtime + 0.75 + 0.75;
+	m_flNextPrimaryAttack = m_flNextSecondaryAttack	= gpGlobals->curtime + 0.75;
 
 	DoLoadEffect();
 	SetChargerState( CHARGER_STATE_DISCHARGE );

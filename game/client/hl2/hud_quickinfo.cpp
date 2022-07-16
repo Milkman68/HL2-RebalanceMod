@@ -16,6 +16,8 @@
 #include "vgui/ISurface.h"
 #include "../hud_crosshair.h"
 #include "VGuiMatSurface/IMatSystemSurface.h"
+#include "ammodef.h"
+#include "in_buttons.h"
 
 #ifdef SIXENSE
 #include "sixense/in_sixense.h"
@@ -26,7 +28,9 @@ int ScreenTransform( const Vector& point, Vector& screen );
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
+//Percent
 #define	HEALTH_WARNING_THRESHOLD	25
+#define	CLIP_PERC_THRESHOLD		0.75f	
 
 static ConVar	hud_quickinfo( "hud_quickinfo", "1", FCVAR_ARCHIVE );
 
@@ -65,6 +69,7 @@ private:
 	bool	EventTimeElapsed( void );
 
 	int		m_lastAmmo;
+	int		m_lastCarry;
 	int		m_lastHealth;
 
 	float	m_ammoFade;
@@ -115,6 +120,7 @@ void CHUDQuickInfo::Init( void )
 	m_healthFade	= 0.0f;
 
 	m_lastAmmo		= 0;
+	m_lastCarry		= 0;
 	m_lastHealth	= 100;
 
 	m_warnAmmo		= false;
@@ -286,20 +292,32 @@ void CHUDQuickInfo::Paint()
 
 	// Check our ammo for a warning
 	int	ammo = pWeapon->Clip1();
-	if ( ammo != m_lastAmmo )
+	float CurrentCarry = player->GetAmmoCount(pWeapon->m_iPrimaryAmmoType);
+	
+	if ( ammo != m_lastAmmo || CurrentCarry != m_lastCarry )
 	{
 		UpdateEventTime();
 		m_lastAmmo	= ammo;
+		m_lastCarry	= CurrentCarry;
+		float ammoPerc;
 
 		// Find how far through the current clip we are
-		float ammoPerc = (float) ammo / (float) pWeapon->GetMaxClip1();
+		if ( pWeapon->GetMaxClip1() == 1 || !pWeapon->UsesClipsForAmmo1() )
+		{ 
+			float MaxCarry = GetAmmoDef()->MaxCarry(pWeapon->m_iPrimaryAmmoType);
+			ammoPerc = (float) CurrentCarry / (float) MaxCarry;
+		}
+		else
+		{ 
+			ammoPerc = (float) ammo / (float) pWeapon->GetMaxClip1(); 
+		}
 
 		// Warn if we're below a certain percentage of our clip's size
-		if (( pWeapon->GetMaxClip1() > 1 ) && ( ammoPerc <= ( 1.0f - CLIP_PERC_THRESHOLD )))
+		if ( ammoPerc <= ( 1.0f - CLIP_PERC_THRESHOLD ) )
 		{
 			if ( m_warnAmmo == false )
 			{
-				m_ammoFade = 255;
+				m_ammoFade = 100;
 				m_warnAmmo = true;
 
 				CLocalPlayerFilter filter;
@@ -360,17 +378,21 @@ void CHUDQuickInfo::Paint()
 	else
 	{
 		float ammoPerc;
-
-		if ( pWeapon->GetMaxClip1() <= 0 )
+		
+		if ( pWeapon->GetMaxClip1() == 1 || !pWeapon->UsesClipsForAmmo1() )
 		{
-			ammoPerc = 0.0f;
+			float CurrentCarry = player->GetAmmoCount(pWeapon->m_iPrimaryAmmoType);
+			float MaxCarry = GetAmmoDef()->MaxCarry(pWeapon->m_iPrimaryAmmoType);
+				
+			ammoPerc = 1.0f - ( (float) CurrentCarry / (float) MaxCarry );
 		}
 		else
 		{
 			ammoPerc = 1.0f - ( (float) ammo / (float) pWeapon->GetMaxClip1() );
-			ammoPerc = clamp( ammoPerc, 0.0f, 1.0f );
 		}
-
+		
+		ammoPerc = clamp( ammoPerc, 0.0f, 1.0f );
+		
 		Color ammoColor = m_warnAmmo ? gHUD.m_clrCaution : gHUD.m_clrNormal;
 		
 		if ( m_warnAmmo )

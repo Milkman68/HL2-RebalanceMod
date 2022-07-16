@@ -23,6 +23,7 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
+ConVar sk_deagle_style_357("sk_deagle_style_357", "0" );
 extern ConVar 	sk_realistic_reloading;
 
 //-----------------------------------------------------------------------------
@@ -36,7 +37,7 @@ public:
 
 	CWeapon357( void );
 	
-	void	ItemPostFrame( void ) { BaseClass::ItemPostFrame(); m_bMagazineStyleReloads = sk_realistic_reloading.GetBool() ? true : false; };
+	void	ItemPostFrame( void );
 
 	void	PrimaryAttack( void );
 	void	Operator_HandleAnimEvent( animevent_t *pEvent, CBaseCombatCharacter *pOperator );
@@ -45,6 +46,8 @@ public:
 
 	DECLARE_SERVERCLASS();
 	DECLARE_DATADESC();
+private:
+float	m_flSoonestPrimaryAttack;
 };
 
 LINK_ENTITY_TO_CLASS( weapon_357, CWeapon357 );
@@ -100,6 +103,8 @@ void CWeapon357::PrimaryAttack( void )
 {
 	// Only the player fires this way so we can cast
 	CBasePlayer *pPlayer = ToBasePlayer( GetOwner() );
+	
+	m_flSoonestPrimaryAttack = gpGlobals->curtime + 0.25;
 
 	if ( !pPlayer )
 	{
@@ -130,7 +135,7 @@ void CWeapon357::PrimaryAttack( void )
 	SendWeaponAnim( ACT_VM_PRIMARYATTACK );
 	pPlayer->SetAnimation( PLAYER_ATTACK1 );
 
-	m_flNextPrimaryAttack = gpGlobals->curtime + 0.75;
+	m_flNextPrimaryAttack = sk_deagle_style_357.GetBool() ? FLT_MAX : gpGlobals->curtime + 0.75;
 	m_flNextSecondaryAttack = gpGlobals->curtime + 0.75;
 
 	m_iClip1--;
@@ -160,4 +165,20 @@ void CWeapon357::PrimaryAttack( void )
 		// HEV suit - indicate out of ammo condition
 		pPlayer->SetSuitUpdate( "!HEV_AMO0", FALSE, 0 ); 
 	}
+}
+void CWeapon357::ItemPostFrame( void )
+{ 
+	m_bMagazineStyleReloads = sk_realistic_reloading.GetBool() ? true : false; 
+	
+	CBasePlayer *pOwner = ToBasePlayer( GetOwner() );
+	
+	bool m_bCanFire = m_flSoonestPrimaryAttack < gpGlobals->curtime;
+	
+	if ( ( ( pOwner->m_nButtons & IN_ATTACK ) == false && m_bCanFire ) && ( sk_deagle_style_357.GetBool() ) )
+	{
+		m_flNextPrimaryAttack = gpGlobals->curtime - 0.1f;
+		m_flSoonestPrimaryAttack = gpGlobals->curtime + 0.25;
+	}
+	
+	BaseClass::ItemPostFrame(); 
 }

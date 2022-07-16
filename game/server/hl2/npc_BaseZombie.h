@@ -249,6 +249,7 @@ protected:
 	
 	bool	m_fIsTorso;			// is this is a half-zombie?
 	bool	m_fIsHeadless;		// is this zombie headless
+	bool	m_bHasExploded;
 
 	float	m_flNextFlinch;
 

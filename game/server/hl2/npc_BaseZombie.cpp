@@ -205,6 +205,7 @@ BEGIN_DATADESC( CNPC_BaseZombie )
 	DEFINE_SOUNDPATCH( m_pMoanSound ),
 	DEFINE_FIELD( m_fIsTorso, FIELD_BOOLEAN ),
 	DEFINE_FIELD( m_fIsHeadless, FIELD_BOOLEAN ),
+	DEFINE_FIELD( m_bHasExploded, FIELD_BOOLEAN ),
 	DEFINE_FIELD( m_flNextFlinch, FIELD_TIME ),
 	DEFINE_FIELD( m_bHeadShot, FIELD_BOOLEAN ),
 	DEFINE_FIELD( m_flBurnDamage, FIELD_FLOAT ),
@@ -2434,13 +2435,19 @@ void CNPC_BaseZombie::ReleaseHeadcrab( const Vector &vecOrigin, const Vector &ve
 		vecSpot.z -= 16;
 	}
 
-	if( fRagdollCrab )
+	if( fRagdollCrab && !m_bHasExploded)
 	{
 		//Vector vecForce = Vector( 0, 0, random->RandomFloat( 700, 1100 ) );
 		CBaseEntity *pGib = CreateRagGib( GetHeadcrabModel(), vecOrigin, GetLocalAngles(), vecVelocity, 15, ShouldIgniteZombieGib() );
 
 		if ( pGib )
 		{
+			if ( !m_bHasExploded && sk_exploding_crabs.GetBool() )
+			{
+				m_bHasExploded = true;
+				ExplosionCreate( GetAbsOrigin(), GetAbsAngles(), this, 100, 256, true );
+			}
+			
 			CBaseAnimating *pAnimatingGib = dynamic_cast<CBaseAnimating*>(pGib);
 
 			// don't collide with this thing ever
@@ -2458,7 +2465,6 @@ void CNPC_BaseZombie::ReleaseHeadcrab( const Vector &vecOrigin, const Vector &ve
 
 			pGib->SetOwnerEntity( this );
 			CopyRenderColorTo( pGib );
-
 			
 			if( UTIL_ShouldShowBlood(BLOOD_COLOR_YELLOW) )
 			{
@@ -2477,7 +2483,7 @@ void CNPC_BaseZombie::ReleaseHeadcrab( const Vector &vecOrigin, const Vector &ve
 			}
 		}
 	}
-	else
+	else if ( !m_bHasExploded )
 	{
 		pCrab = (CAI_BaseNPC*)CreateEntityByName( GetHeadcrabClassname() );
 

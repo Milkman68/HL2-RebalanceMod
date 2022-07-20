@@ -361,37 +361,23 @@ void CItem_DynamicResupply::SpawnFullItem( CItem_DynamicResupply *pMaster, CBase
 		}
 
 		// Otherwise, spawn the first ammo item in the list
-		//flTotalProb = 1.0f;
+		flRatio[0] = 1.0f;
+		flTotalProb = 1.0f;
 	}
 	
-	float flChoice = -1.0;
-	for ( i = 1; i >= 0; ++i )
+	float flChoice = random->RandomFloat( 0.0f, flTotalProb ); 
+	for ( i = 0; i < NUM_AMMO_ITEMS; ++i )
 	{
-		i = random->RandomInt( 0, NUM_AMMO_ITEMS );
-		flChoice = random->RandomFloat( 0.0f, 3.0 );
-		
-		if ( flChoice <= pMaster->m_flDesiredAmmo[i] )
-		{	
-			int iAmmoType = GetAmmoDef()->Index( g_DynamicResupplyAmmoItems[i].sAmmoDef );
-			bool bCanSpawn = pPlayer->Weapon_GetWpnForAmmo( iAmmoType ) != NULL;
-
-			if ( bCanSpawn )
-			{
-				CBaseEntity::Create( g_DynamicResupplyAmmoItems[i].sEntityName, GetAbsOrigin(), GetAbsAngles(), this );
-
-				if ( iDebug )
-				{
-					Msg("Player is full, spawning %s \n", g_DynamicResupplyAmmoItems[i].sEntityName );
-				}
-				return;
-			}
-		}/* 
-		
-		// Loop through continuously until we find a hit. DOES NOT WORK AAAAAAAAAAAAAAAAAAAAAAAAAAA
-		if ( i < 0 )
+		if ( flChoice <= flRatio[i] )
 		{
-			i = NUM_AMMO_ITEMS;
-		} */
+			CBaseEntity::Create( g_DynamicResupplyAmmoItems[i].sEntityName, GetAbsOrigin(), GetAbsAngles(), this );
+
+			if ( iDebug )
+			{
+				Msg("Player is full, spawning %s \n", g_DynamicResupplyAmmoItems[i].sEntityName );
+			}
+			return;
+		}
 	}
 
 	if ( iDebug )

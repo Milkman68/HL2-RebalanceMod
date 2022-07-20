@@ -293,7 +293,6 @@ void CWeaponFrag::SecondaryAttack( void )
 	if ( sk_plr_grenade_is_cookable.GetBool() )
 	{
 		SetTimer();
-		m_flCookTime = gpGlobals->curtime;
 	}
 }
 
@@ -335,7 +334,6 @@ void CWeaponFrag::PrimaryAttack( void )
 	if ( sk_plr_grenade_is_cookable.GetBool() )
 	{
 		SetTimer();
-		m_flCookTime = gpGlobals->curtime;
 	}
 }
 
@@ -530,13 +528,19 @@ void CWeaponFrag::RollGrenade( CBasePlayer *pPlayer )
 //-----------------------------------------------------------------------------
 void CWeaponFrag::SetTimer()
 {
-	// These should be shared between this and the grenade itself for parity.
-	m_flNextBlipTime = gpGlobals->curtime + FRAG_GRENADE_BLIP_FREQUENCY;
-	m_flWarnAITime = gpGlobals->curtime + ( sk_plr_grenade_timer.GetFloat() - FRAG_GRENADE_WARN_TIME );
-	
-	m_flDetonateTime = gpGlobals->curtime + sk_plr_grenade_timer.GetFloat();
-	
-	BlipSound();
+	// Don't re-arm the grenade if we're still cooking.
+	if ( m_flDetonateTime < gpGlobals->curtime )
+	{
+		m_flCookTime = gpGlobals->curtime;
+		
+		// These should be shared between this and the grenade itself for parity.
+		m_flNextBlipTime = gpGlobals->curtime + FRAG_GRENADE_BLIP_FREQUENCY;
+		m_flWarnAITime = gpGlobals->curtime + ( sk_plr_grenade_timer.GetFloat() - FRAG_GRENADE_WARN_TIME );
+		
+		m_flDetonateTime = gpGlobals->curtime + sk_plr_grenade_timer.GetFloat();
+		
+		BlipSound();
+	}
 	
 	SetThink( &CWeaponFrag::BlipThink );
 	SetNextThink( gpGlobals->curtime );

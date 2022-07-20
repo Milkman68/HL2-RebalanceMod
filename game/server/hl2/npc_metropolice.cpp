@@ -3946,6 +3946,17 @@ void CNPC_MetroPolice::TraceAttack( const CTakeDamageInfo &inputInfo, const Vect
 			m_flLastHitYaw	= lastHitAngles.y;
 		}
 	}
+	
+	//Take extra damage from vehicles.
+	CBaseCombatCharacter *npcEnemy = info.GetAttacker()->MyCombatCharacterPointer();
+	if ( !npcEnemy )
+	{
+		if ( info.GetAttacker()->GetServerVehicle() )
+		{
+			float flDamage = info.GetDamage() * 1.5;
+			info.SetDamage( flDamage );
+		}
+	}
 
 	BaseClass::TraceAttack( info, vecDir, ptr, pAccumulator );
 }

@@ -105,7 +105,7 @@ static const char *s_pChunkModelName[CHOPPER_MAX_CHUNKS] =
 #define CHOPPER_GUN_IDLE_TIME		g_helicopter_idletime.GetFloat()
 #define CHOPPER_GUN_MAX_FIRING_DIST	g_helicopter_maxfiringdist.GetFloat()
 
-#define BULLRUSH_IDLE_PLAYER_FIRE_TIME 6.0f
+#define BULLRUSH_IDLE_PLAYER_FIRE_TIME 3.0f
 
 #define DRONE_SPEED	sk_helicopter_drone_speed.GetFloat()
 
@@ -135,6 +135,9 @@ ConVar	sk_helicopter_grenaderadius( "sk_helicopter_grenaderadius","275.0", 0, "T
 ConVar	sk_helicopter_grenadeforce( "sk_helicopter_grenadeforce","55000.0", 0, "The physics force that the helicopter grenade exerts." );
 ConVar	sk_helicopter_grenade_puntscale( "sk_helicopter_grenade_puntscale","1.5", 0, "When physpunting a chopper's grenade, scale its velocity by this much." );
 
+// Turns bombs into actual mines.
+ConVar	sk_helicopter_grenade_stay( "sk_helicopter_grenade_stay","0");
+
 // Number of bomb hits it takes to kill a chopper on each skill level.
 ConVar sk_helicopter_num_bombs1("sk_helicopter_num_bombs1", "3");
 ConVar sk_helicopter_num_bombs2("sk_helicopter_num_bombs2", "5");
@@ -155,7 +158,7 @@ ConVar	g_helicopter_idletime( "g_helicopter_idletime","3.0", 0, "How much time w
 ConVar	g_helicopter_maxfiringdist( "g_helicopter_maxfiringdist","2500.0", 0, "The maximum distance the player can be from the chopper before it stops firing" );
 ConVar	g_helicopter_bullrush_bomb_speed( "g_helicopter_bullrush_bomb_speed","850.0", 0, "The maximum distance the player can be from the chopper before it stops firing" );
 ConVar	g_helicopter_bullrush_shoot_height( "g_helicopter_bullrush_shoot_height","650.0", 0, "The maximum distance the player can be from the chopper before it stops firing" );
-ConVar	g_helicopter_bullrush_mega_bomb_health( "g_helicopter_bullrush_mega_bomb_health","0.25", 0, "Fraction of the health of the chopper before it mega-bombs" );
+ConVar	g_helicopter_bullrush_mega_bomb_health( "g_helicopter_bullrush_mega_bomb_health","1.0", 0, "Fraction of the health of the chopper before it mega-bombs" );
 
 ConVar	g_helicopter_bomb_danger_radius( "g_helicopter_bomb_danger_radius", "120" );
 
@@ -2391,16 +2394,8 @@ bool CNPC_AttackHelicopter::DoGunCharging( )
 
 	if ( !GetEnemyVehicle() || sk_helicopter_dont_deliberately_miss.GetBool() )
 	{
-		if ( sk_helicopter_dont_deliberately_miss.GetBool() )
-		{
-			m_nMaxBurstHits = !IsDeadlyShooting() ? 1000 : 200;
-			m_nMaxNearShots = 10000;
-		}
-		else
-		{
-			m_nMaxBurstHits = !IsDeadlyShooting() ? random->RandomInt( 6, 9 ) : 200;
-			m_nMaxNearShots = 10000;
-		}
+		m_nMaxBurstHits = !IsDeadlyShooting() ? 1000 : 200;
+		m_nMaxNearShots = 10000;
 	}
 	else
 	{
@@ -2448,7 +2443,7 @@ void CNPC_AttackHelicopter::ShootAtFacingDirection( const Vector &vBasePos, cons
 	int nShotCount = sk_helicopter_roundsperburst.GetInt();
 	if ( bFirstShotAccurate && GetEnemy() )
 	{
-		// Check to see if the enemy is within his firing cone
+		// Check to see if the enemy is within his firing cfone
 		if ( GetEnemy() )
 		{
 			// Find the closest point to the gunDir
@@ -4323,7 +4318,6 @@ float CNPC_AttackHelicopter::ComputeBombingLeadingDistance( float flSpeed, float
 	}
 
 	return ClampSplineRemapVal( flSpeedAlongPath, 200.0f, 600.0f, 1000.0f, 2000.0f );
-  //return ClampSplineRemapVal( flSpeedAlongPath, 200.0f, 600.0f, 1000.0f, 2000.0f );
 }
 
 
@@ -5129,9 +5123,9 @@ void CGrenadeHelicopter::BecomeActive()
 
 	SetThink( &CGrenadeHelicopter::ExplodeThink );
 	
-	if ( hl2_episodic.GetBool() )
+	if ( hl2_episodic.GetBool() || sk_helicopter_grenade_stay.GetBool() )
 	{
-		if ( HasSpawnFlags( SF_HELICOPTER_GRENADE_DUD ) == false )
+		if ( ( HasSpawnFlags( SF_HELICOPTER_GRENADE_DUD ) == false ) && ( !sk_helicopter_grenade_stay.GetBool() ) )
 		{
 			SetNextThink( gpGlobals->curtime + GetBombLifetime() );
 		}

@@ -3303,8 +3303,8 @@ int CNPC_MetroPolice::SelectScheduleNewEnemy()
 	{
 		m_flNextLedgeCheckTime = gpGlobals->curtime;
 
-		if( CanDeployManhack() && OccupyStrategySlot( SQUAD_SLOT_POLICE_DEPLOY_MANHACK ) )
-			return SCHED_METROPOLICE_DEPLOY_MANHACK;
+		//if( CanDeployManhack() && OccupyStrategySlot( SQUAD_SLOT_POLICE_DEPLOY_MANHACK ) )
+		//	return SCHED_METROPOLICE_DEPLOY_MANHACK;
 		
 		/* if( !HasBaton() && !IsEnemyInAnAirboat() )
 			return SCHED_TAKE_COVER_FROM_ENEMY; *///bookmark
@@ -3423,14 +3423,6 @@ int CNPC_MetroPolice::SelectCombatSchedule()
 		//m_flHangBackTime = gpGlobals->curtime + random->RandomFloat( 1, 3);
 		return SCHED_TAKE_COVER_FROM_ENEMY;
 	}
-	
-	if ( HasCondition( COND_SEE_ENEMY ) )
-	{
-		if( CanDeployManhack() && OccupyStrategySlot( SQUAD_SLOT_POLICE_DEPLOY_MANHACK ) )
-		{
-			return SCHED_METROPOLICE_DEPLOY_MANHACK;
-		}
-	}
 
 	if ( HasCondition( COND_CAN_RANGE_ATTACK1 ) )
 	{
@@ -3477,11 +3469,6 @@ int CNPC_MetroPolice::SelectCombatSchedule()
 
 	if (HasCondition(COND_ENEMY_OCCLUDED))
 	{
-		if( CanDeployManhack() && OccupyStrategySlot( SQUAD_SLOT_POLICE_DEPLOY_MANHACK ) )
-		{
-			return SCHED_METROPOLICE_DEPLOY_MANHACK;
-		}
-		
 		//if ( IsCurSchedule( SCHED_RANGE_ATTACK1 ) )
 		//{
 			//m_flHangBackTime = gpGlobals->curtime + random->RandomFloat( 1, 3 );
@@ -3496,6 +3483,12 @@ int CNPC_MetroPolice::SelectCombatSchedule()
 			}
 		}
 		//m_flHangBackTime = gpGlobals->curtime + random->RandomFloat( 1, 3);
+		
+		if( CanDeployManhack() && OccupyStrategySlot( SQUAD_SLOT_POLICE_DEPLOY_MANHACK ) )
+		{
+			return SCHED_METROPOLICE_DEPLOY_MANHACK;
+		}
+		
 		return SCHED_METROPOLICE_OVERWATCH;
 	}
 

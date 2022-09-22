@@ -156,7 +156,7 @@ void CWeapon357::PrimaryAttack( void )
 
 	pPlayer->SnapEyeAngles( angles );
 
-	pPlayer->ViewPunch( QAngle( -6, random->RandomFloat( -1.5, 1.5 ), 0 ) );
+	pPlayer->ViewPunch( QAngle( -8, random->RandomFloat( -2, 2 ), 0 ) );
 
 	CSoundEnt::InsertSound( SOUND_COMBAT, GetAbsOrigin(), 600, 0.2, GetOwner() );
 

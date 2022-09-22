@@ -258,10 +258,10 @@ void CHLMachineGun::ItemPostFrame( void )
 		return;
 
 	// Debounce the recoiling counter
-	if ( ( pOwner->m_nButtons & IN_ATTACK ) == false )
+ 	if ( ( pOwner->m_nButtons & IN_ATTACK ) == false )
 	{
 		m_nShotsFired = 0;
-	}
+	} 
 
 	BaseClass::ItemPostFrame();
 }
@@ -312,14 +312,25 @@ float CHLSelectFireMachineGun::GetFireRate( void )
 	}
 }
 
+void CHLSelectFireMachineGun::ItemPostFrame( void )
+{
+	CBasePlayer *pOwner = ToBasePlayer( GetOwner() );
+	
+	// Can't reload if we're bursting.
+	if ( ( m_iBurstSize > 0 && m_iClip1 > 0 ) || ( pOwner->m_nButtons & IN_ATTACK && m_iFireMode == FIREMODE_3RNDBURST ) )
+	{
+		pOwner->m_nButtons &= ~IN_RELOAD;
+	}
+	
+	return BaseClass::ItemPostFrame();
+}
+
 bool CHLSelectFireMachineGun::Deploy( void )
 {
 	// Forget about any bursts this weapon was firing when holstered
 	m_iBurstSize = 0;
 	return BaseClass::Deploy();
 }
-
-
 //-----------------------------------------------------------------------------
 // Purpose: 
 //

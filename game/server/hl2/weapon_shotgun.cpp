@@ -52,7 +52,7 @@ public:
 		static Vector vitalAllyCone = VECTOR_CONE_3DEGREES;
 		static Vector cone;
 				
-		//CBasePlayer *pPlayer = ToBasePlayer( GetOwner() );
+		CBasePlayer *pPlayer = ToBasePlayer( GetOwner() );
 
 		if( GetOwner() && (GetOwner()->Classify() == CLASS_PLAYER_ALLY_VITAL) )
 		{
@@ -60,14 +60,14 @@ public:
 			// to be at least as deadly as she would be with her pistol to stay interesting (sjb)
 			return vitalAllyCone;
 		}
-		// if ( pPlayer )
-		// {
-			cone = VECTOR_CONE_8DEGREES /* * m_flSpreadMultiplier */; // 4 * 2
-		// }
-		// else
-		// {
-			// cone = VECTOR_CONE_4DEGREES;	
-		// }
+		if ( GetOwner() && pPlayer )
+		{
+			cone = VECTOR_CONE_6DEGREES * m_flSpreadMultiplier; // 4 * 2
+		}
+		else
+		{
+			cone = VECTOR_CONE_6DEGREES;	
+		}
 
 		return cone;
 	}
@@ -534,7 +534,7 @@ void CWeaponShotgun::SecondaryAttack( void )
 //-----------------------------------------------------------------------------
 void CWeaponShotgun::BurstThink( void )
 {
-	m_flSpreadMultiplier = 2;
+	m_flSpreadMultiplier = 1.34;
 	// Only the player fires this way so we can cast
 	CBasePlayer *pPlayer = ToBasePlayer( GetOwner() );
 
@@ -616,6 +616,12 @@ void CWeaponShotgun::ItemPostFrame( void )
 	if (!pOwner)
 	{
 		return;
+	}
+	
+	// Can't reload if we're bursting.
+	if ( ( m_iBurstSize > 0 && m_iClip1 > 0 ) || ( pOwner->m_nButtons & IN_ATTACK2 ) )
+	{
+		pOwner->m_nButtons &= ~IN_RELOAD;
 	}
 
 	if (m_bInReload)

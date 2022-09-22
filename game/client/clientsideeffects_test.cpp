@@ -149,10 +149,6 @@ void FX_PlayerTracer( Vector& start, Vector& end )
 	VectorSubtract( end, start, shotDir );
 	length = VectorNormalize( shotDir );
 
-	//We don't want to draw them if they're too close to us
-	if ( length < 256 )
-		return;
-
 	//Randomly place the tracer along this line, with a random length
 	VectorMA( start, TRACER_BASE_OFFSET + random->RandomFloat( -24.0f, 64.0f ), shotDir, dStart );
 	VectorMA( dStart, ( length * random->RandomFloat( 0.1f, 0.6f ) ), shotDir, dEnd );
@@ -292,22 +288,16 @@ void FX_TracerSound( const Vector &start, const Vector &end, int iTracerType )
 void FX_Tracer( Vector& start, Vector& end, int velocity, bool makeWhiz )
 {
 	VPROF_BUDGET( "FX_Tracer", VPROF_BUDGETGROUP_PARTICLE_RENDERING );
-	//Don't make small tracers
 	float dist;
 	Vector dir;
 
 	VectorSubtract( end, start, dir );
 	dist = VectorNormalize( dir );
-
-	// Don't make short tracers.
-	if ( dist >= 256 )
-	{
-		float length = random->RandomFloat( 64.0f, 128.0f );
-		float life = ( dist + length ) / velocity;	//NOTENOTE: We want the tail to finish its run as well
+	float length = random->RandomFloat( 64.0f, 128.0f );
+	float life = ( dist + length ) / velocity;	//NOTENOTE: We want the tail to finish its run as well
 		
-		//Add it
-		FX_AddDiscreetLine( start, dir, velocity, length, dist, random->RandomFloat( 0.75f, 0.9f ), life, "effects/spark" );
-	}
+	//Add it
+	FX_AddDiscreetLine( start, dir, velocity, length, dist, random->RandomFloat( 0.75f, 0.9f ), life, "effects/spark" );
 
 	if( makeWhiz )
 	{

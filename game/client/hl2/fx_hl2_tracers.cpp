@@ -102,10 +102,6 @@ void AirboatGunHeavyTracerCallback( const CEffectData &data )
 	VectorSubtract( data.m_vOrigin, vecStart, vecShotDir );
 	float flTotalDist = VectorNormalize( vecShotDir );
 
-	// Don't make small tracers
-	if ( flTotalDist <= 64 )
-		return;
-
 	float flLength = random->RandomFloat( 300.0f, 400.0f );
 	float flLife = ( flTotalDist + flLength ) / flVelocity;	//NOTENOTE: We want the tail to finish its run as well
 	
@@ -134,10 +130,6 @@ void AirboatGunTracerCallback( const CEffectData &data )
 	Vector vecShotDir;
 	VectorSubtract( data.m_vOrigin, vecStart, vecShotDir );
 	float flTotalDist = VectorNormalize( vecShotDir );
-
-	// Don't make small tracers
-	if ( flTotalDist <= 64 )
-		return;
 
 	float flLength = random->RandomFloat( 256.0f, 384.0f );
 	float flLife = ( flTotalDist + flLength ) / flVelocity;	//NOTENOTE: We want the tail to finish its run as well
@@ -169,10 +161,6 @@ void HelicopterTracerCallback( const CEffectData &data )
 	VectorSubtract( data.m_vOrigin, vecStart, vecShotDir );
 	float flTotalDist = VectorNormalize( vecShotDir );
 
-	// Don't make small tracers
-	if ( flTotalDist <= 256 )
-		return;
-
 	float flLength = random->RandomFloat( 256.0f, 384.0f );
 	float flLife = ( flTotalDist + flLength ) / flVelocity;	//NOTENOTE: We want the tail to finish its run as well
 	
@@ -202,10 +190,6 @@ void FX_PlayerAR2Tracer( const Vector &start, const Vector &end )
 	//Find the direction of the tracer
 	VectorSubtract( end, start, shotDir );
 	length = VectorNormalize( shotDir );
-
-	//We don't want to draw them if they're too close to us
-	if ( length < 128 )
-		return;
 
 	//Randomly place the tracer along this line, with a random length
 	VectorMA( start, random->RandomFloat( 0.0f, 8.0f ), shotDir, dStart );
@@ -239,8 +223,6 @@ void FX_AR2Tracer( Vector& start, Vector& end, int velocity, bool makeWhiz )
 	dist = VectorNormalize( dir );
 
 	// Don't make short tracers.
-	if ( dist < 128 )
-		return;
 
 	float length = random->RandomFloat( 128.0f, 256.0f );
 	float life = ( dist + length ) / velocity;	//NOTENOTE: We want the tail to finish its run as well

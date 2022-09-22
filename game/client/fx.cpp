@@ -872,10 +872,6 @@ void FX_GunshipTracer( Vector& start, Vector& end, int velocity, bool makeWhiz )
 	VectorSubtract( end, start, shotDir );
 	totalDist = VectorNormalize( shotDir );
 
-	//Don't make small tracers
-	if ( totalDist <= 256 )
-		return;
-
 	float length = random->RandomFloat( 128.0f, 256.0f );
 	float life = ( totalDist + length ) / velocity;	//NOTENOTE: We want the tail to finish its run as well
 	
@@ -921,10 +917,6 @@ void FX_StriderTracer( Vector& start, Vector& end, int velocity, bool makeWhiz )
 	//Get out shot direction and length
 	VectorSubtract( end, start, shotDir );
 	totalDist = VectorNormalize( shotDir );
-
-	//Don't make small tracers
-	if ( totalDist <= 256 )
-		return;
 
 	float length = random->RandomFloat( 64.0f, 128.0f );
 	float life = ( totalDist + length ) / velocity;	//NOTENOTE: We want the tail to finish its run as well
@@ -989,10 +981,6 @@ void FX_GaussTracer( Vector& start, Vector& end, int velocity, bool makeWhiz )
 	//Get out shot direction and length
 	VectorSubtract( end, start, shotDir );
 	totalDist = VectorNormalize( shotDir );
-
-	//Don't make small tracers
-	if ( totalDist <= 256 )
-		return;
 
 	float length = random->RandomFloat( 250.0f, 500.0f );
 	float life = ( totalDist + length ) / velocity;	//NOTENOTE: We want the tail to finish its run as well

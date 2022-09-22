@@ -36,14 +36,14 @@
 #include "tier0/memdbgon.h"
 
 
-ConVar	sk_combine_charge_turrets( "sk_combine_charge_turrets","0.0");
+ConVar	sk_combine_charge_turrets( "sk_combine_charge_turrets","1");
 int g_fCombineQuestion;				// true if an idle grunt asked a question. Cleared when someone answers. YUCK old global from grunt code
 
 #define COMBINE_SKIN_DEFAULT		0
 #define COMBINE_SKIN_SHOTGUNNER		1
 
 
-#define COMBINE_GRENADE_THROW_SPEED 650
+#define COMBINE_GRENADE_THROW_SPEED 750
 #define COMBINE_GRENADE_TIMER		3.0
 #define COMBINE_GRENADE_FLUSH_TIME	5.0		// Don't try to flush an enemy who has been out of sight for longer than this.
 //#define COMBINE_GRENADE_FLUSH_DIST	256.0	// Don't try to flush an enemy who has moved farther than this distance from the last place I saw him.
@@ -341,9 +341,10 @@ void CNPC_Combine::Spawn( void )
 	m_flNextPainSoundTime	= 0;
 	m_flNextAlertSoundTime	= 0;
 	m_bShouldPatrol			= false;
-	m_bShouldPursue 		= IsElite() ? true : false;
+	m_bShouldPursue 		= IsElite() ? false : true;
 	m_bCanOccupyExtraSlots  = false;
-	m_bSlotIndependent		= false;
+	m_bSlotIndependent		= IsElite() ? true : false;
+	GetEnemies()->SetFreeKnowledgeDuration( 0.0 );
 
 	//	CapabilitiesAdd( bits_CAP_TURN_HEAD | bits_CAP_MOVE_GROUND | bits_CAP_MOVE_JUMP | bits_CAP_MOVE_CLIMB);
 	// JAY: Disabled jump for now - hard to compare to HL1
@@ -456,10 +457,6 @@ void CNPC_Combine::GatherConditions()
 				m_iTacticalVariant = TACTICAL_VARIANT_DEFAULT;
 			}
 		}
-		/* if ( CountNumEnemies( NULL, NULL ) > 2 )
-			m_bShouldPursue = false;
-		else if ( !IsElite() )
-			m_bShouldPursue = true; */
 	}
 }
 
@@ -561,23 +558,23 @@ float CNPC_Combine::MaxYawSpeed( void )
 	{
 	case ACT_TURN_LEFT:
 	case ACT_TURN_RIGHT:
-		return 45;
+		return 67;
 		break;
 	case ACT_RUN:
 	case ACT_RUN_HURT:
-		return 15;
+		return 22;
 		break;
 	case ACT_WALK:
 	case ACT_WALK_CROUCH:
-		return 25;
+		return 37;
 		break;
 	case ACT_RANGE_ATTACK1:
 	case ACT_RANGE_ATTACK2:
 	case ACT_MELEE_ATTACK1:
 	case ACT_MELEE_ATTACK2:
-		return 35;
+		return 52;
 	default:
-		return 35;
+		return 52;
 		break;
 	}
 }
@@ -593,10 +590,12 @@ bool CNPC_Combine::ShouldMoveAndShoot()
 	//
 	// If any code below changes this timer, the code is saying 
 	// "It's OK to move and shoot until gpGlobals->curtime == m_flStopMoveShootTime"
-	m_flStopMoveShootTime = FLT_MAX;
 
 	if( IsCurSchedule( SCHED_COMBINE_HIDE_AND_RELOAD, false ) )
-		m_flStopMoveShootTime = gpGlobals->curtime + random->RandomFloat( 0.4f, 0.6f );
+		return false;
+	
+	if( IsCurSchedule( SCHED_COMBINE_TAKE_COVER1, false ) )
+		return false;
 
 	if( IsCurSchedule( SCHED_TAKE_COVER_FROM_BEST_SOUND, false ) )
 		return false;
@@ -606,6 +605,8 @@ bool CNPC_Combine::ShouldMoveAndShoot()
 
 	if( IsCurSchedule( SCHED_COMBINE_RUN_AWAY_FROM_BEST_SOUND, false ) )
 		return false;
+	
+	m_flStopMoveShootTime = FLT_MAX;
 
 	if( HasCondition( COND_NO_PRIMARY_AMMO, false ) )
 		m_flStopMoveShootTime = gpGlobals->curtime + random->RandomFloat( 0.4f, 0.6f );
@@ -1068,15 +1069,15 @@ void CNPC_Combine::StartTask( const Task_t *pTask )
 	case TASK_RANGE_ATTACK1://bookmark8
 		{
 			int nBurst;
-			float flDistToEnemy = ( GetEnemy()->GetAbsOrigin() - GetAbsOrigin() ).Length();
+			/* float flDistToEnemy = ( GetEnemy()->GetAbsOrigin() - GetAbsOrigin() ).Length();
 			if ( flDistToEnemy < 256 )
 			{
 				nBurst =  GetActiveWeapon()->GetRandomBurst() * 3;
 			}
 			else
-			{
+			{ */
 				nBurst =  GetActiveWeapon()->GetRandomBurst();
-			}
+		//	}
 /* 			int nBurst = GetActiveWeapon()->GetRandomBurst() / ( flDistToEnemy  / 500 );
 			
 			// Clamp
@@ -1246,7 +1247,7 @@ void CNPC_Combine::RunTask( const Task_t *pTask )
 						// DevMsg("ACT_RANGE_ATTACK1\n");
 						ResetIdealActivity( ACT_RANGE_ATTACK1 );
 						m_flLastAttackTime = gpGlobals->curtime;
-						m_flNextAttack = gpGlobals->curtime + m_flShotDelay - 0.1;
+						m_flNextAttack = gpGlobals->curtime + m_flShotDelay;
 					}
 					else
 					{
@@ -1425,6 +1426,8 @@ void CNPC_Combine::BuildScheduleTestBits( void )
 				// breaking my schedule to range attack. This helps assure that the hunter gets well inside
 				// the room before stopping to attack. Otherwise the Hunter may stop immediately in the doorway
 				// and stop the progress of any hunters behind it.
+				
+				m_MoveAndShootOverlay.SuspendMoveAndShoot( 0.5f );
 				SetCustomInterruptCondition( COND_CAN_RANGE_ATTACK1 );
 			}
 		}
@@ -1689,10 +1692,10 @@ int CNPC_Combine::SelectCombatSchedule()
 				if( HasCondition(COND_WEAPON_HAS_LOS) && !CanOccupyAttackSlot() )
 				{
 					// If everyone else is attacking and I have line of fire, wait for a chance to cover someone.
-					/* if( OccupyStrategySlot( SQUAD_SLOT_OVERWATCH ) )
-					{
-						return SCHED_COMBINE_ENTER_OVERWATCH;
-					}  */
+				//	if( OccupyStrategySlot( SQUAD_SLOT_OVERWATCH ) )
+				//	{
+				//		return SCHED_COMBINE_ENTER_OVERWATCH;
+				//	}
 					return SCHED_TAKE_COVER_FROM_ENEMY;
 				}
 			}
@@ -1716,13 +1719,6 @@ int CNPC_Combine::SelectCombatSchedule()
 				{		
 					if ( ( m_flHangBackTime < gpGlobals->curtime ) && CanOccupyAttackSlot() )
 					{
-					
-/* 						if ( m_bShouldPursue ) // Don't be as aggresive.
-						{
-							//m_flHangBackTime = gpGlobals->curtime + random->RandomFloat( 2, 3 );
-							DevMsg("Hanging Back");
-						} */
-							
 						if ( ( CanOccupyAttackSlot() || IsElite() ) && !IsStrategySlotRangeOccupied( SQUAD_SLOT_GRENADE1, SQUAD_SLOT_GRENADE2 ) )
 						{
 							return SCHED_ESTABLISH_LINE_OF_FIRE;
@@ -1760,7 +1756,7 @@ int CNPC_Combine::SelectCombatSchedule()
 	// ----------------------
 	if ( ( (float)m_nRecentDamage / (float)GetMaxHealth() ) > RECENT_DAMAGE_THRESHOLD )
 	{
-		if ( !IsElite()  && m_flHangBackTime < gpGlobals->curtime && IsStrategySlotRangeOccupied( SQUAD_SLOT_FALLBACK1, SQUAD_SLOT_FALLBACK2 )   )
+		if ( !IsElite() )
 		{
 			if ( GetEnemy() != NULL )
 			{
@@ -1772,9 +1768,7 @@ int CNPC_Combine::SelectCombatSchedule()
 			//	{
 			//		return SCHED_COMBINE_TAKE_COVER2;
 			//	}
-				
-				//m_flHangBackTime = gpGlobals->curtime + random->RandomFloat( 2, 3 );
-				OccupyStrategySlot( SQUAD_SLOT_FALLBACK1 );
+			
 				return SCHED_COMBINE_TAKE_COVER1;
 			}
 			else
@@ -1788,28 +1782,15 @@ int CNPC_Combine::SelectCombatSchedule()
 	// If I'm scared of this enemy run away
 	if ( IRelationType( GetEnemy() ) == D_FR )
 	{
-		if (HasCondition( COND_SEE_ENEMY )	|| 
-			HasCondition( COND_SEE_FEAR )	|| 
-			HasCondition( COND_LIGHT_DAMAGE ) || 
-			HasCondition( COND_HEAVY_DAMAGE ))
-		{
-			FearSound();
-			//ClearCommandGoal();	
-			//DevMsg("I'm running");
-			return SCHED_MOVE_AWAY;
-		}
+		FearSound();
+		//ClearCommandGoal();	
+		//DevMsg("I'm running");
+		return SCHED_MOVE_AWAY;
 	}
 
 	int attackSchedule = SelectScheduleAttack();
 	if ( attackSchedule != SCHED_NONE )
 		return attackSchedule;
-	
-/* 		// Try to be a flanker.
-	if ( ( OccupyStrategySlotRange( SQUAD_SLOT_FLANK1, SQUAD_SLOT_FLANK2 ) ) && m_bShouldPursue && m_bCanFallBack)//bookmark
-	{
-		DevMsg("I'm Flanking");
-		return SCHED_COMBINE_FLANK_ENEMY
-	} */
 	
 	if ( HasCondition( COND_TOO_CLOSE_TO_ATTACK ) )
 	{
@@ -1837,7 +1818,7 @@ int CNPC_Combine::SelectCombatSchedule()
 
 		if( GetEnemy() && !(GetEnemy()->GetFlags() & FL_NOTARGET) )
 		{
-			if ( ( m_flHangBackTime < gpGlobals->curtime ) && CanOccupyAttackSlot() )
+			if ( m_flHangBackTime < gpGlobals->curtime )
 			{
 					
 				if ( !m_bShouldPursue ) // Don't be as aggresive.
@@ -1846,7 +1827,7 @@ int CNPC_Combine::SelectCombatSchedule()
 					DevMsg("Hanging Back");
 				}
 							
-				if ( ( CanOccupyAttackSlot() || IsElite() ) && !IsStrategySlotRangeOccupied( SQUAD_SLOT_GRENADE1, SQUAD_SLOT_GRENADE2 ) )
+				if ( CanOccupyAttackSlot() && !IsStrategySlotRangeOccupied( SQUAD_SLOT_GRENADE1, SQUAD_SLOT_GRENADE2 ) )
 				{
 					return SCHED_ESTABLISH_LINE_OF_FIRE;
 				}
@@ -2126,7 +2107,7 @@ int CNPC_Combine::SelectScheduleAttack()
 	{			
 		//if ( GetEnemy() && GetEnemy()->IsPlayer() )
 			
-		if ( CanGrenadeEnemy()  && OccupyStrategySlot( SQUAD_SLOT_GRENADE1 ) )//bookmark4
+		if ( CanGrenadeEnemy() && OccupyStrategySlot( SQUAD_SLOT_GRENADE1 ) )//bookmark4
 			return SCHED_RANGE_ATTACK2;
 	
 		if ( sk_combine_charge_turrets.GetBool() )
@@ -2136,9 +2117,6 @@ int CNPC_Combine::SelectScheduleAttack()
 				return SCHED_COMBINE_CHARGE_TURRET;
 			} 
 		}
-		
-		m_Sentences.Speak( "COMBINE_COVER" );
-    	return SCHED_TAKE_COVER_FROM_ENEMY;
 	}
 
 	// When fighting against the player who's wielding a mega-physcannon, bookmark
@@ -2195,10 +2173,7 @@ int CNPC_Combine::SelectScheduleAttack()
 		// If we don't see our enemy. If it hasn't been long since I last saw him throw a grenade or lay down supressive fire
 
 		float flTime;
-	//	float flDist;
-		
-		//CBaseEntity *pEnemy = GetEnemy();
-		//Vector vecTarget;
+		Vector vecTarget;
 
 
 		flTime = gpGlobals->curtime - GetEnemies()->LastTimeSeen( GetEnemy() );
@@ -2210,11 +2185,11 @@ int CNPC_Combine::SelectScheduleAttack()
 			return SCHED_RANGE_ATTACK2;
 		}
 		
-		/* else if ( ( HasShotgun() == false ) && ( OccupyStrategySlot( SQUAD_SLOT_ATTACK_OCCLUDER ) ) )
+		else if ( ( HasShotgun() == false ) && ( OccupyStrategySlot( SQUAD_SLOT_ATTACK_OCCLUDER ) ) )
 		{
 			CAI_BaseNPC *pTarget = CreateCustomTarget( GetEnemies()->LastSeenPosition( GetEnemy() ) + GetEnemy()->GetViewOffset()*0.75, COMBINE_SUPRESSION_TIME );
-			AddEntityRelationship( pTarget, IRelationType(pEnemy), IRelationPriority(pEnemy) );
-		}  */
+			AddEntityRelationship( pTarget, D_HT, -1 );
+		}
 	}//bookmark1
 	
 	
@@ -3299,11 +3274,6 @@ int CNPC_Combine::MeleeAttack1Conditions ( float flDot, float flDist )
 	if ( GetEnemy() && fabs(GetEnemy()->GetAbsOrigin().z - GetAbsOrigin().z) > 64 )
 		return COND_NONE;
 
-	/*if (( dynamic_cast<CBaseHeadcrab *>(GetEnemy()) != NULL ) || ( dynamic_cast<CNPC_BaseZombie *>(GetEnemy()) != NULL ))
-	{
-		return SCHED_BACK_AWAY_FROM_ENEMY;//bookmark3
-	}*/
-
 	// Make sure not trying to kick through a window or something. 
 	trace_t tr;
 	Vector vecSrc, vecEnd;
@@ -3432,18 +3402,15 @@ bool CNPC_Combine::OnBeginMoveAndShoot()
 {
 	if ( BaseClass::OnBeginMoveAndShoot() )
 	{
-		if( IsCurSchedule( SCHED_ESTABLISH_LINE_OF_FIRE ) )
-			return true;
-		
-		if( IsCurSchedule( SCHED_COMBINE_FLANK_ENEMY ) )
-			return true;
-		
 		if( HasStrategySlotRange( SQUAD_SLOT_ATTACK1, SQUAD_SLOT_ATTACK2 ) )
 			return true; // already have the slot I need
 		
+		if( IsCurSchedule( SCHED_MOVE_AWAY ) )
+			return true;
+		
 		// Why not just allow the soldiers to move and shoot by default?
-		//if( !HasStrategySlotRange( SQUAD_SLOT_GRENADE1, SQUAD_SLOT_ATTACK_OCCLUDER ) )
-		//	return true;
+	//	if( !HasStrategySlotRange( SQUAD_SLOT_GRENADE1, SQUAD_SLOT_ATTACK_OCCLUDER ) )
+	//		return true;
 	}
 	return false;
 }
@@ -3482,7 +3449,7 @@ WeaponProficiency_t CNPC_Combine::CalcWeaponProficiency( CBaseCombatWeapon *pWea
 	}
 	else if( FClassnameIs( pWeapon, "weapon_smg1" ) )
 	{
-		return WEAPON_PROFICIENCY_GOOD;
+		return WEAPON_PROFICIENCY_VERY_GOOD;
 	}
 
 	return BaseClass::CalcWeaponProficiency( pWeapon );
@@ -3597,9 +3564,6 @@ bool CNPC_Combine::IsRunningApproachEnemySchedule()
 	
 	if( IsCurSchedule( SCHED_COMBINE_FLANK_ENEMY ) )
 		return true;
-	
-//	if( IsCurSchedule( SCHED_COMBINE_SOFT_FLANK_ENEMY ) )
-//		return true;
 
 	if( IsCurSchedule( SCHED_COMBINE_PRESS_ATTACK, false ) )
 		return true;
@@ -3627,23 +3591,7 @@ Disposition_t CNPC_Combine::IRelationType( CBaseEntity *pTarget )
 		m_bShouldPursue = false;
 		if( GetAbsOrigin().DistToSqr(pTarget->GetAbsOrigin()) < COMBINE_FEAR_ANTLION_DIST_SQR )
 		{
-			return D_FR;
-		}
-	}
-	else if( pTarget->Classify() == CLASS_ZOMBIE )
-	{
-		//m_bSlotIndependent = true;
-		m_bShouldPursue = false;
-		if( GetAbsOrigin().DistToSqr(pTarget->GetAbsOrigin()) < COMBINE_FEAR_ZOMBIE_DIST_SQR )
-		{
-			return D_FR;
-		}
-	}
-	else if( pTarget->Classify() == CLASS_HEADCRAB )
-	{
-		if( GetAbsOrigin().DistToSqr(pTarget->GetAbsOrigin()) < COMBINE_FEAR_HEADCRAB_DIST_SQR )
-		{
-			return D_FR;
+			return D_HT;
 		}
 	}
  	else if( pTarget->Classify() == CLASS_CITIZEN_REBEL )
@@ -3699,7 +3647,6 @@ int CNPC_Combine::CountNumEnemies( int m_iClassname, float m_flMaxdist )
 		return true;
 	}
 	return false;
-		
 }  
 //-----------------------------------------------------------------------------
 //
@@ -3741,8 +3688,6 @@ DECLARE_SQUADSLOT( SQUAD_SLOT_FALLBACK2   )
 
 DECLARE_SQUADSLOT( SQUAD_SLOT_ATTACK3 ) // Used only if the soldier has >2 enemies.
 DECLARE_SQUADSLOT( SQUAD_SLOT_ATTACK4 )
-
-// Template: ( ( CanOccupyAttackSlot() ) || m_bSlotIndependent )
 
 DECLARE_CONDITION( COND_COMBINE_NO_FIRE )
 DECLARE_CONDITION( COND_COMBINE_DEAD_FRIEND )
@@ -3946,20 +3891,20 @@ DEFINE_SCHEDULE
  SCHED_COMBINE_HIDE_AND_RELOAD,
 
  "	Tasks"
- "		TASK_SET_FAIL_SCHEDULE		SCHEDULE:SCHED_RELOAD"
+ "		TASK_SET_FAIL_SCHEDULE		SCHEDULE:SCHED_HIDE_AND_RELOAD"
  "		TASK_FIND_COVER_FROM_ENEMY	0"
  "		TASK_RUN_PATH				0"
  "		TASK_WAIT_FOR_MOVEMENT		0"
  "		TASK_REMEMBER				MEMORY:INCOVER"
- "		TASK_FACE_ENEMY				0"
  "		TASK_RELOAD					0"
+ "		TASK_FACE_ENEMY				0"
  ""
  "	Interrupts"
  "		COND_CAN_MELEE_ATTACK1"
  "		COND_CAN_MELEE_ATTACK2"
  //"		COND_HEAVY_DAMAGE"
- "		COND_HEAR_DANGER"
- "		COND_HEAR_MOVE_AWAY"
+ //"		COND_HEAR_DANGER"
+ //"		COND_HEAR_MOVE_AWAY"
  )
 
  //=========================================================
@@ -4095,8 +4040,7 @@ DEFINE_SCHEDULE
 
  "	Tasks"
  "		TASK_SET_FAIL_SCHEDULE		SCHEDULE:SCHED_COMBINE_TAKECOVER_FAILED"
- "		TASK_STOP_MOVING				0"
- "		TASK_WAIT					0.2"
+ "		TASK_STOP_MOVING			0"
  "		TASK_FIND_COVER_FROM_ENEMY	0"
  "		TASK_RUN_PATH				0"
  "		TASK_WAIT_FOR_MOVEMENT		0"
@@ -4183,7 +4127,7 @@ DEFINE_SCHEDULE
  "		TASK_STOP_MOVING				0"
  "		TASK_FACE_ENEMY					0"
  "		TASK_ANNOUNCE_ATTACK			1"	// 1 = primary attack
- "		TASK_WAIT_RANDOM				0.3"
+ "		TASK_WAIT						0.3"
  "		TASK_RANGE_ATTACK1				0"
  "		TASK_COMBINE_IGNORE_ATTACKS		0.5"
  ""
@@ -4278,7 +4222,6 @@ DEFINE_SCHEDULE
  "		TASK_ANNOUNCE_ATTACK				2"	// 2 = grenade
  "		TASK_PLAY_SEQUENCE					ACTIVITY:ACT_RANGE_ATTACK2"
  "		TASK_COMBINE_DEFER_SQUAD_GRENADES	0"
- "		TASK_SET_SCHEDULE					SCHEDULE:SCHED_COMBINE_WAIT_IN_COVER"	// don't run immediately after throwing grenade.
  ""
  "	Interrupts"
  )
@@ -4472,30 +4415,6 @@ DEFINE_SCHEDULE//bookmark
 	"		COND_ENEMY_UNREACHABLE"
 	"		COND_LOST_ENEMY"
 )
-/* //=========================================================
-// Move to a less extreme flanking position, then shoot if possible.
-//=========================================================
-DEFINE_SCHEDULE//bookmark
-(
-	SCHED_COMBINE_SOFT_FLANK_ENEMY,
-
-	"	Tasks"
-	"		TASK_SET_FAIL_SCHEDULE					SCHEDULE:SCHED_ESTABLISH_LINE_OF_FIRE"
-	"		TASK_STOP_MOVING						0"
-	"		TASK_COMBINE_BEGIN_FLANK				0"
-	"		TASK_GET_FLANK_ARC_PATH_TO_ENEMY_LOS	40"
-	"		TASK_RUN_PATH							0"
-	"		TASK_WAIT_FOR_MOVEMENT					0"
-	"		TASK_FACE_ENEMY							0"
-	""
-	"	Interrupts"
-	"		COND_NEW_ENEMY"
-	//"		COND_CAN_RANGE_ATTACK1" // Disabling this turns them into monsters.. 
-	"		COND_CAN_RANGE_ATTACK2" //bookmark7
-	"		COND_CAN_MELEE_ATTACK1"
-	"		COND_ENEMY_UNREACHABLE"
-	"		COND_LOST_ENEMY"
-) */
 //=========================================================
 //
 //=========================================================

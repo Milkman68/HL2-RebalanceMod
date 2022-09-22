@@ -1401,7 +1401,7 @@ int CProtoSniper::SelectSchedule ( void )
 	if( HasCondition( COND_HEAR_DANGER ) )
 	{
 		// Next priority is to be suppressed!
-		ScopeGlint();
+	//	ScopeGlint();
 
 		CSound *pSound = GetBestSound();
 

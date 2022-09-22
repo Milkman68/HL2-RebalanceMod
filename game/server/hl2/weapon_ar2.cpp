@@ -141,10 +141,9 @@ void CWeaponAR2::Precache( void )
 //-----------------------------------------------------------------------------
 float CWeaponAR2::GetFireRate( void )
 {
-	// For balance reasons i've elected to lower the fire rate for npc's to make ar2 soldiers less oppressive.
 	if( GetOwner() && GetOwner()->IsNPC() )
 	{
-		return 0.16;
+		return 0.14;
 	}
 	return sk_weapon_ar2_burst_fire.GetBool() ? 0.1 : 0.14;
 }

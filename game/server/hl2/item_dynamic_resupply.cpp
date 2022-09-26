@@ -450,7 +450,7 @@ void CItem_DynamicResupply::ComputeHealthRatios( CItem_DynamicResupply* pMaster,
 			flMax = pPlayer->GetMaxHealth();
 
 			float flDynamicHealth = pPlayer->GetHealth() + ( pSpawnInfo[i].m_iPotentialItems * sk_healthkit.GetFloat() );
-			float flRandomHealth = random->RandomFloat(-flMax, flMax);
+			float flRandomHealth = random->RandomFloat(0, flMax);
 			
 			float flCurrentHealth = ( ( flRandomHealth * max ) + ( flDynamicHealth * min ) ) / 2;
 			
@@ -468,7 +468,7 @@ void CItem_DynamicResupply::ComputeHealthRatios( CItem_DynamicResupply* pMaster,
 			{
 				flMax = MAX_NORMAL_BATTERY;
 				float flDynamicArmor = pPlayer->ArmorValue() + ( pSpawnInfo[i].m_iPotentialItems * sk_battery.GetFloat());
-				float flRandomArmor = random->RandomFloat(-flMax, flMax);
+				float flRandomArmor = random->RandomFloat(0, flMax);
 				
 				float flCurrentArmor = ( ( flRandomArmor * max ) + ( flDynamicArmor * min ) ) / 2;
 				
@@ -532,12 +532,12 @@ void CItem_DynamicResupply::ComputeAmmoRatios( CItem_DynamicResupply* pMaster, C
 		{
 			float flMax = GetAmmoDef()->MaxCarry( iAmmoType );
 			
-			float flDynamicAmmo = pPlayer->GetAmmoCount( iAmmoType );
-			float flRandomAmmo = random->RandomFloat(-flMax, flMax);;
+			float flDynamicAmmo = pPlayer->GetAmmoCount( iAmmoType ) + (pSpawnInfo[i].m_iPotentialItems * g_DynamicResupplyAmmoItems[i].iAmmoCount);
+			
+			float flRandomAmmo = random->RandomFloat(0, flMax);;
 			
 			float flCurrentAmmo = ( ( flRandomAmmo * max ) + ( flDynamicAmmo * min ) ) / 2;
 			
-			flCurrentAmmo += (pSpawnInfo[i].m_iPotentialItems * g_DynamicResupplyAmmoItems[i].iAmmoCount);
 			pSpawnInfo[i].m_flCurrentRatio = (flCurrentAmmo / flMax);
 		}
 

@@ -144,6 +144,7 @@ acttable_t	CWeaponPistol::m_acttable[] =
 IMPLEMENT_ACTTABLE( CWeaponPistol );
 
 extern ConVar sk_realistic_reloading;
+extern ConVar sk_alternate_recoil;
 
 //-----------------------------------------------------------------------------
 // Purpose: Constructor
@@ -470,10 +471,24 @@ void CWeaponPistol::AddViewKick( void )
 		return;
 
 	QAngle	viewPunch;
-
+	
 	viewPunch.x = random->RandomFloat( -0.9f, -0.9f );
-	viewPunch.y = random->RandomFloat( -0.0f,  0.0f );
+	viewPunch.y = random->RandomFloat( -0.1f,  0.1f );
 	viewPunch.z = 0.0f;
+	
+	if ( sk_alternate_recoil.GetBool() )
+	{
+		// do this to get a hard discontinuity, clear out anything under 10 degrees punch
+		pPlayer->ViewPunchReset(0);
+		
+		QAngle angles = pPlayer->GetLocalAngles();
+		
+		angles.x += viewPunch.x * 0.2;
+		angles.y += viewPunch.y * 0.2;
+		angles.z += viewPunch.z;
+		
+		pPlayer->SnapEyeAngles( angles );
+	}
 
 	//Add it to the view punch
 	pPlayer->ViewPunch( viewPunch );

@@ -61,6 +61,7 @@ ConVar tf_weapon_criticals_bucket_default( "tf_weapon_criticals_bucket_default",
 #endif // TF
 
 ConVar sk_realistic_reloading( "sk_realistic_reloading", "0" );
+ConVar sk_alternate_recoil( "sk_alternate_recoil", "0" );
 
 CBaseCombatWeapon::CBaseCombatWeapon()
 {
@@ -1658,7 +1659,7 @@ void CBaseCombatWeapon::ItemPostFrame( void )
 	//Track the duration of the fire
 	//FIXME: Check for IN_ATTACK2 as well?
 	//FIXME: What if we're calling ItemBusyFrame?
-	m_fFireDuration = ( pOwner->m_nButtons & IN_ATTACK ) ? ( m_fFireDuration + gpGlobals->frametime ) : 0.0f;
+	SetFireDuration();
 
 	if ( UsesClipsForAmmo1() )
 	{
@@ -1762,7 +1763,7 @@ void CBaseCombatWeapon::ItemPostFrame( void )
 	{
 		// reload when reload is pressed, or if no buttons are down and weapon is empty.
 		Reload();
-		m_fFireDuration = 0.0f;
+		ResetFireDuration();
 	}
 
 	// -----------------------
@@ -1784,7 +1785,7 @@ void CBaseCombatWeapon::HandleFireOnEmpty()
 	if ( m_bFireOnEmpty )
 	{
 		ReloadOrSwitchWeapons();
-		m_fFireDuration = 0.0f;
+		ResetFireDuration();
 	}
 	else
 	{
@@ -2431,7 +2432,21 @@ bool CBaseCombatWeapon::IsLocked( CBaseEntity *pAsker )
 {
 	return ( m_flUnlockTime > gpGlobals->curtime && m_hLocker != pAsker );
 }
-
+//-----------------------------------------------------------------------------
+// Resets m_fFireDuration back to 0.
+//-----------------------------------------------------------------------------
+void CBaseCombatWeapon::ResetFireDuration( void )
+{
+	m_fFireDuration = 0.0;
+}
+//-----------------------------------------------------------------------------
+// Sets m_fFireDuration based on the weapons current state.
+//-----------------------------------------------------------------------------
+void CBaseCombatWeapon::SetFireDuration( void )
+{
+	CBasePlayer *pOwner = ToBasePlayer( GetOwner() );
+	m_fFireDuration = ( pOwner->m_nButtons & IN_ATTACK ) ? ( m_fFireDuration + gpGlobals->frametime ) : 0.0f;
+}
 //-----------------------------------------------------------------------------
 // Purpose:
 // Input  :

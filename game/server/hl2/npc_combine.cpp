@@ -43,7 +43,8 @@ int g_fCombineQuestion;				// true if an idle grunt asked a question. Cleared wh
 #define COMBINE_SKIN_SHOTGUNNER		1
 
 
-#define COMBINE_GRENADE_THROW_SPEED 750
+#define COMBINE_GRENADE_THROW_SPEED 	850		// How fast a grenade is thrown when a target is 1000 units away.
+#define COMBINE_GRENADE_MIN_THROW_SPEED 550		// The minimum speed a grenade can be thrown.
 #define COMBINE_GRENADE_TIMER		3.0
 #define COMBINE_GRENADE_FLUSH_TIME	5.0		// Don't try to flush an enemy who has been out of sight for longer than this.
 //#define COMBINE_GRENADE_FLUSH_DIST	256.0	// Don't try to flush an enemy who has moved farther than this distance from the last place I saw him.
@@ -3055,9 +3056,13 @@ bool CNPC_Combine::CheckCanThrowGrenade( const Vector &vecTarget )
 	Vector vecToss;
 	Vector vecMins = -Vector(4,4,4);
 	Vector vecMaxs = Vector(4,4,4);
+	
+	float flDist = ( vecTarget - GetAbsOrigin() ).Length();
+	float flThrowspeedActual = MAX( COMBINE_GRENADE_THROW_SPEED * ( flDist / 1000 ), COMBINE_GRENADE_MIN_THROW_SPEED );
+	
 	if( FInViewCone( vecTarget ) && CBaseEntity::FVisible( vecTarget ) )
 	{
-		vecToss = VecCheckThrow( this, EyePosition(), vecTarget, COMBINE_GRENADE_THROW_SPEED, 1.0, &vecMins, &vecMaxs );
+		vecToss = VecCheckThrow( this, EyePosition(), vecTarget, flThrowspeedActual, 1.0, &vecMins, &vecMaxs );
 	}
 	else
 	{

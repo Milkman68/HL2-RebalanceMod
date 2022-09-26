@@ -28,6 +28,7 @@ BEGIN_DATADESC( CHLMachineGun )
 
 END_DATADESC()
 
+extern ConVar sk_alternate_recoil;
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -173,6 +174,7 @@ void CHLMachineGun::DoMachineGunKick( CBasePlayer *pPlayer, float dampEasy, floa
 	//Apply this to the view angles as well
 	vecScratch.x = -( KICK_MIN_X + ( maxVerticleKickAngle * kickPerc ) );
 	vecScratch.y = -( KICK_MIN_Y + ( maxVerticleKickAngle * kickPerc ) ) / 3;
+	vecScratch.y = random->RandomFloat( -vecScratch.y, vecScratch.y );
 	vecScratch.z = KICK_MIN_Z + ( maxVerticleKickAngle * kickPerc ) / 8;
 
 	//Wibble left and right
@@ -194,6 +196,15 @@ void CHLMachineGun::DoMachineGunKick( CBasePlayer *pPlayer, float dampEasy, floa
 
 	//Clip this to our desired min/max
 	UTIL_ClipPunchAngleOffset( vecScratch, pPlayer->m_Local.m_vecPunchAngle, QAngle( 24.0f, 3.0f, 1.0f ) );
+	
+	if ( sk_alternate_recoil.GetBool() )
+	{
+		QAngle angles = pPlayer->GetLocalAngles();
+		
+		angles += vecScratch * kickPerc;
+		
+		pPlayer->SnapEyeAngles( angles );
+	}
 
 	//Add it to the view punch
 	// NOTE: 0.5 is just tuned to match the old effect before the punch became simulated
@@ -323,6 +334,12 @@ void CHLSelectFireMachineGun::ItemPostFrame( void )
 	}
 	
 	return BaseClass::ItemPostFrame();
+}
+
+void CHLSelectFireMachineGun::SetFireDuration( void )
+{
+	CBasePlayer *pOwner = ToBasePlayer( GetOwner() );
+	m_fFireDuration = ( pOwner->m_nButtons & IN_ATTACK || ( m_iBurstSize > 0 && m_iFireMode == FIREMODE_3RNDBURST ) ) ? ( m_fFireDuration + gpGlobals->frametime ) : 0.0f;
 }
 
 bool CHLSelectFireMachineGun::Deploy( void )

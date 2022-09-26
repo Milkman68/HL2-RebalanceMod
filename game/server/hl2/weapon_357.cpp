@@ -25,6 +25,7 @@
 
 ConVar sk_deagle_style_357("sk_deagle_style_357", "0" );
 extern ConVar 	sk_realistic_reloading;
+extern ConVar sk_alternate_recoil;
 
 //-----------------------------------------------------------------------------
 // CWeapon357
@@ -148,15 +149,18 @@ void CWeapon357::PrimaryAttack( void )
 	pPlayer->SetMuzzleFlashTime( gpGlobals->curtime + 0.5 );
 
 	//Disorient the player
-	QAngle angles = pPlayer->GetLocalAngles();
+	QAngle viewPunch = QAngle( -8, random->RandomFloat( -2, 2 ), 0 );
+	
+	if ( sk_alternate_recoil.GetBool() )
+	{
+		QAngle angles = pPlayer->GetLocalAngles();
+		
+		angles += viewPunch * 0.5;
+		
+		pPlayer->SnapEyeAngles( angles );
+	}
 
-	angles.x += random->RandomInt( -0.5, -0.5 );
-	angles.y += random->RandomInt( -0.5, -0.5 );
-	angles.z = 0;
-
-	pPlayer->SnapEyeAngles( angles );
-
-	pPlayer->ViewPunch( QAngle( -8, random->RandomFloat( -2, 2 ), 0 ) );
+	pPlayer->ViewPunch( viewPunch );
 
 	CSoundEnt::InsertSound( SOUND_COMBAT, GetAbsOrigin(), 600, 0.2, GetOwner() );
 

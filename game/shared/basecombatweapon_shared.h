@@ -249,7 +249,10 @@ public:
 	virtual void			WeaponIdle( void );						// called when no buttons pressed
 	virtual void			HandleFireOnEmpty();					// Called when they have the attack button down
 																	// but they are out of ammo. The default implementation
-																	// either reloads, switches weapons, or plays an empty sound.
+																	// either reloads, switches weapons, or plays an empty sound.																
+	virtual void			ResetFireDuration( void );				// Resets m_fFireDuration back to 0
+	virtual void			SetFireDuration( void );				// Sets m_fFireDuration based on the weapons current state
+																	
 
 	virtual bool			ShouldBlockPrimaryFire() { return false; }
 

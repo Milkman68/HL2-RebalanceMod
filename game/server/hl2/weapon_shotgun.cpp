@@ -27,6 +27,8 @@ extern ConVar sk_plr_num_shotgun_pellets;
 extern ConVar sk_plr_num_shotgun_pellets_double;
 extern ConVar sk_npc_num_shotgun_pellets;
 
+extern ConVar sk_alternate_recoil;
+
 class CWeaponShotgun : public CBaseHLCombatWeapon
 {
 	DECLARE_DATADESC();
@@ -489,7 +491,18 @@ void CWeaponShotgun::PrimaryAttack( void )
 	// Fire the bullets, and force the first shot to be perfectly accuracy
 	pPlayer->FireBullets( sk_plr_num_shotgun_pellets.GetInt(), vecSrc, vecAiming, GetBulletSpread(), MAX_TRACE_LENGTH, m_iPrimaryAmmoType, 2 );
 	
-	pPlayer->ViewPunch( QAngle( random->RandomFloat( -2, -2 ), random->RandomFloat( -0, 0 ), 0 ) );//bookmark
+	QAngle viewPunch = QAngle( random->RandomFloat( -2, -2 ), random->RandomFloat( -0.3, 0.3 ), 0 );
+	
+	if ( sk_alternate_recoil.GetBool() )
+	{
+		QAngle angles = pPlayer->GetLocalAngles();
+		
+		angles += viewPunch * 0.8;
+		
+		pPlayer->SnapEyeAngles( angles );
+	}
+
+	pPlayer->ViewPunch( viewPunch );
 
 	CSoundEnt::InsertSound( SOUND_COMBAT, GetAbsOrigin(), SOUNDENT_VOLUME_SHOTGUN, 0.2, GetOwner() );
 
@@ -572,7 +585,16 @@ void CWeaponShotgun::BurstThink( void )
 	// Fire the bullets
 	pPlayer->FireBullets( sk_plr_num_shotgun_pellets.GetInt(), vecSrc, vecAiming, GetBulletSpread(), MAX_TRACE_LENGTH, m_iPrimaryAmmoType, 2 );
 
-	pPlayer->ViewPunch( QAngle( random->RandomFloat( -3, -3 ), random->RandomFloat( -1, 1 ), 0 ) );//bookmark
+	//Disorient the player
+	QAngle viewPunch = QAngle( random->RandomFloat( -3, -3 ), random->RandomFloat( -1, 1 ), 0 );
+	
+	if ( sk_alternate_recoil.GetBool() )
+	{
+		QAngle angles = pPlayer->GetLocalAngles();
+		pPlayer->SnapEyeAngles( angles );
+	}
+
+	pPlayer->ViewPunch( viewPunch );
 
 	pPlayer->SetMuzzleFlashTime( gpGlobals->curtime + 1.0 );
 

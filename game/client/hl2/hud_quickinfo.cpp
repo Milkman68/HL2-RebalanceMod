@@ -304,6 +304,7 @@ void CHUDQuickInfo::Paint()
 		// Find how far through the current clip we are
 		if ( pWeapon->GetMaxClip1() == 1 || !pWeapon->UsesClipsForAmmo1() )
 		{ 
+			float CurrentCarry = player->GetAmmoCount(pWeapon->m_iPrimaryAmmoType);
 			float MaxCarry = GetAmmoDef()->MaxCarry(pWeapon->m_iPrimaryAmmoType);
 			ammoPerc = (float) CurrentCarry / (float) MaxCarry;
 		}

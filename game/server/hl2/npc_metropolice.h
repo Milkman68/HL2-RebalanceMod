@@ -409,6 +409,7 @@ private:
 	float			m_flBatonChaseCooldown;
 	int				m_iPistolClips;		// How many clips the cop has in reserve
 	int				m_iManhacks;		// How many manhacks the cop has
+	int				m_iOldClip1;
 	bool			m_fWeaponDrawn;		// Is my weapon drawn? (ready to use)
 	bool			m_bSimpleCops;		// The easy version of the cops
 	int				m_LastShootSlot;
@@ -441,6 +442,7 @@ private:
 	float			m_flLastPhysicsFlinchTime;
 	float			m_flLastDamageFlinchTime;
 	float			m_flTimeSawEnemyAgain;
+	float			m_flStopMoveShootTime;
 	
 	// Sentences
 	float			m_flNextPainSoundTime;

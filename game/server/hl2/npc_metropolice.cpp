@@ -176,6 +176,7 @@ BEGIN_DATADESC( CNPC_MetroPolice )
 	DEFINE_FIELD( m_iPistolClips, FIELD_INTEGER ),
 	DEFINE_KEYFIELD( m_fWeaponDrawn, FIELD_BOOLEAN, "weapondrawn" ),
 	DEFINE_FIELD( m_LastShootSlot, FIELD_INTEGER ),
+	DEFINE_FIELD( m_iOldClip1, FIELD_INTEGER ),
 	DEFINE_EMBEDDED( m_TimeYieldShootSlot ),
 	DEFINE_EMBEDDED( m_Sentences ),
 	DEFINE_FIELD( m_bPlayerIsNear, FIELD_BOOLEAN ),
@@ -217,6 +218,7 @@ BEGIN_DATADESC( CNPC_MetroPolice )
 	DEFINE_FIELD( m_bPlayerTooClose,	FIELD_BOOLEAN ),
 	DEFINE_FIELD( m_bKeepFacingPlayer,	FIELD_BOOLEAN ),
 	DEFINE_FIELD( m_flChasePlayerTime,	FIELD_TIME ),
+	DEFINE_FIELD( m_flStopMoveShootTime, FIELD_TIME ),
 	DEFINE_FIELD( m_vecPreChaseOrigin,	FIELD_VECTOR ),
 	DEFINE_FIELD( m_flPreChaseYaw,		FIELD_FLOAT ),
 	DEFINE_FIELD( m_nNumWarnings,		FIELD_INTEGER ),
@@ -529,6 +531,20 @@ void CNPC_MetroPolice::PrescheduleThink( void )
 			m_bKeepFacingPlayer = false;
 		}
 	}
+	
+	if( gpGlobals->curtime >= m_flStopMoveShootTime )
+	{
+		// Time to stop move and shoot and start facing the way I'm running.
+		// This makes the combine look attentive when disengaging, but prevents
+		// them from always running around facing you.
+		//
+		// Only do this if it won't be immediately shut off again.
+		if( GetNavigator()->GetPathTimeToGoal() > 1.0f )
+		{
+			m_MoveAndShootOverlay.SuspendMoveAndShoot( 5.0f );
+			m_flStopMoveShootTime = FLT_MAX;
+		}
+	}
 
 	if( IsOnFire() )
 	{
@@ -554,11 +570,11 @@ void CNPC_MetroPolice::PrescheduleThink( void )
 		SetGroundSpeedMultiplier(1.0);
 	}
 	
-	/* if ( HasCondition( COND_GOT_PUNTED ) )
+	if ( HasCondition( COND_GOT_PUNTED ) && !IsCurSchedule( SCHED_METROPOLICE_PUNT_STUN ) )
 	{
 		ClearCondition( COND_GOT_PUNTED );
 		SetSchedule( SCHED_METROPOLICE_PUNT_STUN );
-	} */
+	} 
 }
 
 //-----------------------------------------------------------------------------
@@ -686,6 +702,7 @@ void CNPC_MetroPolice::Spawn( void )
 
 	m_nBurstHits = 0;
 	m_HackedGunPos = Vector ( 0, 0, 55 );
+	m_flStopMoveShootTime = FLT_MAX; // Move and shoot defaults on.
 
 	//m_iPistolClips = METROPOLICE_NUM_CLIPS; // Doesn't do anything.
 
@@ -722,7 +739,7 @@ void CNPC_MetroPolice::Spawn( void )
 
 	//m_TimeYieldShootSlot.Set( 2, 6 );
 
-	GetEnemies()->SetFreeKnowledgeDuration( 6.0 );
+	GetEnemies()->SetFreeKnowledgeDuration( 0.0 );
 
 	m_bShouldActivateBaton = false;
 	m_flValidStitchTime = -1.0f;
@@ -755,7 +772,7 @@ void CNPC_MetroPolice::Spawn( void )
 	|| FStrEq(STRING(gpGlobals->mapname), "d1_canals_07") 
 	|| FStrEq(STRING(gpGlobals->mapname), "d1_canals_08") 
 	|| FStrEq(STRING(gpGlobals->mapname), "d1_canals_13"))
-	&& ( random->RandomInt(0,100) > 50 ) 
+	&& ( random->RandomInt(0,100) > 70 ) 
 	//&& ( m_iManhacks = 0 )  
 	)
 	{
@@ -2745,15 +2762,15 @@ float CNPC_MetroPolice::MaxYawSpeed( void )
 
 	case ACT_RUN:
 	case ACT_RUN_HURT:
-		return 15;
+		return 22;
 
 	case ACT_WALK:
 	case ACT_WALK_CROUCH:
 	case ACT_RUN_CROUCH:
-		return 25;
+		return 37;
 
 	default:
-		return 45;
+		return 52;
 	}
 }
 
@@ -2822,13 +2839,13 @@ void CNPC_MetroPolice::OnAnimEventStartDeployManhack( void )
 		return;
 	}
 
-	m_iManhacks--;
+//	m_iManhacks--;
 
 	// Turn off the manhack on our body
-	if ( m_iManhacks <= 0 )
-	{
-		SetBodygroup( METROPOLICE_BODYGROUP_MANHACK, false );
-	}
+//	if ( m_iManhacks <= 0 )
+//	{
+//		SetBodygroup( METROPOLICE_BODYGROUP_MANHACK, false );
+//	}
 
 	// Create the manhack to throw
 	CNPC_Manhack *pManhack = (CNPC_Manhack *)CreateEntityByName( "npc_manhack" );
@@ -2882,7 +2899,7 @@ void CNPC_MetroPolice::OnAnimEventDeployManhack( animevent_t *pEvent )
 	}
 
 	// Stop dealing with this manhack
-	m_hManhack = NULL;
+//	m_hManhack = NULL;
 }
 
 //-----------------------------------------------------------------------------
@@ -3165,12 +3182,12 @@ void CNPC_MetroPolice::Event_Killed( const CTakeDamageInfo &info )//bookmark1
 		ReleaseManhack();
 		m_hManhack = NULL;
 	}
-	else if ( m_iManhacks > 0 )
-	{
-		OnAnimEventStartDeployManhack();
-		ReleaseManhack();
-		m_hManhack = NULL;
-	}
+	// else if ( m_iManhacks > 0 )
+	// {
+		// OnAnimEventStartDeployManhack();
+		// ReleaseManhack();
+		// m_hManhack = NULL;
+	// }
 	
 	if ( GetActiveWeapon() && !FClassnameIs( m_hDefaultWeapon, "weapon_stunstick" ) )
 	{
@@ -3228,16 +3245,11 @@ int CNPC_MetroPolice::SelectRangeAttackSchedule()
 	}
 
 	// Range attack if we're able
-	if( ( TryToEnterPistolSlot( SQUAD_SLOT_ATTACK1 ) || TryToEnterPistolSlot( SQUAD_SLOT_ATTACK2 ) ) && gpGlobals->curtime - m_flTimeSawEnemyAgain >= 0.5f)
+	if( ( TryToEnterPistolSlot( SQUAD_SLOT_ATTACK1 ) || TryToEnterPistolSlot( SQUAD_SLOT_ATTACK2 ) ) )
 		return SCHED_RANGE_ATTACK1;
 	
 	// We're not in a shoot slot... so we've allowed someone else to grab it
 	m_LastShootSlot = SQUAD_SLOT_NONE;
-
-	if( CanDeployManhack() && OccupyStrategySlot( SQUAD_SLOT_POLICE_DEPLOY_MANHACK ) )
-	{
-		return SCHED_METROPOLICE_DEPLOY_MANHACK;
-	}
 
 	return SCHED_TAKE_COVER_FROM_ENEMY;
 }
@@ -3303,8 +3315,8 @@ int CNPC_MetroPolice::SelectScheduleNewEnemy()
 	{
 		m_flNextLedgeCheckTime = gpGlobals->curtime;
 
-		//if( CanDeployManhack() && OccupyStrategySlot( SQUAD_SLOT_POLICE_DEPLOY_MANHACK ) )
-		//	return SCHED_METROPOLICE_DEPLOY_MANHACK;
+		if( CanDeployManhack() && OccupyStrategySlot( SQUAD_SLOT_POLICE_DEPLOY_MANHACK ) )
+			return SCHED_METROPOLICE_DEPLOY_MANHACK;
 		
 		/* if( !HasBaton() && !IsEnemyInAnAirboat() )
 			return SCHED_TAKE_COVER_FROM_ENEMY; *///bookmark
@@ -3388,7 +3400,7 @@ int CNPC_MetroPolice::SelectScheduleNoDirectEnemy()
 		return SCHED_METROPOLICE_SMASH_PROP;
 	}
 
-	return SCHED_METROPOLICE_CHASE_ENEMY;
+	return SCHED_TAKE_COVER_FROM_ENEMY;
 }
 
 
@@ -3423,13 +3435,11 @@ int CNPC_MetroPolice::SelectCombatSchedule()
 		//m_flHangBackTime = gpGlobals->curtime + random->RandomFloat( 1, 3);
 		return SCHED_TAKE_COVER_FROM_ENEMY;
 	}
-
+	
 	if ( HasCondition( COND_CAN_RANGE_ATTACK1 ) )
 	{
-		if ( !GetShotRegulator()->IsInRestInterval() )
+		if ( !HasCondition( COND_LOW_PRIMARY_AMMO ) && !HasCondition( COND_NO_PRIMARY_AMMO ) )
 			return SelectRangeAttackSchedule();
-		else if (  metropolice_charge.GetBool() )
-			return SCHED_METROPOLICE_ADVANCE;
 	}
 
 	if ( HasCondition( COND_CAN_MELEE_ATTACK1 ) )
@@ -3474,6 +3484,11 @@ int CNPC_MetroPolice::SelectCombatSchedule()
 			//m_flHangBackTime = gpGlobals->curtime + random->RandomFloat( 1, 3 );
 		//}
 		
+		if( CanDeployManhack() && OccupyStrategySlot( SQUAD_SLOT_POLICE_DEPLOY_MANHACK ) )
+		{
+			return SCHED_METROPOLICE_DEPLOY_MANHACK;
+		}
+		
 		if ( GetEnemy() && !(GetEnemy()->GetFlags() & FL_NOTARGET) )//bookmark
 		{
 			// Charge in and break the enemy's cover!
@@ -3484,12 +3499,7 @@ int CNPC_MetroPolice::SelectCombatSchedule()
 		}
 		//m_flHangBackTime = gpGlobals->curtime + random->RandomFloat( 1, 3);
 		
-		if( CanDeployManhack() && OccupyStrategySlot( SQUAD_SLOT_POLICE_DEPLOY_MANHACK ) )
-		{
-			return SCHED_METROPOLICE_DEPLOY_MANHACK;
-		}
-		
-		return SCHED_METROPOLICE_OVERWATCH;
+		return SCHED_TAKE_COVER_FROM_ENEMY;
 	}
 
 	nResult = SelectScheduleNoDirectEnemy();
@@ -3857,11 +3867,6 @@ int CNPC_MetroPolice::SelectAirboatRangeAttackSchedule()
 		}
 	}
 
-	if( CanDeployManhack() && OccupyStrategySlot( SQUAD_SLOT_POLICE_DEPLOY_MANHACK ) )
-	{
-		return SCHED_METROPOLICE_DEPLOY_MANHACK;
-	}
-
 	return SCHED_METROPOLICE_ESTABLISH_LINE_OF_FIRE;
 }
 
@@ -4155,7 +4160,7 @@ int CNPC_MetroPolice::SelectSchedule( void )
 		}
 	}
 	
-	// Stunstick switching.
+/* 	// Stunstick switching.
 	if ( GetEnemy() && GetActiveWeapon() )
 	{
 		if ( ShouldSwitchToBaton() )
@@ -4169,7 +4174,7 @@ int CNPC_MetroPolice::SelectSchedule( void )
 			return SCHED_COMBAT_FACE;
 			DevMsg("Switched\n");
 		}
-	}
+	} */
 
 	int nSched = SelectFlinchSchedule();
 	if ( nSched != SCHED_NONE )
@@ -4344,6 +4349,11 @@ int CNPC_MetroPolice::SelectFailSchedule( int failedSchedule, int failedTask, AI
 	{
 		return SCHED_TAKE_COVER_FROM_ENEMY;
 	}
+	
+	if( failedSchedule == SCHED_HIDE_AND_RELOAD )
+	{
+		return SCHED_HIDE_AND_RELOAD;
+	}
 
 	return BaseClass::SelectFailSchedule( failedSchedule, failedTask, taskFailCode );
 }
@@ -4370,7 +4380,25 @@ int CNPC_MetroPolice::TranslateSchedule( int scheduleType )
 		}
 		
 		break;
-
+	
+	case SCHED_HIDE_AND_RELOAD:
+		
+		if ( ShouldSwitchToBaton() )
+		{
+			SetCondition( COND_METROPOLICE_SWITCHED_WEAPON );
+				
+			EquipBaton();
+				
+			// This condition interrupts any schedule this metrocop was doing.
+			m_flBatonChaseTime = gpGlobals->curtime + CHASE_ENEMY_TIME;
+			return SCHED_COMBAT_FACE;
+			DevMsg("Switched\n");
+		}
+		
+		return SCHED_HIDE_AND_RELOAD;
+		
+		break;
+		
 	case SCHED_ESTABLISH_LINE_OF_FIRE:
 	case SCHED_METROPOLICE_ESTABLISH_LINE_OF_FIRE:
 		if ( IsEnemyInAnAirboat() )
@@ -4406,15 +4434,6 @@ int CNPC_MetroPolice::TranslateSchedule( int scheduleType )
 			return SCHED_CHASE_ENEMY;
 		}
 		
-		if ( HasCondition( COND_CAN_RANGE_ATTACK1 ) )
-		{
-			// Must be able to shoot now
-			if( TryToEnterPistolSlot( SQUAD_SLOT_ATTACK1 ) || TryToEnterPistolSlot( SQUAD_SLOT_ATTACK2 ) )
-				return SCHED_RANGE_ATTACK1;
-		}
-
-		if ( HasCondition( COND_NO_PRIMARY_AMMO ) )
-			return SCHED_RELOAD;
 		return SCHED_TAKE_COVER_FROM_ENEMY;
 
 	case SCHED_RANGE_ATTACK1:
@@ -4443,6 +4462,7 @@ int CNPC_MetroPolice::TranslateSchedule( int scheduleType )
 				return SCHED_METROPOLICE_SMG_NORMAL_ATTACK;//bookmark4
 			}  
 		}
+		return SCHED_RANGE_ATTACK1;
 		break;
 	case SCHED_METROPOLICE_ADVANCE:
 		if ( m_NextChargeTimer.Expired() )
@@ -4481,6 +4501,17 @@ bool CNPC_MetroPolice::ShouldMoveAndShoot()
 
 	if ( ShouldAttemptToStitch() )
 		return false;
+	
+	if( IsCurSchedule( SCHED_HIDE_AND_RELOAD, false ) )
+		return false;
+	
+	if( IsCurSchedule( SCHED_TAKE_COVER_FROM_ENEMY, false ) )
+		return false;
+
+	if( IsCurSchedule( SCHED_TAKE_COVER_FROM_BEST_SOUND, false ) )
+		return false;
+	
+	m_flStopMoveShootTime = FLT_MAX;
 
 	return BaseClass::ShouldMoveAndShoot();
 }
@@ -4495,15 +4526,6 @@ bool CNPC_MetroPolice::OnBeginMoveAndShoot()
 	{
 		if( HasStrategySlotRange( SQUAD_SLOT_ATTACK1, SQUAD_SLOT_ATTACK2 ) )
 			return true; // already have the slot I need
-		
-		if( IsCurSchedule( SCHED_ESTABLISH_LINE_OF_FIRE ) )
-			return true;
-		
-		if( IsCurSchedule( SCHED_METROPOLICE_FLANK_ENEMY ) )
-			return true;
-		
-		if ( IsCurSchedule( SCHED_TAKE_COVER_FROM_ENEMY ) )
-			return true;
 	}
 
 	return false;
@@ -5087,6 +5109,15 @@ void CNPC_MetroPolice::BuildScheduleTestBits( void )
 	BaseClass::BuildScheduleTestBits();
 	
 	SetCustomInterruptCondition( COND_METROPOLICE_SWITCHED_WEAPON );
+	
+	if ( IsCurSchedule( SCHED_METROPOLICE_PUNT_STUN ) )
+	{
+		ClearCustomInterruptCondition( COND_GOT_PUNTED );
+	}
+	else
+	{
+		SetCustomInterruptCondition( COND_GOT_PUNTED );
+	}
 
 	if ( PlayerIsCriminal() == false )
 	{
@@ -5237,18 +5268,14 @@ void CNPC_MetroPolice::GatherConditions( void )
 	{
 		if ( ( m_flBatonChaseTime < gpGlobals->curtime || m_iNumPlayerHits > 0 ) && HasBaton() && GetActivity() != ACT_MELEE_ATTACK1 )
 		{
-			float m_flDistToEnemy = ( GetEnemy()->GetAbsOrigin() - GetAbsOrigin() ).Length();
-			if ( m_flDistToEnemy > 92 /* && !HasCondition( COND_ENEMY_OCCLUDED ) */ )
-			{
-				EquipDefaultWeapon();
-				m_iNumPlayerHits = 0;
+			EquipDefaultWeapon();
+			m_iNumPlayerHits = 0;
 				
-				m_flBatonChaseCooldown = gpGlobals->curtime + CHASE_ENEMY_COOLDOWN;
-				DevMsg("Switched\n");
-				ClearCondition( COND_METROPOLICE_SWITCHED_WEAPON );
+			m_flBatonChaseCooldown = gpGlobals->curtime + CHASE_ENEMY_COOLDOWN;
+			DevMsg("Switched\n");
+			ClearCondition( COND_METROPOLICE_SWITCHED_WEAPON );
 				
-				m_FollowBehavior.SetFollowTarget( NULL );
-			}
+			m_FollowBehavior.SetFollowTarget( NULL );
 		}
 	}
 
@@ -5273,10 +5300,12 @@ void CNPC_MetroPolice::GatherConditions( void )
 void CNPC_MetroPolice::EquipDefaultWeapon( void )
 {
 	CBaseCombatWeapon *pOldWeapon = Weapon_Create( m_hDefaultWeapon->GetClassname() );
+	m_hDefaultWeapon->m_iClip1 = m_iOldClip1;
 	Weapon_Equip(pOldWeapon);
 }
 void CNPC_MetroPolice::EquipBaton( void )
 {
+	m_iOldClip1 = m_hDefaultWeapon->m_iClip1;
 	CBaseCombatWeapon *pWeapon = Weapon_Create("weapon_stunstick");
 	Weapon_Equip(pWeapon);
 }
@@ -5294,23 +5323,20 @@ bool CNPC_MetroPolice::ShouldSwitchToBaton( void )
 	if ( FClassnameIs( m_hDefaultWeapon, "weapon_stunstick" ) )
 		return false;
 	
-	if ( m_flBatonChaseCooldown < gpGlobals->curtime )
+	if ( m_flBatonChaseCooldown > gpGlobals->curtime )
 		return false;
 	
 	if ( IsUnreachable(GetEnemy()) )
 		return false;
 	
 	float m_flDistToEnemy = ( GetEnemy()->GetAbsOrigin() - GetAbsOrigin() ).Length();
-	if ( m_flDistToEnemy > 128 )
+	if ( m_flDistToEnemy > 256 )
 		return false;
 	
-	//if ( HasCondition( COND_ENEMY_OCCLUDED ) )
-	//{
-		if ( OccupyStrategySlot( SQUAD_SLOT_POLICE_CHARGE_ENEMY ) )
-		{
-			return true;
-		}
-	//}
+	if ( OccupyStrategySlot( SQUAD_SLOT_POLICE_CHARGE_ENEMY ) )
+	{
+		return true;
+	}
 	
 	return false;
 }
@@ -6179,7 +6205,7 @@ DEFINE_SCHEDULE//bookmark
 
 		"	Tasks"
 		"		TASK_STOP_MOVING		0"
-		"		TASK_WAIT				0.3"
+		"		TASK_PLAY_SEQUENCE		ACTIVITY:ACT_COWER"
 	)
 DEFINE_SCHEDULE	
  (

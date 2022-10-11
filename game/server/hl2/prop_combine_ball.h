@@ -154,6 +154,15 @@ private:
 	void AnimThink( void );
 
 	void FadeOut( float flDuration );
+	
+	void	SearchThink( void );
+	
+	void	StartSearching( void );
+	void	StopSearching( void );
+	void 	ShockTarget( CBaseEntity *pOther );
+	
+	void 	SetNearestNPC( CBaseEntity *pNearest ) { m_hNearestNPC.Set( pNearest ); }
+	float 	FindNearestNPC( void );
 
 
 	bool OutOfBounces( void ) const
@@ -188,6 +197,7 @@ private:
 	CHandle < CFuncCombineBallSpawner > m_hSpawner;
 
 	EHANDLE m_hOriginalOwner;
+	EHANDLE	m_hNearestNPC;
 
 	CNetworkVar( bool, m_bEmit );
 	CNetworkVar( bool, m_bHeld );

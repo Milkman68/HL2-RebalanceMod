@@ -124,8 +124,6 @@ enum SquadSlot_T
 	
 	SQUAD_SLOT_FLANK1, // flankmark
 	SQUAD_SLOT_FLANK2,
-	SQUAD_SLOT_FALLBACK1,
-	SQUAD_SLOT_FALLBACK2 = SQUAD_SLOT_FALLBACK1,
 	SQUAD_SLOT_ATTACK3, // Used only if the soldier has >2 enemies.
 	SQUAD_SLOT_ATTACK4, // slotmark
 };
@@ -512,6 +510,12 @@ void CNPC_Combine::PrescheduleThink()
 		m_nRecentDamage = 0;
 		m_flRecentDamageTime = 0;
 	}
+	
+	if ( HasCondition( COND_GOT_PUNTED ) )
+	{
+		ClearCondition( COND_GOT_PUNTED );
+		SetSchedule( SCHED_BIG_FLINCH );
+	} 
 }
 
 
@@ -1374,6 +1378,15 @@ bool CNPC_Combine::UpdateEnemyMemory( CBaseEntity *pEnemy, const Vector &positio
 void CNPC_Combine::BuildScheduleTestBits( void )
 {
 	BaseClass::BuildScheduleTestBits();
+	
+	if ( IsCurSchedule( SCHED_BIG_FLINCH ) )
+	{
+		ClearCustomInterruptCondition( COND_GOT_PUNTED );
+	}
+	else
+	{
+		SetCustomInterruptCondition( COND_GOT_PUNTED );
+	}
 
 	if (gpGlobals->curtime < m_flNextAttack)
 	{
@@ -1381,7 +1394,14 @@ void CNPC_Combine::BuildScheduleTestBits( void )
 		ClearCustomInterruptCondition( COND_CAN_RANGE_ATTACK2 );
 	}
 
-	SetCustomInterruptCondition( COND_COMBINE_HIT_BY_BUGBAIT );
+	if ( !IsCurSchedule( SCHED_COMBINE_BUGBAIT_DISTRACTION ) )
+	{
+		SetCustomInterruptCondition( COND_COMBINE_HIT_BY_BUGBAIT );
+	}
+	else
+	{
+		ClearCondition( COND_COMBINE_HIT_BY_BUGBAIT );
+	}
 
 	/* if ( !IsCurSchedule( SCHED_COMBINE_BURNING_STAND ) )
 	{
@@ -1907,7 +1927,7 @@ int CNPC_Combine::SelectSchedule( void )
 	if ( m_NPCState != NPC_STATE_SCRIPT)
 	{
 		// If we're hit by bugbait, thrash around
-		if ( HasCondition( COND_COMBINE_HIT_BY_BUGBAIT ) )
+		if ( HasCondition( COND_COMBINE_HIT_BY_BUGBAIT ) && !IsCurSchedule( SCHED_COMBINE_BUGBAIT_DISTRACTION ) )
 		{
 			// Don't do this if we're mounting a func_tank
 			if ( m_FuncTankBehavior.IsMounted() == true )
@@ -1916,6 +1936,10 @@ int CNPC_Combine::SelectSchedule( void )
 			}
 
 			ClearCondition( COND_COMBINE_HIT_BY_BUGBAIT );
+			if ( g_pGameRules->IsSkillLevel(SKILL_HARD) )
+			{
+				return SCHED_BIG_FLINCH;
+			}
 			return SCHED_COMBINE_BUGBAIT_DISTRACTION;
 		}
 
@@ -3688,8 +3712,6 @@ DECLARE_SQUADSLOT( SQUAD_SLOT_GRENADE1 )
 DECLARE_SQUADSLOT( SQUAD_SLOT_GRENADE2 )
 DECLARE_SQUADSLOT( SQUAD_SLOT_FLANK1   )
 DECLARE_SQUADSLOT( SQUAD_SLOT_FLANK2   )//bookmark
-DECLARE_SQUADSLOT( SQUAD_SLOT_FALLBACK1   )
-DECLARE_SQUADSLOT( SQUAD_SLOT_FALLBACK2   )
 
 DECLARE_SQUADSLOT( SQUAD_SLOT_ATTACK3 ) // Used only if the soldier has >2 enemies.
 DECLARE_SQUADSLOT( SQUAD_SLOT_ATTACK4 )

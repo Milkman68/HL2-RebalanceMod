@@ -479,6 +479,8 @@ END_DATADESC()
 #define CHARGES_PER_SECOND 1.0f / CHARGE_RATE
 #define CALLS_PER_SECOND 7.0f * CHARGES_PER_SECOND
 
+ConVar sk_healthcharger_speed("sk_healthcharger_speed", "1");
+ConVar sk_healthcharger_health_per_tick("sk_healthcharger_health_per_tick", "1");
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -611,10 +613,10 @@ void CNewWallHealth::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYP
 
 	if ( m_iOn )
 	{
-		float flCharges = CHARGES_PER_SECOND;
+		float flCharges = CHARGES_PER_SECOND * ( 1 / sk_healthcharger_speed.GetFloat() ) * sk_healthcharger_health_per_tick.GetInt();
 		float flCalls = CALLS_PER_SECOND;
 
-		m_flJuice -= flCharges / flCalls;
+		m_flJuice -= ( flCharges / flCalls ); // Support configuring the amount of health given per-charge aswell.
 		StudioFrameAdvance();
 	}
 
@@ -677,11 +679,17 @@ void CNewWallHealth::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYP
 		filter.MakeReliable();
 		EmitSound( filter, entindex(), "WallHealth.LoopingContinueCharge" );
 	}
+	
+	// Don't give more health than the player can take.
+	int m_iHealth = MIN( 100 - pActivator->GetHealth(), sk_healthcharger_health_per_tick.GetInt() );
+	
+	// Check if we have enough juice.
+	m_iHealth = MIN( m_iHealth, m_iJuice );
 
 	// charge the player
-	if ( pActivator->TakeHealth( 1, DMG_GENERIC ) )
+	if ( pActivator->TakeHealth( m_iHealth, DMG_GENERIC ) )
 	{
-		m_iJuice--;
+		m_iJuice -= m_iHealth;
 	}
 
 	// Send the output.
@@ -689,7 +697,7 @@ void CNewWallHealth::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYP
 	m_OutRemainingHealth.Set(flRemaining, pActivator, this);
 
 	// govern the rate of charge
-	m_flNextCharge = gpGlobals->curtime + 0.1;
+	m_flNextCharge = gpGlobals->curtime + 0.1 * sk_healthcharger_speed.GetFloat();
 }
 
 

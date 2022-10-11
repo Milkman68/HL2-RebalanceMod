@@ -22,6 +22,37 @@ ConVar sk_dynamic_resupply_randomness( "sk_dynamic_resupply_randomness","0.3" );
 extern ConVar sk_battery;
 extern ConVar sk_healthkit;
 
+// Pistol ammo
+extern ConVar sk_size_ammo_pistol;
+extern ConVar sk_size_ammo_pistol_large;
+
+// Smg ammo
+extern ConVar sk_size_ammo_smg1;
+extern ConVar sk_size_ammo_smg1_large;
+
+// Smg grenade ammo
+extern ConVar sk_size_ammo_smg1_grenade;
+
+// Ar2 ammo
+extern ConVar sk_size_ammo_ar2;
+extern ConVar sk_size_ammo_ar2_large;
+
+// Ar2 altfire ammo
+extern ConVar sk_size_ammo_ar2_altfire;
+
+// Rpg ammo
+extern ConVar sk_size_ammo_rpg;
+
+// Shotgun ammo
+extern ConVar sk_size_ammo_buckshot;
+
+// 357 ammo
+extern ConVar sk_size_ammo_357;
+extern ConVar sk_size_ammo_357_large;
+
+// Crossbow ammo
+extern ConVar sk_size_ammo_crossbow;
+
 ConVar g_debug_dynamicresupplies( "g_debug_dynamicresupplies", "0", FCVAR_NONE, "Debug item_dynamic_resupply spawning. Set to 1 to see text printouts of the spawning. Set to 2 to see lines drawn to other items factored into the spawning." );
 
 struct DynamicResupplyItems_t
@@ -51,16 +82,16 @@ static DynamicResupplyItems_t g_DynamicResupplyHealthItems[] =
 // Ammo types
 static DynamicResupplyItems_t g_DynamicResupplyAmmoItems[] =
 {
-	{ "item_ammo_pistol",			"Pistol",		SIZE_AMMO_PISTOL,		0.5f },
-	{ "item_ammo_smg1",				"SMG1",			SIZE_AMMO_SMG1,			0.4f },
-	{ "item_ammo_smg1_grenade",		"SMG1_Grenade", SIZE_AMMO_SMG1_GRENADE, 0.0f },
-	{ "item_ammo_ar2",				"AR2",			SIZE_AMMO_AR2,			0.0f },
-	{ "item_box_buckshot",			"Buckshot",		SIZE_AMMO_BUCKSHOT,		0.0f },
-	{ "item_rpg_round",				"RPG_Round",	SIZE_AMMO_RPG_ROUND,	0.0f },
-	{ "weapon_frag",				"Grenade",		1,						0.1f },
-	{ "item_ammo_357",				"357",			SIZE_AMMO_357,			0.0f },
-	{ "item_ammo_crossbow",			"XBowBolt",		SIZE_AMMO_CROSSBOW,		0.0f },
-	{ "item_ammo_ar2_altfire",		"AR2AltFire",	SIZE_AMMO_AR2_ALTFIRE,	0.0f },
+	{ "item_ammo_pistol",			"Pistol",		sk_size_ammo_pistol.GetFloat(),			0.5f },
+	{ "item_ammo_smg1",				"SMG1",			sk_size_ammo_smg1.GetFloat(),			0.4f },
+	{ "item_ammo_smg1_grenade",		"SMG1_Grenade", sk_size_ammo_smg1_grenade.GetFloat(), 	0.0f },
+	{ "item_ammo_ar2",				"AR2",			sk_size_ammo_ar2.GetFloat(),			0.0f },
+	{ "item_box_buckshot",			"Buckshot",		sk_size_ammo_buckshot.GetFloat(),		0.0f },
+	{ "item_rpg_round",				"RPG_Round",	sk_size_ammo_rpg.GetFloat(),			0.0f },
+	{ "weapon_frag",				"Grenade",		1,										0.1f },
+	{ "item_ammo_357",				"357",			sk_size_ammo_357.GetFloat(),			0.0f },
+	{ "item_ammo_crossbow",			"XBowBolt",		sk_size_ammo_crossbow.GetFloat(),		0.0f },
+	{ "item_ammo_ar2_altfire",		"AR2AltFire",	sk_size_ammo_ar2_altfire.GetFloat(),	0.0f },
 };
 
 #define DS_HEALTH_INDEX		0
@@ -340,10 +371,10 @@ void CItem_DynamicResupply::SpawnFullItem( CItem_DynamicResupply *pMaster, CBase
 			flTotalProb += g_DynamicResupplyAmmoItems[i].flFullProbability;
 			flRatio[i] = flTotalProb;
 		}
-		/* else
+		else
 		{
 			flRatio[i] = -1.0f;
-		} */
+		} 
 	}
 
 	if ( flTotalProb == 0.0f )

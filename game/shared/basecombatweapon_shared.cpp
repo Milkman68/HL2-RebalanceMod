@@ -906,9 +906,9 @@ bool CBaseCombatWeapon::ShouldDisplayReloadHUDHint()
 
 	CBaseCombatCharacter *pOwner = GetOwner();
 
-	if( pOwner != NULL && pOwner->IsPlayer() && UsesClipsForAmmo1() && m_iClip1 < (GetMaxClip1() / 2) )
+	if( pOwner != NULL && pOwner->IsPlayer() && UsesClipsForAmmo1() && m_iClip1 < GetMaxClip1() )
 	{
-		// I'm owned by a player, I use clips, I have less then half a clip loaded. Now, does the player have more ammo?
+		// I'm owned by a player, I use clips, I have less then a full clip loaded. Now, does the player have more ammo?
 		if ( pOwner )
 		{
 			if ( pOwner->GetAmmoCount( m_iPrimaryAmmoType ) > 0 ) 
@@ -1612,34 +1612,42 @@ void CBaseCombatWeapon::ItemPreFrame( void )
 
 #ifndef CLIENT_DLL
 #ifndef HL2_EPISODIC
-	if ( IsX360() )
+//	if ( IsX360() )
 #endif
 	{
+		// Don't display hints if we're shooting!
+		CBasePlayer *pOwner = (CBasePlayer*)(GetOwner());
+		if( pOwner->m_nButtons & IN_ATTACK2 || pOwner->m_nButtons & IN_ATTACK )
+		{
+			m_flHudHintPollTime = gpGlobals->curtime + 5.0f;
+		}
+		
 		// If we haven't displayed the hint enough times yet, it's time to try to 
 		// display the hint, and the player is not standing still, try to show a hud hint.
 		// If the player IS standing still, assume they could change away from this weapon at
 		// any second.
 		if( (!m_bAltFireHudHintDisplayed || !m_bReloadHudHintDisplayed) && gpGlobals->curtime > m_flHudHintMinDisplayTime && gpGlobals->curtime > m_flHudHintPollTime && GetOwner() && GetOwner()->IsPlayer() )
 		{
-			CBasePlayer *pPlayer = (CBasePlayer*)(GetOwner());
-
-			if( pPlayer && pPlayer->GetStickDist() > 0.0f )
-			{
+	//		if( pPlayer && pPlayer->GetStickDist() > 0.0f )
+	//		{
 				// If the player is moving, they're unlikely to switch away from the current weapon
 				// the moment this weapon displays its HUD hint.
 				if( ShouldDisplayReloadHUDHint() )
 				{
 					DisplayReloadHudHint();
+					return;
 				}
 				else if( ShouldDisplayAltFireHUDHint() )
 				{
 					DisplayAltFireHudHint();
+					return;
 				}
-			}
-			else
-			{
-				m_flHudHintPollTime = gpGlobals->curtime + 2.0f;
-			}
+				m_flHudHintPollTime = gpGlobals->curtime + 5.0f;
+		//	}
+		//	else
+		//	{
+		//		m_flHudHintPollTime = gpGlobals->curtime + 2.0f;
+		//	}
 		}
 	}
 #endif

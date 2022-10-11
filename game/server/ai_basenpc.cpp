@@ -12630,7 +12630,7 @@ bool CAI_BaseNPC::IsCoverPosition( const Vector &vecThreat, const Vector &vecPos
 
 	AI_TraceLOS( vecThreat, vecPosition, this, &tr, &filter );
 
-	if( tr.fraction != 1.0 && hl2_episodic.GetBool() )
+	if( tr.fraction != 1.0 )
 	{
 		if( tr.m_pEnt->m_iClassname == m_iClassname )
 		{

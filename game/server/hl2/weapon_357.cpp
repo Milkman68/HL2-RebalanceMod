@@ -159,6 +159,17 @@ void CWeapon357::PrimaryAttack( void )
 		
 		pPlayer->SnapEyeAngles( angles );
 	}
+	else
+	{
+		//Disorient the player
+		QAngle angles = pPlayer->GetLocalAngles();
+
+		angles.x += random->RandomInt( -0.5, -0.5 );
+		angles.y += random->RandomInt( -0.5, -0.5 );
+		angles.z = 0;
+
+		pPlayer->SnapEyeAngles( angles );
+	}
 
 	pPlayer->ViewPunch( viewPunch );
 

@@ -65,6 +65,8 @@ ConVar player_throwforce( "player_throwforce", "1000" );
 ConVar physcannon_dmg_glass( "physcannon_dmg_glass", "15" );
 ConVar physcannon_right_turrets( "physcannon_right_turrets", "0" );
 
+ConVar sk_physcannon_combineball_launch_speed( "sk_physcannon_combineball_launch_speed", "1000" );
+
 extern ConVar hl2_fear_style_movement;
 extern ConVar hl2_normspeed;
 extern ConVar hl2_walkspeed;
@@ -1940,8 +1942,16 @@ void CWeaponPhysCannon::PuntVPhysics( CBaseEntity *pEntity, const Vector &vecFor
 //-----------------------------------------------------------------------------
 void CWeaponPhysCannon::ApplyVelocityBasedForce( CBaseEntity *pEntity, const Vector &forward, const Vector &vecHitPos, PhysGunForce_t reason )
 {
-	// Get the launch velocity
-	Vector vVel = Pickup_PhysGunLaunchVelocity( pEntity, forward, reason );
+	Vector vVel;
+	if ( FClassnameIs( pEntity, "prop_combine_ball" ) )
+	{
+		vVel = forward * sk_physcannon_combineball_launch_speed.GetFloat();
+	}
+	else
+	{
+		// Get the launch velocity
+		vVel = Pickup_PhysGunLaunchVelocity( pEntity, forward, reason );
+	}
 	
 	// Get the launch angular impulse
 	AngularImpulse aVel = Pickup_PhysGunLaunchAngularImpulse( pEntity, reason );

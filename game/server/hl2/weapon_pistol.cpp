@@ -71,7 +71,7 @@ public:
 	{		
 		// Handle NPCs first
 		static Vector npcCone;
-		npcCone = VECTOR_CONE_3DEGREES;
+		npcCone = VECTOR_CONE_2DEGREES;
 		
 		if ( GetOwner() && GetOwner()->IsNPC() )
 			return npcCone;
@@ -81,15 +81,12 @@ public:
 		return cone;
 	}
 	
-	virtual int	GetMinBurst() 
-	{ 
-		return 1; 
-	}
+	virtual int	GetMinBurst(){ return 1;}
 
-	virtual int	GetMaxBurst() 
-	{ 
-		return 4; 
-	}
+	virtual int	GetMaxBurst(){ return 4;}
+	
+	virtual float	GetMinRestTime(){ return 0.1; };
+	virtual float	GetMaxRestTime(){ return 0.3; };
 
 	virtual float GetFireRate( void ) 
 	{

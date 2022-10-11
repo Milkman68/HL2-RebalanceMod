@@ -91,7 +91,7 @@ ConVar strider_free_pass_cover_dist( "strider_free_pass_cover_dist", "120" );
 ConVar strider_free_pass_duration( "strider_free_pass_duration", "2" );
 ConVar strider_free_pass_refill_rate( "strider_free_pass_refill_rate", "0.5" );
 ConVar strider_free_pass_move_tolerance( "strider_free_pass_move_tolerance", "320" );
-ConVar strider_free_knowledge( "strider_free_knowledge", "0.5" );
+ConVar strider_free_knowledge( "strider_free_knowledge", "1000" );
 
 ConVar strider_free_pass_after_escorts_dead( "strider_free_pass_after_escorts_dead", "2.5" );
 ConVar strider_free_pass_tolerance_after_escorts_dead( "strider_free_pass_tolerance_after_escorts_dead", "600" );
@@ -1002,7 +1002,8 @@ void CNPC_Strider::GatherConditions()
 				{
 					//DevMsg("PART3\n");
 					
-					CAI_BaseNPC *pCTarget = CreateCustomTarget( GetEnemies()->LastKnownPosition( GetEnemy() ), 20 );
+					CAI_BaseNPC *pCTarget = CreateCustomTarget( GetEnemies()->LastSeenPosition( GetEnemy() ), 20 );
+					AddEntityRelationship( pCTarget, D_HT, -1 );
 					m_flShootCooldown = gpGlobals->curtime + strider_offensive_warp_cannon_cooldown.GetFloat();
 						
 					if ( m_hLastCannonTarget != NULL && pCTarget->GetAbsOrigin() == m_hLastCannonTarget->GetAbsOrigin() )
@@ -1413,9 +1414,9 @@ int CNPC_Strider::SelectSchedule()
 		
 		return SCHED_STRIDER_RANGE_ATTACK2;
 	}
-	else if( m_AttemptCannonLOSTimer.Expired() && HasCondition( COND_STRIDER_HAS_CANNON_TARGET ) )
+	else if( /* m_AttemptCannonLOSTimer.Expired() && */ HasCondition( COND_STRIDER_HAS_CANNON_TARGET ) )
 	{
-		m_AttemptCannonLOSTimer.Set( 5 );
+		//m_AttemptCannonLOSTimer.Set( 5 );
 		return SCHED_STRIDER_ESTABLISH_LINE_OF_FIRE_CANNON;
 	}
 

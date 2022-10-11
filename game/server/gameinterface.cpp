@@ -2098,7 +2098,7 @@ void UpdateChapterRestrictions( const char *mapname )
 
 		// HACK: HL2 added a zany chapter "9a" which wreaks
 		//       havoc in this stupid atoi-based chapter code.
-		if ( !Q_stricmp( modDir, "hl2" ) )
+		if ( !Q_stricmp( modDir, "hl2" ) || !Q_stristr( modDir, "hl2_rebalance" ) )
 		{
 			if ( !Q_stricmp( newChapter, "9a" ) )
 			{
@@ -2149,7 +2149,7 @@ void UpdateRichPresence ( void )
 	// Get presence data based on the game we're playing
 	uint iGameID, iChapterIndex, iChapterID, iGamePresenceID;
 	iGameID = iChapterIndex = iChapterID = iGamePresenceID = 0;
-	if ( Q_stristr( modDir, "hl2" ) )
+	if ( Q_stristr( modDir, "hl2" ) || Q_stristr( modDir, "hl2_rebalance" ) )
 	{
 		iGameID			= CONTEXT_GAME_GAME_HALF_LIFE_2;
 		iChapterID		= CONTEXT_CHAPTER_HL2;

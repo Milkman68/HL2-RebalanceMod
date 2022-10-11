@@ -15,6 +15,37 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
+// Pistol ammo
+ConVar sk_size_ammo_pistol( "sk_size_ammo_pistol", "20" );
+ConVar sk_size_ammo_pistol_large( "sk_size_ammo_pistol_large", "100" );
+
+// Smg ammo
+ConVar sk_size_ammo_smg1( "sk_size_ammo_smg1", "45" );
+ConVar sk_size_ammo_smg1_large( "sk_size_ammo_smg1_large", "225" );
+
+// Smg grenade ammo
+ConVar sk_size_ammo_smg1_grenade( "sk_size_ammo_smg1_grenade", "1" );
+
+// Ar2 ammo
+ConVar sk_size_ammo_ar2( "sk_size_ammo_ar2", "20" );
+ConVar sk_size_ammo_ar2_large( "sk_size_ammo_ar2_large", "100" );
+
+// Ar2 altfire ammo
+ConVar sk_size_ammo_ar2_altfire( "sk_size_ammo_ar2_altfire", "1" );
+
+// Rpg ammo
+ConVar sk_size_ammo_rpg( "sk_size_ammo_rpg", "1" );
+
+// Shotgun ammo
+ConVar sk_size_ammo_buckshot( "sk_size_ammo_buckshot", "20" );
+
+// 357 ammo
+ConVar sk_size_ammo_357( "sk_size_ammo_357", "6" );
+ConVar sk_size_ammo_357_large( "sk_size_ammo_357_large", "20" );
+
+// Crossbow ammo
+ConVar sk_size_ammo_crossbow( "sk_size_ammo_crossbow", "6" );
+
 //---------------------------------------------------------
 // Applies ammo quantity scale.
 //---------------------------------------------------------
@@ -55,7 +86,7 @@ public:
 	}
 	bool MyTouch( CBasePlayer *pPlayer )
 	{
-		if (ITEM_GiveAmmo( pPlayer, SIZE_AMMO_PISTOL, "Pistol"))
+		if (ITEM_GiveAmmo( pPlayer, sk_size_ammo_pistol.GetFloat(), "Pistol"))
 		{
 			if ( g_pGameRules->ItemShouldRespawn( this ) == GR_ITEM_RESPAWN_NO )
 			{
@@ -90,7 +121,7 @@ public:
 	}
 	bool MyTouch( CBasePlayer *pPlayer )
 	{
-		if (ITEM_GiveAmmo( pPlayer, SIZE_AMMO_PISTOL_LARGE, "Pistol"))
+		if (ITEM_GiveAmmo( pPlayer, sk_size_ammo_pistol_large.GetFloat(), "Pistol"))
 		{
 			if ( g_pGameRules->ItemShouldRespawn( this ) == GR_ITEM_RESPAWN_NO )
 			{
@@ -124,7 +155,7 @@ public:
 	}
 	bool MyTouch( CBasePlayer *pPlayer )
 	{
-		if (ITEM_GiveAmmo( pPlayer, SIZE_AMMO_SMG1, "SMG1"))
+		if (ITEM_GiveAmmo( pPlayer, sk_size_ammo_smg1.GetFloat(), "SMG1"))
 		{
 			if ( g_pGameRules->ItemShouldRespawn( this ) == GR_ITEM_RESPAWN_NO )
 			{
@@ -158,7 +189,7 @@ public:
 	}
 	bool MyTouch( CBasePlayer *pPlayer )
 	{
-		if (ITEM_GiveAmmo( pPlayer, SIZE_AMMO_SMG1_LARGE, "SMG1"))
+		if (ITEM_GiveAmmo( pPlayer, sk_size_ammo_smg1_large.GetFloat(), "SMG1"))
 		{
 			if ( g_pGameRules->ItemShouldRespawn( this ) == GR_ITEM_RESPAWN_NO )
 			{
@@ -192,7 +223,7 @@ public:
 	}
 	bool MyTouch( CBasePlayer *pPlayer )
 	{
-		if (ITEM_GiveAmmo( pPlayer, SIZE_AMMO_AR2, "AR2"))
+		if (ITEM_GiveAmmo( pPlayer, sk_size_ammo_ar2.GetFloat(), "AR2"))
 		{
 			if ( g_pGameRules->ItemShouldRespawn( this ) == GR_ITEM_RESPAWN_NO )
 			{
@@ -226,7 +257,7 @@ public:
 	}
 	bool MyTouch( CBasePlayer *pPlayer )
 	{
-		if (ITEM_GiveAmmo( pPlayer, SIZE_AMMO_AR2_LARGE, "AR2"))
+		if (ITEM_GiveAmmo( pPlayer, sk_size_ammo_ar2_large.GetFloat(), "AR2"))
 		{
 			if ( g_pGameRules->ItemShouldRespawn( this ) == GR_ITEM_RESPAWN_NO )
 			{
@@ -262,7 +293,7 @@ public:
 
 	bool MyTouch( CBasePlayer *pPlayer )
 	{
-		if (ITEM_GiveAmmo( pPlayer, SIZE_AMMO_357, "357"))
+		if (ITEM_GiveAmmo( pPlayer, sk_size_ammo_357.GetFloat(), "357"))
 		{
 			if ( g_pGameRules->ItemShouldRespawn( this ) == GR_ITEM_RESPAWN_NO )
 			{
@@ -297,7 +328,7 @@ public:
 
 	bool MyTouch( CBasePlayer *pPlayer )
 	{
-		if (ITEM_GiveAmmo( pPlayer, SIZE_AMMO_357_LARGE, "357"))
+		if (ITEM_GiveAmmo( pPlayer, sk_size_ammo_357_large.GetFloat(), "357"))
 		{
 			if ( g_pGameRules->ItemShouldRespawn( this ) == GR_ITEM_RESPAWN_NO )
 			{
@@ -333,7 +364,7 @@ public:
 
 	bool MyTouch( CBasePlayer *pPlayer )
 	{
-		if (ITEM_GiveAmmo( pPlayer, SIZE_AMMO_CROSSBOW, "XBowBolt" ))
+		if (ITEM_GiveAmmo( pPlayer, sk_size_ammo_crossbow.GetFloat(), "XBowBolt" ))
 		{
 			if ( g_pGameRules->ItemShouldRespawn( this ) == GR_ITEM_RESPAWN_NO )
 			{
@@ -435,7 +466,7 @@ public:
 	}
 	bool MyTouch( CBasePlayer *pPlayer )
 	{
-		if (ITEM_GiveAmmo( pPlayer, SIZE_AMMO_RPG_ROUND, "RPG_Round"))
+		if (ITEM_GiveAmmo( pPlayer, sk_size_ammo_rpg.GetFloat(), "RPG_Round"))
 		{
 			if ( g_pGameRules->ItemShouldRespawn( this ) == GR_ITEM_RESPAWN_NO )
 			{
@@ -469,7 +500,7 @@ public:
 	}
 	bool MyTouch( CBasePlayer *pPlayer )
 	{
-		if (ITEM_GiveAmmo( pPlayer, SIZE_AMMO_SMG1_GRENADE, "SMG1_Grenade"))
+		if (ITEM_GiveAmmo( pPlayer, sk_size_ammo_smg1_grenade.GetFloat(), "SMG1_Grenade"))
 		{
 			if ( g_pGameRules->ItemShouldRespawn( this ) == GR_ITEM_RESPAWN_NO )
 			{
@@ -539,7 +570,7 @@ public:
 	}
 	bool MyTouch( CBasePlayer *pPlayer )
 	{
-		if (ITEM_GiveAmmo( pPlayer, SIZE_AMMO_BUCKSHOT, "Buckshot"))
+		if (ITEM_GiveAmmo( pPlayer, sk_size_ammo_buckshot.GetFloat(), "Buckshot"))
 		{
 			if ( g_pGameRules->ItemShouldRespawn( this ) == GR_ITEM_RESPAWN_NO )
 			{
@@ -575,7 +606,7 @@ public:
 
 	bool MyTouch( CBasePlayer *pPlayer )
 	{
-		if (ITEM_GiveAmmo( pPlayer, SIZE_AMMO_AR2_ALTFIRE, "AR2AltFire" ) )
+		if (ITEM_GiveAmmo( pPlayer, sk_size_ammo_ar2_altfire.GetFloat(), "AR2AltFire" ) )
 		{
 			if ( g_pGameRules->ItemShouldRespawn( this ) == GR_ITEM_RESPAWN_NO )
 			{

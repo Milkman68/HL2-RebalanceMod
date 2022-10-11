@@ -26,6 +26,9 @@ static ConVar	sk_suitcharger( "sk_suitcharger","0" );
 static ConVar	sk_suitcharger_citadel( "sk_suitcharger_citadel","0" );
 static ConVar	sk_suitcharger_citadel_maxarmor( "sk_suitcharger_citadel_maxarmor","0" );
 
+ConVar sk_suitcharger_speed("sk_suitcharger_speed", "1");
+ConVar sk_suitcharger_charge_per_tick("sk_suitcharger_charge_per_tick", "1");
+
 #define SF_CITADEL_RECHARGER	0x2000
 #define SF_KLEINER_RECHARGER	0x4000 // Gives only 25 health
 
@@ -600,7 +603,7 @@ void CNewRecharge::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE 
 
 	if ( m_iOn )
 	{
-		float flCharges = CHARGES_PER_SECOND;
+		float flCharges = CHARGES_PER_SECOND * ( 1 / sk_suitcharger_speed.GetFloat() ) * sk_suitcharger_charge_per_tick.GetInt();
 		float flCalls = CALLS_PER_SECOND;
 
 		if ( HasSpawnFlags( SF_CITADEL_RECHARGER ) )
@@ -649,8 +652,12 @@ void CNewRecharge::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE 
 		nMaxArmor = sk_suitcharger_citadel_maxarmor.GetInt();
 	}
 	
-	int nIncrementArmor = 1;
-
+	// Don't give more armor than the player can take.
+	int nIncrementArmor = MIN( 100 - pPlayer->ArmorValue(), sk_suitcharger_charge_per_tick.GetInt() );
+	
+	// Check if we have enough juice.
+	nIncrementArmor = MIN( nIncrementArmor, m_iJuice );
+	
 	// The citadel charger gives more per charge and also gives health
 	if ( HasSpawnFlags(	SF_CITADEL_RECHARGER ) )
 	{
@@ -720,7 +727,7 @@ void CNewRecharge::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE 
 	m_OutRemainingCharge.Set(flRemaining, pActivator, this);
 
 	// govern the rate of charge
-	m_flNextCharge = gpGlobals->curtime + 0.1;
+	m_flNextCharge = gpGlobals->curtime + 0.1 * sk_suitcharger_speed.GetFloat();
 }
 
 void CNewRecharge::Recharge(void)

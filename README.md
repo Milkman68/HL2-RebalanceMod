@@ -3,6 +3,9 @@ The Github repository for the sourcecode of the mod.
 The download can be found [here](https://github.com/mariovct/HL2-RebalanceMod_Game-files).
 
 
+\/ Copy paste of the original readme.txt below \/
+=============================================================
+               SOURCE 1 SDK LICENSE
 
 Source SDK Copyright(c) Valve Corp.  
 

@@ -81,9 +81,9 @@ public:
 		return cone;
 	}
 	
-	virtual int	GetMinBurst(){ return 1;}
+	virtual int	GetMinBurst(){ return 4;}
 
-	virtual int	GetMaxBurst(){ return 4;}
+	virtual int	GetMaxBurst(){ return 7;}
 	
 	virtual float	GetMinRestTime(){ return 0.1; };
 	virtual float	GetMaxRestTime(){ return 0.3; };

@@ -48,6 +48,7 @@
 #include "ammodef.h"
 #include "vehicle_base.h"
 #include "explode.h"
+#include "npc_headcrab.h"
  
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -791,9 +792,9 @@ HeadcrabRelease_t CNPC_BaseZombie::ShouldReleaseHeadcrab( const CTakeDamageInfo 
 		// If I was killed by a bullet...
 		if ( info.GetDamageType() & DMG_BULLET )
 		{
-			if( m_bHeadShot /* && random->RandomInt( 0, 100 ) <= sk_zombie_chance_of_headcrab_surviving_headshot.GetInt() */ ) 
+			if( m_bHeadShot ) 
 			{
-				if( flDamageThreshold > 0.25 )
+				if( flDamageThreshold > 0.25 || IsCurSchedule( SCHED_ZOMBIE_RELEASECRAB ) )
 				{
 					// Enough force to kill the crab.
 					return RELEASE_RAGDOLL;
@@ -847,10 +848,15 @@ int CNPC_BaseZombie::OnTakeDamage_Alive( const CTakeDamageInfo &inputInfo )
 		
 		Scorch( ZOMBIE_SCORCH_RATE, ZOMBIE_MIN_RENDERCOLOR );
 	}
+	
+	if ( info.GetDamageType() & DMG_CRUSH )
+	{
+		info.ScaleDamage( 1.5 ); // Fixes some traps in ravenholm not killing zombies.
+	}
 
 	// Take some percentage of damage from bullets (unless hit in the crab). Always take full buckshot & sniper damage
-	if ( !m_bHeadShot && (info.GetDamageType() & DMG_BULLET) && !(info.GetDamageType() & (DMG_BUCKSHOT|DMG_SNIPER)) )
-	{
+	if ( !m_bHeadShot && (info.GetDamageType() & DMG_BULLET) && !(info.GetDamageType() & (DMG_SNIPER)) )
+	{	
 		info.ScaleDamage( ZOMBIE_BULLET_DAMAGE_SCALE );
 	}
 
@@ -1124,7 +1130,14 @@ void CNPC_BaseZombie::DieChopped( const CTakeDamageInfo &info )
 
 	CBaseEntity *pLegGib = CreateRagGib( GetLegsModel(), GetAbsOrigin(), GetAbsAngles(), vecLegsForce, flFadeTime, ShouldIgniteZombieGib() );
 	if ( pLegGib )
-	{
+	{	
+		CBaseAnimating *pAnimating = dynamic_cast<CBaseAnimating*>(pLegGib);
+		if ( pAnimating )
+		{
+			pAnimating->m_nSkin = m_nSkin;
+		}
+		
+		pLegGib->SetOwnerEntity( this );
 		CopyRenderColorTo( pLegGib );
 	}
 
@@ -1147,6 +1160,7 @@ void CNPC_BaseZombie::DieChopped( const CTakeDamageInfo &info )
 		CBaseAnimating *pAnimating = dynamic_cast<CBaseAnimating*>(pTorsoGib);
 		if( pAnimating )
 		{
+			pAnimating->m_nSkin = m_nSkin;
 			pAnimating->SetBodygroup( ZOMBIE_BODYGROUP_HEADCRAB, !m_fIsHeadless );
 		}
 
@@ -2179,10 +2193,10 @@ void CNPC_BaseZombie::StartTask( const Task_t *pTask )
 
 			AngleVectors( GetAbsAngles(), &vecForward );
 			
-			vecVelocity = vecForward * 30;
-			vecVelocity.z += 100;
+			vecVelocity = vecForward /* * 30 */;
+		//	vecVelocity.z += 100;
 
-			ReleaseHeadcrab( EyePosition(), vecVelocity, true, true );
+			ReleaseHeadcrab( EyePosition(), vecVelocity, true, false );
 			TaskComplete();
 		}
 		break;
@@ -2298,7 +2312,13 @@ void CNPC_BaseZombie::BecomeTorso( const Vector &vecTorsoForce, const Vector &ve
 	{
 		// -40 on Z to make up for the +40 on Z that we did above. This stops legs spawning above the head.
 		CBaseEntity *pGib = CreateRagGib( GetLegsModel(), GetAbsOrigin() - Vector(0, 0, 40), GetAbsAngles(), vecLegsForce, flFadeTime );
-
+		
+		CBaseAnimating *pAnimating = dynamic_cast<CBaseAnimating*>(pGib);
+		if ( pAnimating )
+		{
+			pAnimating->m_nSkin = m_nSkin;
+		}
+		
 		// don't collide with this thing ever
 		if ( pGib )
 		{
@@ -2425,7 +2445,6 @@ bool CNPC_BaseZombie::HeadcrabFits( CBaseAnimating *pCrab )
 //-----------------------------------------------------------------------------
 void CNPC_BaseZombie::ReleaseHeadcrab( const Vector &vecOrigin, const Vector &vecVelocity, bool fRemoveHead, bool fRagdollBody, bool fRagdollCrab )
 {
-	CAI_BaseNPC		*pCrab;
 	Vector vecSpot = vecOrigin;
 
 	// Until the headcrab is a bodygroup, we have to approximate the
@@ -2485,7 +2504,7 @@ void CNPC_BaseZombie::ReleaseHeadcrab( const Vector &vecOrigin, const Vector &ve
 	}
 	else if ( !m_bHasExploded )
 	{
-		pCrab = (CAI_BaseNPC*)CreateEntityByName( GetHeadcrabClassname() );
+		CHeadcrab *pCrab = (CHeadcrab *)CreateNoSpawn( GetHeadcrabClassname(), EyePosition(), vec3_angle, this );
 
 		if ( !pCrab )
 		{
@@ -2511,27 +2530,12 @@ void CNPC_BaseZombie::ReleaseHeadcrab( const Vector &vecOrigin, const Vector &ve
 
 		pCrab->GetMotor()->SetIdealYaw( GetAbsAngles().y );
 
-		// FIXME: npc's with multiple headcrabs will need some way to query different attachments.
-		// NOTE: this has till after spawn is called so that the model is set up
-		int iCrabAttachment = LookupAttachment( "headcrab" );
-		if (iCrabAttachment > 0)
-		{
-			SetHeadcrabSpawnLocation( iCrabAttachment, pCrab );
-			pCrab->GetMotor()->SetIdealYaw( pCrab->GetAbsAngles().y );
-			
-			// Take out any pitch
-			QAngle angles = pCrab->GetAbsAngles();
-			angles.x = 0.0;
-			pCrab->SetAbsAngles( angles );
-		}
-
 		if( !HeadcrabFits(pCrab) )
 		{
 			UTIL_Remove(pCrab);
 			return;
 		}
 
-		pCrab->SetActivity( ACT_IDLE );
 		pCrab->SetNextThink( gpGlobals->curtime );
 		pCrab->PhysicsSimulate();
 		pCrab->SetAbsVelocity( vecVelocity );
@@ -2542,9 +2546,14 @@ void CNPC_BaseZombie::ReleaseHeadcrab( const Vector &vecOrigin, const Vector &ve
 
 		pCrab->m_flNextAttack = gpGlobals->curtime + 1.0f;
 
-		if( pEnemy )
+		if ( pEnemy )
 		{
 			pCrab->SetEnemy( pEnemy );
+			if ( IsCurSchedule( SCHED_ZOMBIE_RELEASECRAB ) )
+			{
+				pCrab->SetIdealActivity( ACT_RANGE_ATTACK1 );
+				pCrab->JumpAttack( false, pEnemy->EyePosition(), true );
+			}
 		}
 		if( ShouldIgniteZombieGib() )
 		{
@@ -2552,8 +2561,6 @@ void CNPC_BaseZombie::ReleaseHeadcrab( const Vector &vecOrigin, const Vector &ve
 		}
 
 		CopyRenderColorTo( pCrab );
-
-		pCrab->Activate();
 	}
 
 	if( fRemoveHead )

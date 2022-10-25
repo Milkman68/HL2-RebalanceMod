@@ -52,7 +52,7 @@ int g_fCombineQuestion;				// true if an idle grunt asked a question. Cleared wh
 #define COMBINE_LIMP_HEALTH				20
 #define	COMBINE_MIN_GRENADE_CLEAR_DIST	250
 
-#define COMBINE_SUPRESSION_TIME         2.0
+#define COMBINE_SUPPRESSION_TIME         2.0
 
 #define COMBINE_EYE_STANDING_POSITION	Vector( 0, 0, 66 )
 #define COMBINE_GUN_STANDING_POSITION	Vector( 0, 0, 57 )
@@ -156,6 +156,7 @@ BEGIN_DATADESC( CNPC_Combine )
 DEFINE_FIELD( m_nKickDamage, FIELD_INTEGER ),
 DEFINE_FIELD( m_vecTossVelocity, FIELD_VECTOR ),
 DEFINE_FIELD( m_hForcedGrenadeTarget, FIELD_EHANDLE ),
+DEFINE_FIELD( m_hTarget, FIELD_EHANDLE ),
 DEFINE_FIELD( m_bShouldPatrol, FIELD_BOOLEAN ),
 DEFINE_FIELD( m_bSlotIndependent, FIELD_BOOLEAN ),
 DEFINE_FIELD( m_bShouldPursue, FIELD_BOOLEAN ),
@@ -1824,11 +1825,6 @@ int CNPC_Combine::SelectCombatSchedule()
 		Stand();
 		DesireStand();
 		
-		if ( IsCurSchedule( SCHED_RANGE_ATTACK1 ) )
-		{
-			//m_flHangBackTime = gpGlobals->curtime + random->RandomFloat( 2, 3 );
-		}
-		
 		if ( CanGrenadeEnemy() )
 		{
 			if ( OccupyStrategySlot( SQUAD_SLOT_GRENADE1 ) )
@@ -1864,12 +1860,7 @@ int CNPC_Combine::SelectCombatSchedule()
 	// --------------------------------------------------------------
 	// Enemy not occluded but isn't open to attack
 	// --------------------------------------------------------------
- 	/*  if ( HasCondition( COND_SEE_ENEMY ) && !HasCondition( COND_CAN_RANGE_ATTACK1 ) )//bookmark
-	{ 
-		DevMsg("DOING IT\n");
-		return SCHED_ESTABLISH_ADVANCING_COVER; // TEST THIS
-	}  */ 
-	return SCHED_NONE;
+	return SCHED_TAKE_COVER_FROM_ENEMY;
 }
 //-----------------------------------------------------------------------------
 // Purpose:
@@ -1938,7 +1929,7 @@ int CNPC_Combine::SelectSchedule( void )
 			ClearCondition( COND_COMBINE_HIT_BY_BUGBAIT );
 			if ( g_pGameRules->IsSkillLevel(SKILL_HARD) )
 			{
-				return SCHED_BIG_FLINCH;
+				return SCHED_FLINCH_PHYSICS;
 			}
 			return SCHED_COMBINE_BUGBAIT_DISTRACTION;
 		}
@@ -2074,19 +2065,35 @@ int CNPC_Combine::SelectSchedule( void )
 //-----------------------------------------------------------------------------
 int CNPC_Combine::SelectFailSchedule( int failedSchedule, int failedTask, AI_TaskFailureCode_t taskFailCode )
 {
+	if( failedTask == TASK_FIND_COVER_FROM_ENEMY )
+	{
+		if ( CanGrenadeEnemy() )
+		{
+			if ( OccupyStrategySlot( SQUAD_SLOT_GRENADE1 ) )
+			{
+				return SCHED_RANGE_ATTACK2;
+			}
+		}
+	
+		if ( HasCondition( COND_CAN_RANGE_ATTACK1 ) )
+		{
+			if ( CanOccupyAttackSlot() )
+			{
+				return SCHED_RANGE_ATTACK1;
+			}
+		}
+		
+		return SCHED_FAIL;
+	}
+	
 	if( failedSchedule == SCHED_COMBINE_TAKE_COVER1 )
 	{
-		if( IsInSquad() && IsStrategySlotRangeOccupied(SQUAD_SLOT_ATTACK1, SQUAD_SLOT_ATTACK2) && HasCondition(COND_SEE_ENEMY) )
-		{
-			// This eases the effects of an unfortunate bug that usually plagues shotgunners. Since their rate of fire is low,
-			// they spend relatively long periods of time without an attack squad slot. If you corner a shotgunner, usually 
-			// the other memebers of the squad will hog all of the attack slots and pick schedules to move to establish line of
-			// fire. During this time, the shotgunner is prevented from attacking. If he also cannot find cover (the fallback case)
-			// he will stand around like an idiot, right in front of you. Instead of this, we have him run up to you for a melee attack.
-			
-			//FIX: Just try to take cover again. Or shoot?
-			return SCHED_COMBINE_TAKE_COVER1;
-		}
+		return SCHED_TAKE_COVER_FROM_ENEMY;
+	}
+	
+	if( failedSchedule == SCHED_COMBINE_HIDE_AND_RELOAD )
+	{
+		return SCHED_COMBINE_HIDE_AND_RELOAD;
 	}
 	if( failedSchedule == SCHED_TAKE_COVER_FROM_ORIGIN_FIRE && HasCondition( COND_COMBINE_ON_FIRE ) )
 	{
@@ -2172,7 +2179,7 @@ int CNPC_Combine::SelectScheduleAttack()
 
 	// Can I shoot?
 	if ( HasCondition(COND_CAN_RANGE_ATTACK1) )
-	{
+	{	
 		// Engage if allowed
 		if ( CanOccupyAttackSlot() )
 		{
@@ -2195,7 +2202,7 @@ int CNPC_Combine::SelectScheduleAttack()
 
 	if ( GetEnemy() && !HasCondition( COND_SEE_ENEMY ) )
 	{
-		// If we don't see our enemy. If it hasn't been long since I last saw him throw a grenade or lay down supressive fire
+		// If we don't see our enemy. If it hasn't been long since I last saw him throw a grenade or lay down suppressive fire
 
 		float flTime;
 		Vector vecTarget;
@@ -2210,11 +2217,18 @@ int CNPC_Combine::SelectScheduleAttack()
 			return SCHED_RANGE_ATTACK2;
 		}
 		
-		else if ( ( HasShotgun() == false ) && ( OccupyStrategySlot( SQUAD_SLOT_ATTACK_OCCLUDER ) ) )
+/* 		if ( !gEntList.FindEntityByName( NULL, m_SquadName ) && GetEnemy()->IsAlive() )
 		{
-			CAI_BaseNPC *pTarget = CreateCustomTarget( GetEnemies()->LastSeenPosition( GetEnemy() ) + GetEnemy()->GetViewOffset()*0.75, COMBINE_SUPRESSION_TIME );
-			AddEntityRelationship( pTarget, D_HT, -1 );
-		}
+			m_hTarget = CreateCustomTarget( GetEnemies()->LastKnownPosition( GetEnemy() ) + GetEnemy()->GetViewOffset() *0.75, COMBINE_SUPPRESSION_TIME );
+			if ( m_hTarget )
+			{
+				m_hTarget->SetName( m_SquadName );
+					
+				NDebugOverlay::Box( m_hTarget->GetAbsOrigin(), Vector(-10,-10,-10),Vector(10,10,10), 255, 0, 255, 0, COMBINE_SUPPRESSION_TIME );
+					
+				AddEntityRelationship( m_hTarget, D_HT, 0 );
+			}
+		} */
 	}//bookmark1
 	
 	
@@ -2302,11 +2316,6 @@ int CNPC_Combine::TranslateSchedule( int scheduleType )
 					Crouch();
 					return SCHED_COMBAT_FACE;
 				}
-			}
-
-			if( HasCondition( COND_SEE_ENEMY ) )
-			{
-				return TranslateSchedule( SCHED_TAKE_COVER_FROM_ENEMY );
 			}
 			else if ( !m_AssaultBehavior.HasAssaultCue() )
 			{
@@ -3464,7 +3473,7 @@ WeaponProficiency_t CNPC_Combine::CalcWeaponProficiency( CBaseCombatWeapon *pWea
 		}
 		else
 		{
-			return WEAPON_PROFICIENCY_AVERAGE;
+			return WEAPON_PROFICIENCY_GOOD;
 		}
 	}
 	else if( FClassnameIs( pWeapon, "weapon_shotgun" )	)
@@ -3634,20 +3643,17 @@ Disposition_t CNPC_Combine::IRelationType( CBaseEntity *pTarget )
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-int CNPC_Combine::CountNumEnemies( int m_iClassname, float m_flMaxdist )
+int CNPC_Combine::CountNumEnemies( void )
 {
 	AIEnemiesIter_t iter;
 	m_iNumEnemies = 0;
 	
 	for ( AI_EnemyInfo_t *pEMemory = GetEnemies()->GetFirst(&iter); pEMemory != NULL; pEMemory = GetEnemies()->GetNext(&iter) )
 	{
-		if ( pEMemory->hEnemy->IsAlive() && ( pEMemory->hEnemy->Classify() != CLASS_BULLSEYE ) && ( pEMemory->hEnemy->Classify() == m_iClassname || m_iClassname == NULL ) )
-		{
-			if ( ( ( pEMemory->hEnemy->GetAbsOrigin() - GetAbsOrigin() ).Length() <= m_flMaxdist ) || m_flMaxdist == NULL )
-			{				
-				m_iNumEnemies++;	
-				//DevMsg( "My number of enemies now is %i\n",m_iNumEnemies );				
-			}
+		if ( pEMemory->hEnemy->IsAlive() && FVisible( pEMemory->hEnemy ) )
+		{			
+			m_iNumEnemies++;
+			DevMsg( "\nMy number of enemies is now %i",m_iNumEnemies );		
 		}
 	}
 	
@@ -3658,6 +3664,22 @@ int CNPC_Combine::CountNumEnemies( int m_iClassname, float m_flMaxdist )
 //-----------------------------------------------------------------------------
  bool CNPC_Combine::CanOccupyAttackSlot( void )//bookmark12
 {
+	bool m_bIsSuppressPoint = GetEnemy()->Classify() == CLASS_BULLSEYE && GetEnemy()->NameMatches( m_SquadName );
+	
+	if ( m_bIsSuppressPoint )
+	{
+		if ( OccupyStrategySlot( SQUAD_SLOT_ATTACK_OCCLUDER ) )
+		{
+			DevMsg("\nREAL\n");
+			return true;
+		}
+		else
+		{
+			DevMsg("\nFAKE\n");
+			return false;
+		}
+	}
+	
 	if ( m_bSlotIndependent )
 	{
 		//DevMsg("Attack Slot Independence used\n");
@@ -3677,6 +3699,30 @@ int CNPC_Combine::CountNumEnemies( int m_iClassname, float m_flMaxdist )
 	}
 	return false;
 }  
+//-----------------------------------------------------------------------------
+// Purpose:
+//-----------------------------------------------------------------------------
+bool CNPC_Combine::IsValidEnemy( CBaseEntity *pEnemy )
+{
+	
+	bool m_bIsSuppressPoint = pEnemy->Classify() == CLASS_BULLSEYE && pEnemy->NameMatches( m_SquadName );
+	
+	if ( m_bIsSuppressPoint )
+	{
+		if ( !HasShotgun() && CountNumEnemies() == 1 )
+		{
+			DevMsg("\nTRUE\n");
+			return true;
+		}
+		else
+		{
+			DevMsg("\nFALSE\n");
+			return false;
+		}
+	}
+	
+	return BaseClass::IsValidEnemy( pEnemy );
+}
 //-----------------------------------------------------------------------------
 //
 // Schedules
@@ -4045,7 +4091,7 @@ DEFINE_SCHEDULE
  "		TASK_STOP_MOVING				0"
  "		TASK_COMBINE_SET_STANDING		0"
  "		TASK_SET_ACTIVITY				ACTIVITY:ACT_IDLE"	// Translated to cover
- "		TASK_WAIT_FACE_ENEMY			1"
+ "		TASK_WAIT_FACE_ENEMY			5"
  ""
  "	Interrupts"
  "		COND_NEW_ENEMY"

@@ -328,6 +328,7 @@ private:
 		COND_METROPOLICE_ON_FIRE = BaseClass::NEXT_CONDITION,
 		COND_METROPOLICE_ENEMY_RESISTING_ARREST,
 		COND_METROPOLICE_PLAYER_TOO_CLOSE,
+		COND_ATTACK_SLOT_AVAILABLE,
 		COND_METROPOLICE_CHANGE_BATON_STATE,
 		COND_METROPOLICE_PHYSOBJECT_ASSAULT,
 		COND_METROPOLICE_HIT_BY_BUGBAIT,
@@ -373,7 +374,8 @@ private:
 		SCHED_METROPOLICE_BUGBAIT_DISTRACTION,
 		SCHED_METROPOLICE_FLANK_ENEMY,
 		SCHED_METROPOLICE_PUNT_STUN,
-		SCHED_METROPOLICE_OVERWATCH,
+		SCHED_METROPOLICE_WAIT_IN_COVER,
+		SCHED_METROPOLICE_TAKE_COVER_FROM_ENEMY,
 	};
 
 	enum 
@@ -412,6 +414,7 @@ private:
 	int				m_iOldClip1;
 	bool			m_fWeaponDrawn;		// Is my weapon drawn? (ready to use)
 	bool			m_bSimpleCops;		// The easy version of the cops
+	bool			m_bIsElite;		// The elite version of the cops
 	int				m_LastShootSlot;
 	CRandSimTimer	m_TimeYieldShootSlot;
 	CSimpleSimTimer m_BatonSwingTimer;

@@ -17,14 +17,18 @@
 #include "soundenvelope.h"
 #include "engine/IEngineSound.h"
 #include "ammodef.h"
+#include "hl2_gamerules.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
+
+#define ZOMBIE_SKIN_COUNT 6
 
 // ACT_FLINCH_PHYSICS
 
 
 ConVar	sk_zombie_health( "sk_zombie_health","0");
+ConVar	sk_zombie_headcrab_evac_health( "sk_zombie_headcrab_evac_health","0");
 
 envelopePoint_t envZombieMoanVolumeFast[] =
 {
@@ -133,6 +137,7 @@ public:
 	bool IsHeavyDamage( const CTakeDamageInfo &info );
 	bool IsSquashed( const CTakeDamageInfo &info );
 	void BuildScheduleTestBits( void );
+	virtual HeadcrabRelease_t ShouldReleaseHeadcrab( const CTakeDamageInfo &info, float flDamageThreshold );
 
 	void PrescheduleThink( void );
 	int SelectSchedule ( void );
@@ -290,6 +295,8 @@ void CZombie::Spawn( void )
 	//GetNavigator()->SetRememberStaleNodes( false );
 
 	BaseClass::Spawn();
+	
+	m_nSkin = random->RandomInt( 0, ZOMBIE_SKIN_COUNT - 1 );
 
 	m_flNextMoanSound = gpGlobals->curtime + random->RandomFloat( 1.0, 4.0 );
 }
@@ -906,6 +913,22 @@ void CZombie::BuildScheduleTestBits( void )
 	{
 		SetCustomInterruptCondition( COND_PHYSICS_DAMAGE );
 	}
+}
+//---------------------------------------------------------
+//---------------------------------------------------------
+HeadcrabRelease_t CZombie::ShouldReleaseHeadcrab( const CTakeDamageInfo &info, float flDamageThreshold )
+{
+	if ( m_iHealth > 1 )
+	{
+		bool m_bHealthRatio = m_iHealth <= sk_zombie_headcrab_evac_health.GetFloat();
+		
+		if ( ( m_bHealthRatio ) && !IsOnFire() )
+		{
+			return RELEASE_SCHEDULED;
+		}
+	}
+
+	return BaseClass::ShouldReleaseHeadcrab( info, flDamageThreshold );;
 }
 
 	

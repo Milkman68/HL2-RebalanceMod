@@ -85,7 +85,8 @@ public:
 	void			DelaySquadAltFireAttack( float flDelay );
 	float			MaxYawSpeed( void );
 	bool			ShouldMoveAndShoot();
-	bool			OverrideMoveFacing( const AILocalMoveGoal_t &move, float flInterval );;
+	bool			OverrideMoveFacing( const AILocalMoveGoal_t &move, float flInterval );
+	bool			IsValidEnemy(CBaseEntity *pEnemy);
 	void			HandleAnimEvent( animevent_t *pEvent );
 	Vector			Weapon_ShootPosition( );
 
@@ -130,7 +131,7 @@ public:
 
 	bool			IsRunningApproachEnemySchedule();
 	Disposition_t	IRelationType( CBaseEntity *pTarget );
-	int 			CountNumEnemies( int m_iClassname, float m_flMaxdist );
+	int 			CountNumEnemies( void );
 
 	// -------------
 	// Sounds
@@ -276,6 +277,7 @@ private:
 	int				m_nKickDamage;
 	Vector			m_vecTossVelocity;
 	EHANDLE			m_hForcedGrenadeTarget;
+	EHANDLE			m_hTarget;
 	bool			m_bShouldPatrol;
 	bool			m_bSlotIndependent;
 	bool			m_bShouldPursue;

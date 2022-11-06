@@ -29,12 +29,9 @@ obj*/
 !utils/smdlexp/smdlexp.mak
 
 # Specific Source build products
-client.pdb
-client.dll
-client.lib
-server.pdb
-server.dll
-server.lib
+*.pdb
+*.dll
+*.lib
 
 client.so
 client.so.dbg

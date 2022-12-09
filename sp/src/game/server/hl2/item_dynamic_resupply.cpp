@@ -481,11 +481,11 @@ void CItem_DynamicResupply::ComputeHealthRatios( CItem_DynamicResupply* pMaster,
 			flMax = pPlayer->GetMaxHealth();
 
 			float flDynamicHealth = pPlayer->GetHealth() + ( pSpawnInfo[i].m_iPotentialItems * sk_healthkit.GetFloat() );
-			float flRandomHealth = random->RandomFloat(0, flMax);
+		//	float flRandomHealth = random->RandomFloat(0, flMax);
 			
-			float flCurrentHealth = ( ( flRandomHealth * max ) + ( flDynamicHealth * min ) ) / 2;
+		//	float flCurrentHealth = ( ( flRandomHealth * max ) + ( flDynamicHealth * min ) ) / 2;
 			
-			pSpawnInfo[i].m_flCurrentRatio = (flCurrentHealth / flMax);
+			pSpawnInfo[i].m_flCurrentRatio = (flDynamicHealth / flMax);
 		}
 		else if ( i == DS_ARMOR_INDEX )
 		{
@@ -499,15 +499,15 @@ void CItem_DynamicResupply::ComputeHealthRatios( CItem_DynamicResupply* pMaster,
 			{
 				flMax = MAX_NORMAL_BATTERY;
 				float flDynamicArmor = pPlayer->ArmorValue() + ( pSpawnInfo[i].m_iPotentialItems * sk_battery.GetFloat());
-				float flRandomArmor = random->RandomFloat(0, flMax);
+			//	float flRandomArmor = random->RandomFloat(0, flMax);
 				
-				float flCurrentArmor = ( ( flRandomArmor * max ) + ( flDynamicArmor * min ) ) / 2;
+			//	float flCurrentArmor = ( ( flRandomArmor * max ) + ( flDynamicArmor * min ) ) / 2;
 				
-				pSpawnInfo[i].m_flCurrentRatio = (flCurrentArmor / flMax);
+				pSpawnInfo[i].m_flCurrentRatio = (flDynamicArmor / flMax);
 			}
 		}
 
-		pSpawnInfo[i].m_flDesiredRatio = pMaster->m_flDesiredHealth[i] * ComputeResupplyModifier();//bookmark
+		pSpawnInfo[i].m_flDesiredRatio = ( ( random->RandomFloat( 0, 1 ) * max ) + ( pMaster->m_flDesiredHealth[i] * ComputeResupplyModifier() * min ) ) / 2;
 		pSpawnInfo[i].m_flDelta = pSpawnInfo[i].m_flDesiredRatio - pSpawnInfo[i].m_flCurrentRatio;
 		pSpawnInfo[i].m_flDelta = clamp( pSpawnInfo[i].m_flDelta, 0, 1 );
 	}
@@ -520,24 +520,6 @@ void CItem_DynamicResupply::ComputeHealthRatios( CItem_DynamicResupply* pMaster,
 			Msg("   %s Desired Ratio: %.2f, Current Ratio: %.2f = Delta of %.2f\n", 
 				g_DynamicResupplyHealthItems[i].sEntityName, pSpawnInfo[i].m_flDesiredRatio, pSpawnInfo[i].m_flCurrentRatio, pSpawnInfo[i].m_flDelta );
 		}
-	}
-}
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
-float CItem_DynamicResupply::ComputeResupplyModifier( void )//bookmark
-{
-	if ( g_pGameRules->IsSkillLevel( SKILL_HARD ) )
-	{
-		return sk_dynamic_resupply_modifier3.GetFloat();
-	}
-	else if ( g_pGameRules->IsSkillLevel( SKILL_EASY ) )
-	{
-		return sk_dynamic_resupply_modifier1.GetFloat();
-	}
-	else
-	{
-		return sk_dynamic_resupply_modifier2.GetFloat();
 	}
 }
 //-----------------------------------------------------------------------------
@@ -565,15 +547,15 @@ void CItem_DynamicResupply::ComputeAmmoRatios( CItem_DynamicResupply* pMaster, C
 			
 			float flDynamicAmmo = pPlayer->GetAmmoCount( iAmmoType ) + (pSpawnInfo[i].m_iPotentialItems * g_DynamicResupplyAmmoItems[i].iAmmoCount);
 			
-			float flRandomAmmo = random->RandomFloat(0, flMax);;
+		//	float flRandomAmmo = random->RandomFloat(0, flMax);
 			
-			float flCurrentAmmo = ( ( flRandomAmmo * max ) + ( flDynamicAmmo * min ) ) / 2;
+		//	float flCurrentAmmo = ( ( flRandomAmmo * max ) + ( flDynamicAmmo * min ) ) / 2;
 			
-			pSpawnInfo[i].m_flCurrentRatio = (flCurrentAmmo / flMax);
+			pSpawnInfo[i].m_flCurrentRatio = (flDynamicAmmo / flMax);
 		}
 
 		// Use the master if we're supposed to
-		pSpawnInfo[i].m_flDesiredRatio = pMaster->m_flDesiredAmmo[i] * ComputeResupplyModifier();
+		pSpawnInfo[i].m_flDesiredRatio = ( ( random->RandomFloat( 0, 1 ) * max ) + ( pMaster->m_flDesiredAmmo[i] * ComputeResupplyModifier() * min ) ) / 2;
 		pSpawnInfo[i].m_flDelta = pSpawnInfo[i].m_flDesiredRatio - pSpawnInfo[i].m_flCurrentRatio;
 		pSpawnInfo[i].m_flDelta = clamp( pSpawnInfo[i].m_flDelta, 0, 1 );
 	}
@@ -588,8 +570,24 @@ void CItem_DynamicResupply::ComputeAmmoRatios( CItem_DynamicResupply* pMaster, C
 		}
 	}
 }
-
-
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+float CItem_DynamicResupply::ComputeResupplyModifier( void )//bookmark
+{
+	if ( g_pGameRules->IsSkillLevel( SKILL_HARD ) )
+	{
+		return sk_dynamic_resupply_modifier3.GetFloat();
+	}
+	else if ( g_pGameRules->IsSkillLevel( SKILL_EASY ) )
+	{
+		return sk_dynamic_resupply_modifier1.GetFloat();
+	}
+	else
+	{
+		return sk_dynamic_resupply_modifier2.GetFloat();
+	}
+}
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------

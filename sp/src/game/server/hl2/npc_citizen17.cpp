@@ -473,8 +473,6 @@ void CNPC_Citizen::Spawn()
 		}
 		gm_PlayerSquadEvaluateTimer.Force();
 	}
-	
-	CapabilitiesAdd( bits_CAP_MOVE_JUMP );
 
 	if ( IsAmmoResupplier() )
 		m_nSkin = 2;

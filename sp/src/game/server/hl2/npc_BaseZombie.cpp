@@ -723,6 +723,17 @@ void CNPC_BaseZombie::TraceAttack( const CTakeDamageInfo &info, const Vector &ve
 		ApplyAbsVelocityImpulse( puntDir );
 		SetCondition( COND_ZOMBIE_GOT_PUNTED );
 	} */
+	
+	//Take extra damage from vehicles.
+	CBaseCombatCharacter *npcEnemy = infoCopy.GetAttacker()->MyCombatCharacterPointer();
+	if ( !npcEnemy )
+	{
+		if ( infoCopy.GetAttacker()->GetServerVehicle() )
+		{
+			float flDamage = infoCopy.GetDamage() * 1.5;
+			infoCopy.SetDamage( flDamage );
+		}
+	}
 
 	BaseClass::TraceAttack( infoCopy, vecDir, ptr, pAccumulator );
 }
@@ -2110,6 +2121,9 @@ void CNPC_BaseZombie::PrescheduleThink( void )
 	}	
 #endif 
 
+	// Warn enemies of potential danger.
+	CSoundEnt::InsertSound( SOUND_DANGER, GetAbsOrigin(), 128, 0.1f, this );
+
 	//
 	// Cool off if we aren't burned for five seconds or so. 
 	//
@@ -2121,10 +2135,6 @@ void CNPC_BaseZombie::PrescheduleThink( void )
 	if ( HasCondition( COND_GOT_PUNTED ) )
 	{
 		ClearCondition( COND_GOT_PUNTED );
-		if ( !IsCurSchedule( SCHED_MELEE_ATTACK1 ) )
-		{
-			SetSchedule( SCHED_ZOMBIE_PUNT_STUN );
-		}
 	}
 }
 
@@ -3083,14 +3093,6 @@ AI_BEGIN_CUSTOM_NPC( base_zombie, CNPC_BaseZombie )
 
 		"	Tasks"
 		"		TASK_ZOMBIE_WAIT_POST_MELEE		0"
-	)
-	DEFINE_SCHEDULE
-	(
-		SCHED_ZOMBIE_PUNT_STUN,
-
-		"	Tasks"
-		"		TASK_STOP_MOVING		0"
-		"		TASK_WAIT				0.3"
 	)
 
 AI_END_CUSTOM_NPC()

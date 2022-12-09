@@ -379,6 +379,7 @@ private:
 	
 	bool	ShouldExplodeFromDamage( const CTakeDamageInfo &info );
 	bool	m_bExploding;
+	bool	m_bChargingCannon;
 	
 	//-----------------------------------------------------
 	// Conditions, Schedules, Tasks

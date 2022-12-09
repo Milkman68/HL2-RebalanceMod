@@ -373,6 +373,7 @@ BEGIN_DATADESC( CNPC_Strider )
 	DEFINE_FIELD( m_bFastCrouch, FIELD_BOOLEAN ),
 	DEFINE_FIELD( m_bMinigunEnabled, FIELD_BOOLEAN ),
 	DEFINE_FIELD( m_bExploding, FIELD_BOOLEAN ),
+	DEFINE_FIELD( m_bChargingCannon, FIELD_BOOLEAN ),
 
 	// inputs
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetMinigunTime", InputSetMinigunTime ),
@@ -1563,6 +1564,7 @@ void CNPC_Strider::StartTask( const Task_t *pTask )
 		break;
 
 	case TASK_STRIDER_FIRE_CANNON:
+		m_bChargingCannon = false;
 		FireCannon();
 		TaskComplete();
 		break;
@@ -1577,6 +1579,8 @@ void CNPC_Strider::StartTask( const Task_t *pTask )
 
 	case TASK_STRIDER_AIM:
 		{
+			m_bChargingCannon = true;
+			
 			// Stop the minigun for a bit, the big gun's about to shoot!
 			m_pMinigun->StopShootingForSeconds( this, m_pMinigun->GetTarget(), 5 );
 
@@ -3416,9 +3420,13 @@ bool CNPC_Strider::ShouldExplodeFromDamage( const CTakeDamageInfo &info )
 	CBaseEntity *pInflictor = info.GetInflictor();
 	if ( pInflictor == NULL )
 		return false;
+	
+	// Explode if we're in the middle of charging a cannon shot!
+	if ( m_bChargingCannon )
+		return true;
 
 	// Combine balls make us explode
-	if ( UTIL_IsCombineBall( info.GetInflictor() ) )
+	if ( UTIL_IsCombineBall( info.GetInflictor() ) )//e
 		return true;
 
 	// Stickybombs make us explode

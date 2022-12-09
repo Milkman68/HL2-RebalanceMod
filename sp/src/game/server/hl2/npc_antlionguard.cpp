@@ -49,11 +49,11 @@ ConVar	sk_antlionguard_dmg_shove( "sk_antlionguard_dmg_shove", "0" );
 ConVar	sk_antlionguard_dmg_scale_buckshot( "sk_antlionguard_dmg_scale_buckshot", "0.5" );
 ConVar	sk_antlionguard_dmg_scale_bullet( "sk_antlionguard_dmg_scale_bullet", "0.25" );
 
-#if HL2_EPISODIC
+//#if HL2_EPISODIC
 // When enabled, add code to have the antlion bleed profusely as it is badly injured.
 #define ANTLIONGUARD_BLOOD_EFFECTS 2
 ConVar	g_antlionguard_hemorrhage( "g_antlionguard_hemorrhage", "1", FCVAR_NONE, "If 1, guard will emit a bleeding particle effect when wounded." );
-#endif
+//#endif
 
 // Spawnflags 
 #define	SF_ANTLIONGUARD_SERVERSIDE_RAGDOLL	( 1 << 16 )

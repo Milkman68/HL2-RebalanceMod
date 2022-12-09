@@ -302,6 +302,9 @@ private:
 	// Rappel
 	virtual bool IsWaitingToRappel( void ) { return m_RappelBehavior.IsWaitingToRappel(); }
 	void BeginRappel() { m_RappelBehavior.BeginRappel(); }
+	
+	// Can we become an Elite?
+	bool CanBecomeElite( void );
 
 private:
 	enum
@@ -328,11 +331,11 @@ private:
 		COND_METROPOLICE_ON_FIRE = BaseClass::NEXT_CONDITION,
 		COND_METROPOLICE_ENEMY_RESISTING_ARREST,
 		COND_METROPOLICE_PLAYER_TOO_CLOSE,
-		COND_ATTACK_SLOT_AVAILABLE,
 		COND_METROPOLICE_CHANGE_BATON_STATE,
 		COND_METROPOLICE_PHYSOBJECT_ASSAULT,
 		COND_METROPOLICE_HIT_BY_BUGBAIT,
 		COND_METROPOLICE_SWITCHED_WEAPON,
+		COND_ATTACK_SLOT_AVAILABLE,
 
 	};
 
@@ -351,6 +354,7 @@ private:
 		SCHED_METROPOLICE_BURNING_STAND,
 		SCHED_METROPOLICE_SMG_NORMAL_ATTACK,
 		SCHED_METROPOLICE_SMG_BURST_ATTACK,
+		SCHED_METROPOLICE_RANGE_ATTACK1,
 		SCHED_METROPOLICE_AIM_STITCH_AT_AIRBOAT,
 		SCHED_METROPOLICE_AIM_STITCH_IN_FRONT_OF_AIRBOAT,
 		SCHED_METROPOLICE_AIM_STITCH_TIGHTLY,
@@ -482,6 +486,9 @@ private:
 
 	int				m_nRecentDamage;
 	float			m_flRecentDamageTime;
+	
+	int				m_nShots;
+	float			m_flShotDelay;
 
 	// The last hit direction, measured as a yaw relative to our orientation
 	float			m_flLastHitYaw;

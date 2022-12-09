@@ -66,10 +66,13 @@ const char *g_pJeepThinkContext = "JeepSeagullThink";
 
 ConVar	sk_jeep_gauss_damage( "sk_jeep_gauss_damage", "10" );
 ConVar	sk_jeep_gauss_charged_damage( "sk_jeep_gauss_charged_damage", "15" );
-ConVar	sk_jeep_gauss_time_till_max_charge( "sk_jeep_gauss_time_till_max_charge", "3" );
+ConVar	sk_jeep_gauss_charge_time( "sk_jeep_gauss_charge_time", "3" );
 
-ConVar	sk_jeep_ammo_box_ammount_given( "sk_jeep_ammo_box_ammount_given", "45" );
-ConVar	sk_jeep_ammo_box_type_given( "sk_jeep_ammo_box_type_given", "SMG1" );
+ConVar	sk_jeep_gauss_max_ammo( "sk_jeep_gauss_max_ammo", "200" );
+ConVar	sk_jeep_gauss_recharge_rate( "sk_jeep_gauss_recharge_rate", "40" );
+
+ConVar	sk_jeep_gauss_drain( "sk_jeep_gauss_drain", "20" );
+ConVar	sk_jeep_charge_drain( "sk_jeep_gauss_charge_drain", "100" );
 
 ConVar	hud_jeephint_numentries( "hud_jeephint_numentries", "10", FCVAR_NONE );
 ConVar	g_jeepexitspeed( "g_jeepexitspeed", "100", FCVAR_CHEAT );
@@ -128,6 +131,9 @@ BEGIN_DATADESC( CPropJeep )
 	DEFINE_FIELD( m_vecEyeSpeed, FIELD_POSITION_VECTOR ),
 	DEFINE_FIELD( m_vecTargetSpeed, FIELD_POSITION_VECTOR ),
 	DEFINE_FIELD( m_bHeadlightIsOn, FIELD_BOOLEAN ),
+	DEFINE_FIELD( m_nAmmoCount,		FIELD_INTEGER ),
+	DEFINE_FIELD( m_flChargeRemainder,	FIELD_FLOAT ),
+	DEFINE_FIELD( m_flDrainRemainder,	FIELD_FLOAT ),
 	DEFINE_EMBEDDED( m_WaterData ),
 
 	DEFINE_FIELD( m_iNumberOfEntries, FIELD_INTEGER ),
@@ -148,6 +154,7 @@ END_DATADESC()
 
 IMPLEMENT_SERVERCLASS_ST( CPropJeep, DT_PropJeep )
 	SendPropBool( SENDINFO( m_bHeadlightIsOn ) ),
+	SendPropInt( SENDINFO( m_nAmmoCount ), 9 ),
 END_SEND_TABLE();
 
 // This is overriden for the episodic jeep
@@ -221,6 +228,8 @@ void CPropJeep::Spawn( void )
 	m_bInitialHandbrake = false;
 
 	m_flMinimumSpeedToEnterExit = LOCK_SPEED;
+	
+	m_nAmmoCount = sk_jeep_gauss_max_ammo.GetFloat();
 
 	m_nBulletType = GetAmmoDef()->Index("GaussEnergy");
 
@@ -332,15 +341,12 @@ int CPropJeep::OnTakeDamage( const CTakeDamageInfo &inputInfo )
 	info.SetDamage( inputInfo.GetDamage() );
 
 	// small amounts of shock damage disrupt the car, but aren't transferred to the player
-/* 	if ( info.GetDamageType() == DMG_SHOCK )
+ 	if ( info.GetDamageType() == DMG_SHOCK )
 	{
-		if ( info.GetDamage() <= 10 )
-		{
-			// take 10% damage and make the engine stall
-			info.ScaleDamage( 1.0 );
-			m_throttleDisableTime = gpGlobals->curtime + 2;
-		}
-	} */
+		// take 10% damage and make the engine stall
+		info.ScaleDamage( 0.5 );
+		FireCannon();
+	} 
 
 	//Check to do damage to driver
 	if ( GetDriver() )
@@ -426,10 +432,10 @@ void CPropJeep::AimGunAt( Vector *endPos, float flInterval )
 	float newTargetPitch = clamp( targetPitch, -CANNON_MAX_DOWN_PITCH, CANNON_MAX_UP_PITCH );
 
 	// If the angles have been clamped, we're looking outside of our valid range
-	if ( fabs(newTargetYaw-targetYaw) > 1e-4 || fabs(newTargetPitch-targetPitch) > 1e-4 )
-	{
-		m_bUnableToFire = true;
-	}
+//	if ( fabs(newTargetYaw-targetYaw) > 1e-4 || fabs(newTargetPitch-targetPitch) > 1e-4 )
+//	{
+//		m_bUnableToFire = true;
+//	}
 
 	targetYaw = newTargetYaw;
 	targetPitch = newTargetPitch;
@@ -838,6 +844,12 @@ void CPropJeep::Think( void )
 		CPASAttenuationFilter sndFilter( this, "PropJeep.AmmoClose" );
 		EmitSound( sndFilter, entindex(), "PropJeep.AmmoClose" );
 	}
+	
+	// Recharge only if we're not using the gun.
+	if ( !m_bCannonCharging && m_flCannonTime < gpGlobals->curtime - 0.3 )
+	{
+		RechargeAmmo();
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -894,8 +906,10 @@ void CPropJeep::FireCannon( void )
 
 	if ( m_bUnableToFire )
 		return;
+	
+	RemoveAmmo( sk_jeep_gauss_drain.GetFloat() );
 
-	m_flCannonTime = gpGlobals->curtime + 0.3f;
+	m_flCannonTime = gpGlobals->curtime + 0.2f;
 	m_bCannonCharging = false;
 
 	//Find the direction the gun is pointing in
@@ -942,6 +956,8 @@ void CPropJeep::FireChargedCannon( void )
 
 	CPASAttenuationFilter sndFilter( this, "PropJeep.FireChargedCannon" );
 	EmitSound( sndFilter, entindex(), "PropJeep.FireChargedCannon" );
+	
+	RemoveAmmo( sk_jeep_gauss_drain.GetFloat() );
 
 	if( m_hPlayer )
 	{
@@ -961,7 +977,7 @@ void CPropJeep::FireChargedCannon( void )
 	ClearMultiDamage();
 
 	//Find how much damage to do
-	float flChargeAmount = ( gpGlobals->curtime - m_flCannonChargeStartTime ) / sk_jeep_gauss_time_till_max_charge.GetFloat();
+	float flChargeAmount = ( gpGlobals->curtime - m_flCannonChargeStartTime ) / sk_jeep_gauss_charge_time.GetFloat();
 
 	//Clamp this
 	if ( flChargeAmount > 1.0f )
@@ -1071,15 +1087,15 @@ void CPropJeep::ChargeCannon( void )
 		if ( m_sndCannonCharge != NULL )
 		{
 			(CSoundEnvelopeController::GetController()).Play( m_sndCannonCharge, 1.0f, 50 );
-			(CSoundEnvelopeController::GetController()).SoundChangePitch( m_sndCannonCharge, 250, 3.0f );
+			(CSoundEnvelopeController::GetController()).SoundChangePitch( m_sndCannonCharge, 250, sk_jeep_gauss_charge_time.GetFloat() );
 		}
 
 		return;
 	}
 	else
 	{
-		float flChargeAmount = ( gpGlobals->curtime - m_flCannonChargeStartTime ) / sk_jeep_gauss_time_till_max_charge.GetFloat();
-		if ( flChargeAmount > 2.333f )//bookmark
+		float flChargeAmount = ( gpGlobals->curtime - m_flCannonChargeStartTime ) / sk_jeep_gauss_charge_time.GetFloat();
+		if ( flChargeAmount > 2.333f || m_nAmmoCount <= 0 )//bookmark
 		{
 			FireChargedCannon();
 		}
@@ -1178,7 +1194,7 @@ void CPropJeep::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE use
 		if ( ( GetSequence() != LookupSequence( "ammo_open" ) ) && ( GetSequence() != LookupSequence( "ammo_close" ) ) )
 		{
 			// Open the crate
-			pPlayer->GiveAmmo( sk_jeep_ammo_box_ammount_given.GetFloat(), sk_jeep_ammo_box_type_given.GetString() );
+			pPlayer->GiveAmmo( 45, "SMG1" );
 			m_flAnimTime = gpGlobals->curtime;
 			m_flPlaybackRate = 0.0;
 			SetCycle( 0 );
@@ -1371,13 +1387,23 @@ void CPropJeep::DriveVehicle( float flFrameTime, CUserCmd *ucmd, int iButtonsDow
 				{
 					FireChargedCannon();
 				}
-				else
+				else if ( m_nAmmoCount >= sk_jeep_gauss_drain.GetFloat() )
 				{
 					FireCannon();
 				}
 			}
-			else if ( iButtons & IN_ATTACK2 )
+			else if ( iButtons & IN_ATTACK2 && ( m_nAmmoCount >= sk_jeep_gauss_drain.GetFloat() || m_bCannonCharging ) )
 			{
+				// Find how much ammo to drain.
+				float flChargeAmount = MAX( ( gpGlobals->curtime - m_flCannonChargeStartTime ) / sk_jeep_gauss_charge_time.GetFloat(), 1.0 );
+	
+				bool m_bIsDoneCharging = flChargeAmount > 1.0;
+				
+				if ( !m_bIsDoneCharging )
+				{
+					RemoveAmmo( sk_jeep_charge_drain.GetFloat() * ( 0.015 / sk_jeep_gauss_charge_time.GetFloat() ) );
+				}
+				
 				ChargeCannon();
 			}
 		}
@@ -1695,7 +1721,64 @@ void CPropJeep::InputFinishRemoveTauCannon( inputdata_t &inputdata )
 	SetBodygroup( 1, false );
 	m_bHasGun = false;
 }
+//-----------------------------------------------------------------------------
+// Removes the ammo...
+//-----------------------------------------------------------------------------
+void CPropJeep::RemoveAmmo( float flAmmoAmount )
+{
+	m_flDrainRemainder += flAmmoAmount;
+	int nAmmoToRemove = (int)m_flDrainRemainder;
+	m_flDrainRemainder -= nAmmoToRemove;
+	m_nAmmoCount -= nAmmoToRemove;
+	if ( m_nAmmoCount < 0 )
+	{
+		m_nAmmoCount = 0;
+		m_flDrainRemainder = 0.0f;
+	}
+}
 
+
+//-----------------------------------------------------------------------------
+// Recharges the ammo...
+//-----------------------------------------------------------------------------
+void CPropJeep::RechargeAmmo(void)
+{
+	if ( !m_bHasGun )
+	{
+		m_nAmmoCount = -1;
+		return;
+	}
+
+	int nMaxAmmo = sk_jeep_gauss_max_ammo.GetInt();
+	if ( m_nAmmoCount == nMaxAmmo )
+		return;
+
+	float flRechargeRate = sk_jeep_gauss_recharge_rate.GetFloat();
+	float flChargeAmount = flRechargeRate * gpGlobals->frametime;
+	if ( m_flDrainRemainder != 0.0f )
+	{
+		if ( m_flDrainRemainder >= flChargeAmount )
+		{
+			m_flDrainRemainder -= flChargeAmount;
+			return;
+		}
+		else
+		{
+			flChargeAmount -= m_flDrainRemainder;
+			m_flDrainRemainder = 0.0f;
+		}
+	}
+
+	m_flChargeRemainder += flChargeAmount;
+	int nAmmoToAdd = (int)m_flChargeRemainder;
+	m_flChargeRemainder -= nAmmoToAdd;
+	m_nAmmoCount += nAmmoToAdd;
+	if ( m_nAmmoCount > nMaxAmmo )
+	{
+		m_nAmmoCount = nMaxAmmo;
+		m_flChargeRemainder = 0.0f;
+	}
+}
 //========================================================================================================================================
 // JEEP FOUR WHEEL PHYSICS VEHICLE SERVER VEHICLE
 //========================================================================================================================================

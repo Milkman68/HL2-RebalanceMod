@@ -820,9 +820,9 @@ CWeaponShotgun::CWeaponShotgun( void )
 	m_bDelayedFire2 = false;
 
 	m_fMinRange1		= 0;
-	m_fMaxRange1		= 800;
+	m_fMaxRange1		= 650;
 	m_fMinRange2		= 0;
-	m_fMaxRange2		= 800;
+	m_fMaxRange2		= 650;
 }
 
 //-----------------------------------------------------------------------------

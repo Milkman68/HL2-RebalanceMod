@@ -498,7 +498,7 @@ void CWeaponAR2::Operator_HandleAnimEvent( animevent_t *pEvent, CBaseCombatChara
 void CWeaponAR2::AddViewKick( void )
 {
 	#define	EASY_DAMPEN			0.0f
-	#define	MAX_VERTICAL_KICK	1.0f	//Degrees
+	#define	MAX_VERTICAL_KICK	2.0f	//Degrees
 	#define	SLIDE_LIMIT			1.0f	//Seconds
 	
 	//Get the view kick

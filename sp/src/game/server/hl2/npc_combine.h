@@ -22,7 +22,6 @@
 #include "ai_sentence.h"
 #include "ai_baseactor.h"
 
-
 // Used when only what combine to react to what the spotlight sees
 #define SF_COMBINE_NO_LOOK	(1 << 16)
 #define SF_COMBINE_NO_GRENADEDROP ( 1 << 17 )
@@ -44,7 +43,6 @@ public:
 	virtual bool	CreateComponents();
 
 	bool			CanThrowGrenade( const Vector &vecTarget );
-	bool			CanDropGrenade( void );
 	bool			CheckCanThrowGrenade( const Vector &vecTarget );
 	virtual	bool	CanGrenadeEnemy( bool bUseFreeKnowledge = true );
 	virtual bool	CanAltFireEnemy( bool bUseFreeKnowledge );
@@ -85,8 +83,7 @@ public:
 	void			DelaySquadAltFireAttack( float flDelay );
 	float			MaxYawSpeed( void );
 	bool			ShouldMoveAndShoot();
-	bool			OverrideMoveFacing( const AILocalMoveGoal_t &move, float flInterval );
-	bool			IsValidEnemy(CBaseEntity *pEnemy);
+	bool			OverrideMoveFacing( const AILocalMoveGoal_t &move, float flInterval );;
 	void			HandleAnimEvent( animevent_t *pEvent );
 	Vector			Weapon_ShootPosition( );
 
@@ -102,16 +99,12 @@ public:
 	virtual void	PrescheduleThink();
 
 	Activity		NPC_TranslateActivity( Activity eNewActivity );
-	Activity        Weapon_TranslateActivity( Activity eNewActivity, bool *pRequired );
 	void			BuildScheduleTestBits( void );
 	virtual int		SelectSchedule( void );
 	virtual int		SelectFailSchedule( int failedSchedule, int failedTask, AI_TaskFailureCode_t taskFailCode );
 	int				SelectScheduleAttack();
 
 	bool			CreateBehaviors();
-	
-	//void 			CalcNumEnemies( void );
-	 bool 			CanOccupyAttackSlot( void );
 
 	bool			OnBeginMoveAndShoot();
 	void			OnEndMoveAndShoot();
@@ -123,23 +116,18 @@ public:
 
 	bool			HandleInteraction(int interactionType, void *data, CBaseCombatCharacter *sourceEnt);
 	const char*		GetSquadSlotDebugName( int iSquadSlot );
-	
-	//void 			CanOccupyExtraSlots( void );
 
 	bool			IsUsingTacticalVariant( int variant );
 	bool			IsUsingPathfindingVariant( int variant ) { return m_iPathfindingVariant == variant; }
 
 	bool			IsRunningApproachEnemySchedule();
-	Disposition_t	IRelationType( CBaseEntity *pTarget );
-	int 			CountNumEnemies( void );
+	bool			CanOccupyAttackSlot();
 
 	// -------------
 	// Sounds
 	// -------------
 	void			DeathSound( void );
-    void 			PainSound( const CTakeDamageInfo &info );
-	int				OnTakeDamage_Alive( const CTakeDamageInfo &inputInfo );
-	void 			TraceAttack( const CTakeDamageInfo &inputInfo, const Vector &vecDir, trace_t *ptr, CDmgAccumulator *pAccumulator );
+	void			PainSound( const CTakeDamageInfo &info );
 	void			IdleSound( void );
 	void			AlertSound( void );
 	void			LostEnemySound( void );
@@ -187,7 +175,6 @@ private:
 		SCHED_COMBINE_RANGE_ATTACK1,
 		SCHED_COMBINE_RANGE_ATTACK2,
 		SCHED_COMBINE_TAKE_COVER1,
-		SCHED_COMBINE_TAKE_COVER2,
 		SCHED_COMBINE_TAKE_COVER_FROM_BEST_SOUND,
 		SCHED_COMBINE_RUN_AWAY_FROM_BEST_SOUND,
 		SCHED_COMBINE_GRENADE_COVER1,
@@ -207,9 +194,6 @@ private:
 		SCHED_COMBINE_FACE_IDEAL_YAW,
 		SCHED_COMBINE_MOVE_TO_MELEE,
 		SCHED_COMBINE_FLANK_ENEMY,
-		//SCHED_COMBINE_SOFT_FLANK_ENEMY,
-		SCHED_TAKE_COVER_FROM_ORIGIN_FIRE,
-		SCHED_ESTABLISH_ADVANCING_COVER,
 		NEXT_SCHEDULE,
 	};
 
@@ -227,7 +211,7 @@ private:
 		TASK_COMBINE_PLAY_SEQUENCE_FACE_ALTFIRE_TARGET,
 		TASK_COMBINE_GET_PATH_TO_FORCED_GREN_LOS,
 		TASK_COMBINE_SET_STANDING,
-		TASK_COMBINE_BEGIN_FLANK,//bookmark
+		TASK_COMBINE_BEGIN_FLANK,
 		NEXT_TASK
 	};
 
@@ -243,12 +227,16 @@ private:
 		COND_COMBINE_DROP_GRENADE,
 		COND_COMBINE_ON_FIRE,
 		COND_COMBINE_ATTACK_SLOT_AVAILABLE,
+		COND_TAKECOVER_FAILED,
 		NEXT_CONDITION
 	};
 
 private:
 	// Select the combat schedule
 	int SelectCombatSchedule();
+	
+	int	OnTakeDamage_Alive( const CTakeDamageInfo &info );
+
 	// Should we charge the player?
 	bool ShouldChargePlayer();
 
@@ -277,14 +265,8 @@ private:
 	int				m_nKickDamage;
 	Vector			m_vecTossVelocity;
 	EHANDLE			m_hForcedGrenadeTarget;
-	EHANDLE			m_hTarget;
 	bool			m_bShouldPatrol;
-	bool			m_bSlotIndependent;
-	bool			m_bShouldPursue;
-	bool			m_bCanOccupyExtraSlots;
 	bool			m_bFirstEncounter;// only put on the handsign show in the squad's first encounter.
-	bool			m_bCantFlee;
-	//bool			m_bCanFallBack;
 
 	// Time Variables
 	float			m_flNextPainSoundTime;
@@ -293,21 +275,17 @@ private:
 	float			m_flNextLostSoundTime;
 	float			m_flAlertPatrolTime;		// When to stop doing alert patrol
 	float			m_flNextAltFireTime;		// Elites only. Next time to begin considering alt-fire attack.
-	float			m_flHangBackTime;
 	float			m_flTimeSawEnemyAgain;
-
+	float			m_flRecentDamageTime;
+	
+	int				m_nRecentDamage;
 	int				m_nShots;
-	int				m_iNumEnemies;
 	float			m_flShotDelay;
 	float			m_flStopMoveShootTime;
-	float			m_flNextDropGrenadeCheck;
-	float			m_flRecentDamageTime;
 
 	CAI_Sentence< CNPC_Combine > m_Sentences;
 
 	int			m_iNumGrenades;
-	int			m_iVisibleEnemies;
-	int			m_nRecentDamage;
 	CAI_AssaultBehavior			m_AssaultBehavior;
 	CCombineStandoffBehavior	m_StandoffBehavior;
 	CAI_FollowBehavior			m_FollowBehavior;
@@ -318,6 +296,7 @@ private:
 public:
 	int				m_iLastAnimEventHandled;
 	bool			m_fIsElite;
+	bool			m_bCanRun;
 	Vector			m_vecAltFireTarget;
 
 	int				m_iTacticalVariant;

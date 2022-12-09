@@ -203,6 +203,7 @@ enum
 	SCHED_ZOMBIE_WANDER_ANGRILY,
 	SCHED_ZOMBIE_CHARGE_ENEMY,
 	SCHED_ZOMBIE_FAIL,
+	SCHED_ZOMBIE_PUNT_STUN,
 };
 
 //=========================================================
@@ -319,6 +320,13 @@ void CZombie::PrescheduleThink( void )
   			m_flNextMoanSound = gpGlobals->curtime + random->RandomFloat( 1.0, 2.0 );
   		}
   	}
+	if ( HasCondition( COND_GOT_PUNTED ) )
+	{
+		if ( !IsCurSchedule( SCHED_MELEE_ATTACK1 ) && !IsCurSchedule( SCHED_ZOMBIE_PUNT_STUN ) )
+		{
+			SetSchedule( SCHED_ZOMBIE_PUNT_STUN );
+		}
+	}
 
 	BaseClass::PrescheduleThink();
 }
@@ -1019,7 +1027,15 @@ AI_BEGIN_CUSTOM_NPC( npc_zombie, CZombie )
 		"		COND_GIVE_WAY"
 		"		COND_DOOR_OPENED"
 	)
+	DEFINE_SCHEDULE
+	(
+		SCHED_ZOMBIE_PUNT_STUN,
 
+		"	Tasks"
+		"		TASK_STOP_MOVING		0"
+		"		TASK_PLAY_SEQUENCE		ACTIVITY:ACT_FLINCH_PHYSICS"
+		"		TASK_WAIT				0.2"
+	)
 AI_END_CUSTOM_NPC()
 
 //=============================================================================

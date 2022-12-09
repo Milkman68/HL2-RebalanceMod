@@ -119,6 +119,12 @@ private:
 	void		InputShowHudHint( inputdata_t &inputdata );
 	void		InputStartRemoveTauCannon( inputdata_t &inputdata );
 	void		InputFinishRemoveTauCannon( inputdata_t &inputdata );
+	
+	// Recharges the ammo based on speed
+ 	void			RechargeAmmo();
+
+	// Removes the ammo...
+	void			RemoveAmmo( float flAmmoAmount );
 
 protected:
 
@@ -139,6 +145,8 @@ protected:
 	float			m_throttleDisableTime;
 	float			m_flAmmoCrateCloseTime;
 	float			m_flDisableTime;
+	float			m_flChargeRemainder;
+	float			m_flDrainRemainder;
 
 	// handbrake after the fact to keep vehicles from rolling
 	float			m_flHandbrakeTime;
@@ -164,6 +172,7 @@ protected:
 	bool			m_bHasPoop;
 
 	CNetworkVar( bool, m_bHeadlightIsOn );
+	CNetworkVar( int, m_nAmmoCount );
 };
 
 #endif // VEHICLE_JEEP_H

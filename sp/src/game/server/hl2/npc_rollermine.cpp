@@ -2310,7 +2310,7 @@ void CNPC_RollerMine::InputJoltVehicle( inputdata_t &inputdata ) // bookmark1
 	*/
 	CBaseAnimating *pAnimating = dynamic_cast<CBaseAnimating *>( GetVehicleStuckTo() );
 
-	CTakeDamageInfo	info( this, this, vecForce, out, sk_rollermine_shock.GetFloat(), DMG_GENERIC );//bookmark
+	CTakeDamageInfo	info( this, this, vecForce, out, sk_rollermine_shock.GetFloat(), DMG_SHOCK );//bookmark
 	pAnimating->TakeDamage( info );
 	
 	ShockTarget( GetVehicleStuckTo() );//bookmark

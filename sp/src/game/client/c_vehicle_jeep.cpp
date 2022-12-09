@@ -12,6 +12,7 @@
 #include "c_baseplayer.h"
 #include "c_te_effect_dispatch.h"
 #include "fx.h"
+#include "ammodef.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -28,6 +29,7 @@ ConVar r_JeepViewBlendToTime( "r_JeepViewBlendToTime", "1.5", FCVAR_CHEAT );
 
 IMPLEMENT_CLIENTCLASS_DT( C_PropJeep, DT_PropJeep, CPropJeep )
 	RecvPropBool( RECVINFO( m_bHeadlightIsOn ) ),
+	RecvPropInt( RECVINFO( m_nAmmoCount ) ),
 END_RECV_TABLE()
 
 //-----------------------------------------------------------------------------
@@ -321,6 +323,32 @@ void WheelDustCallback( const CEffectData &data )
 		pParticle->m_flRoll			= random->RandomInt( 0, 360 );
 		pParticle->m_flRollDelta	= random->RandomFloat( -2.0f, 2.0f );
 	}
+}
+//-----------------------------------------------------------------------------
+// Draws the ammo for the Jeep
+//-----------------------------------------------------------------------------
+int C_PropJeep::GetPrimaryAmmoType() const
+{
+	if ( m_nAmmoCount < 0 )
+		return -1;
+	
+	int nAmmoType = GetAmmoDef()->Index( "GaussEnergy" );
+	return nAmmoType; 
+}
+
+int C_PropJeep::GetPrimaryAmmoCount() const
+{ 
+	return m_nAmmoCount; 
+}
+
+bool C_PropJeep::PrimaryAmmoUsesClips() const
+{ 
+	return false; 
+}
+
+int C_PropJeep::GetPrimaryAmmoClip() const
+{ 
+	return -1; 
 }
 
 DECLARE_CLIENT_EFFECT( "WheelDust", WheelDustCallback );

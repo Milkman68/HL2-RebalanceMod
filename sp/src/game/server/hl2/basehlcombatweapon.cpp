@@ -77,12 +77,12 @@ void CHLMachineGun::PrimaryAttack( void )
 	}
 
 	// Make sure we don't fire more than the amount in the clip, if this weapon uses clips
-	if ( UsesClipsForAmmo1() )
+ 	if ( UsesClipsForAmmo1() )
 	{
 		if ( iBulletsToFire > m_iClip1 )
 			iBulletsToFire = m_iClip1;
 		m_iClip1 -= iBulletsToFire;
-	}
+	} 
 
 	m_iPrimaryAttacks++;
 	gamestats->Event_WeaponFired( pPlayer, true, GetClassname() );
@@ -336,10 +336,40 @@ void CHLSelectFireMachineGun::ItemPostFrame( void )
 	return BaseClass::ItemPostFrame();
 }
 
+//=====================================================================================================
+// Purpose: Okay... So the reason that this exists is to prevent getting better accuracy while spam-clicking.
+// Because m_fFireDuration always resets when the mouse is not being clicked,
+// meaning rapidly clicking the mouse is objectively better than holding it down!
+
+// Instead of resetting m_fFireDuration, just decrease it each frame based on the firerate of the gun.
+// Simple right? 
+//=====================================================================================================
 void CHLSelectFireMachineGun::SetFireDuration( void )
 {
+//	float m_fPrevFireDuration = m_fFireDuration;
 	CBasePlayer *pOwner = ToBasePlayer( GetOwner() );
-	m_fFireDuration = ( pOwner->m_nButtons & IN_ATTACK || ( m_iBurstSize > 0 && m_iFireMode == FIREMODE_3RNDBURST ) ) ? ( m_fFireDuration + gpGlobals->frametime ) : 0.0f;
+	
+	if ( m_flNextPrimaryAttack < gpGlobals->curtime )
+	{
+		if ( pOwner->m_nButtons & IN_ATTACK )
+		{
+			m_fFireDuration += gpGlobals->frametime + GetFireRate();
+		}
+		else
+		{
+			// This basically makes m_fFireDuration decrease faster or slower based on the firerate.
+			m_fFireDuration -= m_fFireDuration * ( 0.75 - GetFireRate() );
+			
+			// Clamp this when we're near 'enough' to zero.
+			m_fFireDuration = m_fFireDuration < 0.001 ? 0 : m_fFireDuration;
+		}
+		
+		// Debug stuff.
+	//	if ( m_fPrevFireDuration != m_fFireDuration )
+	//	{
+	//		Msg("Current Fire Duration is: %f \n", m_fFireDuration );
+	//	}
+	}
 }
 
 bool CHLSelectFireMachineGun::Deploy( void )

@@ -42,6 +42,10 @@ public:
 
 	void OnEnteredVehicle( C_BasePlayer *pPlayer );
 	void Simulate( void );
+	virtual int GetPrimaryAmmoType() const;
+	virtual int GetPrimaryAmmoClip() const;
+	virtual bool PrimaryAmmoUsesClips() const;
+	virtual int GetPrimaryAmmoCount() const;
 
 private:
 
@@ -57,10 +61,12 @@ private:
 	Vector		m_vecTargetSpeed;
 
 	float		m_flViewAngleDeltaTime;
+	int			m_nAmmoCount;
 
 	float		m_flJeepFOV;
 	CHeadlightEffect *m_pHeadlight;
 	bool		m_bHeadlightIsOn;
+	bool		m_bHasGun;
 };
 
 #endif // C_VEHICLE_JEEP_H

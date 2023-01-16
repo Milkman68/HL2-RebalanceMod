@@ -22,6 +22,7 @@
 #include "tier0/memdbgon.h"
 
 #define ITEM_PICKUP_BOX_BLOAT		24
+extern ConVar	sk_manual_pickup;
 
 class CWorldItem : public CBaseAnimating
 {
@@ -353,6 +354,15 @@ bool UTIL_ItemCanBeTouchedByPlayer( CBaseEntity *pItem, CBasePlayer *pPlayer )
 	IPhysicsObject *pPhysObj = pItem->VPhysicsGetObject();
 	if ( pPhysObj != NULL )
 	{
+		if ( ( pPhysObj->GetGameFlags() != FVPHYSICS_PLAYER_HELD ) && sk_manual_pickup.GetBool() )
+		{
+			// Don't force manually picking up weapons if we're just starting a chapter!
+			if ( gpGlobals->curtime > 5 )
+			{
+				return false;
+			}
+		}
+	
 		// Use the physics hull's center
 		QAngle vecAngles;
 		pPhysObj->GetPosition( &vecStartPos, &vecAngles );

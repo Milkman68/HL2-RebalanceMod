@@ -201,10 +201,10 @@ void C_NPC_Manhack::Simulate( void )
 		dlight_t *dl = effects->CL_AllocDlight ( index );
 		dl->origin = GetAbsOrigin();
  		dl->origin[2];
-		dl->color.r = 32;
-		dl->color.g = 16;
+		dl->color.r = 4;
+		dl->color.g = 2;
 		dl->color.b = 0;
-		dl->radius = random->RandomFloat(64,96);
+		dl->radius = random->RandomFloat(128,192);
 		dl->die = gpGlobals->curtime + 0.05;
 	}
 	else if ( m_bIsCharging )
@@ -212,10 +212,10 @@ void C_NPC_Manhack::Simulate( void )
 		dlight_t *dl = effects->CL_AllocDlight ( index );
 		dl->origin = GetAbsOrigin();
  		dl->origin[2];
-		dl->color.r = 64;
+		dl->color.r = 8;
 		dl->color.g = 0;
 		dl->color.b = 0;
-		dl->radius = random->RandomFloat(96,192);
+		dl->radius = random->RandomFloat(192,384);
 		dl->die = gpGlobals->curtime + 0.05;
 	}
 	else
@@ -223,10 +223,10 @@ void C_NPC_Manhack::Simulate( void )
 		dlight_t *dl = effects->CL_AllocDlight ( index );
 		dl->origin = GetAbsOrigin();
  		dl->origin[2];
-		dl->color.r = 32;
+		dl->color.r = 4;
 		dl->color.g = 0;
 		dl->color.b = 0;
-		dl->radius = random->RandomFloat(64,96);
+		dl->radius = random->RandomFloat(128,192);
 		dl->die = gpGlobals->curtime + 0.05;
 	}
 		

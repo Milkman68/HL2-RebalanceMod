@@ -2650,8 +2650,18 @@ bool CHL2_Player::Weapon_CanUse( CBaseCombatWeapon *pWeapon )
 #ifndef HL2MP	
 	if ( pWeapon->ClassMatches( "weapon_stunstick" ) )
 	{
-		if ( ApplyBattery( 0.5 ) )
+		// HACK: The player is at a massive disadvantage in the first canals map, give 'em some suit-charge via stuntick!
+		if ( FStrEq(STRING(gpGlobals->mapname), "d1_canals_01") )
+		{
+			if ( ApplyBattery( 5 ) )
+			{
+				UTIL_Remove( pWeapon );
+			}
+		}
+		else if ( ApplyBattery( 0.5 ) )
+		{
 			UTIL_Remove( pWeapon );
+		}
 		return false;
 	}
 #endif

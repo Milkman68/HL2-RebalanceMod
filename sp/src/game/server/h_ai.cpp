@@ -211,8 +211,6 @@ Vector VecCheckToss( CBaseEntity *pEntity, Vector vecSpot1, Vector vecSpot2, flo
 // VecCheckThrow - returns the velocity vector at which an object should be thrown from vecspot1 to hit vecspot2.
 // returns vec3_origin if throw is not feasible.
 // 
-// BUG: This breaks if the target in question has a vertical component as this fails to take into account verticality.
-//
 Vector VecCheckThrow ( CBaseEntity *pEdict, const Vector &vecSpot1, Vector vecSpot2, float flSpeed, float flGravityAdj, Vector *vecMins, Vector *vecMaxs )
 {
 	float			flGravity = GetCurrentGravity() * flGravityAdj;

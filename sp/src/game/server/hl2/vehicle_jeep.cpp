@@ -345,7 +345,6 @@ int CPropJeep::OnTakeDamage( const CTakeDamageInfo &inputInfo )
 	{
 		// take 10% damage and make the engine stall
 		info.ScaleDamage( 0.5 );
-		FireCannon();
 	} 
 
 	//Check to do damage to driver

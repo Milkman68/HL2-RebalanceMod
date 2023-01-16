@@ -212,6 +212,7 @@ private:
 		TASK_COMBINE_GET_PATH_TO_FORCED_GREN_LOS,
 		TASK_COMBINE_SET_STANDING,
 		TASK_COMBINE_BEGIN_FLANK,
+		TASK_PLAY_GRENADE_SEQUENCE,
 		NEXT_TASK
 	};
 
@@ -267,6 +268,7 @@ private:
 	EHANDLE			m_hForcedGrenadeTarget;
 	bool			m_bShouldPatrol;
 	bool			m_bFirstEncounter;// only put on the handsign show in the squad's first encounter.
+	bool			m_bUseAttackSlots;
 
 	// Time Variables
 	float			m_flNextPainSoundTime;
@@ -276,6 +278,7 @@ private:
 	float			m_flAlertPatrolTime;		// When to stop doing alert patrol
 	float			m_flNextAltFireTime;		// Elites only. Next time to begin considering alt-fire attack.
 	float			m_flTimeSawEnemyAgain;
+	float			m_flThrowSpeed;
 	float			m_flRecentDamageTime;
 	
 	int				m_nRecentDamage;

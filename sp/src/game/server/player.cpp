@@ -115,7 +115,7 @@ ConVar cl_backspeed( "cl_backspeed", "450", FCVAR_REPLICATED | FCVAR_CHEAT );
 
 // This is declared in the engine, too
 ConVar	sv_noclipduringpause( "sv_noclipduringpause", "0", FCVAR_REPLICATED | FCVAR_CHEAT, "If cheats are enabled, then you can noclip with the game paused (for doing screenshots, etc.)." );
-
+ConVar	sk_manual_pickup( "sk_manual_pickup", "0" );
 extern ConVar sv_maxunlag;
 extern ConVar sv_turbophysics;
 extern ConVar *sv_maxreplay;
@@ -6569,6 +6569,18 @@ bool CBasePlayer::BumpWeapon( CBaseCombatWeapon *pWeapon )
 	// Can I have this weapon type?
 	if ( !IsAllowedToPickupWeapons() )
 		return false;
+	
+	if ( ( pWeapon->VPhysicsGetObject() && pWeapon->VPhysicsGetObject()->GetGameFlags() != FVPHYSICS_PLAYER_HELD ) && sk_manual_pickup.GetBool() )
+	{
+		// Don't force manually picking up weapons if we're just starting a chapter!
+		if ( gpGlobals->curtime > 5 )
+		{
+#ifdef HL2_DLL // Literally nobody knows that the stunstick 'can' even be picked up, just do it automatically.
+				if ( !pWeapon->ClassMatches( "weapon_stunstick" ) )
+#endif
+					return false;
+		}
+	}
 
 	if ( pOwner || !Weapon_CanUse( pWeapon ) || !g_pGameRules->CanHavePlayerItem( this, pWeapon ) )
 	{

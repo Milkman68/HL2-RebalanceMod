@@ -116,6 +116,7 @@ ConVar	sk_metropolice_stitch_along_hitcount( "sk_metropolice_stitch_along_hitcou
 
 
 ConVar	sk_metropolice_health( "sk_metropolice_health","0");
+ConVar	sk_metropolice_elite_health( "sk_metropolice_elite_health","0");
 ConVar	sk_metropolice_simple_health( "sk_metropolice_simple_health","0");
 ConVar	sk_metropolice_stitch_distance( "sk_metropolice_stitch_distance","1000");
 
@@ -714,6 +715,11 @@ void CNPC_MetroPolice::Spawn( void )
 	{
 		m_iHealth = sk_metropolice_simple_health.GetFloat();
 	}
+	
+	if ( m_bIsElite )
+	{
+		m_iHealth = sk_metropolice_elite_health.GetFloat();
+	}
 
 	m_flFieldOfView		= -0.2;// indicates the width of this NPC's forward view cone ( as a dotproduct result )
 	m_NPCState			= NPC_STATE_NONE;
@@ -733,7 +739,7 @@ void CNPC_MetroPolice::Spawn( void )
 	m_nBurstHits = 0;
 	m_HackedGunPos = Vector ( 0, 0, 55 );
 	m_flStopMoveShootTime = FLT_MAX; // Move and shoot defaults on.
-	m_MoveAndShootOverlay.SetInitialDelay( 0.75 ); // But with a bit of a delay.
+	m_MoveAndShootOverlay.SetInitialDelay( 0.25 ); // But with a bit of a delay.
 
 	//m_iPistolClips = METROPOLICE_NUM_CLIPS; // Doesn't do anything.
 
@@ -4875,7 +4881,7 @@ void CNPC_MetroPolice::StartTask( const Task_t *pTask )
 		}
 		break;
 		
-	case TASK_RANGE_ATTACK1:
+	/* case TASK_RANGE_ATTACK1:
 		{
 			m_nShots = GetActiveWeapon()->GetRandomBurst();
 			m_flShotDelay = GetActiveWeapon()->GetFireRate();
@@ -4884,7 +4890,7 @@ void CNPC_MetroPolice::StartTask( const Task_t *pTask )
 			ResetIdealActivity( ACT_RANGE_ATTACK1 );
 			m_flLastAttackTime = gpGlobals->curtime;
 		}
-		break;
+		break; */
 
 	default:
 		BaseClass::StartTask( pTask );
@@ -5087,7 +5093,7 @@ void CNPC_MetroPolice::RunTask( const Task_t *pTask )
 			}
 		}
 		break;
-	case TASK_RANGE_ATTACK1:
+/* 	case TASK_RANGE_ATTACK1:
 		{
 			AutoMovement( );
 
@@ -5124,7 +5130,7 @@ void CNPC_MetroPolice::RunTask( const Task_t *pTask )
 				// DevMsg("Wait\n");
 			}
 		}
-		break;
+		break; */
 
 	default:
 		BaseClass::RunTask( pTask );
@@ -5258,17 +5264,17 @@ void CNPC_MetroPolice::BuildScheduleTestBits( void )
 	if( IsCurSchedule( SCHED_METROPOLICE_ESTABLISH_LINE_OF_FIRE, false ) 
 	|| IsCurSchedule( SCHED_METROPOLICE_FLANK_ENEMY, false ) )
 	{
-		if( HasCondition(COND_CAN_RANGE_ATTACK1) && m_flTimeSawEnemyAgain != NULL )
-		{
-			if( (gpGlobals->curtime - m_flTimeSawEnemyAgain) >= 0.2f )
-			{
+	//	if( HasCondition(COND_CAN_RANGE_ATTACK1) && m_flTimeSawEnemyAgain != NULL )
+	//	{
+		//	if( (gpGlobals->curtime - m_flTimeSawEnemyAgain) >= 0.2f )
+		//	{
 				// When we're running flank behavior, wait a moment AFTER being able to see the enemy before
 				// breaking my schedule to range attack. This helps assure that the hunter gets well inside
 				// the room before stopping to attack. Otherwise the Hunter may stop immediately in the doorway
 				// and stop the progress of any hunters behind it.
 				SetCustomInterruptCondition( COND_CAN_RANGE_ATTACK1 );
-			}
-		}
+		//	}
+	//	}
 	}
 	
 	if ( !IsCurSchedule( SCHED_CHASE_ENEMY ) &&

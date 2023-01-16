@@ -75,7 +75,7 @@ public:
 	}
 
 	virtual int				GetMinBurst() { return 1; }
-	virtual int				GetMaxBurst() { return 1; }
+	virtual int				GetMaxBurst() { return 3; }
 
 	virtual float			GetMinRestTime();
 	virtual float			GetMaxRestTime();
@@ -277,10 +277,10 @@ float CWeaponShotgun::GetMaxRestTime()
 //-----------------------------------------------------------------------------
 float CWeaponShotgun::GetFireRate()
 {
-	if( GetOwner() && GetOwner()->Classify() == CLASS_COMBINE )
-	{
-		return 0.8f;
-	}
+//	if( GetOwner() && GetOwner()->Classify() == CLASS_COMBINE )
+//	{
+//		return 0.8f;
+//	}
 
 	return 0.7;
 }

@@ -2018,9 +2018,9 @@ void CProtoSniper::StartTask( const Task_t *pTask )
 		}
 		else
 		{
-/* 			if( GetEnemy()->IsPlayer() )
+ 			if( GetEnemy()->IsPlayer() )
 			{
-				float delay = 0;
+				float delay = random->RandomFloat( 0, m_flKeyfieldPaintTimeNoise );
 #ifdef _XBOX
 				delay += sniper_xbox_delay.GetFloat();
 #endif
@@ -2037,20 +2037,17 @@ void CProtoSniper::StartTask( const Task_t *pTask )
 				}
 			}
 			else
-			{ */
-				m_flPaintTime = m_flKeyfieldPaintTimeNoise > 0									 ? 
-					m_flKeyfieldPaintTime + random->RandomFloat( 0, m_flKeyfieldPaintTimeNoise ) :
-					m_flKeyfieldPaintTime
-				;
+			{ 
+				m_flPaintTime = m_flKeyfieldPaintTimeNoise > 0 ? m_flKeyfieldPaintTime + random->RandomFloat( 0, m_flKeyfieldPaintTimeNoise ) : m_flKeyfieldPaintTime;
 
-				// if( IsFastSniper() )
-				// {
+				if( IsFastSniper() )
+				{
 					// Get the shot off a little faster.
 					m_flPaintTime *= random->RandomFloat( 0.25, 1.0f );
-				// }
+				}
 
 				SetWait( m_flPaintTime );
-//			}
+			}
 
 			Vector vecCursor;
 

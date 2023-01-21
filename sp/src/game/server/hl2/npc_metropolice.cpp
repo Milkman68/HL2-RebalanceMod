@@ -120,7 +120,7 @@ ConVar	sk_metropolice_elite_health( "sk_metropolice_elite_health","0");
 ConVar	sk_metropolice_simple_health( "sk_metropolice_simple_health","0");
 ConVar	sk_metropolice_stitch_distance( "sk_metropolice_stitch_distance","1000");
 
-ConVar	metropolice_chase_use_follow( "metropolice_chase_use_follow", "1" );
+//ConVar	metropolice_chase_use_follow( "metropolice_chase_use_follow", "1" );
 ConVar  metropolice_move_and_melee("metropolice_move_and_melee", "1" );
 ConVar  metropolice_charge("metropolice_charge", "0" );
 ConVar  metropolice_baton_switch("metropolice_baton_switch", "0" );

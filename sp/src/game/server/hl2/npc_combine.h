@@ -248,6 +248,8 @@ private:
 	// Should we charge the player?
 	bool ShouldChargePlayer();
 	
+	bool OverrideAimOnMoveAndShoot( void );
+	
 	// Delay any advances our squad might do.
 	void DelaySquadAdvances( float flTime );
 

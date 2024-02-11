@@ -3709,6 +3709,16 @@ int CNPC_Combine::RangeAttack1Conditions ( float flDot, float flDist )
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
+bool CNPC_Combine::OverrideAimOnMoveAndShoot( void )
+{
+	if ( IsElite() )
+		return true;
+	
+	return BaseClass::OverrideAimOnMoveAndShoot();
+}
+//-----------------------------------------------------------------------------
+// Purpose:
+//-----------------------------------------------------------------------------
 void CNPC_Combine::DelaySquadAdvances( float flTime )
 {
 	m_flDelayAttacksTime = gpGlobals->curtime + flTime;

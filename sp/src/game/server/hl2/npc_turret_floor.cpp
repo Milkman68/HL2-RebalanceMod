@@ -41,6 +41,7 @@ ConVar	sk_npc_turret_antlion_dmg_multiplier( "sk_npc_turret_antlion_dmg_multipli
 ConVar	sk_npc_turret_combine_dmg_multiplier( "sk_npc_turret_combine_dmg_multiplier", "1.0" );
 
 extern ConVar physcannon_tracelength;
+extern ConVar hl2r_reduced_assists;
 
 // Interactions
 int	g_interactionTurretStillStanding	= 0;
@@ -1122,7 +1123,7 @@ void CNPC_FloorTurret::AutoSearchThink( void )
 	if ( GetEnemy() != NULL )
 	{
 		SetThink( &CNPC_FloorTurret::Deploy );
-		if ( !m_bNoAlarmSounds )
+		if ( !m_bNoAlarmSounds && !hl2r_reduced_assists.GetBool() )
 		{
 			EmitSound( "NPC_FloorTurret.Alert" );
 		}
@@ -1497,7 +1498,7 @@ bool CNPC_FloorTurret::PreThink( turretState_e state )
 				SetEyeState( TURRET_EYE_SEE_TARGET );
 				
 				SpinUp();
-				if ( !m_bNoAlarmSounds )
+				if ( !m_bNoAlarmSounds && !hl2r_reduced_assists.GetBool() )
 				{
 					EmitSound( "NPC_FloorTurret.Alarm" );
 				}

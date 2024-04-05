@@ -26,6 +26,7 @@ ConVar sk_npc_dmg_fraggrenade	( "sk_npc_dmg_fraggrenade","0");
 ConVar sk_fraggrenade_radius	( "sk_fraggrenade_radius", "0");
 
 extern ConVar sk_plr_grenade_timer;
+extern ConVar hl2r_reduced_assists;
 
 #define GRENADE_MODEL "models/Weapons/w_grenade.mdl"
 
@@ -48,7 +49,7 @@ public:
 	void	SetTimer( float detonateDelay, float warnDelay );
 	void	SetVelocity( const Vector &velocity, const AngularImpulse &angVelocity );
 	int		OnTakeDamage( const CTakeDamageInfo &inputInfo );
-	void	BlipSound() { EmitSound( "Grenade.Blip" ); }
+	void	BlipSound() { if ( !hl2r_reduced_assists.GetBool() ){ EmitSound( "Grenade.Blip" ); } }
 	void	BlipEffect( void );
 	void	CheckInitialBlip( void );
 	void	DelayThink();
@@ -164,6 +165,9 @@ void CGrenadeFrag::OnRestore( void )
 //-----------------------------------------------------------------------------
 void CGrenadeFrag::CreateEffects( void )
 {
+	if ( hl2r_reduced_assists.GetBool() )
+		return;
+	
 	// Start up the eye glow
 	m_pMainGlow = CSprite::SpriteCreate( "sprites/redglow1.vmt", GetLocalOrigin(), false );
 

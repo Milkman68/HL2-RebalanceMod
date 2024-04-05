@@ -35,6 +35,8 @@ ConVar sk_plr_grenade_timer("sk_plr_grenade_timer", "3");
 ConVar sk_plr_grenade_is_cookable("sk_plr_grenade_is_cookable", "1");
 ConVar sk_plr_grenade_cook_grace_period("sk_plr_grenade_cook_grace_period", "1.0");
 
+extern ConVar hl2r_reduced_assists;
+
 //-----------------------------------------------------------------------------
 // Fragmentation grenades
 //-----------------------------------------------------------------------------
@@ -67,7 +69,7 @@ private:
 	void	ThrowGrenade( CBasePlayer *pPlayer );
 	void	RollGrenade( CBasePlayer *pPlayer );
 	void	LobGrenade( CBasePlayer *pPlayer );
-	void	BlipSound() { EmitSound( "Grenade.Blip" ); }
+	void	BlipSound() { if ( !hl2r_reduced_assists.GetBool() ){ EmitSound( "Grenade.Blip" ); } }
 	void	BlipThink();
 	void	SetTimer();
 	// check a throw from vecSrc.  If not valid, move the position back along the line to vecEye

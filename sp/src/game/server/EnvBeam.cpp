@@ -545,12 +545,21 @@ bool CEnvBeam::PassesTouchFilters(CBaseEntity *pOther)
 
 	return false;
 }
-
+extern ConVar hl2r_reduced_assists;
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
 void CEnvBeam::UpdateThink( void )
 {
+	if ( hl2r_reduced_assists.GetBool() )
+	{
+		AddEffects( EF_NODRAW );
+	}
+	else if ( m_active )
+	{
+		RemoveEffects( EF_NODRAW );
+	}
+		
 	// Apply damage every 1/10th of a second.
 	if ( ( m_flDamage > 0 ) && ( gpGlobals->curtime >= m_flFireTime + 0.1 ) )
 	{

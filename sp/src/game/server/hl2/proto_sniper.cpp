@@ -55,6 +55,8 @@ ConVar sniper_xbox_delay( "sniper_xbox_delay", "1" );
 extern ConVar sk_dmg_sniper_penetrate_plr;
 extern ConVar sk_dmg_sniper_penetrate_npc;
 
+extern ConVar hl2r_reduced_assists;
+
 // No model, impervious to damage.
 #define SF_SNIPER_HIDDEN		(1 << 16)
 #define SF_SNIPER_VIEWCONE		(1 << 17) ///< when set, sniper only sees in a small cone around the laser.
@@ -643,8 +645,17 @@ void CProtoSniper::LaserOn( const Vector &vecTarget, const Vector &vecDeviance )
 {
 	if (!m_pBeam)
 	{
-		m_pBeam = CBeam::BeamCreate( "sprites/bluelaser1.vmt", 1.0f );
-		m_pBeam->SetColor( 255, 0, 0 );
+		if ( hl2r_reduced_assists.GetBool() )
+		{
+			m_pBeam = CBeam::BeamCreate( "sprites/bluelaser1.vmt", 1.0f );
+			m_pBeam->SetColor( 0, 0, 0 );
+			m_pBeam->SetBrightness( 0 );
+		}
+		else
+		{
+			m_pBeam = CBeam::BeamCreate( "effects/bluelaser1.vmt", 1.0f );
+			m_pBeam->SetColor( 0, 100, 255 );
+		}
 	}
 	else
 	{
@@ -790,8 +801,11 @@ void CProtoSniper::PaintTarget( const Vector &vecTarget, float flPaintTime )
 	// Vital allies are sharper about avoiding the sniper.
 	if( P > 0.25f && GetEnemy() && GetEnemy()->IsNPC() && HasCondition(COND_SEE_ENEMY) && !m_bWarnedTargetEntity )
 	{
-		m_bWarnedTargetEntity = true;
-		CSoundEnt::InsertSound( SOUND_DANGER | SOUND_CONTEXT_REACT_TO_SOURCE, GetEnemy()->EarPosition(), 16, 1.0f, this );
+		if ( !hl2r_reduced_assists.GetBool() )
+		{
+			m_bWarnedTargetEntity = true;
+			CSoundEnt::InsertSound( SOUND_DANGER | SOUND_CONTEXT_REACT_TO_SOURCE, GetEnemy()->EarPosition(), 16, 1.0f, this );
+		}
 	}
 	GetPaintAim( m_vecPaintStart, vecTarget, clamp(P,0.0f,1.0f), &vecCurrentDir );
 

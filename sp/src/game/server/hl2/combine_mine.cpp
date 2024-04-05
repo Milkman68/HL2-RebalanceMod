@@ -22,6 +22,8 @@ ConVar sk_npc_hopper_warn_range("sk_npc_hopper_warn_range", "145" );
 ConVar sk_npc_hopper_detonate_range("sk_npc_hopper_detonate_range", "120" );
 ConVar sk_npc_hopper_explode_dmg("sk_npc_hopper_explode_dmg", "150" );
 
+extern ConVar hl2r_reduced_assists;
+
 enum
 {
 	MINE_STATE_DORMANT = 0,
@@ -786,7 +788,7 @@ void CBounceBomb::Wake( bool bAwake )
 	if( bAwake )
 	{
 		// Turning on
-		if( m_bFoeNearest )
+		if( m_bFoeNearest && !hl2r_reduced_assists.GetBool() )
 		{
 			EmitSound( "NPC_CombineMine.TurnOn" );
 			controller.SoundChangeVolume( m_pWarnSound, 1.0, 0.1 );
@@ -797,6 +799,12 @@ void CBounceBomb::Wake( bool bAwake )
 
 		if( m_bFoeNearest )
 		{
+			if ( hl2r_reduced_assists.GetBool() )
+			{
+				UpdateLight( false, 0, 0, 0, 0 );
+				return;
+			}
+			
 			r = 255;
 		}
 		else
@@ -911,8 +919,15 @@ float CBounceBomb::FindNearestNPC()
 		{
 			if( !m_bFoeNearest )
 			{
-				// Changing state to where a foe is nearest.
-				UpdateLight( true, 255, 0, 0, 190 );
+				if ( hl2r_reduced_assists.GetBool() )
+				{
+					UpdateLight( false, 0, 0, 0, 0 );
+				}
+				else
+				{
+					// Changing state to where a foe is nearest.
+					UpdateLight( true, 255, 0, 0, 190 );
+				}
 				m_bFoeNearest = true;
 			}
 		}

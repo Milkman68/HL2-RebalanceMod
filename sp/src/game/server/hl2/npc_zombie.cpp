@@ -297,7 +297,7 @@ void CZombie::Spawn( void )
 
 	BaseClass::Spawn();
 	
-	m_nSkin = random->RandomInt( 0, ZOMBIE_SKIN_COUNT - 1 );
+	m_nSkin = random->RandomInt( 1, ZOMBIE_SKIN_COUNT );
 
 	m_flNextMoanSound = gpGlobals->curtime + random->RandomFloat( 1.0, 4.0 );
 }

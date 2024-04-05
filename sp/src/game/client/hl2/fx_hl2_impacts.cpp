@@ -284,7 +284,11 @@ void Grenade_Blip( ClientEntityHandle_t hEntity, int attachmentIndex )
 	VPROF_BUDGET( "Grenade_Blip", VPROF_BUDGETGROUP_PARTICLE_RENDERING );
 	
 	extern ConVar hl2r_dynamic_light_level;
+	extern ConVar hl2r_reduced_assists;
 	if ( hl2r_dynamic_light_level.GetInt() != 0 ) // VFX + Entities
+		return;
+		
+	if ( hl2r_reduced_assists.GetBool() )
 		return;
 
 	// Grab the origin out of the transform for the attachment

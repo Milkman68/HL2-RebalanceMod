@@ -112,8 +112,9 @@ enum SquadSlot_T
 	SQUAD_SLOT_GRENADE2,
 	SQUAD_SLOT_ATTACK_OCCLUDER,
 	SQUAD_SLOT_OVERWATCH,
-	SQUAD_SLOT_ATTACK3,
-	SQUAD_SLOT_ATTACK4,
+//	SQUAD_SLOT_ATTACK3,
+//	SQUAD_SLOT_ATTACK4,
+	SQUAD_SLOT_ATTACK_ELITE
 };
 
 enum TacticalVariant_T
@@ -374,11 +375,11 @@ void CNPC_Combine::Spawn( void )
 	
 	if ( IsElite() )
 	{
-		SetGroundSpeedMultiplier( 1.2 );
+		SetGroundSpeedMultiplier( 1.35 );
 	}
 	else
 	{
-		SetGroundSpeedMultiplier( 1.5 );
+		SetGroundSpeedMultiplier( 1.2 );
 	}
 	GetEnemies()->SetFreeKnowledgeDuration( 0.0 );
 	
@@ -659,7 +660,7 @@ bool CNPC_Combine::ShouldMoveAndShoot()
 	{
 		// If we already have, or can occupy an Attack Slot to move and shoot, do it. 
 		// Otherwise, just run in the direction you're facing.
-		if( HasStrategySlotRange( SQUAD_SLOT_ATTACK1, SQUAD_SLOT_ATTACK2 ) || HasStrategySlotRange( SQUAD_SLOT_ATTACK3, SQUAD_SLOT_ATTACK4 ) )
+		if( HasStrategySlotRange( SQUAD_SLOT_ATTACK1, SQUAD_SLOT_ATTACK2 ) )
 		{
 			return true; // already have the slot I need
 		}
@@ -1735,7 +1736,7 @@ int CNPC_Combine::SelectCombatSchedule()
 	// ----------------------
 	// LIGHT DAMAGE
 	// ----------------------
-	if ( ( m_nRecentDamage / GetMaxHealth() ) > ( RECENT_DAMAGE_THRESHOLD / 100 ) && !IsElite() )
+	if ( ( m_nRecentDamage / GetMaxHealth() ) > ( RECENT_DAMAGE_THRESHOLD / 100 ) )
 	{
 		if ( GetEnemy() != NULL && !HasCondition( COND_COMBINE_ON_FIRE ) )
 		{
@@ -3632,9 +3633,18 @@ bool CNPC_Combine::ShouldPickADeathPose( void )
 	
 //	if ( PlayerHasMegaPhysCannon() )
 //		return true;
-	
-	if ( OccupyStrategySlotRange( SQUAD_SLOT_ATTACK1, SQUAD_SLOT_ATTACK2 ) )
+
+	if ( IsElite() )
+	{
+		if ( OccupyStrategySlot(SQUAD_SLOT_ATTACK_ELITE) )
+		{
+			return true;
+		}
+	}
+	else if ( OccupyStrategySlotRange( SQUAD_SLOT_ATTACK1, SQUAD_SLOT_ATTACK2 ) )
+	{
 		return true;
+	}
 	
 	return false;
 }  

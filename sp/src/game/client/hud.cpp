@@ -583,18 +583,24 @@ void CHudTexture::Precache( void )
 
 void CHudTexture::DrawSelf( int x, int y, const Color& clr ) const
 {
-	// Default sizes:
-	float WidthScale  = ScreenWidth() / 2560.0;
-	float HeightScale = ScreenHeight() / 1440.0;
-				
-	// Using only one seems to preserve shape better.
-	float flScale = Scale() * MAX(WidthScale, HeightScale);
-				
-	int iWidth = (int)( flScale * Width() + 0.5f );
-	int iHeight = (int)( flScale * Height() + 0.5f );
-				
-	x -= iWidth  / 2; 
-	y -= iHeight / 2;
+	int iWidth = Width();
+	int iHeight = Height();
+	
+	if ( !bRenderUsingFont )
+	{
+		// Default sizes:
+		float WidthScale  = ScreenWidth() / 2560.0;
+		float HeightScale = ScreenHeight() / 1440.0;
+					
+		// Using only one seems to preserve shape better.
+		float flScale = Scale() * MAX(WidthScale, HeightScale);
+					
+		iWidth = (int)( flScale * Width() + 0.5f );
+		iHeight = (int)( flScale * Height() + 0.5f );
+					
+		x -= iWidth  / 2; 
+		y -= iHeight / 2;
+	}
 	
 	DrawSelf( x, y, iWidth, iHeight, clr );
 }

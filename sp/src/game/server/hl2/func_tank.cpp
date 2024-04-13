@@ -1687,7 +1687,6 @@ void CFuncTank::Think( void )
 	}
 	else if ( !CheckAmmoFull() )
 	{
-		DevMsg("THINK\n");
 		SetNextThink( gpGlobals->curtime + 0.05f );
 	}
 

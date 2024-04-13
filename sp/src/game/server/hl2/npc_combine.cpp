@@ -3436,7 +3436,7 @@ WeaponProficiency_t CNPC_Combine::CalcWeaponProficiency( CBaseCombatWeapon *pWea
 {
 	if( FClassnameIs( pWeapon, "weapon_ar2" ) )
 	{
-		return WEAPON_PROFICIENCY_AVERAGE;
+		return g_pGameRules->IsSkillLevel( SKILL_HARD ) ? WEAPON_PROFICIENCY_GOOD : WEAPON_PROFICIENCY_AVERAGE;
 	}
 	else if( FClassnameIs( pWeapon, "weapon_shotgun" ) || FClassnameIs( pWeapon, "weapon_357" ) )
 	{
@@ -3449,7 +3449,7 @@ WeaponProficiency_t CNPC_Combine::CalcWeaponProficiency( CBaseCombatWeapon *pWea
 	}
 	else if( FClassnameIs( pWeapon, "weapon_smg1" ) )
 	{
-		return WEAPON_PROFICIENCY_GOOD;
+		return g_pGameRules->IsSkillLevel( SKILL_HARD ) ? WEAPON_PROFICIENCY_PERFECT : WEAPON_PROFICIENCY_VERY_GOOD;
 	}
 	if( FClassnameIs( pWeapon, "weapon_pistol" ) )
 	{

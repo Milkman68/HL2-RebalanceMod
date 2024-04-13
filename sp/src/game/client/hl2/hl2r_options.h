@@ -133,6 +133,7 @@ BoxButton_t BoxButtonRef;
 // List of all BoxButtons for the Misc Submenu:
 ComboBox* LightDetailBox;
 ComboBox* QuickinfoBox;
+ComboBox* MinCrosshairBox;
 ComboBox* EpisodicLightBox;
 ComboBox* HudHintBox;
 
@@ -140,6 +141,7 @@ BoxButton_t M_BoxButtons[] =
 {
 	{ LightDetailBox, "LightDetailBox", { "#hl2r_default", "#hl2r_less", "#hl2r_none" }, "hl2r_dynamic_light_level", false },
 	{ QuickinfoBox, "QuickinfoBox", { "#hl2r_on", "#hl2r_off" }, "hud_quickinfo", true },
+	{ MinCrosshairBox, "MinCrosshairBox", { "#hl2r_on", "#hl2r_off" }, "hl2r_old_crosshair", true },
 	{ EpisodicLightBox, "EpisodicLightBox", { "#hl2r_on", "#hl2r_off" }, "hl2r_episodic_flashlight", true },
 	{ HudHintBox, "HudHintBox", { "#hl2r_on", "#hl2r_off" }, "hl2r_hudhints", true },
 };

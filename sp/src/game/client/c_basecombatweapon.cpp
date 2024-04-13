@@ -20,6 +20,8 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
+extern ConVar hl2r_old_crosshair;
+
 //-----------------------------------------------------------------------------
 // Purpose: Gets the local client's active weapon, if any.
 //-----------------------------------------------------------------------------
@@ -260,9 +262,22 @@ void C_BaseCombatWeapon::DrawCrosshair()
 
 	CHudCrosshair *crosshair = GET_HUDELEMENT( CHudCrosshair );
 	
+	if ( hl2r_old_crosshair.GetBool() )
+	{
+		Color white( 255, 255, 255, 255 );
+		crosshair->SetCrosshair( gHUD.GetIcon( "plushair" ), white );
+		return;
+	}
+	
 	if ( player->m_fIsManned )
 	{
-		crosshair->SetCrosshair( gHUD.GetIcon( "gunhair" ), clr );
+		crosshair->SetCrosshair( gHUD.GetIcon( "mountedgunhair" ), clr );
+		return;
+	}
+	
+	if ( player->m_fIsManned )
+	{
+		crosshair->SetCrosshair( gHUD.GetIcon( "mountedgunhair" ), clr );
 		return;
 	}
 	

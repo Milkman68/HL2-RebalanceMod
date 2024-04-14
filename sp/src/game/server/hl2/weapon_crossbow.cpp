@@ -1065,7 +1065,7 @@ void CWeaponCrossbow::DoChargedFire( void )
 	{
 		m_bIsCharging = false;
 		SetLoopingSounds( false );
-		SetWeaponIdleTime( gpGlobals->curtime + SequenceDuration( ACT_VM_PRIMARYATTACK ) + 1 );
+		SetWeaponIdleTime( gpGlobals->curtime + SequenceDuration( ACT_VM_PRIMARYATTACK ) );
 		
 		FireBolt();
 			

@@ -697,40 +697,25 @@ void CNPC_BaseZombie::TraceAttack( const CTakeDamageInfo &info, const Vector &ve
 	{
 		m_bHeadShot = true;
 	}
-	float m_flCrossbowHeadshot = sk_npc_head_crossbow.GetFloat() * sk_plr_dmg_crossbow.GetFloat();
-	if( info.GetDamage() == m_flCrossbowHeadshot && info.GetAmmoType() == GetAmmoDef()->Index("Xbow") )
+	float fCrossbowChargedShot = sk_plr_dmg_crossbow.GetFloat();
+	
+	// Makes zombies burn for a little longer.
+	if( info.GetDamage() == fCrossbowChargedShot && info.GetAmmoType() == GetAmmoDef()->Index("Xbow") )
 	{
-		m_bHeadShot = true;
+		infoCopy.ScaleDamage( 0.75 );
 	}
 
-	if( infoCopy.GetDamageType() & DMG_BUCKSHOT )
+/* 	if( infoCopy.GetDamageType() & DMG_BUCKSHOT )
 	{
 		// Zombie gets across-the-board damage reduction for buckshot. This compensates for the recent changes which
 		// make the shotgun much more powerful, and returns the zombies to a level that has been playtested extensively.(sjb)
 		// This normalizes the buckshot damage to what it used to be on normal (5 dmg per pellet. Now it's 8 dmg per pellet). 
 		infoCopy.ScaleDamage( 0.625 );
-	}
+	} */
 /* 	if ( infoCopy.GetAmmoType() == GetAmmoDef()->Index("Crossbow") )
 	{
 		infoCopy.ScaleDamage( 0.5f );
 	}  */
-	
-/* 	if ( info.GetDamageType() & DMG_PHYSGUN && !IsRunningDynamicInteraction() )
-	{
-		float m_flPuntforce = IsCurSchedule( SCHED_MELEE_ATTACK1 ) ? 150 : 200;
-		Vector	puntDir = ( info.GetDamageForce() * m_flPuntforce );
-
-		if( info.GetDamage() >= GetHealth() )
-		{
-			// This blow will be fatal, so scale the damage force
-			// (it's a unit vector) so that the ragdoll will be 
-			// affected.
-			infoCopy.SetDamageForce( info.GetDamageForce() * 3000.0f );
-		}
-		SetGroundEntity( NULL );
-		ApplyAbsVelocityImpulse( puntDir );
-		SetCondition( COND_ZOMBIE_GOT_PUNTED );
-	} */
 	
 	//Take extra damage from vehicles.
 	CBaseCombatCharacter *npcEnemy = infoCopy.GetAttacker()->MyCombatCharacterPointer();

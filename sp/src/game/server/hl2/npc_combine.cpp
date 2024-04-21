@@ -1284,7 +1284,7 @@ void CNPC_Combine::RunTask( const Task_t *pTask )
 			{
 				if ( IsActivityFinished() )
 				{
-					if ( HasCondition( COND_ENEMY_OCCLUDED ) )
+					if ( HasCondition( COND_ENEMY_OCCLUDED ) /* && !CanSuppressEnemy() */ )
 					{
 						TaskComplete();
 					}
@@ -1788,20 +1788,24 @@ int CNPC_Combine::SelectCombatSchedule()
 		
 		if ( GetEnemy() )
 		{
-			if ( CanGrenadeEnemy( false ) && OccupyStrategySlot( SQUAD_SLOT_GRENADE1 ) )
+			if ( CanGrenadeEnemy( true ) && OccupyStrategySlot( SQUAD_SLOT_GRENADE1 ) )
 			{
 				DelaySquadAdvances( 3 );
 				
 				// Start with trying to see if a grenade can be thrown!
 				return SCHED_RANGE_ATTACK2;
 			}
-  			if ( m_flDelayAttacksTime < gpGlobals->curtime && CanOccupyAttackSlot() )
+			/* else if ( CanSuppressEnemy() && OccupyStrategySlot( SQUAD_SLOT_OVERWATCH ) )
+			{
+				return SCHED_RANGE_ATTACK1;
+			} */
+  			else if ( m_flDelayAttacksTime < gpGlobals->curtime && CanOccupyAttackSlot() )
 			{
 				// Try to charge in and break the enemy's cover!
 				return SCHED_ESTABLISH_LINE_OF_FIRE;
 			}
 		}
-
+			
 		// Otherwise tuck in.
 		Remember( bits_MEMORY_INCOVER );
 		return SCHED_COMBINE_WAIT_IN_COVER;
@@ -2075,7 +2079,7 @@ int CNPC_Combine::SelectFailSchedule( int failedSchedule, int failedTask, AI_Tas
 			if( failedSchedule == SCHED_COMBINE_HIDE_AND_RELOAD  )
 				return SCHED_RELOAD;
 			
-			if ( CanGrenadeEnemy( false ) && OccupyStrategySlot( SQUAD_SLOT_GRENADE1 ) )
+			if ( CanGrenadeEnemy( true ) && OccupyStrategySlot( SQUAD_SLOT_GRENADE1 ) )
 				return SCHED_RANGE_ATTACK2;
 	
 			if ( HasCondition( COND_CAN_RANGE_ATTACK1 ) && CanOccupyAttackSlot() )
@@ -2181,7 +2185,7 @@ int CNPC_Combine::SelectScheduleAttack()
 		}
 		
 		// Throw a grenade if not allowed to engage with weapon.
-		if ( CanGrenadeEnemy() )
+		if ( CanGrenadeEnemy( true ) )
 		{
 			if ( OccupyStrategySlot( SQUAD_SLOT_GRENADE1 ) )
 			{
@@ -2329,7 +2333,7 @@ int CNPC_Combine::TranslateSchedule( int scheduleType )
 			// stand up, just in case
 			// Stand();
 			// DesireStand();
-			if( CanGrenadeEnemy() && OccupyStrategySlot( SQUAD_SLOT_GRENADE1 ) /* && random->RandomInt( 0, 100 ) < 20 */ )
+			if( CanGrenadeEnemy( true ) && OccupyStrategySlot( SQUAD_SLOT_GRENADE1 ) /* && random->RandomInt( 0, 100 ) < 20 */ )
 			{
 				// If I COULD throw a grenade and I need to reload, 20% chance I'll throw a grenade before I hide to reload.
 				return SCHED_COMBINE_GRENADE_AND_RELOAD;
@@ -3192,7 +3196,7 @@ bool CNPC_Combine::CanSuppressEnemy( void )
 		return false;
 
 	// Determine what point we're shooting at
-	Vector vecTarget = GetEnemies()->LastSeenPosition( GetEnemy() ) + (GetEnemy()->GetViewOffset()*0.75);// approximates the chest
+	Vector vecTarget = GetEnemies()->LastKnownPosition( GetEnemy() ) + (GetEnemy()->GetViewOffset()*0.75);// approximates the chest
 
 	trace_t tr;
 	trace_t traceGlass;
@@ -3209,18 +3213,19 @@ bool CNPC_Combine::CanSuppressEnemy( void )
 	// Check for glass, we'll know if the above trace is true and this one is not.
 	UTIL_TraceLine( vShootPosition, vecTarget, MASK_SOLID, this, COLLISION_GROUP_NONE, &traceGlass );
 
-	float flLength = (vShootPosition - vecTarget).Length();
-
-	flLength *= tr.fraction;
-
-	//If the bullets can travel at least 40% of the distance to the player then let the NPC shoot it.
-	if( tr.fraction >= 0.4 && flLength > 128.0f )
+	float flSuppressLength = (vShootPosition - vecTarget).Length();
+	if( flSuppressLength > 256.0f && flSuppressLength < 2048.0f )
 	{
 		// Don't suppress through glass!
 		if ( traceGlass.DidHitWorld() )
-		{
 			return false;
-		}
+		
+		float flLength = ( GetEnemies()->LastKnownPosition( GetEnemy() ) - GetAbsOrigin() ).Length();
+		
+		// Can't be closer to the enemy than our suppress point!
+		if ( flLength > ( GetEnemy()->GetAbsOrigin() - GetAbsOrigin() ).Length() )
+			return false;
+		
 		// Target is valid
 		return true;
 	}

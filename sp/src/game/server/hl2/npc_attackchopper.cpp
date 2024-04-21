@@ -257,6 +257,7 @@ private:
 	// Pow!
 	void DoExplosion( const Vector &vecOrigin, const Vector &vecVelocity );
 	void ExplodeThink();
+	void StallThink();
 	void RampSoundThink();
 	void WarningBlinkerThink();
 	void StopWarningBlinker();
@@ -266,6 +267,7 @@ private:
 	void ResolveFlyCollisionCustom( trace_t &trace, Vector &vecVelocity );
 
 	bool m_bActivated;
+	bool m_bOn;
 	bool m_bExplodeOnContact;
 	CSoundPatch	*m_pWarnSound;
 
@@ -273,11 +275,11 @@ private:
 	bool m_bBlinkerAtTop;
 
 
+	float m_flBlinkFastTime;
 #ifdef HL2_EPISODIC
 	float m_flLifetime;
 	EHANDLE	m_hCollisionObject;	// Pointer to object we re-enable collisions with when picked up
 	bool m_bPickedUp;
-	float m_flBlinkFastTime;
 	COutputEvent m_OnPhysGunOnlyPickup;
 #endif // HL2_EPISODIC
 };
@@ -1418,7 +1420,7 @@ float CNPC_AttackHelicopter::GetMaxSpeedFiring()
 	if ( HasSpawnFlags(SF_HELICOPTER_ELECTRICAL_DRONE) )
 		return DRONE_SPEED;
 
-	if ( ( m_nAttackMode == ATTACK_MODE_BULLRUSH_VEHICLE ) && IsInSecondaryMode( BULLRUSH_MODE_DROP_BOMBS_FIXED_SPEED ) )
+	if ( ( m_nAttackMode == ATTACK_MODE_BULLRUSH_VEHICLE ) /* && IsInSecondaryMode( BULLRUSH_MODE_DROP_BOMBS_FIXED_SPEED ) */ )
 		return CHOPPER_BULLRUSH_ENEMY_BOMB_SPEED;
 
 	if ( !GetEnemyVehicle() )
@@ -4956,17 +4958,18 @@ LINK_ENTITY_TO_CLASS( grenade_helicopter, CGrenadeHelicopter );
 BEGIN_DATADESC( CGrenadeHelicopter )
 
 	DEFINE_FIELD( m_bActivated,			FIELD_BOOLEAN ),
+	DEFINE_FIELD( m_bOn,			FIELD_BOOLEAN ),
 	DEFINE_FIELD( m_bExplodeOnContact,	FIELD_BOOLEAN ),
 	DEFINE_SOUNDPATCH( m_pWarnSound ),
 
 	DEFINE_FIELD( m_hWarningSprite,		FIELD_EHANDLE ),
 	DEFINE_FIELD( m_bBlinkerAtTop,		FIELD_BOOLEAN ),
 
+	DEFINE_FIELD( m_flBlinkFastTime,	FIELD_TIME ),
 #ifdef HL2_EPISODIC
 	DEFINE_FIELD( m_flLifetime,			FIELD_FLOAT ),
 	DEFINE_FIELD( m_hCollisionObject,	FIELD_EHANDLE ),
 	DEFINE_FIELD( m_bPickedUp,			FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_flBlinkFastTime,	FIELD_TIME ),
 
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "ExplodeIn", InputExplodeIn ),
 
@@ -4974,6 +4977,7 @@ BEGIN_DATADESC( CGrenadeHelicopter )
 #endif // HL2_EPISODIC
 
 	DEFINE_THINKFUNC( ExplodeThink ),
+	DEFINE_THINKFUNC( StallThink ),
 	DEFINE_THINKFUNC( AnimateThink ),
 	DEFINE_THINKFUNC( RampSoundThink ),
 	DEFINE_THINKFUNC( WarningBlinkerThink ),
@@ -5070,6 +5074,7 @@ void CGrenadeHelicopter::Spawn( void )
 	}
 
 	m_bActivated = false;
+	m_bOn = false;
 	m_pWarnSound = NULL;
 	m_bExplodeOnContact = false;
 
@@ -5077,10 +5082,10 @@ void CGrenadeHelicopter::Spawn( void )
 
 	g_pNotify->AddEntity( this, this );
 
-	if( hl2_episodic.GetBool() )
-	{
+	//if( hl2_episodic.GetBool() )
+	//{
 		SetContextThink( &CGrenadeHelicopter::AnimateThink, gpGlobals->curtime, s_pAnimateThinkContext );
-	}
+	//}
 }
 
 
@@ -5124,21 +5129,47 @@ void CGrenadeHelicopter::InputExplodeIn( inputdata_t &inputdata )
 //------------------------------------------------------------------------------
 void CGrenadeHelicopter::BecomeActive()
 {
-	if ( m_bActivated )
-		return;
-
 	if ( IsMarkedForDeletion() )
 		return;
-
+	
+	if ( m_bActivated )
+		return;
+	
 	m_bActivated = true;
+	
+	if ( !sk_helicopter_grenade_stay.GetBool() )
+	{
+		m_bOn = true;
+		SetThink( &CGrenadeHelicopter::ExplodeThink );
+	}
+	else
+	{
+		float NextThink = GetOwnerEntity() ? GetBombLifetime() : random->RandomInt(0, 3 );
+		
+		SetNextThink( gpGlobals->curtime + NextThink );
+		if ( GetOwnerEntity() )
+		{
+			SetThink( &CGrenadeHelicopter::StallThink );
+		}
+		else
+		{
+			CBasePlayer *pPlayer = UTIL_GetLocalPlayer();
+			if ( pPlayer && pPlayer->FInViewCone( this ) )
+			{
+				SetThink( &CGrenadeHelicopter::ExplodeThink );
+			}
+			else
+			{
+				UTIL_Remove( this );
+			}
+		}
+	}
 
 	bool bMegaBomb = HasSpawnFlags(SF_GRENADE_HELICOPTER_MEGABOMB);
-
-	SetThink( &CGrenadeHelicopter::ExplodeThink );
 	
-	if ( hl2_episodic.GetBool() || sk_helicopter_grenade_stay.GetBool() )
+	if ( hl2_episodic.GetBool() )
 	{
-		if ( HasSpawnFlags( SF_HELICOPTER_GRENADE_DUD ) == false && !sk_helicopter_grenade_stay.GetBool() )
+		if ( HasSpawnFlags( SF_HELICOPTER_GRENADE_DUD ) == false )
 		{
 			SetNextThink( gpGlobals->curtime + GetBombLifetime() );
 		}
@@ -5154,7 +5185,7 @@ void CGrenadeHelicopter::BecomeActive()
 		SetNextThink( gpGlobals->curtime + GetBombLifetime() );
 	}
 
-	if ( !bMegaBomb )
+	if ( !bMegaBomb && !sk_helicopter_grenade_stay.GetBool() )
 	{
 		SetContextThink( &CGrenadeHelicopter::RampSoundThink, gpGlobals->curtime + GetBombLifetime() - BOMB_RAMP_SOUND_TIME, s_pRampSoundContext );
 
@@ -5163,15 +5194,26 @@ void CGrenadeHelicopter::BecomeActive()
 		m_pWarnSound = controller.SoundCreate( filter, entindex(), "NPC_AttackHelicopterGrenade.Ping" );
 		controller.Play( m_pWarnSound, 1.0, PITCH_NORM );
 	}
-
+	
 	SetContextThink( &CGrenadeHelicopter::WarningBlinkerThink, gpGlobals->curtime + (GetBombLifetime() - 2.0f), s_pWarningBlinkerContext );
 
-#ifdef HL2_EPISODIC
+//#ifdef HL2_EPISODIC
 	m_flBlinkFastTime = gpGlobals->curtime + GetBombLifetime() - 1.0f;
-#endif//HL2_EPISODIC
+//#endif//HL2_EPISODIC
+
+	if ( !sk_helicopter_grenade_stay.GetBool() )
+		m_bOn = true;
 }
 
 
+//------------------------------------------------------------------------------
+// Purpose:
+//------------------------------------------------------------------------------
+void CGrenadeHelicopter::StallThink()
+{
+	m_bActivated = false;
+	BecomeActive();
+}
 //------------------------------------------------------------------------------
 // Pow!
 //------------------------------------------------------------------------------
@@ -5191,9 +5233,9 @@ void CGrenadeHelicopter::RampSoundThink( )
 //------------------------------------------------------------------------------
 void CGrenadeHelicopter::WarningBlinkerThink()
 {
-#ifndef HL2_EPISODIC
+/* #ifndef HL2_EPISODIC
 	return;
-#endif
+#endif */
 
 /*
 	if( !m_hWarningSprite.Get() )
@@ -5237,8 +5279,8 @@ void CGrenadeHelicopter::WarningBlinkerThink()
 	// Frighten people
 	CSoundEnt::InsertSound ( SOUND_DANGER, WorldSpaceCenter(), g_helicopter_bomb_danger_radius.GetFloat(), 0.2f, this, SOUNDENT_CHANNEL_REPEATED_DANGER );
 
-#ifdef HL2_EPISODIC
-	if( gpGlobals->curtime >= m_flBlinkFastTime )
+//#ifdef HL2_EPISODIC
+	if( m_bOn && gpGlobals->curtime >= m_flBlinkFastTime )
 	{
 		SetContextThink( &CGrenadeHelicopter::WarningBlinkerThink, gpGlobals->curtime + 0.1f, s_pWarningBlinkerContext );
 	}
@@ -5246,7 +5288,7 @@ void CGrenadeHelicopter::WarningBlinkerThink()
 	{
 		SetContextThink( &CGrenadeHelicopter::WarningBlinkerThink, gpGlobals->curtime + 0.2f, s_pWarningBlinkerContext );
 	}
-#endif//HL2_EPISODIC
+//#endif//HL2_EPISODIC
 }
 
 //------------------------------------------------------------------------------
@@ -5538,10 +5580,10 @@ void CGrenadeHelicopter::OnPhysGunPickup(CBasePlayer *pPhysGunUser, PhysGunPicku
 
 			SetContextThink( &CGrenadeHelicopter::WarningBlinkerThink, gpGlobals->curtime + GetBombLifetime() - 2.0f, s_pWarningBlinkerContext );
 
-#ifdef HL2_EPISODIC
+//#ifdef HL2_EPISODIC
 			m_nSkin = (int)SKIN_REGULAR;
 			m_flBlinkFastTime = gpGlobals->curtime + GetBombLifetime() - 1.0f;
-#endif//HL2_EPISODIC
+//#endif//HL2_EPISODIC
 			
 			// Stop us from sparing damage to the helicopter that dropped us
 			SetOwnerEntity( pPhysGunUser );

@@ -270,7 +270,10 @@ void C_PropAirboat::DrawHudElements( )
 		VectorMA( vehicleEyeOrigin, 100.0f, vecForward, vehicleEyeOrigin );
 
 		ScreenTransform( vehicleEyeOrigin, screen );
-		x += 0.5 * screen[0] * screenWidth + 0.5;
+		//x += 0.5 * screen[0] * screenWidth + 0.5;
+		
+		// We need the sign inversed for Mirrored.
+		x -= 0.5 * screen[0] * screenWidth + 0.5;
 		y -= 0.5 * screen[1] * screenHeight + 0.5;
 
 	//	x -= pIcon->Width() / 2; 

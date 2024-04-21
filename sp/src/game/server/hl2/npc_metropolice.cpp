@@ -1255,7 +1255,7 @@ CBaseEntity *CNPC_MetroPolice::GetShootTarget()
 // Set up the shot regulator based on the equipped weapon
 //-----------------------------------------------------------------------------
 
-// Ranges across which to tune fire rates bookmark2
+// Ranges across which to tune fire rates
 const float MIN_PISTOL_MODIFY_DIST = 15 * 12;
 const float MAX_PISTOL_MODIFY_DIST = 150 * 12;
 
@@ -1279,8 +1279,8 @@ void CNPC_MetroPolice::OnUpdateShotRegulator( )
 {
 	BaseClass::OnUpdateShotRegulator();
 
-/* 	// FIXME: This code (except the burst interval) could be used for all weapon types 
-	if( Weapon_OwnsThisType( "weapon_pistol" ) )
+ 	// FIXME: This code (except the burst interval) could be used for all weapon types 
+/* 	if( Weapon_OwnsThisType( "weapon_pistol" ) )
 	{
 		if ( m_nBurstMode == BURST_NOT_ACTIVE )
 		{
@@ -1309,11 +1309,6 @@ void CNPC_MetroPolice::OnUpdateShotRegulator( )
 
 		// Add some noise into the pistol
 		GetShotRegulator()->SetBurstInterval( 0.2f, 0.5f );
-	}
-	else if ( Weapon_OwnsThisType( "weapon_shotgun" ) )
-	{
-		GetShotRegulator()->SetBurstShotCountRange(GetActiveWeapon()->GetMinBurst(), GetActiveWeapon()->GetMaxBurst() );
-		GetShotRegulator()->SetRestInterval( 0.6, 1.2 );
 	} */
 }
 
@@ -2525,7 +2520,7 @@ bool CNPC_MetroPolice::CreateBehaviors()
 
 void CNPC_MetroPolice::InputEnableManhackToss( inputdata_t &inputdata )
 {
-	if ( HasSpawnFlags( SF_METROPOLICE_NO_MANHACK_DEPLOY )) //bookmark
+	if ( HasSpawnFlags( SF_METROPOLICE_NO_MANHACK_DEPLOY ))
 	{
 		RemoveSpawnFlags( SF_METROPOLICE_NO_MANHACK_DEPLOY );
 	}
@@ -3190,7 +3185,7 @@ void CNPC_MetroPolice::ReleaseManhack( void )
 //-----------------------------------------------------------------------------
 // 
 //-----------------------------------------------------------------------------
-void CNPC_MetroPolice::Event_Killed( const CTakeDamageInfo &info )//bookmark1
+void CNPC_MetroPolice::Event_Killed( const CTakeDamageInfo &info )
 {
 	// Release the manhack if we're in the middle of deploying him
 	if ( m_hManhack && m_hManhack->IsAlive() )
@@ -3341,7 +3336,7 @@ int CNPC_MetroPolice::SelectScheduleNewEnemy()
 		m_flNextLedgeCheckTime = gpGlobals->curtime;
 		
 		/* if( !HasBaton() && !IsEnemyInAnAirboat() )
-			return SCHED_METROPOLICE_TAKE_COVER_FROM_ENEMY; *///bookmark
+			return SCHED_METROPOLICE_TAKE_COVER_FROM_ENEMY; */
 	}
 
 	if ( !m_fWeaponDrawn )
@@ -3520,7 +3515,7 @@ int CNPC_MetroPolice::SelectCombatSchedule()
 			return SCHED_METROPOLICE_DEPLOY_MANHACK;
 		}
 		
-		if ( GetEnemy() && !(GetEnemy()->GetFlags() & FL_NOTARGET) )//bookmark
+		if ( GetEnemy() && !(GetEnemy()->GetFlags() & FL_NOTARGET) )
 		{
 			// Charge in and break the enemy's cover!
 			if ( TryToEnterPistolSlot( SQUAD_SLOT_ATTACK1 ) || TryToEnterPistolSlot( SQUAD_SLOT_ATTACK2 ) )
@@ -4328,7 +4323,7 @@ int CNPC_MetroPolice::SelectSchedule( void )
 			break;
 
 		case NPC_STATE_COMBAT:
-			if (!IsEnemyInAnAirboat() /* || !Weapon_OwnsThisType( "weapon_smg1" ) */ )
+			if (!IsEnemyInAnAirboat() || !Weapon_OwnsThisType( "weapon_smg1" ) )
 			{
 				int nResult = SelectCombatSchedule();
 				if ( nResult != SCHED_NONE )
@@ -4504,7 +4499,7 @@ int CNPC_MetroPolice::TranslateSchedule( int scheduleType )
 				return SCHED_METROPOLICE_SMG_BURST_ATTACK;
 			}
 			
-			return SCHED_METROPOLICE_SMG_NORMAL_ATTACK;//bookmark4
+			return SCHED_METROPOLICE_SMG_NORMAL_ATTACK;
 		}
 		
 		return SCHED_METROPOLICE_RANGE_ATTACK1;
@@ -5206,7 +5201,6 @@ int CNPC_MetroPolice::OnTakeDamage_Alive( const CTakeDamageInfo &inputInfo )
 //-----------------------------------------------------------------------------
 bool CNPC_MetroPolice::CanDeployManhack( void )
 {
-	//bookmark
 	if ( HasSpawnFlags( SF_METROPOLICE_NO_MANHACK_DEPLOY ) )
 		return false;
 
@@ -5795,17 +5789,18 @@ void CNPC_MetroPolice::HandleRandomSpawnEquipment( void )
 //-----------------------------------------------------------------------------
 Vector CNPC_MetroPolice::GetActualShootPosition( const Vector &shootOrigin )
 {
-	//if ( m_nBurstMode != BURST_NOT_ACTIVE )
+	Vector vecTargetPosition;
+	if( GetEnemy() && GetEnemy()->Classify() == CLASS_ZOMBIE && random->RandomInt(0, 1) == 1 )
+	{
+		vecTargetPosition = GetEnemy()->HeadTarget( shootOrigin );
+	}
+	
+	if ( m_nBurstMode != BURST_NOT_ACTIVE )
 		return BaseClass::GetActualShootPosition( shootOrigin );
 	
 	Vector vecEnemyLKP = GetEnemyLKP();
 	Vector vecEnemyOffset = GetEnemy()->BodyTarget( shootOrigin ) - GetEnemy()->GetAbsOrigin();
-	Vector vecTargetPosition = vecEnemyOffset + vecEnemyLKP;
-	
-	if( GetEnemy()->Classify() == CLASS_ZOMBIE )
-	{
-		vecTargetPosition = GetEnemy()->HeadTarget( shootOrigin );
-	}
+	vecTargetPosition = vecEnemyOffset + vecEnemyLKP;
 	
 	return vecTargetPosition;
 }
@@ -6532,9 +6527,9 @@ DEFINE_SCHEDULE
 	"		COND_ENEMY_DEAD"
 );
 //=========================================================
-// Move to a flanking position, then shoot if possible.//bookmark
+// Move to a flanking position, then shoot if possible.
 //=========================================================
-DEFINE_SCHEDULE//bookmark
+DEFINE_SCHEDULE
 (
 	SCHED_METROPOLICE_FLANK_ENEMY,
 

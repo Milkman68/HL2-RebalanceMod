@@ -273,8 +273,8 @@ void C_PropAirboat::DrawHudElements( )
 		x += 0.5 * screen[0] * screenWidth + 0.5;
 		y -= 0.5 * screen[1] * screenHeight + 0.5;
 
-		x -= pIcon->Width() / 2; 
-		y -= pIcon->Height() / 2; 
+	//	x -= pIcon->Width() / 2; 
+	//	y -= pIcon->Height() / 2; 
 		
 		pIcon->DrawSelf( x, y, gHUD.m_clrNormal );
 	}

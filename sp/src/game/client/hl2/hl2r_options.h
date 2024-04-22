@@ -194,9 +194,9 @@ TickSlider_t M_TickSliders[] =
 //------------------------------------------------------------------------------
 // Game page
 //------------------------------------------------------------------------------
-class CSubOptionsGameHL2R : public vgui::PropertyPage
+class CSubOptionsGameHL2R : public vgui::EditablePanel
 {
-	DECLARE_CLASS_SIMPLE(CSubOptionsGameHL2R, vgui::PropertyPage);
+	DECLARE_CLASS_SIMPLE(CSubOptionsGameHL2R, vgui::EditablePanel);
 
 public:
 	CSubOptionsGameHL2R(vgui::Panel* parent);

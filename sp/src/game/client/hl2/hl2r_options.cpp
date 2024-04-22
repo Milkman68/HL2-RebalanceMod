@@ -7,14 +7,16 @@ using namespace vgui;
 #include <vgui_controls/Button.h>
 #include <vgui_controls/ComboBox.h>
 #include <vgui_controls/Slider.h>
+#include <vgui_controls/ScrollableEditablePanel.h>
 #include "ienginevgui.h"
 #include "hl2r_options.h"
 //------------------------------------------------------------------------------
 // Purpose : HL2R's Game options page
 //------------------------------------------------------------------------------
-CSubOptionsGameHL2R::CSubOptionsGameHL2R(vgui::Panel* parent) : PropertyPage(parent, NULL)
+CSubOptionsGameHL2R::CSubOptionsGameHL2R(vgui::Panel* parent) : EditablePanel(parent, NULL)
 {
  	CheckButtonRef.InitCheckButtons( this, G_CheckButtons, ARRAYSIZE(G_CheckButtons) );
+	SetBounds(0, 0, 422, 675);
 	
 	toggleAllButton = new Button(this, "toggleAllButton", "");
 	toggleAllButton->SetCommand("toggleall");
@@ -81,14 +83,17 @@ void CSubMiscOptionsHL2R::OnControlModified()
 CHL2RMenu::CHL2RMenu(vgui::VPANEL parent) : BaseClass(NULL, "HL2RMenu")
 {
 	SetDeleteSelfOnClose(true);
-	SetBounds(0, 0, 406, 768);
-	SetSizeable(false);
+	SetBounds(0, 0, 422, 570);
+	SetSizeable( false );
 	MoveToCenterOfScreen();
 
 	SetTitle("#hl2r_options_title", true);
-
+	
 	m_pSubOptionsGameHL2R = new CSubOptionsGameHL2R(this);
-	AddPage(m_pSubOptionsGameHL2R, "#hl2r_options_game");
+	ScrollableEditablePanel *m_pGamePanel;
+
+	m_pGamePanel = new ScrollableEditablePanel(this, m_pSubOptionsGameHL2R, NULL);
+	AddPage(m_pGamePanel, "#hl2r_options_game");
 
  	m_pSubMiscOptionsHL2R = new CSubMiscOptionsHL2R(this);
 	AddPage(m_pSubMiscOptionsHL2R, "#hl2r_options_misc");

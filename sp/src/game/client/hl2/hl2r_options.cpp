@@ -83,7 +83,7 @@ void CSubMiscOptionsHL2R::OnControlModified()
 CHL2RMenu::CHL2RMenu(vgui::VPANEL parent) : BaseClass(NULL, "HL2RMenu")
 {
 	SetDeleteSelfOnClose(true);
-	SetBounds(0, 0, 422, 570);
+	SetBounds(0, 0, 422, 590);
 	SetSizeable( false );
 	MoveToCenterOfScreen();
 

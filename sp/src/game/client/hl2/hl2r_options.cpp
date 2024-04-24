@@ -3,13 +3,23 @@ using namespace vgui;
 #include <vgui/IVGui.h>
 #include <vgui_controls/PropertyDialog.h>
 #include <vgui_controls/PropertySheet.h>
-#include <vgui_controls/CheckButton.h>
-#include <vgui_controls/Button.h>
-#include <vgui_controls/ComboBox.h>
-#include <vgui_controls/Slider.h>
 #include <vgui_controls/ScrollableEditablePanel.h>
 #include "ienginevgui.h"
 #include "hl2r_options.h"
+
+//------------------------------------------------------------------------------
+// Purpose : HL2R's Game options parent panel
+//------------------------------------------------------------------------------
+CGameHL2RBasePanel::CGameHL2RBasePanel(vgui::Panel* parent, vgui::EditablePanel* child) : ScrollableEditablePanel(parent, child, NULL){}
+
+//------------------------------------------------------------------------------
+// Purpose : We need this because the main panel sends the apply message to here 
+// instead of the panel parented to this one. So we need to send it manually to the child panel.
+//------------------------------------------------------------------------------
+void CGameHL2RBasePanel::OnApplyChanges()
+{
+	ipanel()->SendMessage(GetChild(0)->GetVPanel(), new KeyValues("ApplyChanges"), GetVPanel());
+}
 //------------------------------------------------------------------------------
 // Purpose : HL2R's Game options page
 //------------------------------------------------------------------------------
@@ -90,10 +100,10 @@ CHL2RMenu::CHL2RMenu(vgui::VPANEL parent) : BaseClass(NULL, "HL2RMenu")
 	SetTitle("#hl2r_options_title", true);
 	
 	m_pSubOptionsGameHL2R = new CSubOptionsGameHL2R(this);
-	ScrollableEditablePanel *m_pGamePanel;
-
-	m_pGamePanel = new ScrollableEditablePanel(this, m_pSubOptionsGameHL2R, NULL);
-	AddPage(m_pGamePanel, "#hl2r_options_game");
+	
+	// Parent the game page to a separate scrollable-panel.
+	m_pGameHL2RBasePanel = new CGameHL2RBasePanel(this, m_pSubOptionsGameHL2R);
+	AddPage(m_pGameHL2RBasePanel, "#hl2r_options_game");
 
  	m_pSubMiscOptionsHL2R = new CSubMiscOptionsHL2R(this);
 	AddPage(m_pSubMiscOptionsHL2R, "#hl2r_options_misc");

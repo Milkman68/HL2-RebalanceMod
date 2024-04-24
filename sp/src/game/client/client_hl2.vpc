@@ -114,6 +114,7 @@ $Project "Client (HL2)"
 			$File 	"episodic\c_vort_charge_token.cpp"
 			$File	"hl2\hl2r_options.cpp"
 			$File	"hl2\hl2r_options.h"
+			$File	"hl2\hl2r_baseoptions.h"
 		}
 	}
 }

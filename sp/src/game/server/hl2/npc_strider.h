@@ -453,7 +453,7 @@ private:
 	EHANDLE			m_hRagdoll;
 
 	EHANDLE			m_hCannonTarget;
-	EHANDLE			m_hLastCannonTarget;
+	Vector			m_LastCannonTargetPos;
 	CSimpleSimTimer	m_AttemptCannonLOSTimer;
 
 	float			m_flSpeedScale;

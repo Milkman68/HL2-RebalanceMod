@@ -3699,31 +3699,6 @@ Vector CNPC_Combine::GetActualShootPosition( const Vector &shootOrigin )
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-int CNPC_Combine::RangeAttack1Conditions ( float flDot, float flDist )
-{
-	CBaseCombatWeapon *pWeapon = GetActiveWeapon();
-	
- 	if ( pWeapon->UsesPrimaryAmmo() && !pWeapon->HasPrimaryAmmo() )
- 	{
- 		return COND_NO_PRIMARY_AMMO;
- 	}
-	if ( !IsElite() )
-	{
-		if ( flDist < pWeapon->m_fMinRange1) 
-		{
-			return COND_TOO_CLOSE_TO_ATTACK;
-		}
-		else if (flDist > pWeapon->m_fMaxRange1) 
-		{
-			return COND_TOO_FAR_TO_ATTACK;
-		}
-	}
-
- 	return COND_CAN_RANGE_ATTACK1;
-}
-//-----------------------------------------------------------------------------
-// Purpose:
-//-----------------------------------------------------------------------------
 bool CNPC_Combine::OverrideAimOnMoveAndShoot( void )
 {
 	if ( IsElite() )
@@ -3842,9 +3817,9 @@ DEFINE_SCHEDULE
 
  "	Tasks"
  "		TASK_STOP_MOVING			0"
- "		TASK_SET_ACTIVITY			ACTIVITY:ACT_IDLE "
- "		TASK_WAIT_FACE_ENEMY		2"
- "		TASK_WAIT_PVS				0"
+ //"		TASK_SET_ACTIVITY			ACTIVITY:ACT_IDLE "
+ //"		TASK_WAIT_FACE_ENEMY		2"
+ //"		TASK_WAIT_PVS				0"
  ""
  "	Interrupts"
  "		COND_CAN_RANGE_ATTACK1"

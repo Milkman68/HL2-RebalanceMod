@@ -55,7 +55,7 @@ public:
 	void CheckHolsterReload( void );
 	void Pump( void );
 	void DryFire( void );
-	virtual float GetFireRate( void ) { return 1.5; };
+	virtual float GetFireRate( void ) { return 1.0; };
 	virtual float			GetMinRestTime() { return 1.0; }
 	virtual float			GetMaxRestTime() { return 1.5; }
 

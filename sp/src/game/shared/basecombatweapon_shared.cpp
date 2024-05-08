@@ -63,7 +63,7 @@ ConVar tf_weapon_criticals_bucket_default( "tf_weapon_criticals_bucket_default",
 extern ConVar hl2r_realistic_reload;
 extern ConVar hl2r_hudhints;
 ConVar sk_alternate_recoil( "sk_alternate_recoil", "0" );
-ConVar deployspeedmult( "deployspeedmult", "1.3" );
+ConVar deployspeedmult( "deployspeedmult", "1.4" );
 
 CBaseCombatWeapon::CBaseCombatWeapon()
 {

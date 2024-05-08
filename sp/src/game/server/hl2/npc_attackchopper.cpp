@@ -257,6 +257,7 @@ private:
 	// Pow!
 	void DoExplosion( const Vector &vecOrigin, const Vector &vecVelocity );
 	void ExplodeThink();
+	bool ShouldMakeSounds();
 	void StallThink();
 	void RampSoundThink();
 	void WarningBlinkerThink();
@@ -5425,15 +5426,31 @@ int CGrenadeHelicopter::OnTakeDamage( const CTakeDamageInfo &info )
 //------------------------------------------------------------------------------
 void CGrenadeHelicopter::DoExplosion( const Vector &vecOrigin, const Vector &vecVelocity )
 {
-	ExplosionCreate( GetAbsOrigin(), GetAbsAngles(), GetOwnerEntity() ? GetOwnerEntity() : this, sk_helicopter_grenadedamage.GetFloat(), 
-		sk_helicopter_grenaderadius.GetFloat(), (SF_ENVEXPLOSION_NOSPARKS|SF_ENVEXPLOSION_NODLIGHTS|SF_ENVEXPLOSION_NODECAL|SF_ENVEXPLOSION_NOFIREBALL|SF_ENVEXPLOSION_NOPARTICLES), 
-		sk_helicopter_grenadeforce.GetFloat(), this );
-
 	if ( GetShakeAmplitude() )
 	{
 		UTIL_ScreenShake( GetAbsOrigin(), GetShakeAmplitude(), 150.0, 1.0, GetShakeRadius(), SHAKE_START );
 	}
-
+	
+	bool bMakeSounds = ShouldMakeSounds();
+	
+	if ( bMakeSounds )
+	{
+		ExplosionCreate( GetAbsOrigin(), GetAbsAngles(), GetOwnerEntity() ? GetOwnerEntity() : this, sk_helicopter_grenadedamage.GetFloat(), 
+			sk_helicopter_grenaderadius.GetFloat(), (SF_ENVEXPLOSION_NOSPARKS|SF_ENVEXPLOSION_NOSOUND|SF_ENVEXPLOSION_NODLIGHTS|SF_ENVEXPLOSION_NODECAL|SF_ENVEXPLOSION_NOFIREBALL|SF_ENVEXPLOSION_NOPARTICLES), 
+			sk_helicopter_grenadeforce.GetFloat(), this );
+	}
+	else
+	{
+		ExplosionCreate( GetAbsOrigin(), 
+			GetAbsAngles(), 
+			GetOwnerEntity() ? GetOwnerEntity() : this, 
+			sk_helicopter_grenadedamage.GetFloat(), 
+			sk_helicopter_grenaderadius.GetFloat(), 
+			(SF_ENVEXPLOSION_NOSPARKS|SF_ENVEXPLOSION_NODLIGHTS|SF_ENVEXPLOSION_NOSOUND|SF_ENVEXPLOSION_NODECAL|SF_ENVEXPLOSION_NOFIREBALL|SF_ENVEXPLOSION_NOPARTICLES), 
+			sk_helicopter_grenadeforce.GetFloat(), 
+			this );
+	}
+	
 	CEffectData data;
 
 	// If we're under water do a water explosion
@@ -5442,13 +5459,14 @@ void CGrenadeHelicopter::DoExplosion( const Vector &vecOrigin, const Vector &vec
 		data.m_vOrigin = WorldSpaceCenter();
 		data.m_flMagnitude = 128;
 		data.m_flScale = 128;
-		data.m_fFlags = 0;
+		data.m_fFlags = bMakeSounds ? 0 : TE_EXPLFLAG_NOSOUND;
 		DispatchEffect( "WaterSurfaceExplosion", data );
 	}
 	else
 	{
 		// Otherwise do a normal explosion
 		data.m_vOrigin = GetAbsOrigin();
+		data.m_fFlags = bMakeSounds ? 0 : TE_EXPLFLAG_NOSOUND;
 		DispatchEffect( "HelicopterMegaBomb", data );
 	}
 
@@ -5500,7 +5518,28 @@ void CGrenadeHelicopter::ResolveFlyCollisionCustom( trace_t &trace, Vector &vecV
 {
 	ResolveFlyCollisionBounce( trace, vecVelocity, 0.1f );
 }
-
+#define BOMB_PER_SOUND 3
+//------------------------------------------------------------------------------
+// Purpose:
+//------------------------------------------------------------------------------
+bool CGrenadeHelicopter::ShouldMakeSounds(void)
+{
+	static unsigned int explodeid = 0;
+	explodeid = explodeid + 1;
+	
+	if ( explodeid > BOMB_PER_SOUND )
+		explodeid = 0;
+	
+	DevMsg("ID is: %i\n", explodeid );
+	
+	if ( sk_helicopter_grenade_stay.GetBool() )
+	{
+		if ( !GetOwnerEntity() && explodeid != BOMB_PER_SOUND )
+			return false;
+	}
+	
+	return true;
+}
 
 //------------------------------------------------------------------------------
 // Contact grenade, explode when it touches something

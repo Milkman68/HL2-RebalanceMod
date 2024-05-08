@@ -3,7 +3,7 @@ This is the Github repository for the SourceCode of the mod.
 The HL2R Sourcemod can be found [here](https://github.com/mariovct/HL2-RebalanceMod_Game-files).
 
 #### ============Terms of Use:============
-I'm fine with just about anybody using my code, or basing their mod off of mine. I can't guarantee  it's all well-written or works flawlessly. But if you find any parts of it useful, then by all means you can copy/use it however you'd like(credit would be nice, but not necessary).
+I'm fine with just about anybody using my code, or basing their mod off of mine. I can't guarantee  it's all well-written or works flawlessly. But if you find any parts of it useful, then by all means you can copy/use it however you'd like. All I ask is that I'm credited in some form.
 
 If you need to discuss something with me about HL2R my Discord ID is: milkman4800
                

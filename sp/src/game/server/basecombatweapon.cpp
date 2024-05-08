@@ -377,7 +377,7 @@ int CBaseCombatWeapon::WeaponRangeAttack1Condition( float flDot, float flDist )
  	{
  		return COND_TOO_CLOSE_TO_ATTACK;
  	}
- 	else if (flDist > m_fMaxRange1) 
+ 	else if (flDist > m_fMaxRange1 * 2) 
  	{
  		return COND_TOO_FAR_TO_ATTACK;
  	}

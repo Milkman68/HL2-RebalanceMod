@@ -2115,7 +2115,7 @@ void CNPC_BaseZombie::PrescheduleThink( void )
 #endif 
 
 	// Warn enemies of potential danger.
-	CSoundEnt::InsertSound( SOUND_DANGER, GetAbsOrigin(), 128, 0.1f, this );
+//	CSoundEnt::InsertSound( SOUND_DANGER, GetAbsOrigin(), 128, 0.1f, this );
 
 	//
 	// Cool off if we aren't burned for five seconds or so. 
@@ -2556,7 +2556,19 @@ void CNPC_BaseZombie::ReleaseHeadcrab( const Vector &vecOrigin, const Vector &ve
 			{
 				pCrab->WasReleased( true );
 				pCrab->SetIdealActivity( ACT_RANGE_ATTACK1 );
-				pCrab->JumpAttack( false, pEnemy->EyePosition(), true );
+				
+				Vector vecDir = ( pEnemy->EyePosition() - EyePosition() );
+				VectorNormalize( vecDir );
+				
+				float flLength = ( pEnemy->EyePosition() - EyePosition() ).Length();
+				
+				// Quickly falloff in range if we're farther than 256 units away.
+				float max = 256;
+				if ( flLength > max )
+					flLength = SimpleSplineRemapVal( clamp( flLength, max, 512 ), max, 512, max, 50 );
+				
+				Vector vecEnemyPos = EyePosition() + ( vecDir * MAX( flLength, max ) );
+				pCrab->JumpAttack( false, vecEnemyPos, true );
 			}
 		}
 		if( ShouldIgniteZombieGib() )

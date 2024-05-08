@@ -61,7 +61,7 @@ ConVar g_debug_doors( "g_debug_doors", "0" );
 ConVar breakable_disable_gib_limit( "breakable_disable_gib_limit", "0" );
 ConVar breakable_multiplayer( "breakable_multiplayer", "1" );
 
-ConVar sk_door_speed( "sk_door_speed", "100" );
+ConVar sk_door_speed( "sk_door_speed", "150" );
 
 // AI Interaction for being hit by a physics object
 int g_interactionHitByPlayerThrownPhysObj = 0;

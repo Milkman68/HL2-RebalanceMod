@@ -331,7 +331,7 @@ BEGIN_DATADESC( CNPC_Strider )
 
 	DEFINE_FIELD( m_hRagdoll,				FIELD_EHANDLE ),
 	DEFINE_FIELD( m_hCannonTarget,		FIELD_EHANDLE ),
-	DEFINE_FIELD( m_hLastCannonTarget,		FIELD_EHANDLE ),
+	DEFINE_FIELD( m_LastCannonTargetPos,		FIELD_POSITION_VECTOR),
 	DEFINE_EMBEDDED( m_AttemptCannonLOSTimer ),
 
 	DEFINE_FIELD( m_flSpeedScale, FIELD_FLOAT ),
@@ -572,7 +572,7 @@ void CNPC_Strider::Spawn()
 
 	m_hPlayersMissile.Set( NULL );
 	m_flTimeNextHuntSound = gpGlobals->curtime - 1.0f;
-	m_hLastCannonTarget = NULL;
+	m_LastCannonTargetPos = vec3_invalid;
 }
 
 void CNPC_Strider::SetupGlobalModelData()
@@ -997,23 +997,12 @@ void CNPC_Strider::GatherConditions()
 	if ( ShouldFireCannon() )
 	{
 		Vector vecTarget = GetEnemies()->LastSeenPosition( GetEnemy() );
-		CAI_BaseNPC *pCTarget = CreateCustomTarget( vecTarget, 20 );
+		
+		CAI_BaseNPC *pCTarget = CreateCustomTarget( vecTarget, -1 );
+		m_flShootCooldown = gpGlobals->curtime + strider_offensive_warp_cannon_cooldown.GetFloat();
 						
-		if ( m_hLastCannonTarget != NULL && pCTarget->GetAbsOrigin() == m_hLastCannonTarget->GetAbsOrigin() )
-		{
-			pCTarget = NULL;
-		} 
-					
-		if ( pCTarget != NULL )
-		{
-			// Update the targets position until ready to fire.
-			m_bUpDateCannonTarget = true;
-			
-			m_flShootCooldown = gpGlobals->curtime + strider_offensive_warp_cannon_cooldown.GetFloat();
-						
-			m_hCannonTarget = pCTarget;
-			m_AttemptCannonLOSTimer.Force();
-		}
+		m_hCannonTarget = pCTarget;
+		m_AttemptCannonLOSTimer.Force();
 	}
 
 	//---------------------------------
@@ -1397,12 +1386,9 @@ int CNPC_Strider::SelectSchedule()
 
 	if( HasCondition( COND_CAN_RANGE_ATTACK2 ) )
 	{
-		// We succeded.
-		m_bFailedTwice = false;
-		
 		return SCHED_STRIDER_RANGE_ATTACK2;
 	}
-	else if( /* m_AttemptCannonLOSTimer.Expired() && */ HasCondition( COND_STRIDER_HAS_CANNON_TARGET ) )
+	else if( HasCondition( COND_STRIDER_HAS_CANNON_TARGET ) )
 	{
 		//m_AttemptCannonLOSTimer.Set( 5 );
 		return SCHED_STRIDER_ESTABLISH_LINE_OF_FIRE_CANNON;
@@ -4173,7 +4159,7 @@ void CNPC_Strider::CannonHitThink()
 			pCannonTarget->TakeDamage( info );
 		}
 		// Setup last cannon target
-		m_hLastCannonTarget = m_hCannonTarget;
+		m_LastCannonTargetPos = m_hCannonTarget->GetAbsOrigin();
 		
 		// Clear this guy now that we've shot him
 		m_hCannonTarget = NULL;
@@ -4492,9 +4478,7 @@ int CNPC_Strider::SelectFailSchedule( int failedSchedule, int failedTask, AI_Tas
 {
 	if( failedSchedule == SCHED_STRIDER_ESTABLISH_LINE_OF_FIRE_CANNON )
 	{
-		m_hLastCannonTarget = m_hCannonTarget;
-		
-		m_bUpDateCannonTarget = false;
+		m_LastCannonTargetPos = m_hCannonTarget->GetAbsOrigin();
 		m_hCannonTarget = NULL;
 	}
 
@@ -4879,10 +4863,16 @@ bool CNPC_Strider::ShouldFireCannon()
 	if ( !GetEnemy() )
 		return false;
 	
-	if ( GetCannonTarget() && !m_bUpDateCannonTarget )	
+	if ( GetCannonTarget() )	
 		return false;
 	
 	if ( m_flShootCooldown > gpGlobals->curtime )
+		return false;
+	
+	Vector vecTarget = GetEnemies()->LastSeenPosition( GetEnemy() );
+		
+	// Don't do it if our last cannon target and this one are the same.
+	if ( m_LastCannonTargetPos != vec3_invalid && vecTarget == m_LastCannonTargetPos )
 		return false;
 	
 	return true;

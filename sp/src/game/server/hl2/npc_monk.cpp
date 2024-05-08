@@ -24,7 +24,7 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-ConVar monk_headshot_freq( "monk_headshot_freq", "2" );
+ConVar monk_headshot_freq( "monk_headshot_freq", "1" );
 
 //-----------------------------------------------------------------------------
 // Activities.
@@ -160,7 +160,6 @@ void CNPC_Monk::BuildScheduleTestBits( void )
 		ClearCustomInterruptCondition( COND_NEW_ENEMY );
 		ClearCustomInterruptCondition( COND_HEAR_DANGER );
 	}
-#endif
 
 	// Don't interrupt while shooting the gun
 	const Task_t* pTask = GetTask();
@@ -172,6 +171,7 @@ void CNPC_Monk::BuildScheduleTestBits( void )
 		ClearCustomInterruptCondition( COND_WEAPON_BLOCKED_BY_FRIEND );
 		ClearCustomInterruptCondition( COND_WEAPON_SIGHT_OCCLUDED );
 	}
+#endif
 }
 
 
@@ -270,7 +270,7 @@ void CNPC_Monk::Spawn()
 	AddSolidFlags( FSOLID_NOT_STANDABLE );
 	SetMoveType( MOVETYPE_STEP );
 	SetBloodColor( BLOOD_COLOR_RED );
-	m_iHealth			= 100;
+	m_iHealth			= 150;
 	m_flFieldOfView		= m_flFieldOfView = -0.707; // 270`
 	m_NPCState			= NPC_STATE_NONE;
 
@@ -375,6 +375,11 @@ bool CNPC_Monk::ShouldBackAway()
 {
 	if( !GetEnemy() )
 		return false;
+	
+	// What we're doing isn't working.
+	// Get away until we can recover our health.
+	if ( GetHealth() < 50 )
+		return true;
 
 	if( GetAbsOrigin().z - GetEnemy()->GetAbsOrigin().z >= MONK_STAND_GROUND_HEIGHT )
 	{
@@ -425,7 +430,7 @@ int CNPC_Monk::TranslateSchedule( int scheduleType )
 			if( ShouldBackAway() )
 			{
 				// Get some room, rely on move and shoot.
-				return SCHED_MOVE_AWAY;
+				return SCHED_MONK_BACK_AWAY_FROM_ENEMY;
 			}
 
 			return SCHED_MONK_RANGE_ATTACK1;
@@ -734,12 +739,13 @@ AI_BEGIN_CUSTOM_NPC( npc_monk, CNPC_Monk )
 		"		TASK_STOP_MOVING							0"
 		"		TASK_STORE_ENEMY_POSITION_IN_SAVEPOSITION	0"
 		"		TASK_FIND_BACKAWAY_FROM_SAVEPOSITION		0"
-		"		TASK_WALK_PATH_TIMED						4.0"
+		"		TASK_RUN_PATH_TIMED							3.0"
 		"		TASK_WAIT_FOR_MOVEMENT						0"
 		""
 		"	Interrupts"
 		"		COND_NEW_ENEMY"
 		"		COND_ENEMY_DEAD"
+		"		COND_HEAVY_DAMAGE"
 	);
 
 	DEFINE_SCHEDULE
@@ -751,13 +757,14 @@ AI_BEGIN_CUSTOM_NPC( npc_monk, CNPC_Monk )
 		"		TASK_STOP_MOVING							0"
 		"		TASK_STORE_ENEMY_POSITION_IN_SAVEPOSITION	0"
 		"		TASK_FIND_BACKAWAY_FROM_SAVEPOSITION		0"
-		"		TASK_WALK_PATH_TIMED						2.0"
+		"		TASK_RUN_PATH_TIMED							3.0"
 		"		TASK_WAIT_FOR_MOVEMENT						0"
 		"		TASK_STOP_MOVING							0"
 		"		TASK_RELOAD									0"
 		""
 		"	Interrupts"
 		"		COND_ENEMY_DEAD"
+		"		COND_HEAVY_DAMAGE"
 	);
 
 	DEFINE_SCHEDULE
@@ -770,6 +777,7 @@ AI_BEGIN_CUSTOM_NPC( npc_monk, CNPC_Monk )
 		""
 		"	Interrupts"
 		"		COND_HEAR_DANGER"
+		"		COND_HEAVY_DAMAGE"
 	);
 
 

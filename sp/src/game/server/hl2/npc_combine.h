@@ -153,7 +153,6 @@ public:
 	void			OnStartSchedule( int scheduleType );
 
 	virtual bool	ShouldPickADeathPose( void );
-	virtual int		RangeAttack1Conditions( float flDot, float flDist );
 	
 protected:
 	void			SetKickDamage( int nDamage ) { m_nKickDamage = nDamage; }

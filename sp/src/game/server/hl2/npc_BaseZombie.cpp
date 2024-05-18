@@ -653,39 +653,6 @@ int CNPC_BaseZombie::MeleeAttack1Conditions ( float flDot, float flDist )
 }
 
 //-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-#define ZOMBIE_BUCKSHOT_TRIPLE_DAMAGE_DIST	96.0f // Triple damage from buckshot at 8 feet (headshot only)
-float CNPC_BaseZombie::GetHitgroupDamageMultiplier( int iHitGroup, const CTakeDamageInfo &info )
-{
-	switch( iHitGroup )
-	{
-	case HITGROUP_HEAD:
-		{
-			if( info.GetDamageType() & DMG_BUCKSHOT )
-			{
-				float flDist = FLT_MAX;
-
-				if( info.GetAttacker() )
-				{
-					flDist = ( GetAbsOrigin() - info.GetAttacker()->GetAbsOrigin() ).Length();
-				}
-
-				if( flDist <= ZOMBIE_BUCKSHOT_TRIPLE_DAMAGE_DIST )
-				{
-					return 3.0f;
-				}
-			}
-			else
-			{
-				return 3.0f;
-			}
-		}
-	}
-
-	return BaseClass::GetHitgroupDamageMultiplier( iHitGroup, info );
-}
-
-//-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
 void CNPC_BaseZombie::TraceAttack( const CTakeDamageInfo &info, const Vector &vecDir, trace_t *ptr, CDmgAccumulator *pAccumulator )
@@ -1082,13 +1049,13 @@ bool CNPC_BaseZombie::IsChopped( const CTakeDamageInfo &info )
 //-----------------------------------------------------------------------------
 bool CNPC_BaseZombie::ShouldIgniteZombieGib( void )
 {
-#ifdef HL2_EPISODIC
+/* #ifdef HL2_EPISODIC
 	// If we're in darkness mode, don't ignite giblets, because we don't want to
 	// pay the perf cost of multiple dynamic lights per giblet.
 	return ( IsOnFire() && !HL2GameRules()->IsAlyxInDarknessMode() );
-#else
+#else */
 	return IsOnFire();
-#endif 
+//#endif 
 }
 
 //-----------------------------------------------------------------------------
@@ -1353,6 +1320,10 @@ CBaseEntity *CNPC_BaseZombie::ClawAttack( float flDist, int iDamage, QAngle &qaV
 	}
 	else 
 	{
+		// Vital allies take less damage.
+		if ( GetEnemy() != NULL )
+			iDamage = GetEnemy()->Classify() == CLASS_PLAYER_ALLY_VITAL ? iDamage / 2: iDamage;
+		
 		// Try to hit them with a trace
 		pHurt = CheckTraceHullAttack( flDist, vecMins, vecMaxs, iDamage, DMG_SLASH );
 	}

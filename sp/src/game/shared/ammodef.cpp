@@ -94,7 +94,7 @@ int	CAmmoDef::NPCDamage(int nAmmoIndex)
 		return m_AmmoType[nAmmoIndex].pNPCDmg;
 	}
 }
-
+extern ConVar hl2r_smaller_reserves;
 //-----------------------------------------------------------------------------
 // Purpose:
 // Input  :
@@ -104,18 +104,32 @@ int	CAmmoDef::MaxCarry(int nAmmoIndex)
 {
 	if ( nAmmoIndex < 1 || nAmmoIndex >= m_nAmmoIndex )
 		return 0;
-
+	
+	int flCarry = 0;
 	if ( m_AmmoType[nAmmoIndex].pMaxCarry == USE_CVAR )
 	{
 		if ( m_AmmoType[nAmmoIndex].pMaxCarryCVar )
-			return m_AmmoType[nAmmoIndex].pMaxCarryCVar->GetFloat();
-
-		return 0;
+			flCarry = m_AmmoType[nAmmoIndex].pMaxCarryCVar->GetFloat();
+		
+		if ( hl2r_smaller_reserves.GetBool() )
+		{
+			if ( flCarry > 5 )
+				flCarry *= 0.5;
+				
+			else if ( flCarry == 5 )
+				flCarry = 3;
+			
+			else if ( flCarry == 3 )
+				flCarry = 1;
+			
+		}
 	}
 	else
 	{
-		return m_AmmoType[nAmmoIndex].pMaxCarry;
+		flCarry = m_AmmoType[nAmmoIndex].pMaxCarry;
 	}
+	
+	return flCarry;
 }
 
 //-----------------------------------------------------------------------------

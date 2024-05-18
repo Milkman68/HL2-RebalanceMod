@@ -143,7 +143,6 @@ public:
 	// No range attacks
 	int RangeAttack1Conditions ( float flDot, float flDist ) { return( 0 ); }
 	
-	virtual float GetHitgroupDamageMultiplier( int iHitGroup, const CTakeDamageInfo &info );
 	void TraceAttack( const CTakeDamageInfo &info, const Vector &vecDir, trace_t *ptr, CDmgAccumulator *pAccumulator );
 	int OnTakeDamage_Alive( const CTakeDamageInfo &info );
 	virtual float	GetReactionDelay( CBaseEntity *pEnemy ) { return 0.0; }

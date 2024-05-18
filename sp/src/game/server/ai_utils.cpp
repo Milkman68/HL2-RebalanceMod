@@ -205,11 +205,7 @@ void CAI_ShotRegulator::OnFiredWeapon()
 	else
 	{
 		m_bInRestInterval = false;
-		m_flNextShotTime += random->RandomFloat( m_flMinBurstInterval, m_flMaxBurstInterval );
-		if ( m_flNextShotTime < gpGlobals->curtime )
-		{
-			m_flNextShotTime = gpGlobals->curtime;
-		}
+		m_flNextShotTime = gpGlobals->curtime + random->RandomFloat( m_flMinBurstInterval, m_flMaxBurstInterval );
 	}
 }
 

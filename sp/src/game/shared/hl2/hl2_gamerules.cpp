@@ -81,6 +81,7 @@ ConVar	hl2r_enemy_promotion( "hl2r_enemy_promotion", "0", FCVAR_REPLICATED | FCV
 ConVar	hl2r_random_weapons( "hl2r_random_weapons", "0", FCVAR_REPLICATED | FCVAR_ARCHIVE);
 ConVar	hl2r_shorter_sprint( "hl2r_shorter_sprint", "0", FCVAR_REPLICATED | FCVAR_ARCHIVE);
 ConVar	hl2r_reduced_assists( "hl2r_reduced_assists", "0", FCVAR_REPLICATED | FCVAR_ARCHIVE);
+ConVar	hl2r_smaller_reserves( "hl2r_smaller_reserves", "0", FCVAR_REPLICATED | FCVAR_ARCHIVE);
 
 ConVar	hl2r_dynamic_light_level( "hl2r_dynamic_light_level", "0", FCVAR_REPLICATED | FCVAR_ARCHIVE);
 ConVar	hl2r_hudhints( "hl2r_hudhints", "1", FCVAR_REPLICATED | FCVAR_ARCHIVE);

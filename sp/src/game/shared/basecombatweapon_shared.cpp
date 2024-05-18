@@ -1433,8 +1433,18 @@ bool CBaseCombatWeapon::DefaultDeploy( char *szViewModel, char *szWeaponModel, i
 	// can still be deployed when they have no ammo.
 	if ( !HasAnyAmmo() && AllowsAutoSwitchFrom() )
 		return false;
-
+	
 	CBasePlayer *pOwner = ToBasePlayer( GetOwner() );
+	
+	if ( pOwner )
+	{
+		if ( pOwner->GetAmmoCount(m_iPrimaryAmmoType) > GetAmmoDef()->MaxCarry(m_iPrimaryAmmoType) )
+			pOwner->SetAmmoCount( GetAmmoDef()->MaxCarry(m_iPrimaryAmmoType), m_iPrimaryAmmoType );
+		
+		if ( pOwner->GetAmmoCount(m_iSecondaryAmmoType) > GetAmmoDef()->MaxCarry(m_iSecondaryAmmoType) )
+			pOwner->SetAmmoCount( GetAmmoDef()->MaxCarry(m_iSecondaryAmmoType), m_iSecondaryAmmoType );
+	}
+	
 	if ( pOwner )
 	{
 		// Dead men deploy no weapons

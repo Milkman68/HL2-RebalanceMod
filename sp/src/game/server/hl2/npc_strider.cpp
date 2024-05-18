@@ -1390,8 +1390,15 @@ int CNPC_Strider::SelectSchedule()
 	}
 	else if( HasCondition( COND_STRIDER_HAS_CANNON_TARGET ) )
 	{
-		//m_AttemptCannonLOSTimer.Set( 5 );
-		return SCHED_STRIDER_ESTABLISH_LINE_OF_FIRE_CANNON;
+		if ( m_LastCannonTargetPos != m_hCannonTarget->GetAbsOrigin() )
+		{
+			m_LastCannonTargetPos = m_hCannonTarget->GetAbsOrigin();
+			return SCHED_STRIDER_ESTABLISH_LINE_OF_FIRE_CANNON;
+		}
+		else
+		{
+			m_hCannonTarget = NULL;
+		}
 	}
 
 	//---------------------------------

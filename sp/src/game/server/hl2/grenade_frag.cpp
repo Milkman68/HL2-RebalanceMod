@@ -134,7 +134,7 @@ void CGrenadeFrag::Spawn( void )
 	SetCollisionGroup( COLLISION_GROUP_WEAPON );
 	CreateVPhysics();
 
-	if ( !sk_plr_grenade_is_cookable.GetBool() || !GetOwnerEntity()->IsPlayer() ) 
+	if ( !sk_plr_grenade_is_cookable.GetBool() || ( GetOwnerEntity() && !GetOwnerEntity()->IsPlayer() ) ) 
 	{ 
 		BlipSound();
 		m_flNextBlipTime = gpGlobals->curtime + FRAG_GRENADE_BLIP_FREQUENCY;

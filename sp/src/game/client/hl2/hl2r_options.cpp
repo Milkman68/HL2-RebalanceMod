@@ -26,7 +26,7 @@ void CGameHL2RBasePanel::OnApplyChanges()
 CSubOptionsGameHL2R::CSubOptionsGameHL2R(vgui::Panel* parent) : EditablePanel(parent, NULL)
 {
  	CheckButtonRef.InitCheckButtons( this, G_CheckButtons, ARRAYSIZE(G_CheckButtons) );
-	SetBounds(0, 0, 422, 675);
+	SetBounds(0, 0, 422, 775);
 	
 	toggleAllButton = new Button(this, "toggleAllButton", "");
 	toggleAllButton->SetCommand("toggleall");

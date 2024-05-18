@@ -94,8 +94,8 @@ ConVar sk_hunter_flechette_explode_dmg( "sk_hunter_flechette_explode_dmg", "12.0
 ConVar sk_hunter_flechette_explode_radius( "sk_hunter_flechette_explode_radius", "128.0" );
 ConVar hunter_flechette_explode_delay( "hunter_flechette_explode_delay", "2.5" );
 ConVar hunter_flechette_delay( "hunter_flechette_delay", "0.1" );
-ConVar hunter_first_flechette_delay( "hunter_first_flechette_delay", "0.5" );
-ConVar hunter_flechette_max_concurrent_volleys( "hunter_flechette_max_concurrent_volleys", "2" );
+ConVar hunter_first_flechette_delay( "hunter_first_flechette_delay", "0.1" );
+ConVar hunter_flechette_max_concurrent_volleys( "hunter_flechette_max_concurrent_volleys", "1" );
 ConVar hunter_flechette_volley_start_min_delay( "hunter_flechette_volley_start_min_delay", ".25" );
 ConVar hunter_flechette_volley_start_max_delay( "hunter_flechette_volley_start_max_delay", ".95" );
 ConVar hunter_flechette_volley_end_min_delay( "hunter_flechette_volley_end_min_delay", "1" );
@@ -103,7 +103,6 @@ ConVar hunter_flechette_volley_end_max_delay( "hunter_flechette_volley_end_max_d
 ConVar hunter_flechette_test( "hunter_flechette_test", "0" );
 ConVar hunter_clamp_shots( "hunter_clamp_shots", "1" );
 ConVar hunter_cheap_explosions( "hunter_cheap_explosions", "1" );
-//ConVar hunter_flechette_lead_delay( "hunter_flechette_lead_multiplier", "0.5" );
 
 // Damage received
 ConVar sk_hunter_bullet_damage_scale( "sk_hunter_bullet_damage_scale", "0.6" );
@@ -122,7 +121,7 @@ ConVar hunter_melee_delay( "hunter_melee_delay", "2.0" );
 
 // Bullrush charge.
 ConVar hunter_charge( "hunter_charge", "1" );
-ConVar hunter_charge_min_delay( "hunter_charge_min_delay", "10.0" );
+ConVar hunter_charge_min_delay( "hunter_charge_min_delay", "5.0" );
 ConVar hunter_charge_pct( "hunter_charge_pct", "25" );
 ConVar hunter_charge_test( "hunter_charge_test", "0" );
 ConVar hunter_charge_turn_speed( "hunter_charge_turn_speed", "15" );
@@ -152,7 +151,7 @@ ConVar hunter_hate_thrown_striderbusters_tolerance( "hunter_hate_thrown_striderb
 ConVar hunter_seek_thrown_striderbusters_tolerance( "hunter_seek_thrown_striderbusters_tolerance", "400.0" );
 ConVar hunter_retreat_striderbusters( "hunter_retreat_striderbusters", "1", FCVAR_NONE, "If true, the hunter will retreat when a buster is glued to him." );
 
-ConVar hunter_allow_nav_jump( "hunter_allow_nav_jump", "1" );
+ConVar hunter_allow_nav_jump( "hunter_allow_nav_jump", "0" );
 ConVar g_debug_hunter_charge( "g_debug_hunter_charge", "0" );
 
 ConVar hunter_stand_still( "hunter_stand_still", "0" ); // used for debugging, keeps them rooted in place
@@ -242,7 +241,7 @@ Activity ACT_HUNTER_FLINCH_W;
 //-----------------------------------------------------------------------------
 //	Squad slots
 //-----------------------------------------------------------------------------
-enum SquadSlot_t//bookmark
+enum SquadSlot_t
 {	
 	SQUAD_SLOT_HUNTER_CHARGE = LAST_SHARED_SQUADSLOT,
 	SQUAD_SLOT_HUNTER_FLANK_FIRST,
@@ -1221,7 +1220,7 @@ public:
 	// Inputs
 	//---------------------------------
 	void			InputDodge( inputdata_t &inputdata );
-	void			InputFlankEnemy( inputdata_t &inputdata );//bookmark
+	void			InputFlankEnemy( inputdata_t &inputdata );
 	void			InputDisableShooting( inputdata_t &inputdata );
 	void			InputEnableShooting( inputdata_t &inputdata );
 	void			InputFollowStrider( inputdata_t &inputdata );
@@ -1375,7 +1374,7 @@ private:
 		SCHED_HUNTER_CHASE_ENEMY,
 		SCHED_HUNTER_CHASE_ENEMY_MELEE,
 		SCHED_HUNTER_COMBAT_FACE,
-		SCHED_HUNTER_FLANK_ENEMY,//bookmark
+		SCHED_HUNTER_FLANK_ENEMY,
 		SCHED_HUNTER_CHANGE_POSITION,
 		SCHED_HUNTER_CHANGE_POSITION_FINISH,
 		SCHED_HUNTER_SIDESTEP,
@@ -1403,8 +1402,8 @@ private:
 		TASK_HUNTER_DODGE,
 		TASK_HUNTER_PRE_RANGE_ATTACK2,
 		TASK_HUNTER_SHOOT_COMMIT,
-		TASK_HUNTER_BEGIN_FLANK,//bookmark
-		TASK_HUNTER_ANNOUNCE_FLANK,//bookmark
+		TASK_HUNTER_BEGIN_FLANK,
+		TASK_HUNTER_ANNOUNCE_FLANK,
 		TASK_HUNTER_STAGGER,
 		TASK_HUNTER_CORNERED_TIMER,
 		TASK_HUNTER_FIND_SIDESTEP_POSITION,
@@ -1414,7 +1413,7 @@ private:
 		TASK_HUNTER_WAIT_FOR_MOVEMENT_FACING_ENEMY,
 
 		COND_HUNTER_SHOULD_PATROL = BaseClass::NEXT_CONDITION,
-		COND_HUNTER_FORCED_FLANK_ENEMY,//bookmark
+		COND_HUNTER_FORCED_FLANK_ENEMY,
 		COND_HUNTER_FORCED_DODGE,
 		COND_HUNTER_CAN_CHARGE_ENEMY,
 		COND_HUNTER_HIT_BY_STICKYBOMB,
@@ -1611,7 +1610,7 @@ BEGIN_DATADESC( CNPC_Hunter )
 
 	// inputs
 	DEFINE_INPUTFUNC( FIELD_VOID, "Dodge", InputDodge ),
-	DEFINE_INPUTFUNC( FIELD_VOID, "FlankEnemy", InputFlankEnemy ),//bookmark1
+	DEFINE_INPUTFUNC( FIELD_VOID, "FlankEnemy", InputFlankEnemy ),
 	DEFINE_INPUTFUNC( FIELD_STRING, "DisableShooting", InputDisableShooting ),
 	DEFINE_INPUTFUNC( FIELD_STRING, "EnableShooting", InputEnableShooting ),
 	DEFINE_INPUTFUNC( FIELD_STRING, "FollowStrider", InputFollowStrider ),
@@ -1693,7 +1692,7 @@ void CNPC_Hunter::Precache()
 	PrecacheScriptSound( "NPC_Hunter.FlechetteVolleyWarn" );
 	PrecacheScriptSound( "NPC_Hunter.FlechetteShoot" );
 	PrecacheScriptSound( "NPC_Hunter.FlechetteShootLoop" );
-	PrecacheScriptSound( "NPC_Hunter.FlankAnnounce" );//bookmark
+	PrecacheScriptSound( "NPC_Hunter.FlankAnnounce" );
 	PrecacheScriptSound( "NPC_Hunter.MeleeAnnounce" );
 	PrecacheScriptSound( "NPC_Hunter.MeleeHit" );
 	PrecacheScriptSound( "NPC_Hunter.TackleAnnounce" );
@@ -1797,6 +1796,7 @@ void CNPC_Hunter::Spawn()
 	{
 		m_BeginFollowDelay.Set( .1 ); // Allow time for strider to spawn
 	}
+	
 	m_bEnableUnplantedShooting = true;
 
 	//if ( !m_pGunFiringSound )
@@ -2159,8 +2159,10 @@ void CNPC_Hunter::UpdateEyes()
 
 	/*Vector vecEyePos;
 	Vector vecEyeDir;
+
 	GetAttachment( gm_nTopGunAttachment, vecEyePos, &vecEyeDir );
 	NDebugOverlay::Line( vecEyePos, vecEyePos + vecEyeDir * 36, 255, 0, 0, 0, 0.1 );
+
 	GetAttachment( gm_nBottomGunAttachment, vecEyePos, &vecEyeDir );
 	NDebugOverlay::Line( vecEyePos, vecEyePos + vecEyeDir * 36, 255, 0, 0, 0, 0.1 );*/
 }
@@ -2552,7 +2554,7 @@ void CNPC_Hunter::BuildScheduleTestBits()
 		ClearCustomInterruptCondition( COND_CAN_RANGE_ATTACK1 );
 		ClearCustomInterruptCondition( COND_CAN_RANGE_ATTACK2 );
 	}
-	else if ( !IsInLargeOutdoorMap() && IsCurSchedule( SCHED_HUNTER_FLANK_ENEMY, false ) && GetEnemy() != NULL )//bookmark
+	else if ( !IsInLargeOutdoorMap() && IsCurSchedule( SCHED_HUNTER_FLANK_ENEMY, false ) && GetEnemy() != NULL )
 	{
 		if( HasCondition(COND_CAN_RANGE_ATTACK2) && m_flTimeSawEnemyAgain != HUNTER_SEE_ENEMY_TIME_INVALID )
 		{
@@ -2590,7 +2592,7 @@ void CNPC_Hunter::BuildScheduleTestBits()
 	}
 
 	// Always interrupt on a flank command.	
-	SetCustomInterruptCondition( COND_HUNTER_FORCED_FLANK_ENEMY );//bookmark
+	SetCustomInterruptCondition( COND_HUNTER_FORCED_FLANK_ENEMY );
 
 	// Always interrupt if staggered.
 	SetCustomInterruptCondition( COND_HUNTER_STAGGERED );
@@ -2779,7 +2781,7 @@ int CNPC_Hunter::SelectCombatSchedule()
 		return SCHED_ESTABLISH_LINE_OF_FIRE;
 	}
 
-	// Certain behaviors, like flanking and melee attacks, only make sense on visible,//bookmark
+	// Certain behaviors, like flanking and melee attacks, only make sense on visible,
 	// corporeal enemies (NOT bullseyes).
 	bool bIsCorporealEnemy = IsCorporealEnemy( pEnemy );
 
@@ -2841,7 +2843,7 @@ int CNPC_Hunter::SelectCombatSchedule()
 		return SCHED_MOVE_AWAY_FROM_ENEMY;
 	}
 
-	// Sidestep every so often if my enemy is nearby and facing me. bookmark
+	// Sidestep every so often if my enemy is nearby and facing me.
 /*
 	if ( gpGlobals->curtime > m_flNextSideStepTime )
 	{
@@ -2866,38 +2868,31 @@ int CNPC_Hunter::SelectCombatSchedule()
 			{
 				return SCHED_HUNTER_CHARGE_ENEMY;
 			}
-/*
 			else
 			{
 				return SCHED_HUNTER_SIDESTEP;
 			}
-*/
-		}
 
-		// Try to be a flanker. //bookmark
-		if ( /* ( NumHuntersInMySquad() > 1 ) && */ OccupyStrategySlotRange( SQUAD_SLOT_HUNTER_FLANK_FIRST, SQUAD_SLOT_HUNTER_FLANK_LAST ) )//bookmark
-		{
-			return SCHED_HUNTER_FLANK_ENEMY;
 		}
 	}
 	
 	// Can't see my enemy.
-	if ( HasCondition( COND_ENEMY_OCCLUDED ) || HasCondition( COND_ENEMY_TOO_FAR ) || HasCondition( COND_TOO_FAR_TO_ATTACK ) || HasCondition( COND_NOT_FACING_ATTACK ) )
+ 	if ( HasCondition( COND_ENEMY_OCCLUDED ) || HasCondition( COND_ENEMY_TOO_FAR ) || HasCondition( COND_TOO_FAR_TO_ATTACK ) || HasCondition( COND_NOT_FACING_ATTACK ) )
 	{
 		return SCHED_HUNTER_CHASE_ENEMY;
 	}
 
-	if ( HasCondition( COND_HUNTER_CANT_PLANT ) )
+/* 	if ( HasCondition( COND_HUNTER_CANT_PLANT ) )
 	{
 		return SCHED_ESTABLISH_LINE_OF_FIRE;
-	}
+	} */
 
-	if ( HasCondition( COND_ENEMY_OCCLUDED ) && IsCurSchedule( SCHED_RANGE_ATTACK1, false ) )
-	{
-		return SCHED_HUNTER_COMBAT_FACE;
-	}
+	//if ( HasCondition( COND_ENEMY_OCCLUDED ) && IsCurSchedule( SCHED_RANGE_ATTACK1, false ) )
+	//{
+	//	return SCHED_HUNTER_COMBAT_FACE;
+	//}
 
- 	return SCHED_HUNTER_CHANGE_POSITION;
+ 	return SCHED_HUNTER_FLANK_ENEMY;
 }
 
 //-----------------------------------------------------------------------------
@@ -3075,7 +3070,7 @@ int CNPC_Hunter::SelectSchedule()
 		}
 	}
 
-	if ( HasCondition( COND_HUNTER_FORCED_FLANK_ENEMY ) )//bookmark
+	if ( HasCondition( COND_HUNTER_FORCED_FLANK_ENEMY ) )
 	{
 		return SCHED_HUNTER_FLANK_ENEMY;
 	}
@@ -3355,7 +3350,7 @@ void CNPC_Hunter::StartTask( const Task_t *pTask )
 			break;
 		}
 
-		case TASK_HUNTER_BEGIN_FLANK: //bookmark
+		case TASK_HUNTER_BEGIN_FLANK:
 		{
 			if ( IsInSquad() && GetSquad()->NumMembers() > 1 )
 			{
@@ -4097,9 +4092,9 @@ bool CNPC_Hunter::HandleChargeImpact( Vector vecImpact, CBaseEntity *pEntity )
 		// dvs: TODO:
 		//if ( !IsPlayingGesture( ACT_HUNTER_CHARGE_HIT ) )
 		//{
-		//	RestartGesture( ACT_HUNTER_CHARGE_HIT ); 
+		//	RestartGesture( ACT_HUNTER_CHARGE_HIT );
 		//}
-		// bookmark2
+		
 		ChargeDamage( pEntity );
 
 		if ( !pEntity->IsNPC() )
@@ -4563,7 +4558,7 @@ void CNPC_Hunter::InputDodge( inputdata_t &inputdata )
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-void CNPC_Hunter::InputFlankEnemy( inputdata_t &inputdata )//bookmark
+void CNPC_Hunter::InputFlankEnemy( inputdata_t &inputdata )
 {
 	SetCondition( COND_HUNTER_FORCED_FLANK_ENEMY );
 }
@@ -4920,6 +4915,7 @@ int CNPC_Hunter::MeleeAttack1Conditions ( float flDot, float flDist )
 		// the enemy is, treat this as an obstruction.
 		Vector vecToEnemy = GetEnemy()->WorldSpaceCenter() - WorldSpaceCenter();
 		Vector vecTrace = tr.endpos - tr.startpos;
+
 		if ( vecTrace.Length2DSqr() < vecToEnemy.Length2DSqr() )
 		{
 			return COND_HUNTER_LOCAL_MELEE_OBSTRUCTION;
@@ -5121,6 +5117,7 @@ CBaseEntity *CNPC_Hunter::MeleeAttack( float flDist, int iDamage, QAngle &qaView
 				Vector vecHunterEyePos; // = EyePosition();
 				QAngle angDiscard;
 				GetBonePosition( LookupBone( "MiniStrider.top_eye_bone" ), vecHunterEyePos, angDiscard );
+
 				Vector vecPlayerEyePos = pPlayer->EyePosition();
 				
 				Vector vecDir = vecHunterEyePos - vecPlayerEyePos;
@@ -5890,7 +5887,7 @@ float CNPC_Hunter::MaxYawSpeed()
 		
 		case ACT_WALK:
 		{
-			return 35;
+			return 25;
 		}
 		
 		default:
@@ -6088,7 +6085,7 @@ void CNPC_Hunter::GetShootDir( Vector &vecDir, const Vector &vecSrc, CBaseEntity
 			vecTarget = m_vecEnemyLastSeen + vecDelta;
 		}
 //	}
-	//else
+//	else
 //	{
 		// If we're firing at a striderbuster, lead it.
 		float flSpeed = hunter_flechette_speed.GetFloat();
@@ -6101,7 +6098,7 @@ void CNPC_Hunter::GetShootDir( Vector &vecDir, const Vector &vecSrc, CBaseEntity
 
 		float flDeltaTime = flDist / flSpeed;
 		vecTarget = vecTarget + flDeltaTime * pTargetEntity->GetSmoothedVelocity();
-	//}
+//	}
 
 	vecDir = vecTarget - vecSrc;
 	VectorNormalize( vecDir );
@@ -7151,7 +7148,7 @@ AI_BEGIN_CUSTOM_NPC( npc_hunter, CNPC_Hunter )
 	DECLARE_TASK( TASK_HUNTER_PRE_RANGE_ATTACK2 )
 	DECLARE_TASK( TASK_HUNTER_SHOOT_COMMIT )
 	DECLARE_TASK( TASK_HUNTER_ANNOUNCE_FLANK )
-	DECLARE_TASK( TASK_HUNTER_BEGIN_FLANK )//bookmark
+	DECLARE_TASK( TASK_HUNTER_BEGIN_FLANK )
 	DECLARE_TASK( TASK_HUNTER_STAGGER )
 	DECLARE_TASK( TASK_HUNTER_CORNERED_TIMER )
 	DECLARE_TASK( TASK_HUNTER_FIND_SIDESTEP_POSITION )
@@ -7188,11 +7185,11 @@ AI_BEGIN_CUSTOM_NPC( npc_hunter, CNPC_Hunter )
 	DECLARE_INTERACTION( g_interactionHunterFoundEnemy );
 
 	DECLARE_SQUADSLOT( SQUAD_SLOT_HUNTER_CHARGE )
-	DECLARE_SQUADSLOT( SQUAD_SLOT_HUNTER_FLANK_FIRST )//bookmark
+	DECLARE_SQUADSLOT( SQUAD_SLOT_HUNTER_FLANK_FIRST )
 	DECLARE_SQUADSLOT( SQUAD_SLOT_RUN_SHOOT )
 
 	DECLARE_CONDITION( COND_HUNTER_SHOULD_PATROL )
-	DECLARE_CONDITION( COND_HUNTER_FORCED_FLANK_ENEMY )//bookmark
+	DECLARE_CONDITION( COND_HUNTER_FORCED_FLANK_ENEMY )
 	DECLARE_CONDITION( COND_HUNTER_CAN_CHARGE_ENEMY )
 	DECLARE_CONDITION( COND_HUNTER_STAGGERED )
 	DECLARE_CONDITION( COND_HUNTER_IS_INDOORS )
@@ -7402,9 +7399,9 @@ AI_BEGIN_CUSTOM_NPC( npc_hunter, CNPC_Hunter )
 	)
 
 	//=========================================================
-	// Move to a flanking position, then shoot if possible.//bookmark
+	// Move to a flanking position, then shoot if possible.
 	//=========================================================
-	DEFINE_SCHEDULE//bookmark
+	DEFINE_SCHEDULE
 	(
 		SCHED_HUNTER_FLANK_ENEMY,
 
@@ -7412,7 +7409,7 @@ AI_BEGIN_CUSTOM_NPC( npc_hunter, CNPC_Hunter )
 		"		TASK_SET_FAIL_SCHEDULE					SCHEDULE:SCHED_ESTABLISH_LINE_OF_FIRE"
 		"		TASK_STOP_MOVING						0"
 		"		TASK_HUNTER_BEGIN_FLANK					0"
-		"		TASK_GET_FLANK_ARC_PATH_TO_ENEMY_LOS	80"
+		"		TASK_GET_FLANK_ARC_PATH_TO_ENEMY_LOS	30"
 		"		TASK_HUNTER_ANNOUNCE_FLANK				0"
 		"		TASK_RUN_PATH							0"
 		"		TASK_WAIT_FOR_MOVEMENT					0"
@@ -7421,8 +7418,8 @@ AI_BEGIN_CUSTOM_NPC( npc_hunter, CNPC_Hunter )
 		""
 		"	Interrupts"
 		"		COND_NEW_ENEMY"
-		"		COND_CAN_RANGE_ATTACK1"
-		"		COND_CAN_RANGE_ATTACK2"
+		//"		COND_CAN_RANGE_ATTACK1"
+		//"		COND_CAN_RANGE_ATTACK2"
 		"		COND_CAN_MELEE_ATTACK1"
 		"		COND_CAN_MELEE_ATTACK2"
 		"		COND_ENEMY_DEAD"

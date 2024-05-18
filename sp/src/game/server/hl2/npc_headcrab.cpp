@@ -193,6 +193,7 @@ ConVar	sk_headcrab_poison_health( "sk_headcrab_poison_health","0");
 ConVar	sk_headcrab_fast_melee_dmg( "sk_headcrab_fast_melee_dmg","0");
 ConVar	sk_headcrab_melee_dmg( "sk_headcrab_melee_dmg","0");
 ConVar	sk_headcrab_poison_dmg( "sk_headcrab_poison_dmg", "0" );
+ConVar	sk_headcrab_poison_ratio( "sk_headcrab_poison_ratio", "1" );
 ConVar	sk_headcrab_poison_npc_damage( "sk_headcrab_poison_npc_damage", "0" );
 
 BEGIN_DATADESC( CBaseHeadcrab )
@@ -3306,8 +3307,15 @@ void CBlackHeadcrab::TouchDamage( CBaseEntity *pOther )
 			{
 				if ( pOther->IsPlayer() )
 				{
-					// That didn't finish them. Take them down to one point with poison damage. It'll heal.
-					pOther->TakeDamage( CTakeDamageInfo( this, this, MIN( sk_headcrab_poison_dmg.GetInt(), pOther->m_iHealth - 1 ), DMG_POISON ) );
+					// Part normal damage, part poison damage
+					float poisonratio = sk_headcrab_poison_ratio.GetFloat();
+					
+					// Don't kill the player.
+					float flDamage = MIN( sk_headcrab_poison_dmg.GetInt(), pOther->m_iHealth - 1 );
+					
+					// Do some damage that won't regenerate.
+					pOther->TakeDamage( CTakeDamageInfo( this, this, flDamage * (1.0f-poisonratio), DMG_ACID ) );
+					pOther->TakeDamage( CTakeDamageInfo( this, this, flDamage * poisonratio, DMG_POISON ) );
 				}
 				else
 				{

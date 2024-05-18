@@ -1159,7 +1159,7 @@ C_EntityFlame *FireEffect( C_BaseAnimating *pTarget, C_BaseEntity *pServerFire, 
 		CPASAttenuationFilter filter( pTarget );
 		pTarget->EmitSound( filter, pTarget->GetSoundSourceIndex(), "General.BurningFlesh" );
 
-		pFire->SetNextClientThink( gpGlobals->curtime + 7.0f );
+		pFire->SetNextClientThink( gpGlobals->curtime + 60.0f );
 	}
 
 	return pFire;

@@ -51,6 +51,7 @@ CheckButton* LessAmmoButton;
 CheckButton* EnemyPromotionButton;
 CheckButton* RandomWeaponsButton;
 CheckButton* ReducedAssistsButton;
+CheckButton* SmallerReservesButton;
 
 // List of all CheckButtons:
 CheckButton_t G_CheckButtons[] =
@@ -62,6 +63,7 @@ CheckButton_t G_CheckButtons[] =
 	{ EnemyPromotionButton, "EnemyPromotionButton", "hl2r_enemy_promotion" },
 	{ RandomWeaponsButton, "RandomWeaponsButton", "hl2r_random_weapons" },
 	{ ReducedAssistsButton, "ReducedAssistsButton", "hl2r_reduced_assists" },
+	{ SmallerReservesButton, "SmallerReservesButton", "hl2r_smaller_reserves" },
 };
 //------------------------------------------------------------------------------
 // Misc page

@@ -561,6 +561,7 @@ private:
 	void    ReloadAnimSpeed( void );
 	void    DoChargedFire( void );
 	void 	SetLoopingSounds( bool bState );
+	float	GetActivityAnimSpeed( Activity ideal );
 	CSoundPatch *GetChargeSound( void );
 	
 	// Various states for the crossbow's charger
@@ -1102,6 +1103,17 @@ void CWeaponCrossbow::DoChargedFire( void )
 	}
 	
 	m_flCharge = flCharge;
+}
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+float CWeaponCrossbow::GetActivityAnimSpeed( Activity ideal )
+{
+	// Just makes the weapon more convenient to use.
+	if ( ideal == ACT_VM_RELOAD || ACT_VM_PRIMARYATTACK )
+		return 1.15;
+	
+	return BaseClass::GetActivityAnimSpeed(ideal);
 }
 //-----------------------------------------------------------------------------
 // Purpose: 

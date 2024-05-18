@@ -5530,7 +5530,7 @@ bool CGrenadeHelicopter::ShouldMakeSounds(void)
 	if ( explodeid > BOMB_PER_SOUND )
 		explodeid = 0;
 	
-	DevMsg("ID is: %i\n", explodeid );
+	//DevMsg("ID is: %i\n", explodeid );
 	
 	if ( sk_helicopter_grenade_stay.GetBool() )
 	{

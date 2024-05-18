@@ -204,6 +204,8 @@ void CNPC_Zombine::Spawn( void )
 	m_fIsTorso = false;
 	m_fIsHeadless = false;
 	
+	SetGroundSpeedMultiplier(1.5);
+	
 #ifdef HL2_EPISODIC
 	SetBloodColor( BLOOD_COLOR_ZOMBIE );
 #else

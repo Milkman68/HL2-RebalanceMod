@@ -1159,6 +1159,14 @@ void CNPC_Combine::StartTask( const Task_t *pTask )
 			}
 		break;
 		}
+	case TASK_RELOAD:
+	
+	// Can happen with moveandshoot reloading.
+	if ( GetActiveWeapon() && GetActiveWeapon()->m_iClip1 >= GetActiveWeapon()->GetMaxClip1() )
+		break;
+	
+		ResetIdealActivity( ACT_RELOAD );
+		break;
 
 	default: 
 		BaseClass:: StartTask( pTask );
@@ -1801,6 +1809,9 @@ int CNPC_Combine::SelectCombatSchedule()
 			} */
   			else if ( m_flDelayAttacksTime < gpGlobals->curtime && CanOccupyAttackSlot() )
 			{
+				if ( IsElite() )
+					return SCHED_COMBINE_FLANK_ENEMY;
+				
 				// Try to charge in and break the enemy's cover!
 				return SCHED_ESTABLISH_LINE_OF_FIRE;
 			}
@@ -2180,6 +2191,10 @@ int CNPC_Combine::SelectScheduleAttack()
 		// Engage if allowed
 		if ( CanOccupyAttackSlot() /* || IsRunningApproachEnemySchedule() */ )
 		{
+			// Elites are always on the move.
+			if ( IsElite() )
+				return SCHED_COMBINE_FLANK_ENEMY;
+			
 			DesireCrouch();
 			return SCHED_RANGE_ATTACK1;
 		}
@@ -3441,7 +3456,7 @@ WeaponProficiency_t CNPC_Combine::CalcWeaponProficiency( CBaseCombatWeapon *pWea
 {
 	if( FClassnameIs( pWeapon, "weapon_ar2" ) )
 	{
-		return g_pGameRules->IsSkillLevel( SKILL_HARD ) ? WEAPON_PROFICIENCY_GOOD : WEAPON_PROFICIENCY_AVERAGE;
+		return IsElite() ? WEAPON_PROFICIENCY_GOOD : WEAPON_PROFICIENCY_AVERAGE;
 	}
 	else if( FClassnameIs( pWeapon, "weapon_shotgun" ) || FClassnameIs( pWeapon, "weapon_357" ) )
 	{
@@ -3921,9 +3936,6 @@ DEFINE_SCHEDULE
 	"		TASK_SPEAK_SENTENCE						1"
 	"		TASK_RUN_PATH							0"
 	"		TASK_WAIT_FOR_MOVEMENT					0"
-	"		TASK_STOP_MOVING		0"
-	"		TASK_SET_ACTIVITY		ACTIVITY:ACT_IDLE"
-	"		TASK_WAIT_FACE_ENEMY			3"
 	""
 	"	Interrupts"
 	"		COND_NEW_ENEMY"

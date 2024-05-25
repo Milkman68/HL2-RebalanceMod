@@ -141,15 +141,15 @@ void CWeaponAR2::Precache( void )
 //-----------------------------------------------------------------------------
 float CWeaponAR2::GetFireRate( void )
 {
-	if( GetOwner() && GetOwner()->IsNPC() )
+/* 	if( GetOwner() && GetOwner()->IsNPC() )
 	{
 		return 0.14;
-	}
+	} */
 	return sk_weapon_ar2_burst_fire.GetBool() ? 0.09 : 0.14;
 }
 int	CWeaponAR2::GetBurstSize( void )
 {
-	return 4;
+	return 3;
 }
 //-----------------------------------------------------------------------------
 // Purpose: Handle grenade detonate in-air (even when no ammo is left)
@@ -498,7 +498,7 @@ void CWeaponAR2::Operator_HandleAnimEvent( animevent_t *pEvent, CBaseCombatChara
 void CWeaponAR2::AddViewKick( void )
 {
 	#define	EASY_DAMPEN			1.0f
-	#define	MAX_VERTICAL_KICK	3.0f	//Degrees
+	#define	MAX_VERTICAL_KICK	2.0f	//Degrees
 	#define	SLIDE_LIMIT			1.0f	//Seconds
 	
 	//Get the view kick

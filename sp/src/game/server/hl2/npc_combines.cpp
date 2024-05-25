@@ -59,10 +59,10 @@ extern Activity ACT_WALK_MARCH;
 //-----------------------------------------------------------------------------
 void CNPC_CombineS::Spawn( void )
 {
-	if( FStrEq(STRING(gpGlobals->mapname), "d3_breen_01") )
+/* 	if( FStrEq(STRING(gpGlobals->mapname), "d3_breen_01") )
 	{
 		SetModelName( MAKE_STRING( "models/combine_super_soldier.mdl" ) );
-	}
+	} */
 	
 	const char *pModelName = STRING( GetModelName() );
 	

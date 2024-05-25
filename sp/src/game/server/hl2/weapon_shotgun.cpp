@@ -66,14 +66,9 @@ public:
 			// to be at least as deadly as she would be with her pistol to stay interesting (sjb)
 			return vitalAllyCone;
 		}
-		if ( GetOwner() && pPlayer )
+		if ( GetOwner() && pPlayer && m_bAltFiring)
 		{
-			cone = VECTOR_CONE_SHOTGUN;
-	
-			if ( m_bAltFiring )
-			{
-				cone = VECTOR_CONE_DOUBLESHOTGUN;
-			}
+			cone = VECTOR_CONE_8DEGREES;
 		}
 		else
 		{
@@ -548,7 +543,7 @@ void CWeaponShotgun::SecondaryAttack( void )
 	m_flNextSecondaryAttack = gpGlobals->curtime + 1.0;
 
 	// Pick up the rest of the burst through the think function.
-	SetNextThink( gpGlobals->curtime + 0.16 );
+	SetNextThink( gpGlobals->curtime + 0.12 );
 }
 //-----------------------------------------------------------------------------
 // Purpose: 

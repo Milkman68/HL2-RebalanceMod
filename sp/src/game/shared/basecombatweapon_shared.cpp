@@ -2524,7 +2524,7 @@ void CBaseCombatWeapon::SetFireDuration( void )
 	m_fFireDuration = ( m_flNextPrimaryAttack >= gpGlobals->curtime - 0.1 ) ? 
 	
 	( m_fFireDuration + gpGlobals->frametime ) : 
-	( m_fFireDuration - 50.0f * gpGlobals->frametime );
+	( m_fFireDuration - GetFireDurationDecayMult() * gpGlobals->frametime );
 	
 	m_fFireDuration = m_fFireDuration < 0.005 ? 0 : m_fFireDuration;
 	

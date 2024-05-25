@@ -252,6 +252,7 @@ public:
 																	// either reloads, switches weapons, or plays an empty sound.																
 	virtual void			ResetFireDuration( void );				// Resets m_fFireDuration back to 0
 	virtual void			SetFireDuration( void );				// Sets m_fFireDuration based on the weapons current state
+	virtual float			GetFireDurationDecayMult( void ) { return 50.0f; }
 																	
 
 	virtual bool			ShouldBlockPrimaryFire() { return false; }
@@ -601,6 +602,7 @@ public:
 	float					m_fMaxRange2;			// What's the furthest this weapon can be used?
 	bool					m_bReloadsSingly;		// True if this weapon reloads 1 round at a time
 	float					m_fFireDuration;		// The amount of time that the weapon has sustained firing
+	float					m_fFireDurationMult;	
 	int						m_iSubType;
 
 	float					m_flUnlockTime;

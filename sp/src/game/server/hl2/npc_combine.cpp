@@ -1798,8 +1798,6 @@ int CNPC_Combine::SelectCombatSchedule()
 		{
 			if ( CanGrenadeEnemy( true ) && OccupyStrategySlot( SQUAD_SLOT_GRENADE1 ) )
 			{
-				DelaySquadAdvances( 3 );
-				
 				// Start with trying to see if a grenade can be thrown!
 				return SCHED_RANGE_ATTACK2;
 			}
@@ -1856,7 +1854,7 @@ int CNPC_Combine::SelectSchedule( void )
 
 	if ( HasCondition( COND_COMBINE_ON_FIRE ) )
 	{
-		if ( GetEnemy() && !HasCondition( COND_LOW_PRIMARY_AMMO ) )
+		if ( GetEnemy() && IsElite() )
 		{
 			m_bUseAttackSlots = false;
 			
@@ -2419,6 +2417,7 @@ int CNPC_Combine::TranslateSchedule( int scheduleType )
 			// Otherwise use innate attack
 			else
 			{
+				DelaySquadAdvances( 3 );
 				return SCHED_COMBINE_RANGE_ATTACK2;
 			}
 		}

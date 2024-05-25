@@ -48,11 +48,12 @@ public:
 	int		GetBurstSize( void );
 	
 	// The amount of delay we want to have between bursts.
-	float 	GetBurstCycleRate( void ){ return 0.3f; }
+	float 	GetBurstCycleRate( void ){ return 0.32f; }
+	float	GetFireDurationDecayMult ( void ) { return 100; }
 	
 	// NPC
-	int		GetMinBurst( void ) { return 4; }
-	int		GetMaxBurst( void ) { return 4; }
+	int		GetMinBurst( void ) { return 3; }
+	int		GetMaxBurst( void ) { return 3; }
 	float	GetMinRestTime( void ) { return 0.6f; }
 	float	GetMaxRestTime( void ) { return 1.0f; }
 

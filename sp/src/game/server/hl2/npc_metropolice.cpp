@@ -766,7 +766,7 @@ void CNPC_MetroPolice::Spawn( void )
 		
 		m_hDefaultWeapon = GetActiveWeapon();
 
-		if( !FClassnameIs( pWeapon, "weapon_pistol" ) )
+		if( !FClassnameIs( pWeapon, "weapon_pistol" ) && !FClassnameIs( pWeapon, "weapon_357" ) )
 		{
 			m_fWeaponDrawn = true;
 		}
@@ -5340,6 +5340,11 @@ WeaponProficiency_t CNPC_MetroPolice::CalcWeaponProficiency( CBaseCombatWeapon *
 	{
 		return WEAPON_PROFICIENCY_AVERAGE;
 	}
+	
+	if( FClassnameIs( pWeapon, "weapon_shotgun" ) || FClassnameIs( pWeapon, "weapon_357" ) )
+	{
+		return WEAPON_PROFICIENCY_AVERAGE;
+	}
 
 	if( FClassnameIs( pWeapon, "weapon_smg1" ) )
 	{
@@ -5694,6 +5699,15 @@ bool CNPC_MetroPolice::CanBecomeElite( void )
 	{
 		if ( random->RandomInt(0,100) > 70  )
 		{
+			// Give elites revolvers on maps the player has it.
+			if ( m_bInC17 || FStrEq(STRING(gpGlobals->mapname), "d1_canals_08") || FStrEq(STRING(gpGlobals->mapname), "d1_canals_13") )
+			{
+				if ( FStrEq(STRING(m_spawnEquipment), "weapon_pistol") )
+				{
+					m_spawnEquipment = MAKE_STRING( "weapon_357" );
+				}
+			}
+			
 			return true;
 		}
 	}
@@ -5749,6 +5763,16 @@ bool CNPC_MetroPolice::CanSupressEnemy( void )
 //-----------------------------------------------------------------------------
 void CNPC_MetroPolice::HandleRandomSpawnEquipment( void )
 {
+	// List of Trainstation maps.
+	bool m_bInTrainstation = ( 
+		FStrEq(STRING(gpGlobals->mapname), "background01") 
+	|| 	FStrEq(STRING(gpGlobals->mapname), "d1_trainstation_01") 
+	|| 	FStrEq(STRING(gpGlobals->mapname), "d1_trainstation_02") 
+	|| 	FStrEq(STRING(gpGlobals->mapname), "d1_trainstation_03") );
+	
+	if ( m_bInTrainstation )
+		return;
+	
 	if ( m_bIsElite )
 	{
 		switch ( random->RandomInt( 0, 3 ) )

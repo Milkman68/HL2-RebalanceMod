@@ -1431,6 +1431,14 @@ void CBasePlayer::ViewPunchReset( float tolerance )
 	m_Local.m_vecPunchAngle = vec3_angle;
 	m_Local.m_vecPunchAngleVel = vec3_angle;
 }
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CBasePlayer::ViewPunchScale( float scale )
+{
+	m_Local.m_vecPunchAngle *= scale;
+	m_Local.m_vecPunchAngleVel *= scale;
+}
 
 #if defined( CLIENT_DLL )
 

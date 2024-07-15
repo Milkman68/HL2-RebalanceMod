@@ -496,13 +496,18 @@ protected:
 	CIKContext						*m_pIk;
 
 	int								m_iEyeAttachment;
-	int								m_iMuzzleFlashColorR;
-	int								m_iMuzzleFlashColorG;
-	int								m_iMuzzleFlashColorB;
-	int 							m_iMuzzleFlashRadius;
+	int								m_iMuzzleFlashColor[4];
 	float							m_flMuzzleFlashTime;
-	float							m_flMuzzleFlashIntensity;
+	
+	// Dlight params
+	int 							m_iMuzzleFlashRadius;
 	float							m_flMuzzleFlashDecay;
+	
+	// ProjTextures params
+	int								m_flMuzzleFlashFov;
+	int								m_flMuzzleFlashRange;
+	float							m_flMuzzleFlashCLQ[3];
+	float							m_flMuzzleFlashHoldTime;
 
 	// Animation playback framerate
 	float							m_flPlaybackRate;

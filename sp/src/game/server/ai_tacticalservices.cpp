@@ -428,7 +428,7 @@ int CAI_TacticalServices::FindCoverNode(const Vector &vNearPos, const Vector &vT
 				{
 					// The next NPC who searches should use a slight different pattern
 					nSearchRandomizer = nodeIndex;
-					DebugFindCover( pNode->GetId(), vEyePos, vThreatEyePos, 0, 255, 0 );
+					DebugFindCover( pNode->GetId(), vEyePos, vThreatEyePos, 255, 255, 0 );
 					
 					// Setup our cover node
 					if ( iIdealNode == NULL )
@@ -437,33 +437,17 @@ int CAI_TacticalServices::FindCoverNode(const Vector &vNearPos, const Vector &vT
 					// If there's no desired dist, use the first node given to us (This is default behavior)
 					if ( flDesiredDist > 0.0f )
 					{
-						// Try to base the cover location on the desired distance
-						float flIdealDist = flDesiredDist;
-						float flNodeScore = 0;
+						float flNewScore = GetOuter()->GetCoverPositionScore( vThreatPos, nodeOrigin, flDesiredDist );
 							
-						// Figure out the distance from the enemy to the cover
-						float flNodePathDist = ComputePathDistance( GetOuter()->GetNavType(), vThreatPos, nodeOrigin );
-						float flNodeDirectDist = ( vThreatPos - nodeOrigin ).Length();
-							
-						float flNodeMedianDist = ( flNodePathDist + flNodeDirectDist ) / 2;
-							
-						// Score it based on how close it is to the desired distance
-						flNodeScore += ( flIdealDist - fabsf(flNodeMedianDist - flIdealDist) ) / flIdealDist;
-							
-						// Distance from us to the cover
-						float flNearPathDist = ComputePathDistance( GetOuter()->GetNavType(), vNearPos, nodeOrigin );
-						float flNearDirectDist = ( vNearPos - nodeOrigin ).Length();
-							
-						float flNearMedianDist = ( flNearPathDist + flNearDirectDist ) / 2;
-
-						// Bias out really long routes
-						flNodeScore += 1.0 - ( flNearMedianDist / flNodeMedianDist );
-							
-						if ( flNodeScore > flScore )
+						if ( flNewScore > flScore )
 						{
-							flScore = flNodeScore;
+							flScore = flNewScore;
 							iIdealNode = nodeIndex;
 						}
+					}
+					else
+					{
+						break;
 					}
 				}
 				else
@@ -535,6 +519,8 @@ int CAI_TacticalServices::FindCoverNode(const Vector &vNearPos, const Vector &vT
 
 			GetOuter()->SetHintNode( pIdealNode->GetHint() );
 		}
+		
+		DebugFindCover( pNode->GetId(), vEyePos, vThreatEyePos, 0, 255, 0 );
 		return iIdealNode;
 	}
 

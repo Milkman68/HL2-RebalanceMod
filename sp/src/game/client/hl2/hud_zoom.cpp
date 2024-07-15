@@ -16,6 +16,7 @@
 #include "materialsystem/imesh.h"
 #include "materialsystem/imaterialvar.h"
 #include "../hud_crosshair.h"
+#include "engine/IEngineSound.h"
 
 #include <vgui/IScheme.h>
 #include <vgui/ISurface.h>
@@ -24,6 +25,8 @@
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
+
+ConVar hud_zoomsounds( "hud_zoomsounds", "1", FCVAR_ARCHIVE );
 
 //-----------------------------------------------------------------------------
 // Purpose: Draws the zoom screen
@@ -47,6 +50,7 @@ private:
 	bool	m_bZoomOn;
 	float	m_flZoomStartTime;
 	bool	m_bPainted;
+	bool	m_bPlayedSound;
 
 	CPanelAnimationVarAliasType( float, m_flCircle1Radius, "Circle1Radius", "66", "proportional_float" );
 	CPanelAnimationVarAliasType( float, m_flCircle2Radius, "Circle2Radius", "74", "proportional_float" );
@@ -135,7 +139,7 @@ bool CHudZoom::ShouldDraw( void )
 	return ( bNeedsDraw && CHudElement::ShouldDraw() );
 }
 
-#define	ZOOM_FADE_TIME	0.4f
+#define	ZOOM_FADE_TIME	0.2f
 //-----------------------------------------------------------------------------
 // Purpose: draws the zoom effect
 //-----------------------------------------------------------------------------
@@ -167,12 +171,28 @@ void CHudZoom::Paint( void )
 
 	if ( m_bZoomOn )
 	{
+		if ( m_bPlayedSound != m_bZoomOn && hud_zoomsounds.GetBool() )
+		{
+			CLocalPlayerFilter filter;
+			C_BaseEntity::EmitSound( filter, SOUND_FROM_LOCAL_PLAYER, "HUDZoom.ZoomIn" );
+			
+			m_bPlayedSound = m_bZoomOn;
+		}
+		
 		alpha = scale;
 	}
 	else
 	{
 		if ( scale >= 1.0f )
 			return;
+		
+		if ( m_bPlayedSound != m_bZoomOn && hud_zoomsounds.GetBool() )
+		{
+			CLocalPlayerFilter filter;
+			C_BaseEntity::EmitSound( filter, SOUND_FROM_LOCAL_PLAYER, "HUDZoom.ZoomOut" );
+			
+			m_bPlayedSound = m_bZoomOn;
+		}
 
 		alpha = ( 1.0f - scale ) * 0.25f;
 		scale = 1.0f - ( scale * 0.5f );
@@ -212,7 +232,7 @@ void CHudZoom::Paint( void )
 	}
 
 	// draw the darkened edges, with a rotated texture in the four corners
-	CMatRenderContextPtr pRenderContext( materials );
+/* 	CMatRenderContextPtr pRenderContext( materials );
 	pRenderContext->Bind( m_ZoomMaterial );
 	IMesh *pMesh = pRenderContext->GetDynamicMesh( true, NULL, NULL, NULL );
 
@@ -265,8 +285,8 @@ void CHudZoom::Paint( void )
 		meshBuilder.AdvanceVertex();
 	}
 
-	meshBuilder.End();
-	pMesh->Draw();
+	meshBuilder.End(); 
+	pMesh->Draw();*/
 
 	m_bPainted = true;
 }

@@ -10,13 +10,16 @@
 #include "history_resource.h"
 #include <vgui_controls/Controls.h>
 #include <vgui/ISurface.h>
+#include <vgui/ILocalize.h>
 #include "c_baseplayer.h"
 #include "hud.h"
+#include "ammodef.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
 WeaponsResource gWR;
+extern ConVar hl2r_ammo_labels;
 
 void FreeHudTextureList( CUtlDict< CHudTexture *, int >& list );
 
@@ -266,5 +269,84 @@ const FileWeaponInfo_t *WeaponsResource::GetWeaponFromAmmo( int iAmmoId )
 	}
 
 	return NULL;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Return a label string from an ammo id
+//-----------------------------------------------------------------------------
+char const *WeaponsResource::GetAmmoLabelFromID( int iAmmoId )
+{
+	// Setup our default label.
+	char const *label = "#Valve_Hud_AMMO";
+	
+	if ( !hl2r_ammo_labels.GetBool() )
+		return label;
+	
+	if ( iAmmoId == GetAmmoDef()->Index("pistol") )
+		label = "#Valve_Hud_AMMO_pistol";
+	
+	if ( iAmmoId == GetAmmoDef()->Index("357") )
+		label = "#Valve_Hud_AMMO_357";
+	
+	if ( iAmmoId == GetAmmoDef()->Index("smg1") )
+		label = "#Valve_Hud_AMMO_smg1";
+	
+	if ( iAmmoId == GetAmmoDef()->Index("ar2") )
+		label = "#Valve_Hud_AMMO_ar2";
+	
+	if ( iAmmoId == GetAmmoDef()->Index("buckshot") )
+		label = "#Valve_Hud_AMMO_shotgun";
+	
+	if ( iAmmoId == GetAmmoDef()->Index("xbowbolt") )
+		label = "#Valve_Hud_AMMO_crossbow";
+	
+	if ( iAmmoId == GetAmmoDef()->Index("rpg_round") )
+		label = "#Valve_Hud_AMMO_rpg";
+	
+	if ( iAmmoId == GetAmmoDef()->Index("grenade") )
+		label = "#Valve_Hud_AMMO_grenade";
+	
+	if ( iAmmoId == GetAmmoDef()->Index("slam") )
+		label = "#Valve_Hud_AMMO_slam";
+	
+	return label;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Helper function for getting an xoffset value from ammoIDs for history_resource
+//-----------------------------------------------------------------------------
+float WeaponsResource::GetAmmoDrawOffesetFromID( int iAmmoId )
+{
+	// Setup our default offset.
+	float offset = 1.25f;
+	
+	if ( iAmmoId == GetAmmoDef()->Index("pistol") )
+		offset = 1.25f;
+	
+	if ( iAmmoId == GetAmmoDef()->Index("357") )
+		offset = 1.25f;
+	
+	if ( iAmmoId == GetAmmoDef()->Index("smg1") )
+		offset = 1.25f;
+	
+	if ( iAmmoId == GetAmmoDef()->Index("ar2") )
+		offset = 1.5f;
+	
+	if ( iAmmoId == GetAmmoDef()->Index("buckshot") )
+		offset = 1.25f;
+	
+	if ( iAmmoId == GetAmmoDef()->Index("xbowbolt") )
+		offset = 0.75f;
+	
+	if ( iAmmoId == GetAmmoDef()->Index("rpg_round") )
+		offset = 0.75f;
+	
+	if ( iAmmoId == GetAmmoDef()->Index("grenade") )
+		offset = 1.5f;
+	
+	if ( iAmmoId == GetAmmoDef()->Index("slam") )
+		offset = 0.75f;
+	
+	return offset;
 }
 

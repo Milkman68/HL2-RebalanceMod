@@ -59,6 +59,52 @@ public:
 	virtual void UpdateLight(const Vector &vecPos, const Vector &vecDir, const Vector &vecRight, const Vector &vecUp, int nDistance);
 };
 
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+
+class CProjMuzzleFlashEffect : public CFlashlightEffect
+{
+public:
+	
+	CProjMuzzleFlashEffect();
+	~CProjMuzzleFlashEffect();
+
+	void UpdateLight( const FlashlightState_t &state );
+};
+
+class C_ProjMuzzleFlash : public C_BaseEntity
+{
+public:
+	
+	C_ProjMuzzleFlash();
+	~C_ProjMuzzleFlash();
+	
+	DECLARE_CLASS( C_ProjMuzzleFlash, C_BaseEntity );
+	
+	bool ShouldDraw();
+	
+public:
+
+	virtual void Simulate( void );
+	
+	float 	die;
+	float	holdtime;
+	float 	fov;
+	int 	range;
+	float 	color[4];
+	float	clq[3];
+	
+private:
+	void Update( void );
+	void Stop( void );
+	
+private:
+	
+	float 					m_flDuration;
+	float 					m_flHoldDuration;
+	CProjMuzzleFlashEffect 	*m_pMuzzleFlash;
+};
+
 
 
 #endif // FLASHLIGHTEFFECT_H

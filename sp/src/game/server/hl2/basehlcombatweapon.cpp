@@ -156,7 +156,7 @@ int CHLMachineGun::WeaponRangeAttack1Condition( float flDot, float flDist )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CHLMachineGun::DoMachineGunKick( CBasePlayer *pPlayer, float dampEasy, float maxVerticleKickAngle, float fireDurationTime, float slideLimitTime )
+void CHLMachineGun::DoMachineGunKick( CBasePlayer *pPlayer, float maxVerticleKickAngle, float fireDurationTime, float slideLimitTime )
 {
 	#define	KICK_MIN_X			0.8f	//Degrees
 	#define	KICK_MIN_Y			0.8f	//Degrees
@@ -165,11 +165,11 @@ void CHLMachineGun::DoMachineGunKick( CBasePlayer *pPlayer, float dampEasy, floa
 	QAngle vecScratch;
 	
 	//Find how far into our accuracy degradation we are
-	float duration	= ( fireDurationTime > slideLimitTime ) ? slideLimitTime : fireDurationTime;
+	float duration	= MIN( fireDurationTime, slideLimitTime );
 	float kickPerc = duration / slideLimitTime;
 
-	// do this to get a hard discontinuity, clear out anything under 10 degrees punch
-	pPlayer->ViewPunchReset( 10 );
+	// Dampen our viewpunch less over time.
+	pPlayer->ViewPunchScale( SimpleSplineRemapVal( kickPerc, 0.0f, 1.0f, 0.75f, 0.25f ) );
 
 	//Apply this to the view angles as well
 	vecScratch.x = -( KICK_MIN_X + ( maxVerticleKickAngle * kickPerc ) );
@@ -184,15 +184,6 @@ void CHLMachineGun::DoMachineGunKick( CBasePlayer *pPlayer, float dampEasy, floa
 	//Wobble up and down
 	if ( random->RandomInt( -1, 1 ) >= 0 )
 		vecScratch.z *= -1;
-
-	//If we're in easy, dampen the effect a bit
-	if ( g_pGameRules->IsSkillLevel( SKILL_EASY ) )
-	{
-		for ( int i = 0; i < 3; i++ )
-		{
-			vecScratch[i] *= dampEasy;
-		}
-	}
 
 	//Clip this to our desired min/max
 	UTIL_ClipPunchAngleOffset( vecScratch, pPlayer->m_Local.m_vecPunchAngle, QAngle( 24.0f, 3.0f, 1.0f ) );

@@ -77,7 +77,8 @@ extern ConVar autoaim_max_dist;
 
 extern int gEvilImpulse101;
 
-ConVar hl2_zoomfov( "hl2_zoomfov", "20" );
+ConVar hl2_zoomfov( "hl2_zoomfov", "45" );
+extern ConVar hl2r_togglezoom;
 
 ConVar sv_autojump( "sv_autojump", "0" );
 
@@ -462,13 +463,23 @@ void CHL2_Player::CheckSuitZoom( void )
 	//Adrian - No zooming without a suit!
 	if ( IsSuitEquipped() )
 	{
-		if ( m_afButtonReleased & IN_ZOOM )
+		if ( hl2r_togglezoom.GetBool() )
 		{
-			StopZooming();
-		}	
-		else if ( m_afButtonPressed & IN_ZOOM )
+			if ( m_afButtonPressed & IN_ZOOM )
+			{
+				ToggleZoom();
+			}
+		}
+		else
 		{
-			StartZooming();
+			if ( m_afButtonReleased & IN_ZOOM )
+			{
+				StopZooming();
+			}	
+			else if ( m_afButtonPressed & IN_ZOOM )
+			{
+				StartZooming();
+			}
 		}
 	}
 //#endif//_XBOX
@@ -1367,7 +1378,7 @@ void CHL2_Player::ToggleZoom(void)
 void CHL2_Player::StartZooming( void )
 {
 	int iFOV = hl2_zoomfov.GetFloat();//bookmark
-	if ( SetFOV( this, iFOV, 0.4f ) )
+	if ( SetFOV( this, iFOV, 0.2f ) )
 	{
 		m_HL2Local.m_bZooming = true;
 	}

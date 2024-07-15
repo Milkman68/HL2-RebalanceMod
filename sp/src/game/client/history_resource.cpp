@@ -19,6 +19,7 @@
 using namespace vgui;
 
 extern ConVar hud_drawhistory_time;
+extern ConVar hl2r_ammo_labels;
 
 DECLARE_HUDELEMENT( CHudHistoryResource );
 DECLARE_HUD_MESSAGE( CHudHistoryResource, ItemPickup );
@@ -337,16 +338,14 @@ void CHudHistoryResource::Paint( void )
 			case HISTSLOT_AMMO:
 				{
 					// Get the weapon we belong to
-#ifndef HL2MP
 					const FileWeaponInfo_t *pWpnInfo = gWR.GetWeaponFromAmmo( m_PickupHistory[i].iId );
-					if ( pWpnInfo && ( pWpnInfo->iMaxClip1 >= 0 || pWpnInfo->iMaxClip2 >= 0 ) )
+					if ( !hl2r_ammo_labels.GetBool() && pWpnInfo && ( pWpnInfo->iMaxClip1 >= 0 || pWpnInfo->iMaxClip2 >= 0 ) )
 					{
 						// The weapon will be the main icon, and the ammo the smaller
 						itemIcon = pWpnInfo->iconSmall;
 						itemAmmoIcon = gWR.GetAmmoIconFromWeapon( m_PickupHistory[i].iId );
 					}
 					else
-#endif // HL2MP
 					{
 						itemIcon = gWR.GetAmmoIconFromWeapon( m_PickupHistory[i].iId );
 						itemAmmoIcon = NULL;
@@ -439,14 +438,28 @@ void CHudHistoryResource::Paint( void )
 			{
 				wchar_t text[16];
 				_snwprintf( text, sizeof( text ) / sizeof(wchar_t), L"%i", m_PickupHistory[i].iCount );
+				
+				int textypos = ypos;
 
 				// offset the number to sit properly next to the icon
 				ypos -= ( surface()->GetFontTall( m_hNumberFont ) - itemIcon->Height() ) / 2;
+				textypos -= ( surface()->GetFontTall( m_hTextFont ) - itemIcon->Height() ) / 2;
 
 				vgui::surface()->DrawSetTextFont( m_hNumberFont );
 				vgui::surface()->DrawSetTextColor( clr );
 				vgui::surface()->DrawSetTextPos( wide - m_flTextInset, ypos );
 				vgui::surface()->DrawUnicodeString( text );
+				
+				if ( hl2r_ammo_labels.GetBool() )
+				{
+					wchar_t *label = g_pVGuiLocalize->Find( gWR.GetAmmoLabelFromID( m_PickupHistory[i].iId ) );
+					float xoffest = gWR.GetAmmoDrawOffesetFromID( m_PickupHistory[i].iId );
+					
+					vgui::surface()->DrawSetTextFont( m_hTextFont );
+					vgui::surface()->DrawSetTextColor( clr );
+					vgui::surface()->DrawSetTextPos( xpos - ( itemIcon->Width() * xoffest ), textypos );
+					vgui::surface()->DrawUnicodeString( label );
+				}
 			}
 			else if ( bUseAmmoFullMsg )
 			{

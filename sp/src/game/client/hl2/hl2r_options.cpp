@@ -88,6 +88,25 @@ void CSubMiscOptionsHL2R::OnControlModified()
 	PostActionSignal(new KeyValues("ApplyButtonEnable"));
 }
 //------------------------------------------------------------------------------
+// Purpose : HL2R's Hud options page
+//------------------------------------------------------------------------------
+CSubHudOptionsHL2R::CSubHudOptionsHL2R(vgui::Panel* parent) : PropertyPage(parent, NULL)
+{
+	BoxButtonRef.InitBoxButtons( this, H_BoxButtons, ARRAYSIZE(H_BoxButtons) );
+	
+	LoadControlSettings("resource/ui/hl2r_optionssubhud.res");
+} 
+
+void CSubHudOptionsHL2R::OnApplyChanges()
+{
+	BoxButtonRef.UpdateConVars( this, H_BoxButtons, ARRAYSIZE(H_BoxButtons) );
+}
+
+void CSubHudOptionsHL2R::OnControlModified()
+{
+	PostActionSignal(new KeyValues("ApplyButtonEnable"));
+}
+//------------------------------------------------------------------------------
 // Purpose : HL2R's Options panel
 //------------------------------------------------------------------------------
 CHL2RMenu::CHL2RMenu(vgui::VPANEL parent) : BaseClass(NULL, "HL2RMenu")
@@ -104,6 +123,9 @@ CHL2RMenu::CHL2RMenu(vgui::VPANEL parent) : BaseClass(NULL, "HL2RMenu")
 	// Parent the game page to a separate scrollable-panel.
 	m_pGameHL2RBasePanel = new CGameHL2RBasePanel(this, m_pSubOptionsGameHL2R);
 	AddPage(m_pGameHL2RBasePanel, "#hl2r_options_game");
+	
+	m_pSubHudOptionsHL2R = new CSubHudOptionsHL2R(this);
+	AddPage(m_pSubHudOptionsHL2R, "#hl2r_options_hud");
 
  	m_pSubMiscOptionsHL2R = new CSubMiscOptionsHL2R(this);
 	AddPage(m_pSubMiscOptionsHL2R, "#hl2r_options_misc");

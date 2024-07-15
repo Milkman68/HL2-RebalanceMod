@@ -47,6 +47,7 @@
 #include "ai_tacticalservices.h"
 #include "ai_behavior.h"
 #include "ai_dynamiclink.h"
+#include "ai_routedist.h"
 #include "AI_Criteria.h"
 #include "basegrenade_shared.h"
 #include "ammodef.h"
@@ -139,16 +140,16 @@ ConVar	ai_debug_think_ticks( "ai_debug_think_ticks", "0" );
 ConVar	ai_debug_doors( "ai_debug_doors", "0" );
 ConVar  ai_debug_enemies( "ai_debug_enemies", "0" );
 
-ConVar	ai_rebalance_thinks( "ai_rebalance_thinks", "1" );
-ConVar	ai_use_efficiency( "ai_use_efficiency", "1" );
-ConVar	ai_use_frame_think_limits( "ai_use_frame_think_limits", "1" );
-ConVar	ai_default_efficient( "ai_default_efficient", ( IsX360() ) ? "1" : "0" );
+ConVar	ai_rebalance_thinks( "ai_rebalance_thinks", "0" );
+ConVar	ai_use_efficiency( "ai_use_efficiency", "0" );
+ConVar	ai_use_frame_think_limits( "ai_use_frame_think_limits", "0" );
+ConVar	ai_default_efficient( "ai_default_efficient", "0" );
 ConVar	ai_efficiency_override( "ai_efficiency_override", "0" );
 ConVar	ai_debug_efficiency( "ai_debug_efficiency", "0" );
 ConVar	ai_debug_dyninteractions( "ai_debug_dyninteractions", "0", FCVAR_NONE, "Debug the NPC dynamic interaction system." );
 ConVar	ai_frametime_limit( "ai_frametime_limit", "50", FCVAR_NONE, "frametime limit for min efficiency AIE_NORMAL (in sec's)." );
 
-ConVar	ai_use_think_optimizations( "ai_use_think_optimizations", "1" );
+ConVar	ai_use_think_optimizations( "ai_use_think_optimizations", "0" );
 
 ConVar	ai_test_moveprobe_ignoresmall( "ai_test_moveprobe_ignoresmall", "0" );
 
@@ -156,17 +157,17 @@ ConVar	ai_test_moveprobe_ignoresmall( "ai_test_moveprobe_ignoresmall", "0" );
 extern ConVar ai_vehicle_avoidance;
 #endif // HL2_EPISODIC
 
-#ifndef _RETAIL
+//#ifndef _RETAIL
 #define ShouldUseEfficiency()			( ai_use_think_optimizations.GetBool() && ai_use_efficiency.GetBool() )
 #define ShouldUseFrameThinkLimits()		( ai_use_think_optimizations.GetBool() && ai_use_frame_think_limits.GetBool() )
 #define ShouldRebalanceThinks()			( ai_use_think_optimizations.GetBool() && ai_rebalance_thinks.GetBool() )
 #define ShouldDefaultEfficient()		( ai_use_think_optimizations.GetBool() && ai_default_efficient.GetBool() )
-#else
-#define ShouldUseEfficiency()			( true )
-#define ShouldUseFrameThinkLimits()		( true )
-#define ShouldRebalanceThinks()			( true )
-#define ShouldDefaultEfficient()		( true )
-#endif
+//#else
+//#define ShouldUseEfficiency()			( true )
+//#define ShouldUseFrameThinkLimits()		( true )
+//#define ShouldRebalanceThinks()			( true )
+//#define ShouldDefaultEfficient()		( true )
+//#endif
 
 #ifndef _RETAIL
 #define DbgEnemyMsg if ( !ai_debug_enemies.GetBool() ) ; else DevMsg
@@ -3074,7 +3075,9 @@ bool CAI_BaseNPC::ShouldAlwaysThink()
 	// the PVS while navigating to the player. Perhaps should incorporate a heuristic taking into
 	// account mode, enemy, last time saw player, player range etc. For example, if enemy is player,
 	// and player is within 100 feet, and saw the player within the past 15 seconds, keep running...
-	return HasSpawnFlags(SF_NPC_ALWAYSTHINK);
+	
+	//return HasSpawnFlags(SF_NPC_ALWAYSTHINK);
+	return true;
 }
 
 
@@ -4618,7 +4621,7 @@ void CAI_BaseNPC::CheckFlinches( void )
 			// Clear the heavy damage condition so we don't interrupt schedules
 			// when we play a gesture flinch because we recently did a full flinch.
 			// Prevents the player from stun-locking enemies, even though they don't full flinch.
-			ClearCondition( COND_HEAVY_DAMAGE );
+		//	ClearCondition( COND_HEAVY_DAMAGE );
 		}
 		else if ( !HasInterruptCondition(COND_HEAVY_DAMAGE) )
 		{
@@ -6920,10 +6923,10 @@ void CAI_BaseNPC::NPCInit ( void )
 
 	CreateVPhysics();
 
-	if ( HasSpawnFlags( SF_NPC_START_EFFICIENT ) )
-	{
-		SetEfficiency( AIE_EFFICIENT );
-	}
+//	if ( HasSpawnFlags( SF_NPC_START_EFFICIENT ) )
+//	{
+//		SetEfficiency( AIE_EFFICIENT );
+//	}
 
 	m_bFadeCorpse = ShouldFadeOnDeath();
 
@@ -12633,6 +12636,36 @@ bool CAI_BaseNPC::IsCoverPosition( const Vector &vecThreat, const Vector &vecPos
 	}
 
 	return (tr.fraction != 1.0);
+}
+
+//-----------------------------------------------------------------------------
+
+float CAI_BaseNPC::GetCoverPositionScore( const Vector &vecThreat, const Vector &vecCover, float flIdealDist )
+{
+	// Try to base the cover location on the desired distance
+	float flNodeScore = 0;
+
+
+	// Figure out the distance from the threat to the cover
+	float flNodePathDist = ComputePathDistance( GetNavType(), vecThreat, vecCover );
+	float flNodeDirectDist = ( vecThreat - vecCover ).Length();
+
+	float flNodeMedianDist = ( flNodePathDist + flNodeDirectDist ) / 2;
+
+
+	// Score it based on how close it is to the desired distance from the threat.
+	flNodeScore += ( flIdealDist - fabsf(flNodeMedianDist - flIdealDist) ) / flIdealDist;
+
+
+	// Distance from us to the cover.
+	float flNearPathDist = ComputePathDistance( GetNavType(), GetAbsOrigin(), vecCover );
+	float flNearDirectDist = ( GetAbsOrigin() - vecCover ).Length();
+							
+	float flNearMedianDist = ( flNearPathDist + flNearDirectDist ) / 2;
+
+
+	// Bias out nodes that are farther away from us than the enemy.
+	return flNodeScore += 1.0 - ( flNearMedianDist / flNodeMedianDist );
 }
 
 //-----------------------------------------------------------------------------

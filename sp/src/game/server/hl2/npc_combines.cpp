@@ -435,10 +435,13 @@ bool CNPC_CombineS::IsLightDamage( const CTakeDamageInfo &info )
 //-----------------------------------------------------------------------------
 bool CNPC_CombineS::IsHeavyDamage( const CTakeDamageInfo &info )
 {
-	if ( info.GetDamageType() & DMG_BULLET )
+	if ( m_nRecentDamage > RECENT_DAMAGE_THRESHOLD )
+	{
+		m_flRecentDamageTime = FLT_MAX;
 		return true;
-
-	return BaseClass::IsHeavyDamage( info );
+	}
+	
+	return false;
 }
 //-----------------------------------------------------------------------------
 // Purpose:

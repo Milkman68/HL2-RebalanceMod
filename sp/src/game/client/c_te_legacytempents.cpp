@@ -1775,6 +1775,10 @@ void CTempEnts::MuzzleFlash( int type, ClientEntityHandle_t hEntity, int attachm
 		{
 			MuzzleFlash_357_Player( hEntity, attachmentIndex );
 		}
+		else
+		{
+			MuzzleFlash_Shotgun_NPC( hEntity, attachmentIndex );
+		}
 		break;
 	case MUZZLEFLASH_RPG:
 		if ( firstPerson )

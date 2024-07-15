@@ -538,3 +538,167 @@ void CHeadlightEffect::UpdateLight( const Vector &vecPos, const Vector &vecDir, 
 	g_pClientShadowMgr->UpdateProjectedTexture( GetFlashlightHandle(), true );
 }
 
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+
+CProjMuzzleFlashEffect::CProjMuzzleFlashEffect() 
+{
+	
+}
+
+CProjMuzzleFlashEffect::~CProjMuzzleFlashEffect()
+{
+
+}
+
+void CProjMuzzleFlashEffect::UpdateLight( const FlashlightState_t &state )
+{
+	if( GetFlashlightHandle() == CLIENTSHADOW_INVALID_HANDLE )
+	{
+		SetFlashlightHandle( g_pClientShadowMgr->CreateFlashlight( state ) );
+	}
+	else
+	{
+		g_pClientShadowMgr->UpdateFlashlightState( GetFlashlightHandle(), state );
+	}
+	
+	g_pClientShadowMgr->UpdateProjectedTexture( GetFlashlightHandle(), true );
+}
+
+//------------------------------------------------------------------------------
+// Purpose :
+//------------------------------------------------------------------------------
+C_ProjMuzzleFlash::C_ProjMuzzleFlash() 
+{
+	
+}
+
+C_ProjMuzzleFlash::~C_ProjMuzzleFlash()
+{
+	
+}
+
+//------------------------------------------------------------------------------
+// Purpose :
+//------------------------------------------------------------------------------
+
+void C_ProjMuzzleFlash::Simulate(void)
+{
+	BaseClass::Simulate();
+	
+	if ( !m_pMuzzleFlash )
+	{
+		m_pMuzzleFlash = new CProjMuzzleFlashEffect();
+		
+		if ( !m_pMuzzleFlash )
+		{
+			Stop();
+			return;
+		}
+		
+		m_flDuration = gpGlobals->curtime + die;
+		m_flHoldDuration = gpGlobals->curtime + holdtime;
+		m_pMuzzleFlash->TurnOn();
+	}
+	
+	if ( m_flDuration <= gpGlobals->curtime )
+	{
+		Stop();
+		return;
+	}
+	
+	Update();
+}
+
+//------------------------------------------------------------------------------
+// Purpose :
+//------------------------------------------------------------------------------
+
+void C_ProjMuzzleFlash::Stop(void)
+{
+	delete m_pMuzzleFlash;
+	m_pMuzzleFlash = NULL;
+	
+	Release();
+}
+
+extern ConVar r_projected_muzzleflash_debug;
+
+//------------------------------------------------------------------------------
+// Purpose :
+//------------------------------------------------------------------------------
+
+void C_ProjMuzzleFlash::Update(void)
+{
+	FlashlightState_t state;
+	
+	state.m_fHorizontalFOVDegrees = fov;
+	state.m_fVerticalFOVDegrees = fov;
+	
+	state.m_fConstantAtten = clq[0];
+	state.m_fLinearAtten = clq[1];
+	state.m_fQuadraticAtten = clq[2];
+	
+	float flashPerc;
+	if ( m_flHoldDuration > gpGlobals->curtime )
+	{
+		flashPerc = 1.0;
+	}
+	else
+	{
+		flashPerc = ( m_flDuration - gpGlobals->curtime ) / ( die - holdtime );
+	}
+	
+//	DevMsg("flashPerc is: %f\n", flashPerc );
+	
+	state.m_Color[0] = color[0] * flashPerc;
+	state.m_Color[1] = color[1] * flashPerc;
+	state.m_Color[2] = color[2] * flashPerc;
+	state.m_Color[3] = color[3];
+	
+	state.m_NearZ = 4;
+	state.m_FarZ = range;
+	state.m_bEnableShadows = true;
+	
+	CTextureReference m_MuzzleFlashTexture;
+	m_MuzzleFlashTexture.Init( "effects/muzzleflash_projected", TEXTURE_GROUP_OTHER, true );
+	
+	state.m_pSpotlightTexture = m_MuzzleFlashTexture;
+	state.m_nSpotlightTextureFrame = 0;
+	
+	// Find out our angle.
+	Vector vecDir, vecRight, vecUp;
+	AngleVectors( GetAbsAngles(), &vecDir, &vecRight, &vecUp );
+	
+	Vector basisX, basisY, basisZ;
+	basisX = vecDir;
+	basisY = vecRight;
+	basisZ = vecUp;
+	VectorNormalize(basisX);
+	VectorNormalize(basisY);
+	VectorNormalize(basisZ);
+
+	BasisToQuaternion( basisX, basisY, basisZ, state.m_quatOrientation );
+
+	// Our position.
+	state.m_vecLightOrigin = GetAbsOrigin();
+	
+	if ( r_projected_muzzleflash_debug.GetBool() )
+	{
+		Vector range = Vector( 5, 5, 5 );
+		debugoverlay->AddBoxOverlay( GetAbsOrigin(), range, -range, GetAbsAngles(), 0, 255, 0, 16, 0.05 );
+	}
+
+	// Update the light with the new position and direction.		
+	m_pMuzzleFlash->UpdateLight( state );
+}
+
+//------------------------------------------------------------------------------
+// Purpose :
+//------------------------------------------------------------------------------
+
+bool C_ProjMuzzleFlash::ShouldDraw()
+{
+	return false;
+}

@@ -54,6 +54,7 @@
 #include "replay/replay_ragdoll.h"
 #include "studio_stats.h"
 #include "tier1/callqueue.h"
+#include "flashlighteffect.h"
 
 #ifdef TF_CLIENT_DLL
 #include "c_tf_player.h"
@@ -65,6 +66,7 @@
 
 static ConVar cl_SetupAllBones( "cl_SetupAllBones", "0" );
 ConVar r_sequence_debug( "r_sequence_debug", "" );
+extern ConVar r_projected_muzzleflash_debug( "r_projected_muzzleflash_debug", "0" );
 
 // If an NPC is moving faster than this, he should play the running footstep sound
 const float RUN_SPEED_ESTIMATE_SQR = 150.0f * 150.0f;
@@ -87,6 +89,7 @@ bool NPC_IsImportantNPC( C_BaseAnimating *pAnimating );
 void VCollideWireframe_ChangeCallback( IConVar *pConVar, char const *pOldString, float flOldValue );
 
 ConVar vcollide_wireframe( "vcollide_wireframe", "0", FCVAR_CHEAT, "Render physics collision models in wireframe", VCollideWireframe_ChangeCallback );
+extern ConVar hl2r_dynamic_light_level;
 
 bool C_AnimationLayer::IsActive( void )
 {
@@ -3314,27 +3317,73 @@ void C_BaseAnimating::ProcessMuzzleFlashEvent()// bookmark
 	{
 		//FIXME: We should really use a named attachment for this
 		if ( m_Attachments.Count() > 0 )
-		{		
+		{
 			Vector vAttachment, vAng;
 			QAngle angles;
             GetAttachment( 1, vAttachment, angles ); // set 1 instead "attachment"
 			AngleVectors( angles, &vAng );
-			vAttachment += vAng * 2;
 			
-			dlight_t *dl = effects->CL_AllocDlight ( index );
+			// Decide wheather to use elights or projected textures.
+			if ( hl2r_dynamic_light_level.GetInt() == 2 )
+			{
+				vAttachment += vAng * 2;
 			
-			extern ConVar hl2r_dynamic_light_level;
-			if ( hl2r_dynamic_light_level.GetInt() == 2 ) // None
-				dl = effects->CL_AllocElight ( index );
-			
-			dl->origin = vAttachment;
-			dl->color.r = m_iMuzzleFlashColorR;
-			dl->color.g = m_iMuzzleFlashColorG;
-			dl->color.b = m_iMuzzleFlashColorB;
-			dl->die = gpGlobals->curtime + m_flMuzzleFlashTime;
-			dl->radius = m_iMuzzleFlashRadius;
-			dl->decay = dl->radius / m_flMuzzleFlashTime;
-			dl->color.exponent = m_flMuzzleFlashIntensity;
+				dlight_t *el = effects->CL_AllocElight ( index );
+					
+				el->origin = vAttachment;
+				el->color.r = m_iMuzzleFlashColor[0];
+				el->color.g = m_iMuzzleFlashColor[1];
+				el->color.b = m_iMuzzleFlashColor[2];
+				el->color.exponent = m_iMuzzleFlashColor[3];
+				el->die = gpGlobals->curtime + m_flMuzzleFlashTime;
+				el->radius = m_iMuzzleFlashRadius;
+				el->decay = el->radius / m_flMuzzleFlashTime;
+			}
+			else
+			{
+				C_ProjMuzzleFlash *pFlash = new C_ProjMuzzleFlash();
+				
+				// Initialize our effect.
+				if ( pFlash->InitializeAsClientEntity( NULL, RENDER_GROUP_TRANSLUCENT_ENTITY ) == false )
+				{
+					pFlash->Release();
+					return;
+				}
+				
+				if ( pFlash )
+				{
+					// Set the position and angle.
+					pFlash->SetAbsOrigin( vAttachment );
+					pFlash->SetAbsAngles( angles );
+					
+					// Parent the light to our muzzle (unless we're debugging).
+					if ( !r_projected_muzzleflash_debug.GetBool() )
+						pFlash->SetParent( this );
+#if 0
+					// Add random rotation to add variation.
+					QAngle localangle = pFlash->GetLocalAngles();
+					localangle[ ROLL ] = random->RandomInt( -180, 180 );
+					
+					pFlash->SetLocalAngles( localangle );
+#endif
+					// Add color.
+					pFlash->color[0] = (float)m_iMuzzleFlashColor[0] / 255;
+					pFlash->color[1] = (float)m_iMuzzleFlashColor[1] / 255;
+					pFlash->color[2] = (float)m_iMuzzleFlashColor[2] / 255;
+					pFlash->color[3] = (float)m_iMuzzleFlashColor[3];
+					pFlash->die = m_flMuzzleFlashTime;
+					pFlash->holdtime = m_flMuzzleFlashHoldTime;
+					
+					// General parameters.
+					pFlash->fov = m_flMuzzleFlashFov;
+					pFlash->range = m_flMuzzleFlashRange;
+					
+					// Constant, linear, and quadratic values.
+					pFlash->clq[0] = m_flMuzzleFlashCLQ[0];
+					pFlash->clq[1] = m_flMuzzleFlashCLQ[1];
+					pFlash->clq[2] = m_flMuzzleFlashCLQ[2];
+				}
+			}
 		}
 	}
 }
@@ -3546,35 +3595,41 @@ bool C_BaseAnimating::DispatchMuzzleEffect( const char *options, bool isFirstPer
 	if ( token ) 
 	{
 		// Setup default values.
-		m_iMuzzleFlashColorR = 255;
-		m_iMuzzleFlashColorG = 205;
-		m_iMuzzleFlashColorB = 80;
-		m_iMuzzleFlashRadius = random->RandomFloat(128.0f, 196.0f);
-		m_flMuzzleFlashTime = 0.1;
-		m_flMuzzleFlashIntensity = 1;
-		m_flMuzzleFlashDecay = m_iMuzzleFlashRadius / 0.1;
+		m_iMuzzleFlashColor[0] = 255;
+		m_iMuzzleFlashColor[1] = 205;
+		m_iMuzzleFlashColor[2] = 80;
+		m_iMuzzleFlashColor[3] = 1;
+		m_flMuzzleFlashTime = 0.07;
+		
+		// Decide which parameters to setup.
+		if ( hl2r_dynamic_light_level.GetInt() == 2 )
+		{
+			m_iMuzzleFlashRadius = random->RandomFloat(128.0f, 196.0f);
+			m_flMuzzleFlashDecay = m_iMuzzleFlashRadius / 0.1;
+		}
+		else
+		{
+			m_flMuzzleFlashFov = random->RandomInt( 90, 125 );
+			m_flMuzzleFlashRange = 1000;
+			m_flMuzzleFlashHoldTime = 0.0f;
+			m_flMuzzleFlashCLQ[0] = 0;
+			m_flMuzzleFlashCLQ[1] = 2;
+			m_flMuzzleFlashCLQ[2] = 3000; // Use only quadratic for now.
+		}
 		
 		//TODO: Parse the type from a list instead
-		if ( Q_stricmp( token, "COMBINE" ) == 0 )
+		if ( Q_stricmp( token, "COMBINE" ) == 0 || Q_stricmp( token, "AR2" ) == 0 )
 		{
 			// Blue color
-			m_iMuzzleFlashColorR = 255;
-			m_iMuzzleFlashColorG = 255;
-			m_iMuzzleFlashColorB = 170;
-			
-			weaponType = MUZZLEFLASH_COMBINE;
-		}
-		else if ( Q_stricmp( token, "AR2" ) == 0 )
-		{
-			// Blue color
-			m_iMuzzleFlashColorR = 255;
-			m_iMuzzleFlashColorG = 255;
-			m_iMuzzleFlashColorB = 170;
+			m_iMuzzleFlashColor[0] = 255;
+			m_iMuzzleFlashColor[1] = 255;
+			m_iMuzzleFlashColor[2] = 170;
 			
 			weaponType = MUZZLEFLASH_COMBINE;
 		}
 		else if ( Q_stricmp( token, "SMG1" ) == 0 )
 		{
+			m_flMuzzleFlashTime = 0.05;
 			weaponType = MUZZLEFLASH_SMG1;
 		}
 		else if ( Q_stricmp( token, "PISTOL" ) == 0 )
@@ -3584,18 +3639,24 @@ bool C_BaseAnimating::DispatchMuzzleEffect( const char *options, bool isFirstPer
 		else if ( Q_stricmp( token, "SHOTGUN" ) == 0 )
 		{
 			// Longer flash
-			m_flMuzzleFlashTime = 0.12;
-			m_iMuzzleFlashColorG = 170;
-			m_iMuzzleFlashColorB = 85;
+			m_flMuzzleFlashTime = 0.1;
+			m_flMuzzleFlashHoldTime = 0.05;
+			
+			m_iMuzzleFlashColor[1] = 170;
+			m_iMuzzleFlashColor[2] = 85;
+			m_iMuzzleFlashColor[3] = 3;
 			
 			weaponType = MUZZLEFLASH_SHOTGUN;
 		}
 		else if ( Q_stricmp( token, "357" ) == 0 )
 		{
 			// Longer flash
-			m_flMuzzleFlashTime = 0.13;
-			m_iMuzzleFlashColorG = 170;
-			m_iMuzzleFlashColorB = 85;
+			m_flMuzzleFlashTime = 0.1;
+			m_flMuzzleFlashHoldTime = 0.05;
+			
+			m_iMuzzleFlashColor[1] = 170;
+			m_iMuzzleFlashColor[2] = 85;
+			m_iMuzzleFlashColor[3] = 3;
 			
 			weaponType = MUZZLEFLASH_357;
 		}
@@ -3607,6 +3668,13 @@ bool C_BaseAnimating::DispatchMuzzleEffect( const char *options, bool isFirstPer
 		{
 			//NOTENOTE: This means you specified an invalid muzzleflash type, check your spelling?
 			Assert( 0 );
+		}
+		
+		if ( r_projected_muzzleflash_debug.GetBool() )
+		{
+			// Make a permanant bright flash.
+			m_flMuzzleFlashTime = 999;
+			m_flMuzzleFlashCLQ[0] = 1;
 		}
 	}
 	else

@@ -49,8 +49,8 @@
 #define AIM_BEHIND_MINIMUM_DISTANCE				650.0f
 #define AIM_BEHIND_STEER_DISTANCE				150.0f
 
-#define RECENT_DAMAGE_INTERVAL		3.0f
-#define RECENT_DAMAGE_THRESHOLD		0.1f
+#define RECENT_DAMAGE_INTERVAL		0.5f
+#define RECENT_DAMAGE_THRESHOLD		20.0f
 
 #define CHASE_ENEMY_TIME			8.0f
 #define CHASE_ENEMY_COOLDOWN		4.0f
@@ -576,7 +576,7 @@ void CNPC_MetroPolice::PrescheduleThink( void )
 		ClearCondition( COND_METROPOLICE_ON_FIRE );
 	}
 
-	if ( gpGlobals->curtime > m_flRecentDamageTime + RECENT_DAMAGE_INTERVAL )
+	if ( gpGlobals->curtime > m_flRecentDamageTime )
 	{
 		m_nRecentDamage = 0;
 		m_flRecentDamageTime = 0;
@@ -3451,14 +3451,12 @@ int CNPC_MetroPolice::SelectCombatSchedule()
 		return SCHED_METROPOLICE_HIDE_AND_RELOAD;
 	}
 
-	if ( !HasBaton() && ((float)m_nRecentDamage / (float)GetMaxHealth()) > RECENT_DAMAGE_THRESHOLD)
+	if ( !HasBaton() && m_nRecentDamage > RECENT_DAMAGE_THRESHOLD )
 	{
 		m_nRecentDamage = 0;
 		m_flRecentDamageTime = 0;
+		
 		m_Sentences.Speak( "METROPOLICE_COVER_HEAVY_DAMAGE", SENTENCE_PRIORITY_MEDIUM, SENTENCE_CRITERIA_NORMAL );
-		
-		VacateStrategySlot();
-		
 		return SCHED_METROPOLICE_TAKE_COVER_FROM_ENEMY;
 	}
 	
@@ -3939,11 +3937,13 @@ int CNPC_MetroPolice::SelectAirboatCombatSchedule()
 //-----------------------------------------------------------------------------
 bool CNPC_MetroPolice::IsHeavyDamage( const CTakeDamageInfo &info )
 {
-	// Metropolice considers bullet fire heavy damage
-	if ( info.GetDamageType() & DMG_BULLET )
+	if ( m_nRecentDamage > RECENT_DAMAGE_THRESHOLD )
+	{
+		m_flRecentDamageTime = FLT_MAX;
 		return true;
-
-	return BaseClass::IsHeavyDamage( info );
+	}
+	
+	return false;
 }
 
 //-----------------------------------------------------------------------------
@@ -5189,7 +5189,7 @@ int CNPC_MetroPolice::OnTakeDamage_Alive( const CTakeDamageInfo &inputInfo )
 		// Keep track of recent damage by my attacker. If it seems like we're
 		// being killed, consider running off and hiding.
 		m_nRecentDamage += info.GetDamage();
-		m_flRecentDamageTime = gpGlobals->curtime;
+		m_flRecentDamageTime = gpGlobals->curtime + RECENT_DAMAGE_INTERVAL;
 	}
 
 	return BaseClass::OnTakeDamage_Alive( info ); 

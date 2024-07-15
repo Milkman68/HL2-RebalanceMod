@@ -49,9 +49,6 @@ extern ConVar hl2r_enemies_altfire;
 #define COMBINE_LIMP_HEALTH				20
 #define	COMBINE_MIN_GRENADE_CLEAR_DIST	250
 
-#define RECENT_DAMAGE_THRESHOLD			10
-#define	RECENT_DAMAGE_INTERVAL			2
-
 #define COMBINE_EYE_STANDING_POSITION	Vector( 0, 0, 66 )
 #define COMBINE_GUN_STANDING_POSITION	Vector( 0, 0, 57 )
 #define COMBINE_EYE_CROUCHING_POSITION	Vector( 0, 0, 40 )
@@ -468,9 +465,26 @@ void CNPC_Combine::GatherConditions()
 			}
 		}
 		
-		if ( ( m_nRecentDamage / GetMaxHealth() ) > ( RECENT_DAMAGE_THRESHOLD / 100 ) )
+		if ( !IsElite() )
 		{
-			SetCondition( COND_HEAVY_DAMAGE );
+			if ( gpGlobals->curtime > m_flNextGrenadeCheck )
+			{
+				if ( CanGrenadeEnemy( true ) )
+					SetCondition( COND_COMBINE_CAN_GRENADE_ENEMY );
+				else
+					ClearCondition( COND_COMBINE_CAN_GRENADE_ENEMY );
+			}
+		}
+		
+		if ( IsElite() || hl2r_enemies_altfire.GetBool() )
+		{
+			if ( gpGlobals->curtime > m_flNextAltFireTime )
+			{
+				if ( CanAltFireEnemy( true ) )
+					SetCondition( COND_COMBINE_CAN_ALTFIRE_ENEMY );
+				else
+					ClearCondition( COND_COMBINE_CAN_ALTFIRE_ENEMY );
+			}
 		}
 	}
 	if( !HasCondition(COND_ENEMY_OCCLUDED) )
@@ -544,7 +558,7 @@ void CNPC_Combine::PrescheduleThink()
 		}
 	}
 	
-	if ( gpGlobals->curtime > m_flRecentDamageTime + RECENT_DAMAGE_INTERVAL )
+	if ( gpGlobals->curtime > m_flRecentDamageTime )
 	{
 		m_nRecentDamage = 0;
 		m_flRecentDamageTime = 0;
@@ -1030,6 +1044,7 @@ void CNPC_Combine::StartTask( const Task_t *pTask )
 
 					if( pCombine )
 					{
+						pCombine->ClearCondition( COND_COMBINE_CAN_GRENADE_ENEMY );
 						pCombine->m_flNextGrenadeCheck = gpGlobals->curtime + 5;
 					}
 
@@ -1436,7 +1451,7 @@ void CNPC_Combine::BuildScheduleTestBits( void )
 	if (gpGlobals->curtime < m_flNextAttack)
 	{
 		ClearCustomInterruptCondition( COND_CAN_RANGE_ATTACK1 );
-		ClearCustomInterruptCondition( COND_CAN_RANGE_ATTACK2 );
+	//	ClearCustomInterruptCondition( COND_CAN_RANGE_ATTACK2 );
 	}
 
 	if ( !IsCurSchedule( SCHED_COMBINE_BUGBAIT_DISTRACTION ) )
@@ -1742,9 +1757,9 @@ int CNPC_Combine::SelectCombatSchedule()
 	}
 
 	// ----------------------
-	// LIGHT DAMAGE
+	// HEAVY DAMAGE
 	// ----------------------
-	if ( ( m_nRecentDamage / GetMaxHealth() ) > ( RECENT_DAMAGE_THRESHOLD / 100 ) )
+	if ( m_nRecentDamage > RECENT_DAMAGE_THRESHOLD )
 	{
 		if ( GetEnemy() != NULL && !HasCondition( COND_COMBINE_ON_FIRE ) )
 		{
@@ -1796,7 +1811,7 @@ int CNPC_Combine::SelectCombatSchedule()
 		
 		if ( GetEnemy() )
 		{
-			if ( CanGrenadeEnemy( true ) && OccupyStrategySlot( SQUAD_SLOT_GRENADE1 ) )
+			if ( HasCondition( COND_COMBINE_CAN_GRENADE_ENEMY ) && OccupyStrategySlot( SQUAD_SLOT_GRENADE1 ) )
 			{
 				// Start with trying to see if a grenade can be thrown!
 				return SCHED_RANGE_ATTACK2;
@@ -2088,7 +2103,7 @@ int CNPC_Combine::SelectFailSchedule( int failedSchedule, int failedTask, AI_Tas
 			if( failedSchedule == SCHED_COMBINE_HIDE_AND_RELOAD  )
 				return SCHED_RELOAD;
 			
-			if ( CanGrenadeEnemy( true ) && OccupyStrategySlot( SQUAD_SLOT_GRENADE1 ) )
+			if ( HasCondition( COND_COMBINE_CAN_GRENADE_ENEMY ) && OccupyStrategySlot( SQUAD_SLOT_GRENADE1 ) )
 				return SCHED_RANGE_ATTACK2;
 	
 			if ( HasCondition( COND_CAN_RANGE_ATTACK1 ) && CanOccupyAttackSlot() )
@@ -2132,13 +2147,21 @@ int CNPC_Combine::SelectScheduleAttack()
 	// hurt it with bullets, so become grenade happy.
 	if ( GetEnemy() && GetEnemy()->Classify() == CLASS_COMBINE && FClassnameIs(GetEnemy(), "npc_turret_floor") )
 	{
-		if ( CanGrenadeEnemy() && OccupyStrategySlot( SQUAD_SLOT_GRENADE1 ) )
+		if ( HasCondition( COND_COMBINE_CAN_GRENADE_ENEMY ) && OccupyStrategySlot( SQUAD_SLOT_GRENADE1 ) )
 			return SCHED_RANGE_ATTACK2;
-
-		// If we're not in the viewcone of the turret, run up and hit it. Do this a bit later to
-		// give other squadmembers a chance to throw a grenade before I run in.
-		if ( OccupyStrategySlot( SQUAD_SLOT_GRENADE1 ) )
-			return SCHED_COMBINE_CHARGE_TURRET;
+		
+		if ( IsElite() )
+		{
+			if( HasCondition( COND_COMBINE_CAN_ALTFIRE_ENEMY ) && OccupyStrategySlot(SQUAD_SLOT_SPECIAL_ATTACK) )
+				return SCHED_COMBINE_AR2_ALTFIRE;
+		}
+		else
+		{
+			// If we're not in the viewcone of the turret, run up and hit it. Do this a bit later to
+			// give other squadmembers a chance to throw a grenade before I run in.
+			if ( HasCondition( COND_SEE_ENEMY ) && OccupyStrategySlot( SQUAD_SLOT_GRENADE1 ) )
+				return SCHED_COMBINE_CHARGE_TURRET;
+		}
 	}
 
 	// When fighting against the player who's wielding a mega-physcannon, 
@@ -2198,7 +2221,7 @@ int CNPC_Combine::SelectScheduleAttack()
 		}
 		
 		// Throw a grenade if not allowed to engage with weapon.
-		if ( CanGrenadeEnemy( true ) )
+		if ( HasCondition( COND_COMBINE_CAN_GRENADE_ENEMY ) )
 		{
 			if ( OccupyStrategySlot( SQUAD_SLOT_GRENADE1 ) )
 			{
@@ -2233,14 +2256,13 @@ int CNPC_Combine::TranslateSchedule( int scheduleType )
 	{
 	case SCHED_TAKE_COVER_FROM_ENEMY:
 		{
-			int	m_nDamage = m_nRecentDamage;
-			bool bTakenDamage = ( m_nDamage / GetMaxHealth() ) > ( RECENT_DAMAGE_THRESHOLD / 100 );
+			bool bTakenDamage = m_nRecentDamage > RECENT_DAMAGE_THRESHOLD;
 			
 			m_nRecentDamage = 0;
 			m_flRecentDamageTime = 0;
 			
 			// Have to explicitly check innate range attack condition as may have weapon with range attack 2
-			if ( HasCondition(COND_CAN_RANGE_ATTACK2) && OccupyStrategySlot( SQUAD_SLOT_GRENADE1 ) && bTakenDamage )
+			if ( !bTakenDamage && HasCondition(COND_CAN_RANGE_ATTACK2) && OccupyStrategySlot( SQUAD_SLOT_GRENADE1 ) )
 			{
 				if ( m_pSquad )
 					m_Sentences.Speak( "COMBINE_THROW_GRENADE" );
@@ -2320,7 +2342,7 @@ int CNPC_Combine::TranslateSchedule( int scheduleType )
 			// always assume standing
 			// Stand();
 
-			if( CanAltFireEnemy(true) && OccupyStrategySlot(SQUAD_SLOT_SPECIAL_ATTACK) )
+			if( HasCondition( COND_COMBINE_CAN_ALTFIRE_ENEMY ) && OccupyStrategySlot(SQUAD_SLOT_SPECIAL_ATTACK) )
 			{
 				// If an elite in the squad could fire a combine ball at the player's last known position,
 				// do so!
@@ -2346,7 +2368,7 @@ int CNPC_Combine::TranslateSchedule( int scheduleType )
 			// stand up, just in case
 			// Stand();
 			// DesireStand();
-			if( CanGrenadeEnemy( true ) && OccupyStrategySlot( SQUAD_SLOT_GRENADE1 ) /* && random->RandomInt( 0, 100 ) < 20 */ )
+			if( HasCondition( COND_COMBINE_CAN_GRENADE_ENEMY ) && OccupyStrategySlot( SQUAD_SLOT_GRENADE1 ) /* && random->RandomInt( 0, 100 ) < 20 */ )
 			{
 				// If I COULD throw a grenade and I need to reload, 20% chance I'll throw a grenade before I hide to reload.
 				return SCHED_COMBINE_GRENADE_AND_RELOAD;
@@ -2368,7 +2390,7 @@ int CNPC_Combine::TranslateSchedule( int scheduleType )
 				return TranslateSchedule( SCHED_HIDE_AND_RELOAD );
 			}
 
-			if( CanAltFireEnemy(true) && OccupyStrategySlot(SQUAD_SLOT_SPECIAL_ATTACK) )
+			if( HasCondition( COND_COMBINE_CAN_ALTFIRE_ENEMY ) && OccupyStrategySlot(SQUAD_SLOT_SPECIAL_ATTACK) )
 			{
 				// Since I'm holding this squadslot, no one else can try right now. If I die before the shot 
 				// goes off, I won't have affected anyone else's ability to use this attack at their nearest
@@ -2586,6 +2608,7 @@ void CNPC_Combine::HandleAnimEvent( animevent_t *pEvent )
 				}
 
 				// wait six seconds before even looking again to see if a grenade can be thrown.
+				ClearCondition( COND_COMBINE_CAN_GRENADE_ENEMY );
 				m_flNextGrenadeCheck = gpGlobals->curtime + 6;
 			}
 			handledEvent = true;
@@ -2598,7 +2621,9 @@ void CNPC_Combine::HandleAnimEvent( animevent_t *pEvent )
 				CBaseEntity *pGrenade = CreateNoSpawn( "npc_contactgrenade", Weapon_ShootPosition(), vec3_angle, this );
 				pGrenade->KeyValue( "velocity", m_vecTossVelocity );
 				pGrenade->Spawn( );
-
+				
+				ClearCondition( COND_COMBINE_CAN_ALTFIRE_ENEMY );
+				
 				if ( g_pGameRules->IsSkillLevel(SKILL_HARD) )
 					m_flNextGrenadeCheck = gpGlobals->curtime + random->RandomFloat( 2, 5 );// wait a random amount of time before shooting again
 				else
@@ -2611,7 +2636,9 @@ void CNPC_Combine::HandleAnimEvent( animevent_t *pEvent )
 			{
 				Vector vecStart;
 				GetAttachment( "lefthand", vecStart );
-
+				
+				ClearCondition( COND_COMBINE_CAN_GRENADE_ENEMY );
+				
 				Fraggrenade_Create( vecStart, vec3_angle, m_vecTossVelocity, vec3_origin, this, COMBINE_GRENADE_TIMER, true );
 			//	m_iNumGrenades--;
 			}
@@ -2772,14 +2799,6 @@ void CNPC_Combine::PainSound( const CTakeDamageInfo &info )
 
 		m_Sentences.Speak( pSentenceName, SENTENCE_PRIORITY_INVALID, SENTENCE_CRITERIA_ALWAYS );
 		m_flNextPainSoundTime = gpGlobals->curtime + 1;
-	}
-	
-	if ( info.GetAttacker() == GetEnemy() )
-	{
-		// Keep track of recent damage by my attacker. If it seems like we're
-		// being killed, consider running off and hiding.
-		m_nRecentDamage += info.GetDamage();
-		m_flRecentDamageTime = gpGlobals->curtime;
 	}
 }
 
@@ -2969,8 +2988,8 @@ bool CNPC_Combine::CanThrowGrenade( const Vector &vecTarget )
 	// -----------------------
 	// If moving, don't check.
 	// -----------------------
-	if ( m_flGroundSpeed != 0 )
-		return false;
+//	if ( m_flGroundSpeed != 0 )
+	//	return false;
 
 #if 0
 	Vector vecEnemyLKP = GetEnemyLKP();
@@ -3085,7 +3104,7 @@ bool CNPC_Combine::CanAltFireEnemy( bool bUseFreeKnowledge )
 
 	CBaseEntity *pEnemy = GetEnemy();
 
-	if( !pEnemy->IsPlayer() && (!pEnemy->IsNPC() || !pEnemy->MyNPCPointer()->IsPlayerAlly()) )
+	if( pEnemy->IsNPC() && pEnemy->MyNPCPointer()->IsPlayerAlly() )
 		return false;
 
 	Vector vecTarget;
@@ -3679,8 +3698,7 @@ int CNPC_Combine::OnTakeDamage_Alive( const CTakeDamageInfo &inputInfo )
 		// Keep track of recent damage by my attacker. If it seems like we're
 		// being killed, consider running off and hiding.
 		m_nRecentDamage += info.GetDamage();
-		m_flRecentDamageTime = gpGlobals->curtime;
-		
+		m_flRecentDamageTime = gpGlobals->curtime + RECENT_DAMAGE_INTERVAL;
 	}
 	
 	//Take extra damage from vehicles.
@@ -3742,6 +3760,22 @@ void CNPC_Combine::DelaySquadAdvances( float flTime )
 	}
 }
 //-----------------------------------------------------------------------------
+// Purpose:
+//-----------------------------------------------------------------------------
+bool CNPC_Combine::IsValidEnemy( CBaseEntity *pEnemy )
+{
+	if ( pEnemy->Classify() == CLASS_COMBINE && FClassnameIs(pEnemy, "npc_turret_floor") )
+	{
+		IPhysicsObject *pPhysObj = pEnemy->VPhysicsGetObject();
+		if ( pPhysObj != NULL && pPhysObj->GetGameFlags() == FVPHYSICS_PLAYER_HELD )
+		{
+			return false;
+		}
+	}
+
+	return BaseClass::IsValidEnemy( pEnemy );
+}
+//-----------------------------------------------------------------------------
 //
 // Schedules
 //
@@ -3785,6 +3819,8 @@ DECLARE_CONDITION( COND_COMBINE_ON_FIRE )
 DECLARE_CONDITION( COND_COMBINE_ATTACK_SLOT_AVAILABLE )
 //DECLARE_CONDITION( COND_COMBINE_ENEMY_GRENADE )
 DECLARE_CONDITION( COND_TAKECOVER_FAILED )
+DECLARE_CONDITION( COND_COMBINE_CAN_GRENADE_ENEMY )
+DECLARE_CONDITION( COND_COMBINE_CAN_ALTFIRE_ENEMY )
 
 DECLARE_INTERACTION( g_interactionCombineBash );
 
@@ -4416,6 +4452,8 @@ DEFINE_SCHEDULE
  "		COND_LOST_ENEMY"
  "		COND_BETTER_WEAPON_AVAILABLE"
  "		COND_HEAR_DANGER"
+ "		COND_COMBINE_CAN_GRENADE_ENEMY"
+ "		COND_COMBINE_CAN_ALTFIRE_ENEMY"
  )
 
  //=========================================================

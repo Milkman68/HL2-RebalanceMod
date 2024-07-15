@@ -91,22 +91,9 @@ void C_BaseCombatCharacter::DoMuzzleFlash()
 {
 	// Our weapon takes our muzzle flash command
 	C_BaseCombatWeapon *pWeapon = GetActiveWeapon();
-	//const char *strWeaponName = pWeapon->GetName();
 			
 	if ( pWeapon )
-	{	
-		// if ( !Q_stricmp( strWeaponName, "weapon_ar2" ) )
-		// {
-			// m_iMuzzleFlashColorR = 227;
-			// m_iMuzzleFlashColorG = 255;
-			// m_iMuzzleFlashColorB = 253;
-		// }
-		// else
-		// {
-			// m_iMuzzleFlashColorR = 255;
-			// m_iMuzzleFlashColorG = 241;
-			// m_iMuzzleFlashColorB = 71;
-		// }
+	{
 		pWeapon->DoMuzzleFlash();
 		//NOTENOTE: We do not chain to the base here
 	}

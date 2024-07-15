@@ -2227,6 +2227,7 @@ void CFuncTank::DoMuzzleFlash( void )
 			
 			// FIXME: Create a custom entry here!
 			DispatchEffect( "ChopperMuzzleFlash", data );
+			DispatchEffect( "MuzzleFlashLight", data );
 		}
 		else
 		{
@@ -2237,6 +2238,7 @@ void CFuncTank::DoMuzzleFlash( void )
 			data.m_fFlags = MUZZLEFLASH_COMBINE;
 
 			DispatchEffect( "MuzzleFlash", data );
+			DispatchEffect( "MuzzleFlashLight", data );
 		}
 	}
 }

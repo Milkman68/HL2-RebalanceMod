@@ -380,6 +380,7 @@ public:
 	void					VelocityPunch( const Vector &vecForce );
 	void					ViewPunch( const QAngle &angleOffset );
 	void					ViewPunchReset( float tolerance = 0 );
+	void					ViewPunchScale( float scale );
 	void					ShowViewModel( bool bShow );
 	void					ShowCrosshair( bool bShow );
 

@@ -15,6 +15,7 @@
 #include <vgui/ILocalize.h>
 #include <vgui/ISurface.h>
 #include "ihudlcd.h"
+#include "ammodef.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -80,16 +81,6 @@ void CHudAmmo::Init( void )
 	
 	m_bIsPlayerManned = false;
 	m_iconPrimaryAmmo = NULL;
-
-	wchar_t *tempString = g_pVGuiLocalize->Find("#Valve_Hud_AMMO");
-	if (tempString)
-	{
-		SetLabelText(tempString);
-	}
-	else
-	{
-		SetLabelText(L"AMMO");
-	}
 }
 
 //-----------------------------------------------------------------------------
@@ -143,6 +134,9 @@ void CHudAmmo::UpdatePlayerAmmo( C_BasePlayer *player )
 
 	SetPaintEnabled(true);
 	SetPaintBackgroundEnabled(true);
+	
+	wchar_t *tempString = g_pVGuiLocalize->Find( gWR.GetAmmoLabelFromID( wpn->GetPrimaryAmmoType() ) );
+	SetLabelText( tempString );
 
 	// Get our icons for the ammo types
 	m_iconPrimaryAmmo = gWR.GetAmmoIconFromWeapon( wpn->GetPrimaryAmmoType() );
@@ -208,6 +202,11 @@ void CHudAmmo::UpdateVehicleAmmo( C_BasePlayer *player, IClientVehicle *pVehicle
 
 	SetPaintEnabled(true);
 	SetPaintBackgroundEnabled(true);
+	
+	//wchar_t *tempString;
+//	V_wcscpy_safe( tempString, gWR.GetAmmoLabelFromID( pVehicle->GetPrimaryAmmoType() ) );
+	
+	//SetLabelText( tempString );
 
 	// get the ammo in our clip
 	int ammo1 = pVehicle->GetPrimaryAmmoClip();
@@ -260,6 +259,9 @@ void CHudAmmo::UpdateEmplacementAmmo( C_BasePlayer *player )
 
 	SetPaintEnabled(true);
 	SetPaintBackgroundEnabled(true);
+	
+	// Just use the default label.
+	//SetLabelText( gWR.GetAmmoLabelFromID( NULL ) );
 
 	// get the ammo in our clip
 	int ammo1 = player->m_iMannedGunAmmo;

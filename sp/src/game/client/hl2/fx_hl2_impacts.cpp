@@ -11,6 +11,7 @@
 #include "fx_sparks.h"
 #include "dlight.h"
 #include "iefx.h"
+#include "flashlighteffect.h"
 
 #include "tier0/vprof.h"
 
@@ -275,6 +276,7 @@ void ImpactHelicopterCallback( const CEffectData &data )
 
 DECLARE_CLIENT_EFFECT( "HelicopterImpact", ImpactHelicopterCallback );
 
+extern ConVar hl2r_dynamic_light_level;
 
 //-----------------------------------------------------------------------------
 // Purpose: Just throwing grenade light effects here.
@@ -283,7 +285,6 @@ void Grenade_Blip( ClientEntityHandle_t hEntity, int attachmentIndex )
 {
 	VPROF_BUDGET( "Grenade_Blip", VPROF_BUDGETGROUP_PARTICLE_RENDERING );
 	
-	extern ConVar hl2r_dynamic_light_level;
 	extern ConVar hl2r_reduced_assists;
 	if ( hl2r_dynamic_light_level.GetInt() != 0 ) // VFX + Entities
 		return;
@@ -326,3 +327,93 @@ void GrenadeBlipCallback( const CEffectData &data )
 }
 
 DECLARE_CLIENT_EFFECT( "GrenadeBlip", GrenadeBlipCallback );
+
+//-----------------------------------------------------------------------------
+// Purpose: A way to initialize a muzzleflash light without needing to come from CBasecombatWeapon
+//-----------------------------------------------------------------------------
+void MuzzleFlashLight( ClientEntityHandle_t hEntity, int attachmentIndex, int flashtype )
+{
+	VPROF_BUDGET( "MuzzleFlashLight", VPROF_BUDGETGROUP_PARTICLE_RENDERING );
+	
+	extern ConVar hl2r_dynamic_light_level;
+	if ( hl2r_dynamic_light_level.GetInt() == 2 ) // None
+		return;
+
+	// Grab the origin out of the transform for the attachment
+	// If the client hasn't seen this entity yet, bail.
+	Vector origin;
+	QAngle angles;
+	
+	if ( FX_GetAttachmentTransform( hEntity, attachmentIndex, &origin, &angles ) )
+	{
+		int entityIndex = ClientEntityList().HandleToEntIndex( hEntity );
+		if ( entityIndex >= 0 )
+		{
+			C_ProjMuzzleFlash *pFlash = new C_ProjMuzzleFlash();
+				
+			// Initialize our effect.
+			if ( pFlash->InitializeAsClientEntity( NULL, RENDER_GROUP_TRANSLUCENT_ENTITY ) == false )
+			{
+				pFlash->Release();
+				return;
+			}
+				
+			if ( pFlash )
+			{
+				// Set the position and angle.
+				pFlash->SetAbsOrigin( origin );
+				pFlash->SetAbsAngles( angles );
+					
+				// Parent the light to our muzzle.
+				pFlash->SetParent( ClientEntityList().GetBaseEntityFromHandle( hEntity ) );
+				
+				// Add random rotation.
+				QAngle localangle = pFlash->GetLocalAngles();
+				localangle[ ROLL ] = random->RandomInt( -180, 180 );
+					
+				pFlash->SetLocalAngles( localangle );
+			
+				// Parameters
+				float r, g, b, e; // Red, Green, Blue, Intensity.
+				
+				if ( flashtype == MUZZLEFLASH_COMBINE )
+				{
+					r = 1.0f;
+					g = 1.0f;
+					b = 0.66f;
+					e = 1.0f;
+				}
+				else
+				{
+					r = 1.0f;
+					g = 0.8f;
+					b = 0.3f;
+					e = 1.0f;
+				}
+				
+				pFlash->color[0] = r;
+				pFlash->color[1] = g;
+				pFlash->color[2] = b;
+				pFlash->color[3] = e;
+
+				pFlash->die = 0.1f;
+				pFlash->holdtime = 0.0f;
+				pFlash->fov = 100;
+				pFlash->range = 1000;
+				pFlash->clq[0] = 0.2f;
+				pFlash->clq[1] = 0.0f;
+				pFlash->clq[2] = 2500.0f;
+			}
+		}
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void MuzzleFlashLightCallback( const CEffectData &data )
+{
+	MuzzleFlashLight( data.m_hEntity, data.m_nAttachmentIndex, data.m_fFlags );
+}
+
+DECLARE_CLIENT_EFFECT( "MuzzleFlashLight", MuzzleFlashLightCallback );

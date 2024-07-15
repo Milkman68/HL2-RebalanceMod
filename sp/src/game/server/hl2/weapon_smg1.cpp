@@ -315,9 +315,8 @@ bool CWeaponSMG1::Reload( void )
 //-----------------------------------------------------------------------------
 void CWeaponSMG1::AddViewKick( void )
 {
-	#define	EASY_DAMPEN			1.0f	//			0.0
-	#define	MAX_VERTICAL_KICK	3.0f	//Degrees	4.0
-	#define	SLIDE_LIMIT			3.0f	//Seconds	8.0
+	#define	MAX_VERTICAL_KICK	15.0f	//Degrees
+	#define	SLIDE_LIMIT			6.0f	//Seconds
 	
 	//Get the view kick
 	CBasePlayer *pPlayer = ToBasePlayer( GetOwner() );
@@ -325,7 +324,7 @@ void CWeaponSMG1::AddViewKick( void )
 	if ( pPlayer == NULL )
 		return;
 
-	DoMachineGunKick( pPlayer, EASY_DAMPEN, MAX_VERTICAL_KICK, m_fFireDuration, SLIDE_LIMIT );
+	DoMachineGunKick( pPlayer, MAX_VERTICAL_KICK, m_fFireDuration, SLIDE_LIMIT );
 }
 
 //-----------------------------------------------------------------------------

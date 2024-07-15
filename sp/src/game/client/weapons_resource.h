@@ -37,6 +37,8 @@ public:
 	// Ammo Handling
 	CHudTexture					*GetAmmoIconFromWeapon( int iAmmoId );
 	const FileWeaponInfo_t		*GetWeaponFromAmmo( int iAmmoId );
+	char const					*GetAmmoLabelFromID( int iAmmoId );
+	float						GetAmmoDrawOffesetFromID( int iAmmoId );
 };
 
 extern WeaponsResource gWR;

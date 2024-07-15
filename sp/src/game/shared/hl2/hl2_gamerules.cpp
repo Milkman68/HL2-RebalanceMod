@@ -88,6 +88,8 @@ ConVar	hl2r_hudhints( "hl2r_hudhints", "1", FCVAR_REPLICATED | FCVAR_ARCHIVE);
 ConVar	hl2r_episodic_flashlight( "hl2r_episodic_flashlight", "0", FCVAR_REPLICATED | FCVAR_ARCHIVE );
 ConVar	hl2r_rollangle( "hl2r_rollangle", "2", FCVAR_REPLICATED | FCVAR_ARCHIVE);
 ConVar	hl2r_old_crosshair( "hl2r_old_crosshair", "0", FCVAR_REPLICATED | FCVAR_ARCHIVE);
+ConVar	hl2r_ammo_labels( "hl2r_ammo_labels", "0", FCVAR_REPLICATED | FCVAR_ARCHIVE);
+ConVar	hl2r_togglezoom( "hl2r_togglezoom", "0", FCVAR_REPLICATED | FCVAR_ARCHIVE);
 
 // Defined here now so it can be accessed by the options menu.
 ConVar	hud_quickinfo( "hud_quickinfo", "1", FCVAR_REPLICATED | FCVAR_ARCHIVE );

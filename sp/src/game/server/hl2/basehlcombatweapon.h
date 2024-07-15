@@ -39,7 +39,7 @@ public:
 	int				WeaponSoundRealtime( WeaponSound_t shoot_type );
 
 	// utility function
-	static void DoMachineGunKick( CBasePlayer *pPlayer, float dampEasy, float maxVerticleKickAngle, float fireDurationTime, float slideLimitTime );
+	static void DoMachineGunKick( CBasePlayer *pPlayer, float maxVerticleKickAngle, float fireDurationTime, float slideLimitTime );
 
 protected:
 

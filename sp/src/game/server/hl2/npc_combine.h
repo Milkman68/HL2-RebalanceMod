@@ -27,6 +27,9 @@
 #define SF_COMBINE_NO_GRENADEDROP ( 1 << 17 )
 #define SF_COMBINE_NO_AR2DROP ( 1 << 18 )
 
+#define RECENT_DAMAGE_THRESHOLD			20
+#define	RECENT_DAMAGE_INTERVAL			0.5
+
 //=========================================================
 //	>> CNPC_Combine
 //=========================================================
@@ -235,6 +238,8 @@ private:
 		COND_COMBINE_ATTACK_SLOT_AVAILABLE,
 		COND_COMBINE_TAKECOVER,
 		COND_TAKECOVER_FAILED,
+		COND_COMBINE_CAN_GRENADE_ENEMY,
+		COND_COMBINE_CAN_ALTFIRE_ENEMY,
 		NEXT_CONDITION
 	};
 
@@ -251,6 +256,8 @@ private:
 	
 	// Delay any advances our squad might do.
 	void DelaySquadAdvances( float flTime );
+	
+	bool IsValidEnemy( CBaseEntity *pEnemy );
 
 	// Chase the enemy, updating the target position as the player moves
 	void StartTaskChaseEnemyContinuously( const Task_t *pTask );
@@ -291,9 +298,7 @@ private:
 	float			m_flNextAltFireTime;		// Elites only. Next time to begin considering alt-fire attack.
 	float			m_flTimeSawEnemyAgain;
 	float			m_flThrowSpeed;
-	float			m_flRecentDamageTime;
 	
-	int				m_nRecentDamage;
 	int				m_nShots;
 	float			m_flShotDelay;
 	float			m_flStopMoveShootTime;
@@ -318,6 +323,8 @@ public:
 
 	int				m_iTacticalVariant;
 	int				m_iPathfindingVariant;
+	float			m_flRecentDamageTime;
+	int				m_nRecentDamage;
 };
 
 

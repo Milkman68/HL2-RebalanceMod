@@ -417,13 +417,14 @@ void CWeaponPistol::ItemPostFrame( void )
 	if ( pOwner == NULL )
 		return;
 	
-	if ( ( ( pOwner->m_nButtons & IN_ATTACK ) || ( pOwner->m_nButtons & IN_ATTACK2 ) ) && ( m_flNextPrimaryAttack < gpGlobals->curtime ) && ( m_iClip1 <= 0 ) )
+	if ( ( ( pOwner->m_nButtons & IN_ATTACK ) || ( pOwner->m_nButtons & IN_ATTACK2 ) ) 
+	&& m_flNextPrimaryAttack < gpGlobals->curtime && m_iClip1 <= 0 )
 	{
 		DryFire();
 	}
 	
 		//Allow a refire as fast as the player can click
-	if ( ( ( pOwner->m_nButtons & IN_ATTACK ) == false ) && ( m_flSoonestPrimaryAttack < gpGlobals->curtime ) )
+	if ( ( ( pOwner->m_nButtons & IN_ATTACK ) == false ) && m_iClip1 > 0 /* && ( m_flSoonestPrimaryAttack < gpGlobals->curtime ) */ )
 	{
 		m_flNextPrimaryAttack = gpGlobals->curtime - 0.1f;
 	}
@@ -476,9 +477,11 @@ void CWeaponPistol::AddViewKick( void )
 
 	QAngle	viewPunch;
 	
-	viewPunch.x = random->RandomFloat( -0.9f, -0.9f );
+	viewPunch.x = -1.25f;
 	viewPunch.y = random->RandomFloat( -0.1f,  0.1f );
 	viewPunch.z = 0.0f;
+	
+	pPlayer->ViewPunchScale(0.75);
 	
 /*  	//Find how far into our accuracy degradation we are
 	float limit = 10;

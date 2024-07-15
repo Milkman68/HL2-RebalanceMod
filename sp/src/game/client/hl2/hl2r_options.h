@@ -93,20 +93,14 @@ private:
 // Misc page elements
 //------------------------------------------------------------------------------
 ComboBox* LightDetailBox;
-ComboBox* QuickinfoBox;
-ComboBox* MinCrosshairBox;
 ComboBox* EpisodicLightBox;
-ComboBox* HudHintBox;
 ComboBox* ZoomToggleBox;
 
 // List of all BoxButtons:
 BoxButton_t M_BoxButtons[] =
 {
 	{ LightDetailBox, "LightDetailBox", { "#hl2r_default", "#hl2r_less", "#hl2r_none" }, "hl2r_dynamic_light_level", false },
-	{ QuickinfoBox, "QuickinfoBox", { "#hl2r_on", "#hl2r_off" }, "hud_quickinfo", true },
-	{ MinCrosshairBox, "MinCrosshairBox", { "#hl2r_on", "#hl2r_off" }, "hl2r_old_crosshair", /* true */ false }, // Renamed to "New Crosshairs" in the options.
 	{ EpisodicLightBox, "EpisodicLightBox", { "#hl2r_on", "#hl2r_off" }, "hl2r_episodic_flashlight", true },
-	{ HudHintBox, "HudHintBox", { "#hl2r_on", "#hl2r_off" }, "hl2r_hudhints", true },
 	{ ZoomToggleBox, "ZoomToggleBox", { "#hl2r_on", "#hl2r_off" }, "hl2r_togglezoom", true },
 };
 
@@ -116,6 +110,40 @@ Slider* viewRollSlider;
 TickSlider_t M_TickSliders[] =
 {
 	{ viewRollSlider, "viewRollSlider", 0, 10, 5, "hl2r_rollangle" },
+};
+//------------------------------------------------------------------------------
+// Hud page
+//------------------------------------------------------------------------------
+class CSubHudOptionsHL2R : public vgui::PropertyPage
+{
+	DECLARE_CLASS_SIMPLE(CSubHudOptionsHL2R, vgui::PropertyPage);
+
+public:
+	CSubHudOptionsHL2R(vgui::Panel* parent);
+	~CSubHudOptionsHL2R() {}
+	
+	virtual void OnApplyChanges();
+
+private:
+	MESSAGE_FUNC( OnControlModified, "ControlModified" );
+	MESSAGE_FUNC( OnTextChanged, "TextChanged" )
+	{
+		OnControlModified();
+	}
+};
+//------------------------------------------------------------------------------
+// Hud page elements
+//------------------------------------------------------------------------------
+ComboBox* QuickinfoBox;
+ComboBox* MinCrosshairBox;
+ComboBox* HudHintBox;
+
+// List of all BoxButtons:
+BoxButton_t H_BoxButtons[] =
+{
+	{ QuickinfoBox, "QuickinfoBox", { "#hl2r_on", "#hl2r_off" }, "hud_quickinfo", true },
+	{ MinCrosshairBox, "MinCrosshairBox", { "#hl2r_on", "#hl2r_off" }, "hl2r_old_crosshair", /* true */ false }, // Renamed to "New Crosshairs" in the options.
+	{ HudHintBox, "HudHintBox", { "#hl2r_on", "#hl2r_off" }, "hl2r_hudhints", true },
 };
 //------------------------------------------------------------------------------
 // Main panel
@@ -138,6 +166,8 @@ private:
 	CGameHL2RBasePanel* m_pGameHL2RBasePanel;
 	
 	CSubMiscOptionsHL2R* m_pSubMiscOptionsHL2R;
+	
+	CSubHudOptionsHL2R* m_pSubHudOptionsHL2R;
 };
 
 #endif

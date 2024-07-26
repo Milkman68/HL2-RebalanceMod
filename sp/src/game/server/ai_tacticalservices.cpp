@@ -396,7 +396,7 @@ int CAI_TacticalServices::FindCoverNode(const Vector &vNearPos, const Vector &vT
 
 	// mark start as visited
 	list.Insert( AI_NearNode_t(iMyNode, 0) ); 
-	wasVisited.Set( iMyNode );
+	//wasVisited.Set( iMyNode );
 	float flMinDistSqr = flMinDist*flMinDist;
 	float flMaxDistSqr = flMaxDist*flMaxDist;
 	
@@ -418,6 +418,8 @@ int CAI_TacticalServices::FindCoverNode(const Vector &vNearPos, const Vector &vT
 		float dist = (vNearPos - nodeOrigin).LengthSqr();
 		if (dist >= flMinDistSqr && dist < flMaxDistSqr)
 		{
+			GetOuter()->SetForceCrouchCover( false );
+			
 			Activity nCoverActivity = GetOuter()->GetCoverActivity( pNode->GetHint() );
 			Vector vEyePos = nodeOrigin + GetOuter()->EyeOffset(nCoverActivity);
 
@@ -572,7 +574,7 @@ int CAI_TacticalServices::FindLosNode( const Vector &vThreatPos, const Vector &v
 	CVarBitVec wasVisited(GetNetwork()->NumNodes());	// Nodes visited
 
 	// mark start as visited
-	wasVisited.Set( iMyNode );
+//	wasVisited.Set( iMyNode );
 	list.Insert( AI_NearNode_t(iMyNode, 0) );
 
 	static int nSearchRandomizer = 0;		// tries to ensure the links are searched in a different order each time;

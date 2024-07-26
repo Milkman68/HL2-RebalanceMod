@@ -8,29 +8,29 @@
 #include "hl2r_baseoptions.h"
 
 //------------------------------------------------------------------------------
-// Game parent panel
+// Challenge parent panel
 //------------------------------------------------------------------------------
-class CGameHL2RBasePanel : public vgui::ScrollableEditablePanel
+class CChallengesHL2RBasePanel : public vgui::ScrollableEditablePanel
 {
-	DECLARE_CLASS_SIMPLE(CGameHL2RBasePanel, vgui::ScrollableEditablePanel);
+	DECLARE_CLASS_SIMPLE(CChallengesHL2RBasePanel, vgui::ScrollableEditablePanel);
 
 public:
-	CGameHL2RBasePanel(vgui::Panel* parent, vgui::EditablePanel* child);
-	~CGameHL2RBasePanel() {}
+	CChallengesHL2RBasePanel(vgui::Panel* parent, vgui::EditablePanel* child);
+	~CChallengesHL2RBasePanel() {}
 	
 	// Called when the OK / Apply button is pressed.  Changed data should be written into document.
 	MESSAGE_FUNC( OnApplyChanges, "ApplyChanges" );
 };
 //------------------------------------------------------------------------------
-// Game page
+// Challenge page
 //------------------------------------------------------------------------------
-class CSubOptionsGameHL2R : public vgui::EditablePanel
+class CSubOptionsChallengesHL2R : public vgui::EditablePanel
 {
-	DECLARE_CLASS_SIMPLE(CSubOptionsGameHL2R, vgui::EditablePanel);
+	DECLARE_CLASS_SIMPLE(CSubOptionsChallengesHL2R, vgui::EditablePanel);
 
 public:
-	CSubOptionsGameHL2R(vgui::Panel* parent);
-	~CSubOptionsGameHL2R() {}
+	CSubOptionsChallengesHL2R(vgui::Panel* parent);
+	~CSubOptionsChallengesHL2R() {}
 
 	MESSAGE_FUNC( OnApplyChanges, "ApplyChanges" );
 
@@ -42,7 +42,7 @@ private:
 	Button* toggleAllButton;
 };
 //------------------------------------------------------------------------------
-// Game page elements
+// Challenge page elements
 //------------------------------------------------------------------------------
 CheckButton* ExplosiveCrabsButton;
 CheckButton* FearMovementButton;
@@ -54,7 +54,7 @@ CheckButton* ReducedAssistsButton;
 CheckButton* SmallerReservesButton;
 
 // List of all CheckButtons:
-CheckButton_t G_CheckButtons[] =
+CheckButton_t C_CheckButtons[] =
 {
 	{ ExplosiveCrabsButton, "ExplosiveCrabsButton", "hl2r_explosive_crabs" },
 	{ FearMovementButton, "FearMovementButton", "hl2r_fear_style_movement" },
@@ -66,15 +66,15 @@ CheckButton_t G_CheckButtons[] =
 	{ SmallerReservesButton, "SmallerReservesButton", "hl2r_smaller_reserves" },
 };
 //------------------------------------------------------------------------------
-// Misc page
+// Game page
 //------------------------------------------------------------------------------
-class CSubMiscOptionsHL2R : public vgui::PropertyPage
+class CSubGameOptionsHL2R : public vgui::PropertyPage
 {
-	DECLARE_CLASS_SIMPLE(CSubMiscOptionsHL2R, vgui::PropertyPage);
+	DECLARE_CLASS_SIMPLE(CSubGameOptionsHL2R, vgui::PropertyPage);
 
 public:
-	CSubMiscOptionsHL2R(vgui::Panel* parent);
-	~CSubMiscOptionsHL2R() {}
+	CSubGameOptionsHL2R(vgui::Panel* parent);
+	~CSubGameOptionsHL2R() {}
 	
 	virtual void OnApplyChanges();
 
@@ -90,37 +90,37 @@ private:
 	}
 };
 //------------------------------------------------------------------------------
-// Misc page elements
+// Game page elements
 //------------------------------------------------------------------------------
-ComboBox* LightDetailBox;
 ComboBox* EpisodicLightBox;
 ComboBox* ZoomToggleBox;
 
 // List of all BoxButtons:
-BoxButton_t M_BoxButtons[] =
+BoxButton_t G_BoxButtons[] =
 {
-	{ LightDetailBox, "LightDetailBox", { "#hl2r_default", "#hl2r_less", "#hl2r_none" }, "hl2r_dynamic_light_level", false },
 	{ EpisodicLightBox, "EpisodicLightBox", { "#hl2r_on", "#hl2r_off" }, "hl2r_episodic_flashlight", true },
 	{ ZoomToggleBox, "ZoomToggleBox", { "#hl2r_on", "#hl2r_off" }, "hl2r_togglezoom", true },
 };
 
 Slider* viewRollSlider;
+Slider* WeaponFOVSlider;
 
 // List of all TickSliders:
-TickSlider_t M_TickSliders[] =
+TickSlider_t G_TickSliders[] =
 {
 	{ viewRollSlider, "viewRollSlider", 0, 10, 5, "hl2r_rollangle" },
+	{ WeaponFOVSlider, "WeaponFOVSlider", 62, 90, 14, "viewmodel_fov" },
 };
 //------------------------------------------------------------------------------
-// Hud page
+// Visual page
 //------------------------------------------------------------------------------
-class CSubHudOptionsHL2R : public vgui::PropertyPage
+class CSubVisualOptionsHL2R : public vgui::PropertyPage
 {
-	DECLARE_CLASS_SIMPLE(CSubHudOptionsHL2R, vgui::PropertyPage);
+	DECLARE_CLASS_SIMPLE(CSubVisualOptionsHL2R, vgui::PropertyPage);
 
 public:
-	CSubHudOptionsHL2R(vgui::Panel* parent);
-	~CSubHudOptionsHL2R() {}
+	CSubVisualOptionsHL2R(vgui::Panel* parent);
+	~CSubVisualOptionsHL2R() {}
 	
 	virtual void OnApplyChanges();
 
@@ -132,18 +132,22 @@ private:
 	}
 };
 //------------------------------------------------------------------------------
-// Hud page elements
+// Visual page elements
 //------------------------------------------------------------------------------
 ComboBox* QuickinfoBox;
 ComboBox* MinCrosshairBox;
 ComboBox* HudHintBox;
+ComboBox* LightDetailBox;
+ComboBox* ProjectedMuzzleflashBox;
 
 // List of all BoxButtons:
-BoxButton_t H_BoxButtons[] =
+BoxButton_t V_BoxButtons[] =
 {
 	{ QuickinfoBox, "QuickinfoBox", { "#hl2r_on", "#hl2r_off" }, "hud_quickinfo", true },
 	{ MinCrosshairBox, "MinCrosshairBox", { "#hl2r_on", "#hl2r_off" }, "hl2r_old_crosshair", /* true */ false }, // Renamed to "New Crosshairs" in the options.
 	{ HudHintBox, "HudHintBox", { "#hl2r_on", "#hl2r_off" }, "hl2r_hudhints", true },
+	{ LightDetailBox, "LightDetailBox", { "#hl2r_default", "#hl2r_less", "#hl2r_none" }, "hl2r_dynamic_light_level", false },
+	{ ProjectedMuzzleflashBox, "ProjectedMuzzleflashBox", { "#hl2r_on", "#hl2r_off" }, "hl2r_projected_muzzleflash", true },
 };
 //------------------------------------------------------------------------------
 // Main panel
@@ -162,12 +166,12 @@ protected:
 	virtual void OnClose();
 
 private:
-	CSubOptionsGameHL2R* m_pSubOptionsGameHL2R;
-	CGameHL2RBasePanel* m_pGameHL2RBasePanel;
+	CSubOptionsChallengesHL2R* m_pSubOptionsChallengesHL2R;
+	CChallengesHL2RBasePanel* m_pChallengesHL2RBasePanel;
 	
-	CSubMiscOptionsHL2R* m_pSubMiscOptionsHL2R;
+	CSubGameOptionsHL2R* m_pSubGameOptionsHL2R;
 	
-	CSubHudOptionsHL2R* m_pSubHudOptionsHL2R;
+	CSubVisualOptionsHL2R* m_pSubVisualOptionsHL2R;
 };
 
 #endif

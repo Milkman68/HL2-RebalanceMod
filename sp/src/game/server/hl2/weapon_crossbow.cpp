@@ -52,7 +52,7 @@ void TE_StickyBolt( IRecipientFilter& filter, float delay,	Vector vecDirection, 
 #define	BOLT_SKIN_NORMAL	0
 #define BOLT_SKIN_GLOW		1
 
-#define CHARGE_TIME 2.0f
+#define CHARGE_TIME 2.5f
 
 //-----------------------------------------------------------------------------
 // Crossbow Bolt
@@ -1110,8 +1110,11 @@ void CWeaponCrossbow::DoChargedFire( void )
 float CWeaponCrossbow::GetActivityAnimSpeed( Activity ideal )
 {
 	// Just makes the weapon more convenient to use.
-	if ( ideal == ACT_VM_RELOAD || ACT_VM_PRIMARYATTACK )
+	if ( ideal == ACT_VM_RELOAD )
 		return 1.15;
+	
+	if ( ideal == ACT_VM_PRIMARYATTACK )
+		return 2.0;
 	
 	return BaseClass::GetActivityAnimSpeed(ideal);
 }

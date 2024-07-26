@@ -3565,7 +3565,7 @@ bool CAI_Navigator::MarkCurWaypointFailedLink( void )
 // Output : True is route was found, false otherwise
 //-----------------------------------------------------------------------------
 
-bool CAI_Navigator::DoFindPathToPos(void)
+bool CAI_Navigator::DoFindPathToPos(void) // bookmark
 {
 	CAI_Path *		pPath 			= GetPath();
 	CAI_Pathfinder *pPathfinder 	= GetPathfinder();

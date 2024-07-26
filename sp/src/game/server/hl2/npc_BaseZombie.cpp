@@ -659,18 +659,21 @@ void CNPC_BaseZombie::TraceAttack( const CTakeDamageInfo &info, const Vector &ve
 {
 	CTakeDamageInfo infoCopy = info;
 
+	// Always count crossbow shots as headshots.
+	bool bCrossbow = info.GetAmmoType() == GetAmmoDef()->Index("Xbow");
+	
 	// Keep track of headshots so we can determine whether to pop off our headcrab.
-	if (ptr->hitgroup == HITGROUP_HEAD)
+	if (ptr->hitgroup == HITGROUP_HEAD || bCrossbow)
 	{
 		m_bHeadShot = true;
 	}
-	float fCrossbowChargedShot = sk_plr_dmg_crossbow.GetFloat();
+/* 	float fCrossbowChargedShot = sk_plr_dmg_crossbow.GetFloat();
 	
 	// Makes zombies burn for a little longer.
 	if( info.GetDamage() == fCrossbowChargedShot && info.GetAmmoType() == GetAmmoDef()->Index("Xbow") )
 	{
 		infoCopy.ScaleDamage( 0.75 );
-	}
+	} */
 
 /* 	if( infoCopy.GetDamageType() & DMG_BUCKSHOT )
 	{
@@ -824,9 +827,11 @@ int CNPC_BaseZombie::OnTakeDamage_Alive( const CTakeDamageInfo &inputInfo )
 	{
 		info.ScaleDamage( 1.5 ); // Fixes some traps in ravenholm not killing zombies.
 	}
+	
+	bool bCrossbow = info.GetAmmoType() == GetAmmoDef()->Index("Xbow");
 
 	// Take some percentage of damage from bullets (unless hit in the crab). Always take full buckshot & sniper damage
-	if ( !m_bHeadShot && (info.GetDamageType() & DMG_BULLET) && !(info.GetDamageType() & (DMG_SNIPER)) )
+	if ( !bCrossbow && !m_bHeadShot && (info.GetDamageType() & DMG_BULLET) && !(info.GetDamageType() & (DMG_SNIPER)) )
 	{	
 		info.ScaleDamage( ZOMBIE_BULLET_DAMAGE_SCALE );
 	}

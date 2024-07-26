@@ -8,101 +8,101 @@ using namespace vgui;
 #include "hl2r_options.h"
 
 //------------------------------------------------------------------------------
-// Purpose : HL2R's Game options parent panel
+// Purpose : HL2R's challenge options parent panel
 //------------------------------------------------------------------------------
-CGameHL2RBasePanel::CGameHL2RBasePanel(vgui::Panel* parent, vgui::EditablePanel* child) : ScrollableEditablePanel(parent, child, NULL){}
+CChallengesHL2RBasePanel::CChallengesHL2RBasePanel(vgui::Panel* parent, vgui::EditablePanel* child) : ScrollableEditablePanel(parent, child, NULL){}
 
 //------------------------------------------------------------------------------
 // Purpose : We need this because the main panel sends the apply message to here 
 // instead of the panel parented to this one. So we need to send it manually to the child panel.
 //------------------------------------------------------------------------------
-void CGameHL2RBasePanel::OnApplyChanges()
+void CChallengesHL2RBasePanel::OnApplyChanges()
 {
 	ipanel()->SendMessage(GetChild(0)->GetVPanel(), new KeyValues("ApplyChanges"), GetVPanel());
 }
 //------------------------------------------------------------------------------
-// Purpose : HL2R's Game options page
+// Purpose : HL2R's challenge options page
 //------------------------------------------------------------------------------
-CSubOptionsGameHL2R::CSubOptionsGameHL2R(vgui::Panel* parent) : EditablePanel(parent, NULL)
+CSubOptionsChallengesHL2R::CSubOptionsChallengesHL2R(vgui::Panel* parent) : EditablePanel(parent, NULL)
 {
- 	CheckButtonRef.InitCheckButtons( this, G_CheckButtons, ARRAYSIZE(G_CheckButtons) );
+ 	CheckButtonRef.InitCheckButtons( this, C_CheckButtons, ARRAYSIZE(C_CheckButtons) );
 	SetBounds(0, 0, 422, 775);
 	
 	toggleAllButton = new Button(this, "toggleAllButton", "");
 	toggleAllButton->SetCommand("toggleall");
 
-	LoadControlSettings("resource/ui/hl2r_optionssubgame.res");
+	LoadControlSettings("resource/ui/hl2r_optionssubchallenge.res");
 }
 
-void CSubOptionsGameHL2R::OnApplyChanges()
+void CSubOptionsChallengesHL2R::OnApplyChanges()
 {
-	CheckButtonRef.UpdateConVars( this, G_CheckButtons, ARRAYSIZE(G_CheckButtons) );
+	CheckButtonRef.UpdateConVars( this, C_CheckButtons, ARRAYSIZE(C_CheckButtons) );
 }
 
-void CSubOptionsGameHL2R::OnCheckButtonChecked(Panel* panel)
+void CSubOptionsChallengesHL2R::OnCheckButtonChecked(Panel* panel)
 {
 	PostActionSignal(new KeyValues("ApplyButtonEnable"));
 }
 
-void CSubOptionsGameHL2R::OnCommand(const char* pcCommand)
+void CSubOptionsChallengesHL2R::OnCommand(const char* pcCommand)
 {
 	BaseClass::OnCommand(pcCommand);
 	if (!Q_stricmp(pcCommand, "toggleall"))
 	{
 		bool bState = true;
 		
-		for ( int i = 0; i < ARRAYSIZE(G_CheckButtons); i++ )
+		for ( int i = 0; i < ARRAYSIZE(C_CheckButtons); i++ )
 		{
-			if ( G_CheckButtons[i].Button->IsSelected() )
+			if ( C_CheckButtons[i].Button->IsSelected() )
 			{
 				bState = false;
 				break;
 			}
 		}
 		
-		for ( int i = 0; i < ARRAYSIZE(G_CheckButtons); i++ )
+		for ( int i = 0; i < ARRAYSIZE(C_CheckButtons); i++ )
 		{
-			G_CheckButtons[i].Button->SetSelected(bState);
+			C_CheckButtons[i].Button->SetSelected(bState);
 		}
 	}
 }
 //------------------------------------------------------------------------------
-// Purpose : HL2R's Misc options page
+// Purpose : HL2R's Game options page
 //------------------------------------------------------------------------------
-CSubMiscOptionsHL2R::CSubMiscOptionsHL2R(vgui::Panel* parent) : PropertyPage(parent, NULL)
+CSubGameOptionsHL2R::CSubGameOptionsHL2R(vgui::Panel* parent) : PropertyPage(parent, NULL)
 {
-	BoxButtonRef.InitBoxButtons( this, M_BoxButtons, ARRAYSIZE(M_BoxButtons) );
-	TickSliderRef.InitTickSliders( this, M_TickSliders, ARRAYSIZE(M_TickSliders) );
+	BoxButtonRef.InitBoxButtons( this, G_BoxButtons, ARRAYSIZE(G_BoxButtons) );
+	TickSliderRef.InitTickSliders( this, G_TickSliders, ARRAYSIZE(G_TickSliders) );
 	
-	LoadControlSettings("resource/ui/hl2r_optionssubmisc.res");
+	LoadControlSettings("resource/ui/hl2r_optionssubgame.res");
 } 
 
-void CSubMiscOptionsHL2R::OnApplyChanges()
+void CSubGameOptionsHL2R::OnApplyChanges()
 {
-	BoxButtonRef.UpdateConVars( this, M_BoxButtons, ARRAYSIZE(M_BoxButtons) );
-	TickSliderRef.UpdateConVars( this, M_TickSliders, ARRAYSIZE(M_TickSliders) );
+	BoxButtonRef.UpdateConVars( this, G_BoxButtons, ARRAYSIZE(G_BoxButtons) );
+	TickSliderRef.UpdateConVars( this, G_TickSliders, ARRAYSIZE(G_TickSliders) );
 }
 
-void CSubMiscOptionsHL2R::OnControlModified()
+void CSubGameOptionsHL2R::OnControlModified()
 {
 	PostActionSignal(new KeyValues("ApplyButtonEnable"));
 }
 //------------------------------------------------------------------------------
-// Purpose : HL2R's Hud options page
+// Purpose : HL2R's Visuals options page
 //------------------------------------------------------------------------------
-CSubHudOptionsHL2R::CSubHudOptionsHL2R(vgui::Panel* parent) : PropertyPage(parent, NULL)
+CSubVisualOptionsHL2R::CSubVisualOptionsHL2R(vgui::Panel* parent) : PropertyPage(parent, NULL)
 {
-	BoxButtonRef.InitBoxButtons( this, H_BoxButtons, ARRAYSIZE(H_BoxButtons) );
+	BoxButtonRef.InitBoxButtons( this, V_BoxButtons, ARRAYSIZE(V_BoxButtons) );
 	
-	LoadControlSettings("resource/ui/hl2r_optionssubhud.res");
+	LoadControlSettings("resource/ui/hl2r_optionssubvisuals.res");
 } 
 
-void CSubHudOptionsHL2R::OnApplyChanges()
+void CSubVisualOptionsHL2R::OnApplyChanges()
 {
-	BoxButtonRef.UpdateConVars( this, H_BoxButtons, ARRAYSIZE(H_BoxButtons) );
+	BoxButtonRef.UpdateConVars( this, V_BoxButtons, ARRAYSIZE(V_BoxButtons) );
 }
 
-void CSubHudOptionsHL2R::OnControlModified()
+void CSubVisualOptionsHL2R::OnControlModified()
 {
 	PostActionSignal(new KeyValues("ApplyButtonEnable"));
 }
@@ -118,17 +118,17 @@ CHL2RMenu::CHL2RMenu(vgui::VPANEL parent) : BaseClass(NULL, "HL2RMenu")
 
 	SetTitle("#hl2r_options_title", true);
 	
-	m_pSubOptionsGameHL2R = new CSubOptionsGameHL2R(this);
+	m_pSubOptionsChallengesHL2R = new CSubOptionsChallengesHL2R(this);
 	
-	// Parent the game page to a separate scrollable-panel.
-	m_pGameHL2RBasePanel = new CGameHL2RBasePanel(this, m_pSubOptionsGameHL2R);
-	AddPage(m_pGameHL2RBasePanel, "#hl2r_options_game");
+	// Parent the challenge page to a separate scrollable-panel.
+	m_pChallengesHL2RBasePanel = new CChallengesHL2RBasePanel(this, m_pSubOptionsChallengesHL2R);
+	AddPage(m_pChallengesHL2RBasePanel, "#hl2r_options_game");
 	
-	m_pSubHudOptionsHL2R = new CSubHudOptionsHL2R(this);
-	AddPage(m_pSubHudOptionsHL2R, "#hl2r_options_hud");
+	m_pSubVisualOptionsHL2R = new CSubVisualOptionsHL2R(this);
+	AddPage(m_pSubVisualOptionsHL2R, "#hl2r_options_hud");
 
- 	m_pSubMiscOptionsHL2R = new CSubMiscOptionsHL2R(this);
-	AddPage(m_pSubMiscOptionsHL2R, "#hl2r_options_misc");
+ 	m_pSubGameOptionsHL2R = new CSubGameOptionsHL2R(this);
+	AddPage(m_pSubGameOptionsHL2R, "#hl2r_options_misc");
 	
 	SetApplyButtonVisible(true);
 	GetPropertySheet()->SetTabWidth(168);

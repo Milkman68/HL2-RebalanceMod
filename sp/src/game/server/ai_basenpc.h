@@ -1643,6 +1643,7 @@ public:
 	virtual bool		TestShootPosition(const Vector &vecShootPos, const Vector &targetPos )	{ return WeaponLOSCondition( vecShootPos, targetPos, false ); }
 	virtual bool		IsCoverPosition( const Vector &vecThreat, const Vector &vecPosition );
 	virtual float		GetCoverPositionScore( const Vector &vecThreat, const Vector &vecCover, float flIdealDist = 500.0f );
+	virtual float		GetPathDistanceToPoint( const Vector& vecStart, const Vector& vecPosition ) ;
 	virtual float		CoverRadius( void ) { return 1024; } // Default cover radius
 	virtual float		GetMaxTacticalLateralMovement( void ) { return MAXTACLAT_IGNORE; }
 
@@ -1657,6 +1658,8 @@ protected:
 private:
 	string_t			m_strHintGroup;
 	bool				m_bHintGroupNavLimiting;
+	bool				m_bTestCrouchCover;
+	bool				m_bForceCrouchActivity;
 	CAI_TacticalServices *m_pTacticalServices;
 
 public:
@@ -1733,6 +1736,12 @@ public:
 	virtual float		GetHintDelay( short sHintType );
 	virtual Activity	GetCoverActivity( CAI_Hint* pHint );
 	virtual Activity	GetReloadActivity( CAI_Hint* pHint );
+	
+	virtual bool		ShouldTestCrouchCover( void ) { return false; } // Makes us check if we can crouch at a node to use as cover. 
+	virtual void		SetTestCrouchCover( bool bState ) { m_bTestCrouchCover = ShouldTestCrouchCover() ? bState : false; }
+	
+	virtual void		SetForceCrouchCover( bool bState ) { m_bForceCrouchActivity = bState; } // Makes us check if we can crouch at a node to use as cover. 
+	virtual bool		ShouldForceCrouchCover( void) { return m_bForceCrouchActivity; }
 
 	virtual void		SetTurnActivity( void );
 	bool				UpdateTurnGesture( void );

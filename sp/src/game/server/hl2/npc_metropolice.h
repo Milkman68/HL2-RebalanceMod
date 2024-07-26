@@ -106,6 +106,7 @@ public:
 	CAI_Sentence< CNPC_MetroPolice > *GetSentences() { return &m_Sentences; }
 
 	virtual	bool		AllowedToIgnite( void ) { return true; }
+	virtual	bool		ShouldTestCrouchCover( void ) { return true; }
 
 	void	PlayFlinchGesture( void );
 
@@ -309,6 +310,8 @@ private:
 	bool CanSupressEnemy( void );
 	
 	void HandleRandomSpawnEquipment( void );
+	
+	bool IsCoverPosition( const Vector &vecThreat, const Vector &vecPosition );
 
 private:
 	enum
@@ -388,6 +391,7 @@ private:
 		SCHED_ENTER_OVERWATCH,
 		SCHED_OVERWATCH,
 		SCHED_METROPOLICE_TAKECOVER_FAILED,
+		SCHED_METROPOLICE_COMBAT_FAIL,
 	};
 
 	enum 
@@ -415,6 +419,7 @@ private:
 		TASK_METROPOLICE_GET_PATH_TO_PRECHASE,
 		TASK_METROPOLICE_CLEAR_PRECHASE,
 		TASK_METROPOLICE_BEGIN_FLANK,
+		TASK_METROPOLICE_PLAY_COVER_SEQUENCE,
 	};
 
 private:

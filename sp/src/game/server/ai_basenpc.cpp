@@ -7972,9 +7972,16 @@ CBaseEntity *CAI_BaseNPC::BestEnemy( void )
 Activity CAI_BaseNPC::GetReloadActivity( CAI_Hint* pHint )
 {
 	Activity nReloadActivity = ACT_RELOAD;
+	
+	// Placing this above the hint code so we don't override any level design.
+	if ( ShouldForceCrouchCover() )
+		nReloadActivity = ACT_RELOAD_LOW;
 
 	if (pHint && GetEnemy()!=NULL)
 	{
+		// Don't do this if we're using hints.
+		SetTestCrouchCover( false );
+		
 		switch (pHint->HintType())
 		{
 			case HINT_TACTICAL_COVER_LOW:
@@ -7995,6 +8002,11 @@ Activity CAI_BaseNPC::GetReloadActivity( CAI_Hint* pHint )
 			}
 		}
 	}
+	else
+	{
+		SetTestCrouchCover( true );
+	}
+	
 	return nReloadActivity;
 }
 
@@ -8006,12 +8018,19 @@ Activity CAI_BaseNPC::GetReloadActivity( CAI_Hint* pHint )
 Activity CAI_BaseNPC::GetCoverActivity( CAI_Hint *pHint )
 {
 	Activity nCoverActivity = ACT_INVALID;
+	
+	// Placing this above the hint code so we don't override any level design.
+	if ( ShouldForceCrouchCover() )
+		nCoverActivity = ACT_COVER_LOW;
 
 	// ---------------------------------------------------------------
 	//  Check if hint node specifies different cover type
 	// ---------------------------------------------------------------
 	if (pHint)
 	{
+		// Don't do this if we're using hints.
+		SetTestCrouchCover( false );
+		
 		switch (pHint->HintType())
 		{
 			case HINT_TACTICAL_COVER_MED:
@@ -8025,6 +8044,10 @@ Activity CAI_BaseNPC::GetCoverActivity( CAI_Hint *pHint )
 				break;
 			}
 		}
+	}
+	else
+	{
+		SetTestCrouchCover( true );
 	}
 
 	if ( nCoverActivity == ACT_INVALID )
@@ -10674,6 +10697,8 @@ BEGIN_DATADESC( CAI_BaseNPC )
     DEFINE_FIELD( m_iMySquadSlot,				FIELD_INTEGER ),
 	DEFINE_KEYFIELD( m_strHintGroup,			FIELD_STRING, "hintgroup" ),
 	DEFINE_KEYFIELD( m_bHintGroupNavLimiting,	FIELD_BOOLEAN, "hintlimiting" ),
+	DEFINE_FIELD( m_bTestCrouchCover,	FIELD_BOOLEAN ),
+	DEFINE_FIELD( m_bForceCrouchActivity,	FIELD_BOOLEAN ),
  	DEFINE_EMBEDDEDBYREF( m_pTacticalServices ),
  	DEFINE_FIELD( m_flWaitFinished,			FIELD_TIME ),
 	DEFINE_FIELD( m_flNextFlinchTime,		FIELD_TIME ),
@@ -11362,6 +11387,8 @@ CAI_BaseNPC::CAI_BaseNPC(void)
 	m_fIsUsingSmallHull			= true;
 
 	m_bHintGroupNavLimiting		= false;
+	m_bTestCrouchCover			= false;
+	m_bForceCrouchActivity		= false;
 
 	m_fNoDamageDecal			= false;
 
@@ -12625,12 +12652,35 @@ bool CAI_BaseNPC::IsCoverPosition( const Vector &vecThreat, const Vector &vecPos
 	}
 
 	AI_TraceLOS( vecThreat, vecPosition, this, &tr, &filter );
-
+	
+	// If our first trace failed, try again with our crouched position.
+	if ( m_bTestCrouchCover && tr.fraction == 1.0 )
+	{
+		// HACKHACK: Subtract our cover activity offset to get our original position.
+		Activity nCoverActivity = GetCoverActivity( NULL );
+		Vector vPos = vecPosition - EyeOffset(nCoverActivity);
+		
+		SetForceCrouchCover( true );
+		
+		// Add back our offset with our new activity.
+		nCoverActivity = GetCoverActivity( NULL );
+		Vector vEyeOffset = EyeOffset(nCoverActivity);
+		
+		AI_TraceLOS( vecThreat, vPos + vEyeOffset, this, &tr, &filter );
+		
+/* 		if( tr.fraction != 1.0 )
+			NDebugOverlay::Box( vPos + vEyeOffset, Vector(-5,-5,-5),Vector(5,5,5), 0,255,0, true, 15.0 );
+		else
+			NDebugOverlay::Box( vPos + vEyeOffset, Vector(-5,-5,-5),Vector(5,5,5), 255,0,0, true, 15.0 ); */
+	}
+	
 	if( tr.fraction != 1.0 )
 	{
 		if( tr.m_pEnt->m_iClassname == m_iClassname )
 		{
 			// Don't hide behind buddies!
+			
+			SetForceCrouchCover( false );
 			return false;
 		}
 	}
@@ -12645,27 +12695,30 @@ float CAI_BaseNPC::GetCoverPositionScore( const Vector &vecThreat, const Vector 
 	// Try to base the cover location on the desired distance
 	float flNodeScore = 0;
 
-
-	// Figure out the distance from the threat to the cover
-	float flNodePathDist = ComputePathDistance( GetNavType(), vecThreat, vecCover );
-	float flNodeDirectDist = ( vecThreat - vecCover ).Length();
-
-	float flNodeMedianDist = ( flNodePathDist + flNodeDirectDist ) / 2;
-
-
+	// Setup our distance metrics.
+	float flNodeDist = ( vecThreat - vecCover ).Length();
+	float flNearDist = ( GetAbsOrigin() - vecCover ).Length();
+	
 	// Score it based on how close it is to the desired distance from the threat.
-	flNodeScore += ( flIdealDist - fabsf(flNodeMedianDist - flIdealDist) ) / flIdealDist;
-
-
-	// Distance from us to the cover.
-	float flNearPathDist = ComputePathDistance( GetNavType(), GetAbsOrigin(), vecCover );
-	float flNearDirectDist = ( GetAbsOrigin() - vecCover ).Length();
-							
-	float flNearMedianDist = ( flNearPathDist + flNearDirectDist ) / 2;
-
+	flNodeScore += ( flIdealDist - fabsf(flNodeDist - flIdealDist) ) / flIdealDist;
 
 	// Bias out nodes that are farther away from us than the enemy.
-	return flNodeScore += 1.0 - ( flNearMedianDist / flNodeMedianDist );
+	return flNodeScore += 1.0 - ( flNearDist / flNodeDist );
+}
+
+//-----------------------------------------------------------------------------
+
+float CAI_BaseNPC::GetPathDistanceToPoint( const Vector& vecStart, const Vector& vecPosition ) 
+{
+	AI_Waypoint_t *pPathToPoint = GetPathfinder()->BuildRoute( vecStart, vecPosition, NULL, 64, NAV_NONE, true );
+
+	if ( !pPathToPoint )
+		return -1.0;
+	
+	CAI_Path tempPath;
+	tempPath.SetWaypoints( pPathToPoint );
+	
+	return tempPath.GetPathDistanceToGoal( vecStart );
 }
 
 //-----------------------------------------------------------------------------

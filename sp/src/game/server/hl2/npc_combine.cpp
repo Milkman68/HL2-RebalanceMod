@@ -29,6 +29,7 @@
 #include "weapon_physcannon.h"
 #include "SoundEmitterSystem/isoundemittersystembase.h"
 #include "npc_headcrab.h"
+#include "ai_routedist.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -1174,14 +1175,21 @@ void CNPC_Combine::StartTask( const Task_t *pTask )
 			}
 		break;
 		}
+	case TASK_PLAY_COVER_SEQUENCE:
+		{
+			SetIdealActivity( GetCoverActivity( NULL ) );
+		break;
+		}
 	case TASK_RELOAD:
+	{
 	
 	// Can happen with moveandshoot reloading.
 	if ( GetActiveWeapon() && GetActiveWeapon()->m_iClip1 >= GetActiveWeapon()->GetMaxClip1() )
 		break;
 	
-		ResetIdealActivity( ACT_RELOAD );
+		ResetIdealActivity( GetReloadActivity( NULL ) );
 		break;
+	}
 
 	default: 
 		BaseClass:: StartTask( pTask );
@@ -1327,6 +1335,15 @@ void CNPC_Combine::RunTask( const Task_t *pTask )
 		}
 		break;
 	case TASK_PLAY_GRENADE_SEQUENCE:
+		{
+			AutoMovement( );
+			if ( IsActivityFinished() )
+			{
+				TaskComplete();
+			}
+			break;
+		}
+	case TASK_PLAY_COVER_SEQUENCE:
 		{
 			AutoMovement( );
 			if ( IsActivityFinished() )
@@ -3776,6 +3793,43 @@ bool CNPC_Combine::IsValidEnemy( CBaseEntity *pEnemy )
 	return BaseClass::IsValidEnemy( pEnemy );
 }
 //-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+bool CNPC_Combine::IsCoverPosition( const Vector &vecThreat, const Vector &vecPosition )
+{
+	if ( !GetActiveWeapon() )
+		return BaseClass::IsCoverPosition( vecThreat, vecPosition );
+	
+	// Create a path from us to our enemy.
+	float flLength = GetPathDistanceToPoint( GetAbsOrigin(), vecThreat );
+	
+	// If we can't find one, use default behavior.
+	if ( flLength < 0 )
+		return BaseClass::IsCoverPosition( vecThreat, vecPosition );
+	
+	float flIdealDist = ( GetActiveWeapon()->m_fMaxRange1 - GetActiveWeapon()->m_fMinRange1 ) / 2;
+	
+	// If our enemy is closer than we'd like, take cover from our current position aswell.
+	if ( flLength > flIdealDist )
+		return BaseClass::IsCoverPosition( vecThreat, vecPosition );
+		
+	// Trace a line from ourselves to the cover.
+	trace_t	tr;
+	CTraceFilterLOS filter( NULL, COLLISION_GROUP_NONE, this );
+			
+	AI_TraceLOS( GetAbsOrigin() + EyeOffset(ACT_IDLE), vecPosition, this, &tr, &filter );
+			
+	if( tr.fraction != 1.0 )
+	{
+		return BaseClass::IsCoverPosition( vecThreat, vecPosition );
+	}
+	else
+	{
+		// Don't use it if our cover is visible from our current position.
+		return false;
+	}
+}
+//-----------------------------------------------------------------------------
 //
 // Schedules
 //
@@ -3795,6 +3849,7 @@ DECLARE_TASK( TASK_COMBINE_GET_PATH_TO_FORCED_GREN_LOS )
 DECLARE_TASK( TASK_COMBINE_SET_STANDING )
 DECLARE_TASK( TASK_COMBINE_BEGIN_FLANK )
 DECLARE_TASK( TASK_PLAY_GRENADE_SEQUENCE )
+DECLARE_TASK( TASK_PLAY_COVER_SEQUENCE )
 
 //Activities
 DECLARE_ACTIVITY( ACT_COMBINE_THROW_GRENADE )
@@ -4168,8 +4223,8 @@ DEFINE_SCHEDULE
  "	Tasks"
  "		TASK_STOP_MOVING				0"
  "		TASK_COMBINE_SET_STANDING		0"
- "		TASK_SET_ACTIVITY				ACTIVITY:ACT_IDLE"	// Translated to cover
- "		TASK_WAIT_FACE_ENEMY			1"
+ "		TASK_PLAY_COVER_SEQUENCE		0"
+ "		TASK_WAIT_FACE_ENEMY			3"
  ""
  "	Interrupts"
  "		COND_NEW_ENEMY"

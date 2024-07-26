@@ -20,6 +20,7 @@
 #include "items.h"
 #include "hl2_gamerules.h"
 #include "ammodef.h"
+#include "ai_routedist.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -50,7 +51,7 @@
 #define AIM_BEHIND_STEER_DISTANCE				150.0f
 
 #define RECENT_DAMAGE_INTERVAL		0.5f
-#define RECENT_DAMAGE_THRESHOLD		20.0f
+#define RECENT_DAMAGE_THRESHOLD		5.0f
 
 #define CHASE_ENEMY_TIME			8.0f
 #define CHASE_ENEMY_COOLDOWN		4.0f
@@ -4539,6 +4540,15 @@ int CNPC_MetroPolice::TranslateSchedule( int scheduleType )
 			break;
 		}
 		break;
+		
+	case SCHED_FAIL:
+		{
+			if ( GetEnemy() != NULL )
+			{
+				return SCHED_METROPOLICE_COMBAT_FAIL;
+			}
+			return SCHED_FAIL;
+		}
 	}
 
 	return BaseClass::TranslateSchedule( scheduleType );
@@ -4677,7 +4687,13 @@ void CNPC_MetroPolice::StartTask( const Task_t *pTask )
 		TaskComplete();
 		break;
 		}
-
+		
+	case TASK_METROPOLICE_PLAY_COVER_SEQUENCE: //flankmark
+		{
+			SetIdealActivity( GetCoverActivity( NULL ) );
+		break;
+		}
+		
 	case TASK_METROPOLICE_ACTIVATE_BATON:
 		{
 			// Simply early out if we're in here without a baton
@@ -4897,9 +4913,11 @@ void CNPC_MetroPolice::StartTask( const Task_t *pTask )
 		break;
 
 	case TASK_RELOAD:
+	{
 		m_nBurstReloadCount = METROPOLICE_BURST_RELOAD_COUNT;
-		BaseClass::StartTask( pTask );
+		ResetIdealActivity( GetReloadActivity( NULL ) );
 		break;
+	}
 
 	case TASK_METROPOLICE_GET_PATH_TO_BESTSOUND_LOS:
 		{
@@ -4980,7 +4998,16 @@ void CNPC_MetroPolice::RunTask( const Task_t *pTask )
 			TaskComplete();
 		}	
 		break;
-
+	
+	case TASK_METROPOLICE_PLAY_COVER_SEQUENCE:
+		{
+			AutoMovement( );
+			if ( IsActivityFinished() )
+			{
+				TaskComplete();
+			}
+			break;
+		}
 	case TASK_METROPOLICE_BURST_ATTACK:
 		{
 			AutoMovement( );
@@ -5348,7 +5375,7 @@ WeaponProficiency_t CNPC_MetroPolice::CalcWeaponProficiency( CBaseCombatWeapon *
 
 	if( FClassnameIs( pWeapon, "weapon_smg1" ) )
 	{
-		return WEAPON_PROFICIENCY_GOOD;
+		return WEAPON_PROFICIENCY_VERY_GOOD;
 	}
 
 	return BaseClass::CalcWeaponProficiency( pWeapon );
@@ -5829,6 +5856,43 @@ Vector CNPC_MetroPolice::GetActualShootPosition( const Vector &shootOrigin )
 	return vecTargetPosition;
 }
 //-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+bool CNPC_MetroPolice::IsCoverPosition( const Vector &vecThreat, const Vector &vecPosition )
+{
+	if ( !GetActiveWeapon() )
+		return BaseClass::IsCoverPosition( vecThreat, vecPosition );
+	
+	// Create a path from us to our enemy.
+	float flLength = GetPathDistanceToPoint( GetAbsOrigin(), vecThreat );
+	
+	// If we can't find one, use default behavior.
+	if ( flLength < 0 )
+		return BaseClass::IsCoverPosition( vecThreat, vecPosition );
+	
+	float flIdealDist = ( GetActiveWeapon()->m_fMaxRange1 - GetActiveWeapon()->m_fMinRange1 ) / 2;
+	
+	// If our enemy is closer than we'd like, take cover from our current position aswell.
+	if ( flLength > flIdealDist )
+		return BaseClass::IsCoverPosition( vecThreat, vecPosition );
+		
+	// Trace a line from ourselves to the cover.
+	trace_t	tr;
+	CTraceFilterLOS filter( NULL, COLLISION_GROUP_NONE, this );
+			
+	AI_TraceLOS( GetAbsOrigin() + EyeOffset(ACT_IDLE), vecPosition, this, &tr, &filter );
+			
+	if( tr.fraction != 1.0 )
+	{
+		return BaseClass::IsCoverPosition( vecThreat, vecPosition );
+	}
+	else
+	{
+		// Don't use it if our cover is visible from our current position.
+		return false;
+	}
+}
+//-----------------------------------------------------------------------------
 //
 // Schedules
 //
@@ -5887,6 +5951,7 @@ AI_BEGIN_CUSTOM_NPC( npc_metropolice, CNPC_MetroPolice )
 	DECLARE_TASK( TASK_METROPOLICE_GET_PATH_TO_PRECHASE );
 	DECLARE_TASK( TASK_METROPOLICE_CLEAR_PRECHASE );
 	DECLARE_TASK( TASK_METROPOLICE_BEGIN_FLANK );
+	DECLARE_TASK( TASK_METROPOLICE_PLAY_COVER_SEQUENCE );
 
 	DECLARE_CONDITION( COND_METROPOLICE_ON_FIRE );
 	DECLARE_CONDITION( COND_METROPOLICE_ENEMY_RESISTING_ARREST );
@@ -6585,7 +6650,7 @@ DEFINE_SCHEDULE
 	SCHED_METROPOLICE_TAKE_COVER_FROM_ENEMY,
 
 	"	Tasks"
-	"		TASK_SET_FAIL_SCHEDULE			SCHEDULE:SCHED_METROPOLICE_TAKE_COVER_FROM_ENEMY"
+	"		TASK_SET_FAIL_SCHEDULE			SCHEDULE:SCHED_METROPOLICE_TAKECOVER_FAILED"
 	"		TASK_FIND_COVER_FROM_ENEMY_IN_WEAPON_RANGE		0"
 	"		TASK_RUN_PATH					0"
 	"		TASK_WAIT_FOR_MOVEMENT			0"
@@ -6603,6 +6668,19 @@ DEFINE_SCHEDULE
  "	Tasks"
  ""
  "	Interrupts"
+ )
+ DEFINE_SCHEDULE	
+ (
+ SCHED_METROPOLICE_COMBAT_FAIL,
+
+ "	Tasks"
+ "		TASK_STOP_MOVING			0"
+ ""
+ "	Interrupts"
+ "		COND_CAN_RANGE_ATTACK1"
+ "		COND_CAN_RANGE_ATTACK2"
+ "		COND_CAN_MELEE_ATTACK1"
+ "		COND_CAN_MELEE_ATTACK2"
  )
 //=========================================================
 //=========================================================
@@ -6639,8 +6717,8 @@ DEFINE_SCHEDULE
 
  "	Tasks"
  "		TASK_STOP_MOVING				0"
- "		TASK_SET_ACTIVITY				ACTIVITY:ACT_IDLE"	// Translated to cover
- "		TASK_WAIT_FACE_ENEMY			5"
+ "		TASK_METROPOLICE_PLAY_COVER_SEQUENCE	0"
+ "		TASK_WAIT_FACE_ENEMY			3"
  ""
  "	Interrupts"
  "		COND_NEW_ENEMY"
@@ -6675,7 +6753,6 @@ DEFINE_SCHEDULE
 
  "	Tasks"
  "		TASK_STOP_MOVING			0"
- "		TASK_COMBINE_SET_STANDING	0"
  "		TASK_SET_ACTIVITY			ACTIVITY:ACT_IDLE"
  "		TASK_FACE_ENEMY				0"
  "		TASK_SET_SCHEDULE			SCHEDULE:SCHED_COMBINE_OVERWATCH"

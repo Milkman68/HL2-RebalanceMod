@@ -90,6 +90,7 @@ void VCollideWireframe_ChangeCallback( IConVar *pConVar, char const *pOldString,
 
 ConVar vcollide_wireframe( "vcollide_wireframe", "0", FCVAR_CHEAT, "Render physics collision models in wireframe", VCollideWireframe_ChangeCallback );
 extern ConVar hl2r_dynamic_light_level;
+extern ConVar hl2r_projected_muzzleflash;
 
 bool C_AnimationLayer::IsActive( void )
 {
@@ -3324,20 +3325,29 @@ void C_BaseAnimating::ProcessMuzzleFlashEvent()// bookmark
 			AngleVectors( angles, &vAng );
 			
 			// Decide wheather to use elights or projected textures.
-			if ( hl2r_dynamic_light_level.GetInt() == 2 )
+			if ( !hl2r_projected_muzzleflash.GetBool() || hl2r_dynamic_light_level.GetInt() == 2 )
 			{
 				vAttachment += vAng * 2;
-			
-				dlight_t *el = effects->CL_AllocElight ( index );
+				
+				dlight_t *dl;
+				if ( hl2r_dynamic_light_level.GetInt() == 2 )
+				{
+					dl = effects->CL_AllocElight ( index );
+				}
+				else
+				{
+					dl = effects->CL_AllocDlight ( index );
+				}
 					
-				el->origin = vAttachment;
-				el->color.r = m_iMuzzleFlashColor[0];
-				el->color.g = m_iMuzzleFlashColor[1];
-				el->color.b = m_iMuzzleFlashColor[2];
-				el->color.exponent = m_iMuzzleFlashColor[3];
-				el->die = gpGlobals->curtime + m_flMuzzleFlashTime;
-				el->radius = m_iMuzzleFlashRadius;
-				el->decay = el->radius / m_flMuzzleFlashTime;
+					
+				dl->origin = vAttachment;
+				dl->color.r = m_iMuzzleFlashColor[0];
+				dl->color.g = m_iMuzzleFlashColor[1];
+				dl->color.b = m_iMuzzleFlashColor[2];
+				dl->color.exponent = m_iMuzzleFlashColor[3];
+				dl->die = gpGlobals->curtime + m_flMuzzleFlashTime;
+				dl->radius = m_iMuzzleFlashRadius;
+				dl->decay = dl->radius / m_flMuzzleFlashTime;
 			}
 			else
 			{
@@ -3602,19 +3612,19 @@ bool C_BaseAnimating::DispatchMuzzleEffect( const char *options, bool isFirstPer
 		m_flMuzzleFlashTime = 0.07;
 		
 		// Decide which parameters to setup.
-		if ( hl2r_dynamic_light_level.GetInt() == 2 )
+		if ( !hl2r_projected_muzzleflash.GetBool() )
 		{
 			m_iMuzzleFlashRadius = random->RandomFloat(128.0f, 196.0f);
 			m_flMuzzleFlashDecay = m_iMuzzleFlashRadius / 0.1;
 		}
 		else
 		{
-			m_flMuzzleFlashFov = random->RandomInt( 90, 125 );
+			m_flMuzzleFlashFov = random->RandomInt( 115, 130 );
 			m_flMuzzleFlashRange = 1000;
 			m_flMuzzleFlashHoldTime = 0.0f;
 			m_flMuzzleFlashCLQ[0] = 0;
-			m_flMuzzleFlashCLQ[1] = 2;
-			m_flMuzzleFlashCLQ[2] = 3000; // Use only quadratic for now.
+			m_flMuzzleFlashCLQ[1] = 0;
+			m_flMuzzleFlashCLQ[2] = 4000; // Use only quadratic for now.
 		}
 		
 		//TODO: Parse the type from a list instead

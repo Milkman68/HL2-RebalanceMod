@@ -146,6 +146,7 @@ public:
 	void			NotifyDeadFriend( CBaseEntity* pFriend );
 
 	virtual float	HearingSensitivity( void ) { return 1.0; };
+	virtual	bool	ShouldTestCrouchCover( void ) { return true; }
 	int				GetSoundInterests( void );
 	virtual bool	QueryHearSound( CSound *pSound );
 
@@ -221,6 +222,7 @@ private:
 		TASK_COMBINE_SET_STANDING,
 		TASK_COMBINE_BEGIN_FLANK,
 		TASK_PLAY_GRENADE_SEQUENCE,
+		TASK_PLAY_COVER_SEQUENCE,
 		NEXT_TASK
 	};
 
@@ -258,6 +260,8 @@ private:
 	void DelaySquadAdvances( float flTime );
 	
 	bool IsValidEnemy( CBaseEntity *pEnemy );
+	
+	bool IsCoverPosition( const Vector &vecThreat, const Vector &vecPosition );
 
 	// Chase the enemy, updating the target position as the player moves
 	void StartTaskChaseEnemyContinuously( const Task_t *pTask );

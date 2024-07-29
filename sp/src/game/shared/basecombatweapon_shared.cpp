@@ -454,14 +454,14 @@ int CBaseCombatWeapon::GetSlot( void ) const
 //-----------------------------------------------------------------------------
 int CBaseCombatWeapon::GetPosition( void ) const
 {
-/* 	CBasePlayer *pPlayer = ToBasePlayer( GetOwner() );
+ 	CBasePlayer *pPlayer = ToBasePlayer( GetOwner() );
 	
-	if ( !pPlayer ) */
+	if ( !pPlayer )
 		return GetWpnData().iPosition;
-/* 	
+ 	
 	int position = 0;
 	
-	// Dynamically changes a weapons slot position based on already owned weapons.
+	// Dynamically change our slot position based on the player's current weapons.
 	for ( int i = 0; i < MAX_WEAPONS; i++ )
 	{
 		CBaseCombatWeapon *pWeapon = pPlayer->GetWeapon(i);
@@ -469,27 +469,21 @@ int CBaseCombatWeapon::GetPosition( void ) const
 		if ( !pPlayer->GetWeapon(i) )
 			continue;
 		
-		DevMsg("1\n");
+		if ( pWeapon == this )
+			continue;
 		
 		if ( pWeapon->GetSlot() != GetSlot() )
 			continue;
 		
-		DevMsg("2\n");
-		
-		if ( pWeapon->GetWpnData().iPosition <= GetWpnData().iPosition )
-			continue;
-		
-		DevMsg("3\n");
-		
-		int iNewPosition = GetWpnData().iPosition - pWeapon->GetWpnData().iPosition;
-		if ( iNewPosition >= position )
+		// If there's a weapon with a lower slot-order than us
+		// offset our position to be above it.
+		if ( pWeapon->GetWpnData().iPosition < GetWpnData().iPosition )
 		{
-			DevMsg("4\n");
-			position = iNewPosition;
+			position++;
 		}
 	} 
 	
-	return position; */
+	return position;
 }
 
 //-----------------------------------------------------------------------------

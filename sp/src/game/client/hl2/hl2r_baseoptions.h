@@ -121,6 +121,8 @@ struct TickSlider_t
 	char		Name[32];
 	int			min, max; // Value range for ConVars
 	int			numticks; // Number of visible ticks on the slider.
+	float		scale; // Scales the value difference between slider options.
+	
 	char		Convar[128];
 	
 	// Initializes a given TickSlider array.
@@ -129,11 +131,14 @@ struct TickSlider_t
 		for ( int i = 0; i < size; i++ )
 		{
 			tickSliders[i].TickSlider = new Slider(parent, tickSliders[i].Name);
-			tickSliders[i].TickSlider->SetRange(tickSliders[i].min, tickSliders[i].max); 
-			tickSliders[i].TickSlider->SetNumTicks(tickSliders[i].numticks);
 			
+			int min = tickSliders[i].min / tickSliders[i].scale;
+			int max = tickSliders[i].max / tickSliders[i].scale;
+			tickSliders[i].TickSlider->SetRange(min, max); 
+			
+			tickSliders[i].TickSlider->SetNumTicks(tickSliders[i].numticks);
 			ConVarRef var( tickSliders[i].Convar );
-			tickSliders[i].TickSlider->SetValue(var.GetFloat());
+			tickSliders[i].TickSlider->SetValue(var.GetFloat() / tickSliders[i].scale);
 		}
 	}
 	
@@ -143,7 +148,7 @@ struct TickSlider_t
 		for ( int i = 0; i < size; i++ )
 		{
 			ConVarRef var( tickSliders[i].Convar );
-			var.SetValue( tickSliders[i].TickSlider->GetValue());
+			var.SetValue( tickSliders[i].TickSlider->GetValue() * tickSliders[i].scale );
 		}
 	}
 };

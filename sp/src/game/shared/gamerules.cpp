@@ -142,6 +142,7 @@ extern IVoiceGameMgrHelper *g_pVoiceGameMgrHelper;
 
 CGameRules*	g_pGameRules = NULL;
 extern bool	g_fGameOver;
+extern ConVar launched_hl2r;
 
 //-----------------------------------------------------------------------------
 // constructor, destructor
@@ -155,6 +156,20 @@ CGameRules::CGameRules() : CAutoGameSystemPerFrame( "CGameRules" )
 	ClearMultiDamage();
 
 	m_flNextVerboseLogOutput = 0.0f;
+	
+	// HACKHACK: Make sure we load the default control-scheme
+	// on first starting hl2r.
+	if ( !launched_hl2r.GetBool() )
+	{
+		char szExec[256];
+		Q_snprintf( szExec, sizeof(szExec), "exec config_default.cfg\n" );
+		
+		engine->ServerCommand( szExec );
+		engine->ServerExecute();
+		
+		// We launched the game.
+		launched_hl2r.SetValue(1);
+	}
 }
 
 //-----------------------------------------------------------------------------

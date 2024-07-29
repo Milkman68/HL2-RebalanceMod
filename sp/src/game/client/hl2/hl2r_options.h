@@ -108,8 +108,8 @@ Slider* WeaponFOVSlider;
 // List of all TickSliders:
 TickSlider_t G_TickSliders[] =
 {
-	{ viewRollSlider, "viewRollSlider", 0, 10, 5, "hl2r_rollangle" },
-	{ WeaponFOVSlider, "WeaponFOVSlider", 62, 90, 14, "viewmodel_fov" },
+	{ viewRollSlider, "viewRollSlider", 0, 10, 10, 1, "hl2r_rollangle"},
+	{ WeaponFOVSlider, "WeaponFOVSlider", 54, 90, 12, 3, "viewmodel_fov" },
 };
 //------------------------------------------------------------------------------
 // Visual page

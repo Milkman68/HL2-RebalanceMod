@@ -140,6 +140,8 @@ public:
 	void InputPullGrenade ( inputdata_t &inputdata );
 
 	virtual CBaseEntity *OnFailedPhysGunPickup ( Vector vPhysgunPos );
+	
+	float GetHitgroupDamageMultiplier( int iHitGroup, const CTakeDamageInfo &info );
 
 	//Called when we want to let go of a grenade and let the physcannon pick it up.
 	void ReleaseGrenade( Vector vPhysgunPos );
@@ -204,7 +206,7 @@ void CNPC_Zombine::Spawn( void )
 	m_fIsTorso = false;
 	m_fIsHeadless = false;
 	
-	SetGroundSpeedMultiplier(1.5);
+//	SetGroundSpeedMultiplier(1.5);
 	
 #ifdef HL2_EPISODIC
 	SetBloodColor( BLOOD_COLOR_ZOMBIE );
@@ -999,6 +1001,20 @@ CBaseEntity *CNPC_Zombine::OnFailedPhysGunPickup( Vector vPhysgunPos )
 	CBaseEntity *pGrenade = m_hGrenade;
 	ReleaseGrenade( vPhysgunPos );
 	return pGrenade;
+}
+
+float CNPC_Zombine::GetHitgroupDamageMultiplier( int iHitGroup, const CTakeDamageInfo &info )
+{
+	switch( iHitGroup )
+	{
+	case HITGROUP_HEAD:
+		{
+			// Soldiers take double headshot damage
+			return 2.0f;
+		}
+	}
+
+	return BaseClass::GetHitgroupDamageMultiplier( iHitGroup, info );
 }
 
 //-----------------------------------------------------------------------------

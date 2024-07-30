@@ -121,8 +121,7 @@ struct TickSlider_t
 	char		Name[32];
 	int			min, max; // Value range for ConVars
 	int			numticks; // Number of visible ticks on the slider.
-	float		scale; // Scales the value difference between slider options.
-	
+	float		scale; // Scales the value difference between slider positions.
 	char		Convar[128];
 	
 	// Initializes a given TickSlider array.

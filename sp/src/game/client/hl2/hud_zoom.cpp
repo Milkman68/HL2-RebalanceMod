@@ -26,7 +26,7 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-ConVar hud_zoomsounds( "hud_zoomsounds", "1", FCVAR_ARCHIVE );
+ConVar hud_zoomsounds( "hud_zoomsounds", "0", FCVAR_ARCHIVE );
 
 //-----------------------------------------------------------------------------
 // Purpose: Draws the zoom screen

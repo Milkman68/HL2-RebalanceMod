@@ -4690,7 +4690,7 @@ void CNPC_MetroPolice::StartTask( const Task_t *pTask )
 		
 	case TASK_METROPOLICE_PLAY_COVER_SEQUENCE: //flankmark
 		{
-			SetIdealActivity( GetCoverActivity( NULL ) );
+			SetActivity( GetCoverActivity( NULL ) );
 		break;
 		}
 		
@@ -5399,15 +5399,14 @@ void CNPC_MetroPolice::GatherConditions( void )
 		// slot. If they do not select an attack schedule, then they'll release the slot.
 		
 		// Make sure we're fully loaded before trying to poll.
-		/* if ( GetActiveWeapon() && GetActiveWeapon()->m_iClip1 < GetActiveWeapon()->GetMaxClip1() * 0.85 )
+		if ( GetActiveWeapon() && GetActiveWeapon()->m_iClip1 < GetActiveWeapon()->GetMaxClip1() * 0.6 )
 		{
 			if ( !HasCondition( COND_LOW_PRIMARY_AMMO ) )
 			{
-			//	DevMsg("RELOADING IN COVER\n");
 				SetCondition( COND_LOW_PRIMARY_AMMO );
 			}
 		}
-		else  */if( TryToEnterPistolSlot( SQUAD_SLOT_ATTACK1 ) || TryToEnterPistolSlot( SQUAD_SLOT_ATTACK2 ) )
+		else if( TryToEnterPistolSlot( SQUAD_SLOT_ATTACK1 ) || TryToEnterPistolSlot( SQUAD_SLOT_ATTACK2 ) )
 		{
 			SetCondition( COND_ATTACK_SLOT_AVAILABLE );
 		}
@@ -5727,9 +5726,22 @@ bool CNPC_MetroPolice::CanBecomeElite( void )
 		if ( random->RandomInt(0,100) > 70  )
 		{
 			// Give elites revolvers on maps the player has it.
-			if ( m_bInC17 || FStrEq(STRING(gpGlobals->mapname), "d1_canals_08") || FStrEq(STRING(gpGlobals->mapname), "d1_canals_13") )
+			if ( FStrEq(STRING(gpGlobals->mapname), "d1_canals_08") || FStrEq(STRING(gpGlobals->mapname), "d1_canals_13") )
 			{
 				if ( FStrEq(STRING(m_spawnEquipment), "weapon_pistol") )
+				{
+					m_spawnEquipment = MAKE_STRING( "weapon_357" );
+				}
+			}
+			
+			// Give elites higher grade weapons in the city chapters.
+			if ( m_bInC17 )
+			{
+				if ( FStrEq(STRING(m_spawnEquipment), "weapon_pistol") )
+				{
+					m_spawnEquipment = MAKE_STRING( "weapon_smg1" );
+				}
+				else if ( FStrEq(STRING(m_spawnEquipment), "weapon_smg1") )
 				{
 					m_spawnEquipment = MAKE_STRING( "weapon_357" );
 				}
@@ -5856,41 +5868,47 @@ Vector CNPC_MetroPolice::GetActualShootPosition( const Vector &shootOrigin )
 	return vecTargetPosition;
 }
 //-----------------------------------------------------------------------------
-// Purpose: 
+// Purpose:
 //-----------------------------------------------------------------------------
-bool CNPC_MetroPolice::IsCoverPosition( const Vector &vecThreat, const Vector &vecPosition )
+Activity CNPC_MetroPolice::GetCoverActivity( CAI_Hint *pHint )
 {
-	if ( !GetActiveWeapon() )
-		return BaseClass::IsCoverPosition( vecThreat, vecPosition );
-	
-	// Create a path from us to our enemy.
-	float flLength = GetPathDistanceToPoint( GetAbsOrigin(), vecThreat );
-	
-	// If we can't find one, use default behavior.
-	if ( flLength < 0 )
-		return BaseClass::IsCoverPosition( vecThreat, vecPosition );
-	
-	float flIdealDist = ( GetActiveWeapon()->m_fMaxRange1 - GetActiveWeapon()->m_fMinRange1 ) / 2;
-	
-	// If our enemy is closer than we'd like, take cover from our current position aswell.
-	if ( flLength > flIdealDist )
-		return BaseClass::IsCoverPosition( vecThreat, vecPosition );
+	if ( ShouldForceCrouchCover() )
+	{
+		Activity nCoverActivity = ACT_INVALID;
+		CBaseCombatWeapon *pWeapon = GetActiveWeapon();
 		
-	// Trace a line from ourselves to the cover.
-	trace_t	tr;
-	CTraceFilterLOS filter( NULL, COLLISION_GROUP_NONE, this );
-			
-	AI_TraceLOS( GetAbsOrigin() + EyeOffset(ACT_IDLE), vecPosition, this, &tr, &filter );
-			
-	if( tr.fraction != 1.0 )
-	{
-		return BaseClass::IsCoverPosition( vecThreat, vecPosition );
+		if ( pWeapon && ( FClassnameIs( pWeapon, "weapon_pistol" ) || FClassnameIs( pWeapon, "weapon_357" ) ) )
+		{
+			nCoverActivity = ACT_COVER_PISTOL_LOW;
+			return nCoverActivity;
+		}
+		
+		nCoverActivity = ACT_COVER_SMG1_LOW;
+		return nCoverActivity;
 	}
-	else
+
+	return BaseClass::GetCoverActivity( pHint );
+}
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+Activity CNPC_MetroPolice::GetReloadActivity( CAI_Hint *pHint )
+{
+	if ( ShouldForceCrouchCover() )
 	{
-		// Don't use it if our cover is visible from our current position.
-		return false;
+		Activity nCoverActivity = ACT_INVALID;
+		CBaseCombatWeapon *pWeapon = GetActiveWeapon();
+		
+		if ( pWeapon && ( FClassnameIs( pWeapon, "weapon_pistol" ) || FClassnameIs( pWeapon, "weapon_357" ) ) )
+		{
+			nCoverActivity = ACT_RELOAD_PISTOL_LOW;
+			return nCoverActivity;
+		}
+		
+		nCoverActivity = ACT_RELOAD_SMG1_LOW;
+		return nCoverActivity;
 	}
+
+	return BaseClass::GetReloadActivity( pHint );
 }
 //-----------------------------------------------------------------------------
 //
@@ -6092,7 +6110,7 @@ DEFINE_SCHEDULE
 	"	Tasks "
 	"		TASK_SET_FAIL_SCHEDULE			SCHEDULE:SCHED_COMBAT_FACE"
 	"		TASK_SET_TOLERANCE_DISTANCE		48"
-	"		TASK_GET_PATH_TO_ENEMY_LKP_LOS	0"
+	"		TASK_GET_PATH_TO_ENEMY_LOS_IN_WEAPON_RANGE	0"
 	"		TASK_SPEAK_SENTENCE				6"	// METROPOLICE_SENTENCE_MOVE_INTO_POSITION
 	"		TASK_RUN_PATH					0"
 	"		TASK_METROPOLICE_RESET_LEDGE_CHECK_TIME 0"
@@ -6718,7 +6736,7 @@ DEFINE_SCHEDULE
  "	Tasks"
  "		TASK_STOP_MOVING				0"
  "		TASK_METROPOLICE_PLAY_COVER_SEQUENCE	0"
- "		TASK_WAIT_FACE_ENEMY			3"
+ "		TASK_WAIT_FACE_ENEMY			2"
  ""
  "	Interrupts"
  "		COND_NEW_ENEMY"

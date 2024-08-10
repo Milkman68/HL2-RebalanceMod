@@ -12668,10 +12668,13 @@ bool CAI_BaseNPC::IsCoverPosition( const Vector &vecThreat, const Vector &vecPos
 		
 		AI_TraceLOS( vecThreat, vPos + vEyeOffset, this, &tr, &filter );
 		
-/* 		if( tr.fraction != 1.0 )
+		if ( tr.fraction == 1.0 )
+			SetForceCrouchCover( false );
+		
+ 		/*if( tr.fraction != 1.0 )
 			NDebugOverlay::Box( vPos + vEyeOffset, Vector(-5,-5,-5),Vector(5,5,5), 0,255,0, true, 15.0 );
 		else
-			NDebugOverlay::Box( vPos + vEyeOffset, Vector(-5,-5,-5),Vector(5,5,5), 255,0,0, true, 15.0 ); */
+			NDebugOverlay::Box( vPos + vEyeOffset, Vector(-5,-5,-5),Vector(5,5,5), 255,0,0, true, 15.0 );*/
 	}
 	
 	if( tr.fraction != 1.0 )
@@ -12679,8 +12682,6 @@ bool CAI_BaseNPC::IsCoverPosition( const Vector &vecThreat, const Vector &vecPos
 		if( tr.m_pEnt->m_iClassname == m_iClassname )
 		{
 			// Don't hide behind buddies!
-			
-			SetForceCrouchCover( false );
 			return false;
 		}
 	}
@@ -12698,12 +12699,68 @@ float CAI_BaseNPC::GetCoverPositionScore( const Vector &vecThreat, const Vector 
 	// Setup our distance metrics.
 	float flNodeDist = ( vecThreat - vecCover ).Length();
 	float flNearDist = ( GetAbsOrigin() - vecCover ).Length();
+	float flEnemyDist = ( GetAbsOrigin() - vecThreat ).Length();
 	
 	// Score it based on how close it is to the desired distance from the threat.
 	flNodeScore += ( flIdealDist - fabsf(flNodeDist - flIdealDist) ) / flIdealDist;
 
 	// Bias out nodes that are farther away from us than the enemy.
-	return flNodeScore += 1.0 - ( flNearDist / flNodeDist );
+	flNodeScore += 1.0 - ( flNearDist / flNodeDist );
+	
+	// Give bonus score if this node can double as a firing posistion.
+	if ( ShouldForceCrouchCover() )
+	{
+		flNodeScore += 0.3;
+	}
+	else if ( GetPathDistanceToPoint( GetAbsOrigin(), vecThreat ) != NULL )
+	{
+		// If our enemy can path to us, prefer nodes that can't see our current position.
+		trace_t	tr;
+		CTraceFilterLOS filter( NULL, COLLISION_GROUP_NONE, this );
+
+		AI_TraceLOS( GetAbsOrigin() + EyeOffset(ACT_IDLE), vecCover + EyeOffset(ACT_IDLE), this, &tr, &filter );
+
+		if( tr.fraction == 1.0 )
+			flNodeScore -= ( flIdealDist - fabsf(flEnemyDist - flIdealDist) ) / flIdealDist;
+	}
+	
+	return flNodeScore;
+}
+
+//-----------------------------------------------------------------------------
+
+float CAI_BaseNPC::GetLOSPositionScore( const Vector &vecThreat, const Vector &vecPos, float flIdealDist )
+{
+	float flNodeScore = 0;
+
+	// Setup our distance metrics.
+	float flNodeDist = ( vecThreat - vecPos ).Length();
+	float flNearDist = ( GetAbsOrigin() - vecPos ).Length();
+
+	// Bias out nodes that are farther away from us than the enemy.
+	flNodeScore += 1.0 - ( flNearDist / flNodeDist );
+		
+	SetForceCrouchCover( true );
+		
+	// Temporarily get our crouch cover activity offset.
+	Activity nCoverActivity = GetCoverActivity( NULL );
+	Vector vEyeOffset = EyeOffset(nCoverActivity);
+	
+	SetForceCrouchCover( false );
+	
+	// By default, we ignore the viewer (me) when determining cover positions
+	CTraceFilterLOS filter( NULL, COLLISION_GROUP_NONE, this );
+	
+	trace_t tr;
+	AI_TraceLOS( vecPos + vEyeOffset, vecThreat, this, &tr, &filter );
+		
+	if ( tr.fraction != 1.0 )
+	{
+		// Give bonus score if this node can double as a cover posistion.
+		flNodeScore += 0.5;
+	}
+	
+	return flNodeScore;
 }
 
 //-----------------------------------------------------------------------------
@@ -12713,7 +12770,7 @@ float CAI_BaseNPC::GetPathDistanceToPoint( const Vector& vecStart, const Vector&
 	AI_Waypoint_t *pPathToPoint = GetPathfinder()->BuildRoute( vecStart, vecPosition, NULL, 64, NAV_NONE, true );
 
 	if ( !pPathToPoint )
-		return -1.0;
+		return NULL;
 	
 	CAI_Path tempPath;
 	tempPath.SetWaypoints( pPathToPoint );

@@ -207,7 +207,7 @@ bool CAI_BaseNPC::IsUnusableNode(int iNodeID, CAI_Hint *pHint)
 //-----------------------------------------------------------------------------
 bool CAI_BaseNPC::ValidateNavGoal()
 {
-/* 	if (GetNavigator()->GetGoalType() == GOALTYPE_COVER)
+ 	if (GetNavigator()->GetGoalType() == GOALTYPE_COVER)
 	{
 		// Check if this location will block my enemy's line of sight to me
 		if (GetEnemy())
@@ -230,7 +230,7 @@ bool CAI_BaseNPC::ValidateNavGoal()
 				return false;
 			}
 		}
-	} */
+	}
 	return true;
 }
 

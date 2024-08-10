@@ -992,12 +992,6 @@ bool CAI_BaseNPC::FindCoverFromEnemy( bool bNodesOnly, float flMinDistance, floa
 bool CAI_BaseNPC::FindCoverFromEnemyInRange( float flMinDistance, float flMaxDistance )
 {
 	CBaseEntity *pEntity = GetEnemy();
-	
-	CBaseEntity *pPlayer = gEntList.FindEntityByName( NULL, "!player" );
-	if ( pPlayer && pPlayer)
-	{
-		
-	}
 
 	// Find cover from self if no enemy available
 	if ( pEntity == NULL )
@@ -1014,6 +1008,10 @@ bool CAI_BaseNPC::FindCoverFromEnemyInRange( float flMinDistance, float flMaxDis
 		
 	if ( !GetTacticalServices()->FindCoverPos( GetAbsOrigin(), pEntity->GetAbsOrigin(), pEntity->EyePosition(), flMinDistance, flMaxDistance, &coverPos, flDesiredDist ) )
 		return false;
+	
+	// If it's roughly where were standing, don't bother to path to it.
+	if ( ( GetAbsOrigin() - coverPos ).Length() < 48 )
+		return true;
 
 	AI_NavGoal_t goal( GOALTYPE_COVER, coverPos, ACT_RUN, AIN_HULL_TOLERANCE );
 
@@ -2028,6 +2026,45 @@ void CAI_BaseNPC::StartTask( const Task_t *pTask )
 			}
 
 			if ( !found )
+			{
+				TaskFail( FAIL_NO_SHOOT );
+			}
+			else
+			{
+				// else drop into run task to offer an interrupt
+				m_vInterruptSavePosition = posLos;
+			}
+		}
+		break;
+		
+	case TASK_GET_PATH_TO_ENEMY_LOS_IN_WEAPON_RANGE:
+		{
+			if ( GetEnemy() == NULL )
+			{
+				TaskFail(FAIL_NO_ENEMY);
+				return;
+			}
+		
+			AI_PROFILE_SCOPE(CAI_BaseNPC_FindLosToEnemy);
+			
+			float flMinDistance = 0;
+			float flMaxDistance = 500;
+			
+			float flDesiredDist = 250;
+			
+			if ( GetActiveWeapon() )
+			{
+				flMinDistance = GetActiveWeapon()->m_fMinRange1;
+				flMaxDistance = GetActiveWeapon()->m_fMaxRange1;
+				
+				flDesiredDist = (flMinDistance + flMaxDistance) / 2;
+			}
+
+			Vector vecEnemy 	= GetEnemy()->GetAbsOrigin();
+			Vector vecEnemyEye	= vecEnemy + GetEnemy()->GetViewOffset();
+
+			Vector posLos;
+			if ( !GetTacticalServices()->FindLos( vecEnemy, vecEnemyEye, flMinDistance, flMaxDistance, 1.0, FLANKTYPE_NONE, vec3_origin, 0, &posLos, flDesiredDist ) )
 			{
 				TaskFail( FAIL_NO_SHOOT );
 			}
@@ -3752,6 +3789,28 @@ void CAI_BaseNPC::RunTask( const Task_t *pTask )
 				ClearTaskInterrupt();
 
 				Vector vecEnemy = ( pTask->iTask == TASK_GET_PATH_TO_ENEMY_LOS ) ? GetEnemy()->GetAbsOrigin() : GetEnemyLKP();
+				AI_NavGoal_t goal( m_vInterruptSavePosition, ACT_RUN, AIN_HULL_TOLERANCE );
+
+				GetNavigator()->SetGoal( goal, AIN_CLEAR_TARGET );
+				GetNavigator()->SetArrivalDirection( vecEnemy - goal.dest );
+			}
+			else
+				TaskInterrupt();
+		}
+		break;
+		
+	case TASK_GET_PATH_TO_ENEMY_LOS_IN_WEAPON_RANGE:
+		{
+			if ( GetEnemy() == NULL )
+			{
+				TaskFail(FAIL_NO_ENEMY);
+				return;
+			}
+			if ( GetTaskInterrupt() > 0 )
+			{
+				ClearTaskInterrupt();
+
+				Vector vecEnemy = GetEnemyLKP();
 				AI_NavGoal_t goal( m_vInterruptSavePosition, ACT_RUN, AIN_HULL_TOLERANCE );
 
 				GetNavigator()->SetGoal( goal, AIN_CLEAR_TARGET );

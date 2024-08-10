@@ -177,6 +177,9 @@ enum sharedtasks_e
 
 		// Path to the within shot range of last place this character saw the enemy
 		TASK_GET_PATH_TO_RANGE_ENEMY_LKP_LOS,
+		
+		// Path to a node with line of sight to our enemy nearest to our weapons ideal range.
+		TASK_GET_PATH_TO_ENEMY_LOS_IN_WEAPON_RANGE,
 
 		// Build a path to m_hTargetEnt
 		TASK_GET_PATH_TO_TARGET,

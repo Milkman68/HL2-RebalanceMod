@@ -442,15 +442,14 @@ void CNPC_Combine::GatherConditions()
 			ClearCondition( COND_TAKECOVER_FAILED );
 			
 			// Make sure we're fully loaded before trying to poll.
-			/* if ( GetActiveWeapon() && GetActiveWeapon()->m_iClip1 < GetActiveWeapon()->GetMaxClip1() * 0.85 )
+			if ( GetActiveWeapon() && GetActiveWeapon()->m_iClip1 < GetActiveWeapon()->GetMaxClip1() * 0.6 )
 			{
 				if ( !HasCondition( COND_LOW_PRIMARY_AMMO ) )
 				{
-				//	DevMsg("RELOADING IN COVER\n");
 					SetCondition( COND_LOW_PRIMARY_AMMO );
 				}
 			}
-			else */ if( CanOccupyAttackSlot() )
+			else if( CanOccupyAttackSlot() )
 			{ 
 				SetCondition( COND_COMBINE_ATTACK_SLOT_AVAILABLE );
 			}
@@ -1177,7 +1176,7 @@ void CNPC_Combine::StartTask( const Task_t *pTask )
 		}
 	case TASK_PLAY_COVER_SEQUENCE:
 		{
-			SetIdealActivity( GetCoverActivity( NULL ) );
+			SetActivity( GetCoverActivity( NULL ) );
 		break;
 		}
 	case TASK_RELOAD:
@@ -1823,8 +1822,8 @@ int CNPC_Combine::SelectCombatSchedule()
 	if (HasCondition(COND_ENEMY_OCCLUDED))
 	{
 		// stand up, just in case
-		Stand();
-		DesireStand();
+	//	Stand();
+	//	DesireStand();
 		
 		if ( GetEnemy() )
 		{
@@ -3065,7 +3064,24 @@ bool CNPC_Combine::CheckCanThrowGrenade( const Vector &vecTarget )
 	
 	if( FInViewCone( vecTarget ) && CBaseEntity::FVisible( vecTarget ) )
 	{
-		vecToss = VecCheckThrow( this, EyePosition(), vecTarget, m_flThrowSpeed, 1.0, &vecMins, &vecMaxs );
+		trace_t tr;
+		
+		// Approximate chest-height.
+		Vector vecStart = EyePosition() + Vector( 0, 0, -40 );
+		
+		// HACKHACK: We need to do this trace since soldiers behind waist-high cover will nade themselves 
+		// because the position of their throw animation is lower than their eyes.
+		AI_TraceLine( vecStart, vecTarget, MASK_SHOT|CONTENTS_GRATE, this, COLLISION_GROUP_NONE, &tr );
+		
+		// Do a high toss if this is the case!
+		if ( tr.fraction != 1.0 )
+		{
+			vecToss = VecCheckToss( this, vecStart, vecTarget, -1, 1.0, true, &vecMins, &vecMaxs );
+		}
+		else
+		{
+			vecToss = VecCheckThrow( this, EyePosition(), vecTarget, m_flThrowSpeed, 1.0, &vecMins, &vecMaxs );
+		}
 	}
 	else
 	{
@@ -3793,43 +3809,6 @@ bool CNPC_Combine::IsValidEnemy( CBaseEntity *pEnemy )
 	return BaseClass::IsValidEnemy( pEnemy );
 }
 //-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
-bool CNPC_Combine::IsCoverPosition( const Vector &vecThreat, const Vector &vecPosition )
-{
-	if ( !GetActiveWeapon() )
-		return BaseClass::IsCoverPosition( vecThreat, vecPosition );
-	
-	// Create a path from us to our enemy.
-	float flLength = GetPathDistanceToPoint( GetAbsOrigin(), vecThreat );
-	
-	// If we can't find one, use default behavior.
-	if ( flLength < 0 )
-		return BaseClass::IsCoverPosition( vecThreat, vecPosition );
-	
-	float flIdealDist = ( GetActiveWeapon()->m_fMaxRange1 - GetActiveWeapon()->m_fMinRange1 ) / 2;
-	
-	// If our enemy is closer than we'd like, take cover from our current position aswell.
-	if ( flLength > flIdealDist )
-		return BaseClass::IsCoverPosition( vecThreat, vecPosition );
-		
-	// Trace a line from ourselves to the cover.
-	trace_t	tr;
-	CTraceFilterLOS filter( NULL, COLLISION_GROUP_NONE, this );
-			
-	AI_TraceLOS( GetAbsOrigin() + EyeOffset(ACT_IDLE), vecPosition, this, &tr, &filter );
-			
-	if( tr.fraction != 1.0 )
-	{
-		return BaseClass::IsCoverPosition( vecThreat, vecPosition );
-	}
-	else
-	{
-		// Don't use it if our cover is visible from our current position.
-		return false;
-	}
-}
-//-----------------------------------------------------------------------------
 //
 // Schedules
 //
@@ -3994,7 +3973,7 @@ DEFINE_SCHEDULE
  "	Tasks "
  "		TASK_SET_FAIL_SCHEDULE			SCHEDULE:SCHED_FAIL_ESTABLISH_LINE_OF_FIRE"
  "		TASK_SET_TOLERANCE_DISTANCE		48"
- "		TASK_GET_PATH_TO_ENEMY_LKP_LOS	0"
+ "		TASK_GET_PATH_TO_ENEMY_LOS_IN_WEAPON_RANGE	0"
  "		TASK_COMBINE_SET_STANDING		1"
  "		TASK_SPEAK_SENTENCE				1"
  "		TASK_RUN_PATH					0"
@@ -4222,9 +4201,9 @@ DEFINE_SCHEDULE
 
  "	Tasks"
  "		TASK_STOP_MOVING				0"
- "		TASK_COMBINE_SET_STANDING		0"
+ //"		TASK_COMBINE_SET_STANDING		0"
  "		TASK_PLAY_COVER_SEQUENCE		0"
- "		TASK_WAIT_FACE_ENEMY			3"
+ "		TASK_WAIT_FACE_ENEMY			2"
  ""
  "	Interrupts"
  "		COND_NEW_ENEMY"

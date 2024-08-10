@@ -37,13 +37,12 @@ public:
 	
 	void Init( CAI_Network *pNetwork );
 
-	bool			FindLos( const Vector &threatPos, const Vector &threatEyePos, float minThreatDist, float maxThreatDist, float blockTime, Vector *pResult );
-	bool			FindLos( const Vector &threatPos, const Vector &threatEyePos, float minThreatDist, float maxThreatDist, float blockTime, FlankType_t eFlankType, const Vector &VecFlankRefPos, float flFlankParam, Vector *pResult );
+	bool			FindLos( const Vector &threatPos, const Vector &threatEyePos, float minThreatDist, float maxThreatDist, float blockTime, Vector *pResult, float flDesiredDist = -1.0f );
+	bool			FindLos( const Vector &threatPos, const Vector &threatEyePos, float minThreatDist, float maxThreatDist, float blockTime, FlankType_t eFlankType, const Vector &VecFlankRefPos, float flFlankParam, Vector *pResult, float flDesiredDist = -1.0f );
 	bool			FindLateralLos( const Vector &threatPos, Vector *pResult );
 	bool			FindBackAwayPos( const Vector &vecThreat, Vector *pResult );
-	bool			FindCoverPos( const Vector &vThreatPos, const Vector &vThreatEyePos, float flMinDist, float flMaxDist, Vector *pResult );
-	bool			FindCoverPos( const Vector &vNearPos, const Vector &vThreatPos, const Vector &vThreatEyePos, float flMinDist, float flMaxDist, Vector *pResult );
-	bool			FindCoverPos( const Vector &vNearPos, const Vector &vThreatPos, const Vector &vThreatEyePos, float flMinDist, float flMaxDist, Vector *pResult, float flDesiredDist );
+	bool			FindCoverPos( const Vector &vThreatPos, const Vector &vThreatEyePos, float flMinDist, float flMaxDist, Vector *pResult, float flDesiredDist = -1.0f );
+	bool			FindCoverPos( const Vector &vNearPos, const Vector &vThreatPos, const Vector &vThreatEyePos, float flMinDist, float flMaxDist, Vector *pResult, float flDesiredDist = -1.0f );
 	bool			FindLateralCover( const Vector &vecThreat, float flMinDist, Vector *pResult );
 	bool			FindLateralCover( const Vector &vecThreat, float flMinDist, float distToCheck, int numChecksPerDir, Vector *pResult );
 	bool			FindLateralCover( const Vector &vNearPos, const Vector &vecThreat, float flMinDist, float distToCheck, int numChecksPerDir, Vector *pResult );
@@ -54,11 +53,9 @@ private:
 	// Checks lateral cover
 	bool			TestLateralCover( const Vector &vecCheckStart, const Vector &vecCheckEnd, float flMinDist );
 	bool			TestLateralLos( const Vector &vecCheckStart, const Vector &vecCheckEnd );
-
 	int				FindBackAwayNode( const Vector &vecThreat );
-	int				FindCoverNode( const Vector &vThreatPos, const Vector &vThreatEyePos, float flMinDist, float flMaxDist );
-	int				FindCoverNode( const Vector &vNearPos, const Vector &vThreatPos, const Vector &vThreatEyePos, float flMinDist, float flMaxDist, float flDesiredDist  );
-	int				FindLosNode( const Vector &vThreatPos, const Vector &vThreatEyePos, float flMinThreatDist, float flMaxThreatDist, float flBlockTime, FlankType_t eFlankType, const Vector &vThreatFacing, float flFlankParam );
+	int				FindCoverNode( const Vector &vNearPos, const Vector &vThreatPos, const Vector &vThreatEyePos, float flMinDist, float flMaxDist, float flDesiredDist = -1.0f );
+	int				FindLosNode( const Vector &vThreatPos, const Vector &vThreatEyePos, float flMinThreatDist, float flMaxThreatDist, float flBlockTime, FlankType_t eFlankType, const Vector &vThreatFacing, float flFlankParam, float flDesiredDist = -1.0f );
 
 	Vector			GetNodePos( int );
 

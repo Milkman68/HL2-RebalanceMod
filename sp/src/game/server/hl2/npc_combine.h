@@ -260,8 +260,6 @@ private:
 	void DelaySquadAdvances( float flTime );
 	
 	bool IsValidEnemy( CBaseEntity *pEnemy );
-	
-	bool IsCoverPosition( const Vector &vecThreat, const Vector &vecPosition );
 
 	// Chase the enemy, updating the target position as the player moves
 	void StartTaskChaseEnemyContinuously( const Task_t *pTask );

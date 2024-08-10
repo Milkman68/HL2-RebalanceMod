@@ -22,7 +22,7 @@
 #include "tier0/memdbgon.h"
 
 ConVar ai_find_lateral_cover( "ai_find_lateral_cover", "0" );
-ConVar ai_find_lateral_los( "ai_find_lateral_los", "1" );
+ConVar ai_find_lateral_los( "ai_find_lateral_los", "0" );
 
 #ifdef _DEBUG
 ConVar ai_debug_cover( "ai_debug_cover", "0" );
@@ -73,7 +73,7 @@ void CAI_TacticalServices::Init( CAI_Network *pNetwork )
 	
 //-------------------------------------
 
-bool CAI_TacticalServices::FindLos(const Vector &threatPos, const Vector &threatEyePos, float minThreatDist, float maxThreatDist, float blockTime, FlankType_t eFlankType, const Vector &vecFlankRefPos, float flFlankParam, Vector *pResult)
+bool CAI_TacticalServices::FindLos(const Vector &threatPos, const Vector &threatEyePos, float minThreatDist, float maxThreatDist, float blockTime, FlankType_t eFlankType, const Vector &vecFlankRefPos, float flFlankParam, Vector *pResult, float flDesiredDist )
 {
 	AI_PROFILE_SCOPE( CAI_TacticalServices_FindLos );
 
@@ -81,7 +81,7 @@ bool CAI_TacticalServices::FindLos(const Vector &threatPos, const Vector &threat
 
 	int node = FindLosNode( threatPos, threatEyePos, 
 											 minThreatDist, maxThreatDist, 
-											 blockTime, eFlankType, vecFlankRefPos, flFlankParam );
+											 blockTime, eFlankType, vecFlankRefPos, flFlankParam, flDesiredDist );
 	
 	if (node == NO_NODE)
 		return false;
@@ -92,7 +92,7 @@ bool CAI_TacticalServices::FindLos(const Vector &threatPos, const Vector &threat
 
 //-------------------------------------
 
-bool CAI_TacticalServices::FindLos(const Vector &threatPos, const Vector &threatEyePos, float minThreatDist, float maxThreatDist, float blockTime, Vector *pResult)
+bool CAI_TacticalServices::FindLos(const Vector &threatPos, const Vector &threatEyePos, float minThreatDist, float maxThreatDist, float blockTime, Vector *pResult, float flDesiredDist )
 {
 	return FindLos( threatPos, threatEyePos, minThreatDist, maxThreatDist, blockTime, FLANKTYPE_NONE, vec3_origin, 0, pResult );
 }
@@ -125,28 +125,11 @@ bool CAI_TacticalServices::FindBackAwayPos( const Vector &vecThreat, Vector *pRe
 
 //-------------------------------------
 
-bool CAI_TacticalServices::FindCoverPos( const Vector &vThreatPos, const Vector &vThreatEyePos, float flMinDist, float flMaxDist, Vector *pResult )
+bool CAI_TacticalServices::FindCoverPos( const Vector &vThreatPos, const Vector &vThreatEyePos, float flMinDist, float flMaxDist, Vector *pResult, float flDesiredDist )
 {
 	return FindCoverPos( GetLocalOrigin(), vThreatPos, vThreatEyePos, flMinDist, flMaxDist, pResult );
 }
 //-------------------------------------
-
-bool CAI_TacticalServices::FindCoverPos( const Vector &vNearPos, const Vector &vThreatPos, const Vector &vThreatEyePos, float flMinDist, float flMaxDist, Vector *pResult )
-{
-	AI_PROFILE_SCOPE( CAI_TacticalServices_FindCoverPos );
-
-	MARK_TASK_EXPENSIVE();
-
-	int node = FindCoverNode( vNearPos, vThreatPos, vThreatEyePos, flMinDist, flMaxDist, -1.0 );
-	
-	if (node == NO_NODE)
-		return false;
-
-	*pResult = GetNodePos( node );
-	return true;
-}
-
-//------------------------------------- HACK: Extra Overload
 
 bool CAI_TacticalServices::FindCoverPos( const Vector &vNearPos, const Vector &vThreatPos, const Vector &vThreatEyePos, float flMinDist, float flMaxDist, Vector *pResult, float flDesiredDist )
 {
@@ -347,14 +330,6 @@ int CAI_TacticalServices::FindBackAwayNode(const Vector &vecThreat )
 // if MaxDist isn't supplied, it defaults to a reasonable 
 // value
 //-------------------------------------
-
-int CAI_TacticalServices::FindCoverNode(const Vector &vThreatPos, const Vector &vThreatEyePos, float flMinDist, float flMaxDist )
-{
-	return FindCoverNode(GetLocalOrigin(), vThreatPos, vThreatEyePos, flMinDist, flMaxDist, -1.0 );
-}
-
-//-------------------------------------
-
 int CAI_TacticalServices::FindCoverNode(const Vector &vNearPos, const Vector &vThreatPos, const Vector &vThreatEyePos, float flMinDist, float flMaxDist, float flDesiredDist )
 {
 	if ( !CAI_NetworkManager::NetworksLoaded() )
@@ -401,6 +376,8 @@ int CAI_TacticalServices::FindCoverNode(const Vector &vNearPos, const Vector &vT
 	float flMaxDistSqr = flMaxDist*flMaxDist;
 	
 	int iIdealNode = NULL;
+	bool bWantCrouch = false;
+	
 	float flScore = 0;
 	
 	static int nSearchRandomizer = 0;		// tries to ensure the links are searched in a different order each time;
@@ -418,8 +395,6 @@ int CAI_TacticalServices::FindCoverNode(const Vector &vNearPos, const Vector &vT
 		float dist = (vNearPos - nodeOrigin).LengthSqr();
 		if (dist >= flMinDistSqr && dist < flMaxDistSqr)
 		{
-			GetOuter()->SetForceCrouchCover( false );
-			
 			Activity nCoverActivity = GetOuter()->GetCoverActivity( pNode->GetHint() );
 			Vector vEyePos = nodeOrigin + GetOuter()->EyeOffset(nCoverActivity);
 
@@ -443,12 +418,15 @@ int CAI_TacticalServices::FindCoverNode(const Vector &vNearPos, const Vector &vT
 							
 						if ( flNewScore > flScore )
 						{
+							bWantCrouch = GetOuter()->ShouldForceCrouchCover();
+							
 							flScore = flNewScore;
 							iIdealNode = nodeIndex;
 						}
 					}
 					else
 					{
+						bWantCrouch = GetOuter()->ShouldForceCrouchCover();
 						break;
 					}
 				}
@@ -522,6 +500,8 @@ int CAI_TacticalServices::FindCoverNode(const Vector &vNearPos, const Vector &vT
 			GetOuter()->SetHintNode( pIdealNode->GetHint() );
 		}
 		
+		GetOuter()->SetForceCrouchCover( bWantCrouch );
+		
 		DebugFindCover( pNode->GetId(), vEyePos, vThreatEyePos, 0, 255, 0 );
 		return iIdealNode;
 	}
@@ -548,7 +528,7 @@ int CAI_TacticalServices::FindCoverNode(const Vector &vNearPos, const Vector &vT
 // Output :	int				- ID number of node that meets qualifications
 //-------------------------------------
 
-int CAI_TacticalServices::FindLosNode( const Vector &vThreatPos, const Vector &vThreatEyePos, float flMinThreatDist, float flMaxThreatDist, float flBlockTime, FlankType_t eFlankType, const Vector &vecFlankRefPos, float flFlankParam )
+int CAI_TacticalServices::FindLosNode( const Vector &vThreatPos, const Vector &vThreatEyePos, float flMinThreatDist, float flMaxThreatDist, float flBlockTime, FlankType_t eFlankType, const Vector &vecFlankRefPos, float flFlankParam, float flDesiredDist  )
 {
 	if ( !CAI_NetworkManager::NetworksLoaded() )
 		return NO_NODE;
@@ -578,6 +558,9 @@ int CAI_TacticalServices::FindLosNode( const Vector &vThreatPos, const Vector &v
 	list.Insert( AI_NearNode_t(iMyNode, 0) );
 
 	static int nSearchRandomizer = 0;		// tries to ensure the links are searched in a different order each time;
+	
+	int iIdealNode = NULL;
+	float flScore = 0;
 
 	while ( list.Count() )
 	{
@@ -671,7 +654,29 @@ int CAI_TacticalServices::FindLosNode( const Vector &vThreatPos, const Vector &v
 
 							// The next NPC who searches should use a slight different pattern
 							nSearchRandomizer = nodeIndex;
-							return nodeIndex;
+							
+							// Setup our cover node
+							if ( iIdealNode == NULL )
+								iIdealNode = nodeIndex;
+							
+							// If there's no desired dist, use the first node given to us (This is default behavior)
+							if ( flDesiredDist > 0.0f )
+							{
+							//	NDebugOverlay::Box( nodeOrigin, Vector(5, 5, 5), -Vector(5, 5, 5), 255,0,0, true, 10 );
+								
+								float flNewScore = GetOuter()->GetLOSPositionScore( vThreatPos, nodeOrigin, flDesiredDist );
+									
+								if ( flNewScore > flScore )
+								{
+									flScore = flNewScore;
+									iIdealNode = nodeIndex;
+								}
+							}
+							else
+							{
+								iIdealNode = nodeIndex;
+								break;
+							}
 						}
 						else
 						{
@@ -720,6 +725,15 @@ int CAI_TacticalServices::FindLosNode( const Vector &vThreatPos, const Vector &v
 			}
 		}
 	}
+	
+	if ( iIdealNode != NULL )
+	{
+	//	Vector nodeOrigin = GetNetwork()->GetNode(iIdealNode)->GetPosition(GetHullType());
+	//	NDebugOverlay::Box( nodeOrigin, GetOuter()->GetHullMins(), GetOuter()->GetHullMaxs(), 0,255,0, true, 10 );
+		
+		return iIdealNode;
+	}
+	
 	// We failed.  No range attack node node was found
 	return NO_NODE;
 }

@@ -311,8 +311,9 @@ private:
 	
 	void HandleRandomSpawnEquipment( void );
 	
-	bool IsCoverPosition( const Vector &vecThreat, const Vector &vecPosition );
-
+	Activity GetCoverActivity( CAI_Hint *pHint );
+	Activity GetReloadActivity( CAI_Hint *pHint );
+	
 private:
 	enum
 	{

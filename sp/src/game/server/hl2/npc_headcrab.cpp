@@ -616,8 +616,6 @@ void CBaseHeadcrab::HandleAnimEvent( animevent_t *pEvent )
 		// Ignore if we're in mid air
 		if ( m_bMidJump )
 			return;
-		
-		DevMsg("e\n");
 
 		CBaseEntity *pEnemy = GetEnemy();
 			
@@ -1728,7 +1726,7 @@ int CBaseHeadcrab::OnTakeDamage_Alive( const CTakeDamageInfo &inputInfo )
 	// Certain death from melee weapons!
 	//
 	
-	if (( strcmp(GetClassname(), "npc_headcrab_fast") == 0 ) && ( info.GetDamageType() & DMG_CLUB ))
+	if ( info.GetDamageType() & DMG_CLUB )
 	{
 		info.SetDamage( m_iHealth );
 	}

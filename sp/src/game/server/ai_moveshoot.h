@@ -43,6 +43,7 @@ private:
 
 	bool	m_bMovingAndShooting;
 	bool	m_bNoShootWhileMove;
+	bool	m_bInInitialDelay;
 	float	m_initialDelay;
 	float	m_flSuspendUntilTime;
 

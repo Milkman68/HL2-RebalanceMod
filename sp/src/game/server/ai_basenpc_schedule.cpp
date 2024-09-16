@@ -2038,6 +2038,7 @@ void CAI_BaseNPC::StartTask( const Task_t *pTask )
 		break;
 		
 	case TASK_GET_PATH_TO_ENEMY_LOS_IN_WEAPON_RANGE:
+	case TASK_GET_PATH_TO_ENEMY_LKP_LOS_IN_WEAPON_RANGE:
 		{
 			if ( GetEnemy() == NULL )
 			{
@@ -2060,7 +2061,7 @@ void CAI_BaseNPC::StartTask( const Task_t *pTask )
 				flDesiredDist = (flMinDistance + flMaxDistance) / 2;
 			}
 
-			Vector vecEnemy 	= GetEnemy()->GetAbsOrigin();
+			Vector vecEnemy 	= task == TASK_GET_PATH_TO_ENEMY_LKP_LOS_IN_WEAPON_RANGE ? GetEnemyLKP() : GetEnemy()->GetAbsOrigin();
 			Vector vecEnemyEye	= vecEnemy + GetEnemy()->GetViewOffset();
 
 			Vector posLos;
@@ -3800,6 +3801,7 @@ void CAI_BaseNPC::RunTask( const Task_t *pTask )
 		break;
 		
 	case TASK_GET_PATH_TO_ENEMY_LOS_IN_WEAPON_RANGE:
+	case TASK_GET_PATH_TO_ENEMY_LKP_LOS_IN_WEAPON_RANGE:
 		{
 			if ( GetEnemy() == NULL )
 			{

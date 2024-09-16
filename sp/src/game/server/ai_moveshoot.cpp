@@ -73,7 +73,6 @@ void CAI_MoveAndShootOverlay::StartShootWhileMove()
 		return;
 	}
 	
-	GetOuter()->GetShotRegulator()->FireNoEarlierThan( gpGlobals->curtime + m_initialDelay );
 	m_bNoShootWhileMove = false;
 }
 
@@ -235,6 +234,12 @@ void CAI_MoveAndShootOverlay::RunShootWhileMove()
 		// time to fire?
 		if ( pOuter->HasCondition( COND_CAN_RANGE_ATTACK1, false ) )
 		{
+			if ( !m_bInInitialDelay )
+			{
+				GetOuter()->GetShotRegulator()->FireNoEarlierThan( gpGlobals->curtime + m_initialDelay );
+				m_bInInitialDelay = true;
+			}
+			
 			if ( pOuter->GetShotRegulator()->IsInRestInterval() )
 			{
 				EndShootWhileMove();
@@ -256,14 +261,19 @@ void CAI_MoveAndShootOverlay::RunShootWhileMove()
 				}
 			}
 		}
-		else if ( pOuter->HasCondition( COND_NO_PRIMARY_AMMO, false ) )
+		else 
 		{
-			if ( pOuter->GetNavigator()->GetPathTimeToGoal() > 1.0 )
+			if ( pOuter->HasCondition( COND_NO_PRIMARY_AMMO, false ) )
 			{
-				activity = pOuter->TranslateActivity( ACT_GESTURE_RELOAD );
-				if ( activity != ACT_INVALID && GetOuter()->HaveSequenceForActivity( activity ) )
-					pOuter->AddGesture( activity );
+				if ( pOuter->GetNavigator()->GetPathTimeToGoal() > 1.0 )
+				{
+					activity = pOuter->TranslateActivity( ACT_GESTURE_RELOAD );
+					if ( activity != ACT_INVALID && GetOuter()->HaveSequenceForActivity( activity ) )
+						pOuter->AddGesture( activity );
+				}
 			}
+			
+			m_bInInitialDelay = false;
 		}
 	}
 

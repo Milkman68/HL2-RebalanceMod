@@ -3239,18 +3239,63 @@ bool CNPC_MetroPolice::TryToEnterPistolSlot( int nSquadSlot )
 {
 	// This logic here will not allow us to occupy the a squad slot
 	// too soon after we already were in it.
-	if ( /* ( m_LastShootSlot != nSquadSlot || !m_TimeYieldShootSlot.Expired() )  && */ OccupyStrategySlot( nSquadSlot ) )
+	if (  ( m_LastShootSlot != nSquadSlot || !m_TimeYieldShootSlot.Expired() ) && OccupyStrategySlot( nSquadSlot ) )
 	{
-	//	if ( m_LastShootSlot != nSquadSlot )
-	//	{
+		if ( m_LastShootSlot != nSquadSlot )
+		{
 			m_TimeYieldShootSlot.Reset();
 			m_LastShootSlot = nSquadSlot;
-	//	}
+		}
 		return true;
 	}
 
 	return false;
 }
+
+//-----------------------------------------------------------------------------
+// Updated version of the above function 
+//-----------------------------------------------------------------------------
+bool CNPC_MetroPolice::CanOccupyAttackSlot( void )
+{
+	// We can attack but no slots are available.
+	if ( IsStrategySlotRangeOccupied(SQUAD_SLOT_ATTACK1, SQUAD_SLOT_ATTACK2) && HasCondition( COND_CAN_RANGE_ATTACK1 ) )
+	{
+		AISquadIter_t iter;
+		CAI_BaseNPC *pSquadmate = m_pSquad ? m_pSquad->GetFirstMember( &iter ) : NULL;
+		
+		bool bOverrideSlot = false;
+		
+		// Iterate through the squad.
+		while ( pSquadmate )
+		{
+			CNPC_MetroPolice *pCombine = dynamic_cast<CNPC_MetroPolice*>(pSquadmate);
+			if( pSquadmate )
+			{
+				// Check if any squadmembers have a slot that currently isn't being used for attacking.
+				if ( pCombine->HasStrategySlotRange( SQUAD_SLOT_ATTACK1, SQUAD_SLOT_ATTACK2 ) && !pCombine->HasCondition( COND_CAN_RANGE_ATTACK1 ) )
+				{
+					bOverrideSlot = true;
+					break;
+				}
+				
+				pSquadmate = m_pSquad->GetNextMember( &iter );
+			}
+		}
+		
+		// If we found a member with an unused slot, take that slot for ourselves and interrupt their current schedule.
+		if ( bOverrideSlot )
+		{
+			pSquadmate->VacateStrategySlot();
+			pSquadmate->SetCondition( COND_ATTACK_SLOT_TAKEN );
+		}
+		
+	}
+	
+	if ( OccupyStrategySlotRange( SQUAD_SLOT_ATTACK1, SQUAD_SLOT_ATTACK2 ) )
+		return true;
+	
+	return false;
+}  
 
 
 //-----------------------------------------------------------------------------
@@ -3266,7 +3311,7 @@ int CNPC_MetroPolice::SelectRangeAttackSchedule()
 	}
 
 	// Range attack if we're able
-	if( ( TryToEnterPistolSlot( SQUAD_SLOT_ATTACK1 ) || TryToEnterPistolSlot( SQUAD_SLOT_ATTACK2 ) ) )
+	if( CanOccupyAttackSlot() )
 		return SCHED_RANGE_ATTACK1;
 	
 	// We're not in a shoot slot... so we've allowed someone else to grab it
@@ -3517,7 +3562,7 @@ int CNPC_MetroPolice::SelectCombatSchedule()
 		if ( GetEnemy() && !(GetEnemy()->GetFlags() & FL_NOTARGET) )
 		{
 			// Charge in and break the enemy's cover!
-			if ( TryToEnterPistolSlot( SQUAD_SLOT_ATTACK1 ) || TryToEnterPistolSlot( SQUAD_SLOT_ATTACK2 ) )
+			if ( CanOccupyAttackSlot() )
 			{
 				return SCHED_ESTABLISH_LINE_OF_FIRE;
 			}
@@ -4373,7 +4418,7 @@ int CNPC_MetroPolice::SelectFailSchedule( int failedSchedule, int failedTask, AI
 			if( failedSchedule == SCHED_METROPOLICE_HIDE_AND_RELOAD  )
 				return SCHED_RELOAD;
 	
-			if ( HasCondition( COND_CAN_RANGE_ATTACK1 ) && ( TryToEnterPistolSlot( SQUAD_SLOT_ATTACK1 ) || TryToEnterPistolSlot( SQUAD_SLOT_ATTACK2 ) ) )
+			if ( HasCondition( COND_CAN_RANGE_ATTACK1 ) && CanOccupyAttackSlot() )
 				return SCHED_RANGE_ATTACK1;
 		}
 		
@@ -4529,9 +4574,7 @@ int CNPC_MetroPolice::TranslateSchedule( int scheduleType )
 		
 	case SCHED_METROPOLICE_TAKECOVER_FAILED:
 		{
-			if ( HasCondition( COND_CAN_RANGE_ATTACK1 ) 
-			&& ( TryToEnterPistolSlot( SQUAD_SLOT_ATTACK1 ) 
-			|| TryToEnterPistolSlot( SQUAD_SLOT_ATTACK2 ) ) )
+			if ( HasCondition( COND_CAN_RANGE_ATTACK1 ) && CanOccupyAttackSlot() )
 			{
 				return TranslateSchedule( SCHED_RANGE_ATTACK1 );
 			}
@@ -4590,7 +4633,7 @@ bool CNPC_MetroPolice::ShouldMoveAndShoot()
 		{
 			return true; // already have the slot I need
 		}
-		else if( TryToEnterPistolSlot( SQUAD_SLOT_ATTACK1 ) || TryToEnterPistolSlot( SQUAD_SLOT_ATTACK2 ) )
+		else if( CanOccupyAttackSlot() )
 		{
 			return true;
 		}
@@ -5357,6 +5400,15 @@ void CNPC_MetroPolice::BuildScheduleTestBits( void )
 	{
 		ClearCustomInterruptCondition( COND_CAN_MELEE_ATTACK1 );
 	}
+	
+	if ( IsCurSchedule( SCHED_METROPOLICE_ESTABLISH_LINE_OF_FIRE )  )
+	{
+		SetCustomInterruptCondition( COND_ATTACK_SLOT_TAKEN );
+	}
+	else
+	{
+		ClearCustomInterruptCondition( COND_ATTACK_SLOT_TAKEN );
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -5406,7 +5458,7 @@ void CNPC_MetroPolice::GatherConditions( void )
 				SetCondition( COND_LOW_PRIMARY_AMMO );
 			}
 		}
-		else if( TryToEnterPistolSlot( SQUAD_SLOT_ATTACK1 ) || TryToEnterPistolSlot( SQUAD_SLOT_ATTACK2 ) )
+		else if( CanOccupyAttackSlot() )
 		{
 			SetCondition( COND_ATTACK_SLOT_AVAILABLE );
 		}
@@ -5979,6 +6031,7 @@ AI_BEGIN_CUSTOM_NPC( npc_metropolice, CNPC_MetroPolice )
 	DECLARE_CONDITION( COND_METROPOLICE_PHYSOBJECT_ASSAULT );
 	DECLARE_CONDITION( COND_METROPOLICE_SWITCHED_WEAPON );
 	DECLARE_CONDITION( COND_ATTACK_SLOT_AVAILABLE );
+	DECLARE_CONDITION( COND_ATTACK_SLOT_TAKEN );
 
 
 	//=========================================================
@@ -6669,21 +6722,27 @@ DEFINE_SCHEDULE
 
 	"	Tasks"
 	"		TASK_SET_FAIL_SCHEDULE			SCHEDULE:SCHED_METROPOLICE_TAKECOVER_FAILED"
+	"		TASK_STOP_MOVING				0"
 	"		TASK_FIND_COVER_FROM_ENEMY_IN_WEAPON_RANGE		0"
 	"		TASK_RUN_PATH					0"
 	"		TASK_WAIT_FOR_MOVEMENT			0"
 	"		TASK_REMEMBER					MEMORY:INCOVER"
+	"		TASK_FACE_ENEMY					0"
 	"		TASK_SET_SCHEDULE				SCHEDULE:SCHED_METROPOLICE_WAIT_IN_COVER"
 	""
 	"	Interrupts"
 	"		COND_NEW_ENEMY"
+	"		COND_CAN_MELEE_ATTACK1"
+	"		COND_CAN_MELEE_ATTACK2"
 	"		COND_HEAR_DANGER"
+	"		COND_HEAR_MOVE_AWAY"
 )
  DEFINE_SCHEDULE
  (
  SCHED_METROPOLICE_TAKECOVER_FAILED,
 
  "	Tasks"
+ "		TASK_STOP_MOVING					0"
  ""
  "	Interrupts"
  )
@@ -6736,7 +6795,7 @@ DEFINE_SCHEDULE
  "	Tasks"
  "		TASK_STOP_MOVING				0"
  "		TASK_METROPOLICE_PLAY_COVER_SEQUENCE	0"
- "		TASK_WAIT_FACE_ENEMY			2"
+ "		TASK_FACE_ENEMY					0"
  ""
  "	Interrupts"
  "		COND_NEW_ENEMY"

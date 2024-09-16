@@ -103,12 +103,12 @@ Wedge's notes:
 #define GUNSHIP_HEAD_MAX_LEFT		60
 #define GUNSHIP_HEAD_MAX_RIGHT		-60
 
-#define	BASE_STITCH_VELOCITY		1500    //Units per second
-#define	MAX_STITCH_VELOCITY			1500	//Units per second
+#define	BASE_STITCH_VELOCITY		800		//Units per second
+#define	MAX_STITCH_VELOCITY			1000	//Units per second
 
 #define	GUNSHIP_LEAD_DISTANCE		800.0f
 #define	GUNSHIP_AVOID_DIST			512.0f
-#define	GUNSHIP_STITCH_MIN			0.0f
+#define	GUNSHIP_STITCH_MIN			512.0f
 
 #define	GUNSHIP_MIN_CHASE_DIST_DIFF	128.0f	// Distance threshold used to determine when a target has moved enough to update our navigation to it
 
@@ -125,7 +125,7 @@ Wedge's notes:
 #define GUNSHIP_BELLYBLAST_TARGET_HEIGHT	512.0		// Height above targets that the gunship wants to be when bellyblasting
 
 #define GUNSHIP_MISSILE_MAX_RESPONSE_TIME	0.4
-#define GUNSHIP_MAX_HITS_PER_BURST			999
+#define GUNSHIP_MAX_HITS_PER_BURST			5
 
 #define GUNSHIP_FLARE_IGNORE_TIME		6.0
 
@@ -1727,7 +1727,6 @@ void CNPC_CombineGunship::FireCannonRound( void )
 		// Fire directly at the target
 		FireBulletsInfo_t info( 1, vecMuzzle, vecToEnemy, vec3_origin, MAX_COORD_RANGE, m_iAmmoType );
 		info.m_iTracerFreq = 1;
-
 		CAmmoDef *pAmmoDef = GetAmmoDef();
 		info.m_iPlayerDamage = pAmmoDef->PlrDamage( m_iAmmoType );
 
@@ -1735,7 +1734,7 @@ void CNPC_CombineGunship::FireCannonRound( void )
 		// player multiple times during a single burst.
 		if ( m_iBurstHits >= GUNSHIP_MAX_HITS_PER_BURST )
 		{
-			info.m_iPlayerDamage = 1;//bookmark1
+			info.m_iPlayerDamage = 1;
 		}
 
 		FireBullets( info );
@@ -2947,14 +2946,14 @@ int	CNPC_CombineGunship::OnTakeDamage_Alive( const CTakeDamageInfo &inputInfo )
 		// Take a percentage of our health away
 		// Adjust health for damage
 		int iHealthIncrements = sk_gunship_health_increments.GetInt();
- 		if ( g_pGameRules->IsSkillLevel( SKILL_EASY ) )
+		if ( g_pGameRules->IsSkillLevel( SKILL_EASY ) )
 		{
 			iHealthIncrements = ceil( iHealthIncrements * 0.5 );
 		}
-		/*else if ( g_pGameRules->IsSkillLevel( SKILL_HARD ) )
+		else if ( g_pGameRules->IsSkillLevel( SKILL_HARD ) )
 		{
 			iHealthIncrements = floor( iHealthIncrements * 1.5 );
-		} */
+		}
 		info.SetDamage( ( GetMaxHealth() / (float)iHealthIncrements ) + 1 );
 		
 		// Find out which "stage" we're at in our health
@@ -3031,17 +3030,17 @@ void CNPC_CombineGunship::StartCannonBurst( int iBurstSize )
 	{
 		// Follow mode
 		Vector	enemyPos;
-		UTIL_PredictedPosition( GetEnemy(), 1.0f, &enemyPos );
+		UTIL_PredictedPosition( GetEnemy(), 2.0f, &enemyPos );
 
 		QAngle offsetAngles;
 		Vector offsetDir = ( WorldSpaceCenter() - enemyPos );
 		VectorNormalize( offsetDir );
 		VectorAngles( offsetDir, offsetAngles );
 
-		int angleOffset = random->RandomInt( 0, 1 ); // 15-30
+		int angleOffset = random->RandomInt( 15, 30 );
 		if ( random->RandomInt( 0, 1 ) )
 		{
-			angleOffset *= 0; // -1
+			angleOffset *= -1;
 		}
 		offsetAngles[YAW] += angleOffset;
 		offsetAngles[PITCH] = 0;
@@ -3226,4 +3225,3 @@ AI_BEGIN_CUSTOM_NPC( npc_combinegunship, CNPC_CombineGunship )
 
 
 AI_END_CUSTOM_NPC()
-

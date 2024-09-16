@@ -45,9 +45,9 @@ private:
 // Challenge page elements
 //------------------------------------------------------------------------------
 CheckButton* ExplosiveCrabsButton;
-CheckButton* FearMovementButton;
+//CheckButton* FearMovementButton;
 CheckButton* ShorterSprintButton;
-CheckButton* LessAmmoButton;
+//CheckButton* LessAmmoButton;
 CheckButton* EnemyPromotionButton;
 CheckButton* RandomWeaponsButton;
 CheckButton* ReducedAssistsButton;
@@ -57,9 +57,9 @@ CheckButton* SmallerReservesButton;
 CheckButton_t C_CheckButtons[] =
 {
 	{ ExplosiveCrabsButton, "ExplosiveCrabsButton", "hl2r_explosive_crabs" },
-	{ FearMovementButton, "FearMovementButton", "hl2r_fear_style_movement" },
+	//{ FearMovementButton, "FearMovementButton", "hl2r_fear_style_movement" },
 	{ ShorterSprintButton, "ShorterSprintButton", "hl2r_shorter_sprint" },
-	{ LessAmmoButton, "LessAmmoButton", "hl2r_less_ammo" },
+	//{ LessAmmoButton, "LessAmmoButton", "hl2r_less_ammo" },
 	{ EnemyPromotionButton, "EnemyPromotionButton", "hl2r_enemy_promotion" },
 	{ RandomWeaponsButton, "RandomWeaponsButton", "hl2r_random_weapons" },
 	{ ReducedAssistsButton, "ReducedAssistsButton", "hl2r_reduced_assists" },

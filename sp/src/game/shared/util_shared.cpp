@@ -778,7 +778,7 @@ void UTIL_BloodDrips( const Vector &origin, const Vector &direction, int color, 
 	if ( !UTIL_ShouldShowBlood( color ) )
 		return;
 
-	if ( color == DONT_BLEED || amount == 0 )
+	if ( color == DONT_BLEED /* || amount == 0 */ )
 		return;
 
 	if ( g_Language.GetInt() == LANGUAGE_GERMAN && color == BLOOD_COLOR_RED )
@@ -796,10 +796,8 @@ void UTIL_BloodDrips( const Vector &origin, const Vector &direction, int color, 
 	if (color == BLOOD_COLOR_MECH)
 	{
 		g_pEffects->Sparks(origin);
-		if (random->RandomFloat(0, 2) >= 1)
-		{
-			UTIL_Smoke(origin, random->RandomInt(10, 15), 10);
-		}
+		g_pEffects->Ricochet(origin, direction);
+		UTIL_Smoke(origin, random->RandomInt(10, 15), 10);
 	}
 	else
 	{

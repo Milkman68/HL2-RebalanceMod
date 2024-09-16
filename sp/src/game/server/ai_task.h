@@ -180,6 +180,9 @@ enum sharedtasks_e
 		
 		// Path to a node with line of sight to our enemy nearest to our weapons ideal range.
 		TASK_GET_PATH_TO_ENEMY_LOS_IN_WEAPON_RANGE,
+		
+		// Path to a node with line of sight to our enemy's last known position nearest to our weapons ideal range.
+		TASK_GET_PATH_TO_ENEMY_LKP_LOS_IN_WEAPON_RANGE,
 
 		// Build a path to m_hTargetEnt
 		TASK_GET_PATH_TO_TARGET,

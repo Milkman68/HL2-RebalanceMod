@@ -38,6 +38,8 @@
 #define BOLT_MODEL	"models/weapons/w_missile_closed.mdl"
 
 extern ConVar sk_plr_dmg_crossbow;
+extern ConVar sk_plr_dmg_crossbow_charged;
+
 extern ConVar sk_npc_dmg_crossbow;
 
 extern ConVar sk_alternate_recoil;
@@ -74,14 +76,14 @@ public:
 	void BoltTouch( CBaseEntity *pOther );
 	bool CreateVPhysics( void );
 	unsigned int PhysicsSolidMaskForEntity() const;
-	static CCrossbowBolt *BoltCreate( const Vector &vecOrigin, const QAngle &angAngles, CBasePlayer *pentOwner = NULL, float flChargePerc = 0.0f );
+	static CCrossbowBolt *BoltCreate( const Vector &vecOrigin, const QAngle &angAngles, CBasePlayer *pentOwner = NULL, float flDamage = NULL );
 
 protected:
 
 	bool	CreateSprites( void );
 
 	CHandle<CSprite>		m_pGlowSprite;
-	float					m_flChargePerc;
+	float					m_flDamage;
 	//CHandle<CSpriteTrail>	m_pGlowTrail;
 
 	DECLARE_DATADESC();
@@ -96,7 +98,7 @@ BEGIN_DATADESC( CCrossbowBolt )
 
 	// These are recreated on reload, they don't need storage
 	DEFINE_FIELD( m_pGlowSprite, FIELD_EHANDLE ),
-	DEFINE_FIELD( m_flChargePerc, FIELD_FLOAT ),
+	DEFINE_FIELD( m_flDamage, FIELD_FLOAT ),
 	//DEFINE_FIELD( m_pGlowTrail, FIELD_EHANDLE ),
 
 END_DATADESC()
@@ -104,7 +106,7 @@ END_DATADESC()
 IMPLEMENT_SERVERCLASS_ST( CCrossbowBolt, DT_CrossbowBolt )
 END_SEND_TABLE()
 
-CCrossbowBolt *CCrossbowBolt::BoltCreate( const Vector &vecOrigin, const QAngle &angAngles, CBasePlayer *pentOwner, float flChargePerc )
+CCrossbowBolt *CCrossbowBolt::BoltCreate( const Vector &vecOrigin, const QAngle &angAngles, CBasePlayer *pentOwner, float flDamage )
 {
 	// Create a new entity with CCrossbowBolt private data
 	CCrossbowBolt *pBolt = (CCrossbowBolt *)CreateEntityByName( "crossbow_bolt" );
@@ -112,7 +114,7 @@ CCrossbowBolt *CCrossbowBolt::BoltCreate( const Vector &vecOrigin, const QAngle 
 	pBolt->SetAbsAngles( angAngles );
 	pBolt->Spawn();
 	pBolt->SetOwnerEntity( pentOwner );
-	pBolt->m_flChargePerc = flChargePerc;
+	pBolt->m_flDamage = flDamage != NULL ? flDamage : sk_plr_dmg_crossbow.GetFloat();
 
 	return pBolt;
 }
@@ -238,11 +240,9 @@ void CCrossbowBolt::BoltTouch( CBaseEntity *pOther )
 			return;
 		}
 #endif//HL2_EPISODIC
-
-		float m_flDamage = sk_plr_dmg_crossbow.GetFloat();
 		
 		// MODIFIED MAPBASE CODE BELOW!!
-		CBaseAnimating *pOtherAnimating = pOther->GetBaseAnimating();
+/* 		CBaseAnimating *pOtherAnimating = pOther->GetBaseAnimating();
 		if (pOtherAnimating && pOtherAnimating->GetModelPtr() && pOtherAnimating->GetModelPtr()->numbones() > 1)
 		{
 			// Iterate through all bones.
@@ -309,12 +309,12 @@ void CCrossbowBolt::BoltTouch( CBaseEntity *pOther )
 				
 				tr.physicsbone = pOtherAnimating->GetPhysicsBone(iClosestBone);
 			}
-		}
+		} */
 
 		if( GetOwnerEntity() && GetOwnerEntity()->IsPlayer() && pOther->IsNPC() )
 		{
 			// Multiply damage by our charge percentage.
-			CTakeDamageInfo	dmgInfo( this, GetOwnerEntity(), m_flDamage * m_flChargePerc, DMG_BULLET | DMG_NEVERGIB );
+			CTakeDamageInfo	dmgInfo( this, GetOwnerEntity(), m_flDamage, DMG_BULLET | DMG_NEVERGIB );
 			
 			dmgInfo.AdjustPlayerDamageInflictedForSkillLevel();
 			CalculateMeleeDamageForce( &dmgInfo, vecNormalizedVel, tr.endpos, 0.7f );
@@ -326,7 +326,7 @@ void CCrossbowBolt::BoltTouch( CBaseEntity *pOther )
 			pAnim = dynamic_cast<CBaseAnimating*>(pOther);
 			
 			// Only ignite at full charge.
-			if( pAnim && m_flChargePerc >= 1.0 )
+			if( pAnim && m_flDamage == sk_plr_dmg_crossbow_charged.GetFloat() )
 			{
 				pAnim->Ignite( 30.0f );
 			}
@@ -781,12 +781,12 @@ void CWeaponCrossbow::FireBolt( void )
 	// Only start increasing damage after 1/3 of the max charge time has occurred.
 	float flChargeTime = MAX( gpGlobals->curtime - ( m_flChargeTime + flChargeRatio ), 0.0f );
 	
-	// Start at 25% damage and increase to 100% at full charge.
-	float flChargePerc = RemapValClamped( flChargeTime, 0.0f, CHARGE_TIME - flChargeRatio, 0.25f, 1.0 );
-	
-	//DevMsg("Damage is: %f\n", sk_plr_dmg_crossbow.GetFloat() * flChargePerc );
+	// Lerp from default dmg to charged dmg based on our charge.
+	float flDamage = RemapValClamped( flChargeTime, 0.0f, CHARGE_TIME - flChargeRatio, 
+	sk_plr_dmg_crossbow.GetFloat(), 
+	sk_plr_dmg_crossbow_charged.GetFloat() );
 
-	CCrossbowBolt *pBolt = CCrossbowBolt::BoltCreate( vecSrc, angAiming, pOwner, flChargePerc );
+	CCrossbowBolt *pBolt = CCrossbowBolt::BoltCreate( vecSrc, angAiming, pOwner, flDamage );
 
 	if ( pOwner->GetWaterLevel() == 3 )
 	{

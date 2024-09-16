@@ -27,6 +27,7 @@
 #include "hl2_shareddefs.h"
 #include "rumble_shared.h"
 #include "gamestats.h"
+#include "ndebugoverlay.h"
 
 #ifdef PORTAL
 	#include "portal_util_shared.h"
@@ -40,6 +41,8 @@
 #include "tier0/memdbgon.h"
 
 static ConVar sk_apc_missile_damage("sk_apc_missile_damage", "15");
+extern ConVar sk_plr_dmg_rpg_round;
+extern ConVar sk_npc_dmg_rpg_round;
 ConVar rpg_missle_use_custom_detonators( "rpg_missle_use_custom_detonators", "1" );
 ConVar sk_rpg_missile_speed("sk_rpg_missile_speed", "1500");
 
@@ -165,7 +168,15 @@ void CMissile::Spawn( void )
 	SetThink( &CMissile::IgniteThink );
 	
 	SetNextThink( gpGlobals->curtime + 0.3f );
-	SetDamage( 200.0f );
+	
+	if ( GetOwnerEntity() && GetOwnerEntity()->Classify() == CLASS_COMBINE )
+	{
+		SetDamage( sk_npc_dmg_rpg_round.GetFloat() );
+	}
+	else
+	{
+		SetDamage( sk_plr_dmg_rpg_round.GetFloat() );
+	}
 
 	m_takedamage = DAMAGE_YES;
 	m_iHealth = m_iMaxHealth = 100;
@@ -1393,6 +1404,8 @@ PRECACHE_WEAPON_REGISTER(weapon_rpg);
 acttable_t	CWeaponRPG::m_acttable[] = 
 {
 	{ ACT_RANGE_ATTACK1, ACT_RANGE_ATTACK_RPG, true },
+	{ ACT_RELOAD, ACT_RELOAD_ANNABELLE, true },
+	{ ACT_RELOAD_LOW, ACT_RELOAD_ANNABELLE_LOW, true },
 
 	{ ACT_IDLE_RELAXED,				ACT_IDLE_RPG_RELAXED,			true },
 	{ ACT_IDLE_STIMULATED,			ACT_IDLE_ANGRY_RPG,				true },
@@ -1404,6 +1417,8 @@ acttable_t	CWeaponRPG::m_acttable[] =
 	{ ACT_WALK_CROUCH,				ACT_WALK_CROUCH_RPG,			true },
 	{ ACT_RUN,						ACT_RUN_RPG,					true },
 	{ ACT_RUN_CROUCH,				ACT_RUN_CROUCH_RPG,				true },
+	{ ACT_WALK_AIM,					ACT_WALK_AIM_RIFLE,				true },
+	{ ACT_RUN_AIM,					ACT_RUN_AIM_RIFLE,				true },
 	{ ACT_COVER_LOW,				ACT_COVER_LOW_RPG,				true },
 };
 
@@ -1545,6 +1560,9 @@ void CWeaponRPG::Operator_HandleAnimEvent( animevent_t *pEvent, CBaseCombatChara
 			{
 				m_hLaserDot->TurnOff();
 			}
+			
+			if( GetOwner()->Classify() == CLASS_COMBINE )
+				m_iClip1--;
 		}
 		break;
 
@@ -1600,7 +1618,10 @@ void CWeaponRPG::PrimaryAttack( void )
 	
 	if ( pOwner == NULL )
 		return;
-
+	
+	if( GetOwner() && GetOwner()->Classify() == CLASS_COMBINE )
+		m_flNextPrimaryAttack = gpGlobals->curtime + 2.5f;
+	
 	Vector	vForward, vRight, vUp;
 
 	pOwner->EyeVectors( &vForward, &vRight, &vUp );
@@ -2029,12 +2050,31 @@ bool CWeaponRPG::Reload()
 bool CWeaponRPG::WeaponLOSCondition( const Vector &ownerPos, const Vector &targetPos, bool bSetConditions )
 {
 	bool bResult = BaseClass::WeaponLOSCondition( ownerPos, targetPos, bSetConditions );
-
-	if( bResult )
+	
+	CAI_BaseNPC* npcOwner = GetOwner()->MyNPCPointer();
+	if( bResult && npcOwner)
 	{
-		CAI_BaseNPC* npcOwner = GetOwner()->MyNPCPointer();
-
-		if( npcOwner )
+		if( GetOwner()->Classify() == CLASS_COMBINE  )
+		{
+			trace_t tr;
+			
+			Vector vecRelativeShootPosition;
+			VectorSubtract( npcOwner->Weapon_ShootPosition(), npcOwner->GetAbsOrigin(), vecRelativeShootPosition );
+			Vector vecMuzzle = ownerPos + vecRelativeShootPosition;
+			Vector vecShootDir = npcOwner->GetActualShootTrajectory( vecMuzzle );
+			
+			float flDist = ( vecMuzzle - targetPos ).Length();
+			UTIL_TraceHull( vecMuzzle, vecMuzzle + vecShootDir * flDist, Vector(-4,-4,-4), Vector(4,4,4), MASK_SHOT|CONTENTS_GRATE, GetOwner(), COLLISION_GROUP_NONE, &tr );
+			
+			if( tr.fraction < 0.8 )
+			{
+				if ( bSetConditions )
+					npcOwner->SetCondition( COND_WEAPON_SIGHT_OCCLUDED );
+				
+				bResult = false;
+			}
+		}
+		else
 		{
 			trace_t tr;
 
@@ -2064,8 +2104,32 @@ int CWeaponRPG::WeaponRangeAttack1Condition( float flDot, float flDist )
 {
 	if ( m_hMissile != NULL )
 		return 0;
+	
+	if( GetOwner() && GetOwner()->Classify() == CLASS_COMBINE )
+	{
+		CAI_BaseNPC *pNPC = GetOwner()->MyNPCPointer();
+		CBaseEntity *pEnemy = pNPC->GetEnemy();
+		
+		flDist = ( pEnemy->GetAbsOrigin() - pNPC->GetAbsOrigin() ).Length();
+		
+		Vector vecMuzzle = pNPC->Weapon_ShootPosition();
+		Vector vecShootDir = pNPC->GetActualShootTrajectory( vecMuzzle );
 
-	// Ignore vertical distance when doing our RPG distance calculations
+		trace_t tr;
+		UTIL_TraceHull( vecMuzzle, vecMuzzle + vecShootDir * flDist, Vector(-4,-4,-4), Vector(4,4,4), MASK_SHOT|CONTENTS_GRATE, GetOwner(), COLLISION_GROUP_NONE, &tr );
+		
+		if ( ( tr.startpos - tr.endpos ).Length() < 128 )
+			return COND_TOO_CLOSE_TO_ATTACK;
+		
+		UTIL_TraceLine( vecMuzzle, vecMuzzle + Vector(0, 16, 0), MASK_SHOT|CONTENTS_GRATE, GetOwner(), COLLISION_GROUP_NONE, &tr );
+		
+		if( tr.fraction != 1.0 )
+			return COND_WEAPON_SIGHT_OCCLUDED;
+
+		return COND_CAN_RANGE_ATTACK1;
+	}
+
+ 	// Ignore vertical distance when doing our RPG distance calculations
 	CAI_BaseNPC *pNPC = GetOwner()->MyNPCPointer();
 	if ( pNPC )
 	{
@@ -2216,6 +2280,19 @@ void CWeaponRPG::UpdateLaserEffects( void )
 	{
 		m_hLaserMuzzleSprite->SetScale( 0.1f + random->RandomFloat( -0.025f, 0.025f ) );
 	}
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+int CWeaponRPG::GetMaxClip1( void ) const
+{
+	if( GetOwner() && GetOwner()->Classify() == CLASS_COMBINE )
+	{
+		return 3;
+	}
+
+	return BaseClass::GetMaxClip1();
 }
 
 //=============================================================================

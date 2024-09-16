@@ -222,6 +222,8 @@ public:
 	void	StartLaserEffects( void );
 	void	StopLaserEffects( void );
 	void	UpdateLaserEffects( void );
+	
+	virtual int GetMaxClip1( void ) const;
 
 	// NPC RPG users cheat and directly set the laser pointer's origin
 	void	UpdateNPCLaserPosition( const Vector &vecTarget );

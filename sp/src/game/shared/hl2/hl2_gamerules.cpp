@@ -96,6 +96,7 @@ ConVar	hl2r_projected_muzzleflash( "hl2r_projected_muzzleflash", "0", FCVAR_REPL
 ConVar	hud_quickinfo( "hud_quickinfo", "1", FCVAR_REPLICATED | FCVAR_ARCHIVE );
 
 ConVar launched_hl2r( "launched_hl2r", "0", FCVAR_REPLICATED | FCVAR_ARCHIVE );
+ConVar launched_hl2r_1( "launched_hl2r_1", "0", FCVAR_REPLICATED | FCVAR_ARCHIVE );
 
 
 // Controls the application of the robus radius damage model.
@@ -200,6 +201,7 @@ ConVar	sk_npc_dmg_357			( "sk_npc_dmg_357", "0", FCVAR_REPLICATED );
 ConVar	sk_max_357				( "sk_max_357", "0", FCVAR_REPLICATED );
 
 ConVar	sk_plr_dmg_crossbow		( "sk_plr_dmg_crossbow", "0", FCVAR_REPLICATED );
+ConVar	sk_plr_dmg_crossbow_charged		( "sk_plr_dmg_crossbow_charged", "0", FCVAR_REPLICATED );
 ConVar	sk_npc_dmg_crossbow		( "sk_npc_dmg_crossbow", "0", FCVAR_REPLICATED );
 ConVar	sk_max_crossbow			( "sk_max_crossbow", "0", FCVAR_REPLICATED );
 

@@ -143,6 +143,7 @@ extern IVoiceGameMgrHelper *g_pVoiceGameMgrHelper;
 CGameRules*	g_pGameRules = NULL;
 extern bool	g_fGameOver;
 extern ConVar launched_hl2r;
+extern ConVar launched_hl2r_1;
 
 //-----------------------------------------------------------------------------
 // constructor, destructor
@@ -169,6 +170,17 @@ CGameRules::CGameRules() : CAutoGameSystemPerFrame( "CGameRules" )
 		
 		// We launched the game.
 		launched_hl2r.SetValue(1);
+	}
+	
+	if ( !launched_hl2r_1.GetBool() )
+	{
+		extern ConVar hl2r_fear_style_movement;
+		extern ConVar hl2r_less_ammo;
+		
+		hl2r_fear_style_movement.SetValue(0);
+		hl2r_less_ammo.SetValue(0);
+		
+		launched_hl2r_1.SetValue(1);
 	}
 }
 

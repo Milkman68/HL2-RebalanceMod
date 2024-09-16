@@ -205,6 +205,7 @@ void CPropJeep::Precache( void )
 	PrecacheScriptSound( "PropJeep.FireCannon" );
 	PrecacheScriptSound( "PropJeep.FireChargedCannon" );
 	PrecacheScriptSound( "PropJeep.AmmoOpen" );
+	PrecacheScriptSound( "Door.Locked2" );
 
 	PrecacheScriptSound( "Jeep.GaussCharge" );
 	PrecacheScriptSound( "Airboat_headlight_on" );
@@ -1167,6 +1168,8 @@ void CPropJeep::GetCannonAim( Vector *resultDir )
 	AngleVectors( muzzleAngles, resultDir );
 }
 
+extern ConVar hl2r_less_ammo;
+
 //-----------------------------------------------------------------------------
 // Purpose: If the player uses the jeep while at the back, he gets ammo from the crate instead
 //-----------------------------------------------------------------------------
@@ -1189,8 +1192,12 @@ void CPropJeep::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE use
 	{
 		// Player's using the crate.
 		// Fill up his SMG ammo.
-		
-		if ( ( GetSequence() != LookupSequence( "ammo_open" ) ) && ( GetSequence() != LookupSequence( "ammo_close" ) ) )
+		if ( hl2r_less_ammo.GetBool() )
+		{
+			CPASAttenuationFilter sndFilter( this, "Door.Locked2" );
+			EmitSound( sndFilter, entindex(), "Door.Locked2" );
+		}
+		else if ( ( GetSequence() != LookupSequence( "ammo_open" ) ) && ( GetSequence() != LookupSequence( "ammo_close" ) ) )
 		{
 			// Open the crate
 			pPlayer->GiveAmmo( 45, "SMG1" );

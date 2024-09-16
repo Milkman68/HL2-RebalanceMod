@@ -65,7 +65,8 @@ ConVar player_throwforce( "player_throwforce", "1000" );
 ConVar physcannon_dmg_glass( "physcannon_dmg_glass", "15" );
 ConVar physcannon_right_turrets( "physcannon_right_turrets", "0" );
 
-ConVar sk_physcannon_combineball_launch_speed( "sk_physcannon_combineball_launch_speed", "1000" );
+ConVar sk_physcannon_mega_combineball_speed( "sk_physcannon_mega_combineball_speed", "1000" );
+ConVar sk_physcannon_combineball_speed( "sk_physcannon_combineball_speed", "1000" );
 
 extern ConVar hl2r_fear_style_movement;
 extern ConVar hl2_normspeed;
@@ -1945,7 +1946,7 @@ void CWeaponPhysCannon::ApplyVelocityBasedForce( CBaseEntity *pEntity, const Vec
 	Vector vVel;
 	if ( FClassnameIs( pEntity, "prop_combine_ball" ) )
 	{
-		vVel = forward * sk_physcannon_combineball_launch_speed.GetFloat();
+		vVel = forward * ( IsMegaPhysCannon() ? sk_physcannon_mega_combineball_speed.GetFloat() : sk_physcannon_combineball_speed.GetFloat() );
 	}
 	else
 	{

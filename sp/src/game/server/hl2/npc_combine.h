@@ -27,7 +27,7 @@
 #define SF_COMBINE_NO_GRENADEDROP ( 1 << 17 )
 #define SF_COMBINE_NO_AR2DROP ( 1 << 18 )
 
-#define RECENT_DAMAGE_THRESHOLD			20
+#define RECENT_DAMAGE_THRESHOLD			10
 #define	RECENT_DAMAGE_INTERVAL			0.5
 
 //=========================================================
@@ -178,10 +178,12 @@ private:
 		SCHED_COMBINE_OVERWATCH,
 		SCHED_COMBINE_ASSAULT,
 		SCHED_COMBINE_ESTABLISH_LINE_OF_FIRE,
+		SCHED_COMBINE_ESTABLISH_LINE_OF_FIRE_LKP,
 		SCHED_COMBINE_PRESS_ATTACK,
 		SCHED_COMBINE_WAIT_IN_COVER,
 		SCHED_COMBINE_RANGE_ATTACK1,
 		SCHED_COMBINE_RANGE_ATTACK2,
+		SCHED_COMBINE_RANGE_ATTACK1_RPG,
 		SCHED_COMBINE_TAKE_COVER1,
 		SCHED_COMBINE_TAKE_COVER_FROM_BEST_SOUND,
 		SCHED_COMBINE_RUN_AWAY_FROM_BEST_SOUND,
@@ -214,6 +216,7 @@ private:
 		TASK_COMBINE_FACE_TOSS_DIR = BaseClass::NEXT_TASK,
 		TASK_COMBINE_IGNORE_ATTACKS,
 		TASK_COMBINE_SIGNAL_BEST_SOUND,
+		TASK_COMBINE_SIGNAL_RPG,
 		TASK_COMBINE_DEFER_SQUAD_GRENADES,
 		TASK_COMBINE_CHASE_ENEMY_CONTINUOUSLY,
 		TASK_COMBINE_DIE_INSTANTLY,
@@ -238,6 +241,7 @@ private:
 		COND_COMBINE_DROP_GRENADE,
 		COND_COMBINE_ON_FIRE,
 		COND_COMBINE_ATTACK_SLOT_AVAILABLE,
+		COND_COMBINE_ATTACK_SLOT_TAKEN,
 		COND_COMBINE_TAKECOVER,
 		COND_TAKECOVER_FAILED,
 		COND_COMBINE_CAN_GRENADE_ENEMY,
@@ -249,7 +253,7 @@ private:
 	// Select the combat schedule
 	int SelectCombatSchedule();
 	
-	int	OnTakeDamage_Alive( const CTakeDamageInfo &info );
+	void TraceAttack( const CTakeDamageInfo &info, const Vector &vecDir, trace_t *ptr, CDmgAccumulator *pAccumulator );
 
 	// Should we charge the player?
 	bool ShouldChargePlayer();
@@ -264,6 +268,10 @@ private:
 	// Chase the enemy, updating the target position as the player moves
 	void StartTaskChaseEnemyContinuously( const Task_t *pTask );
 	void RunTaskChaseEnemyContinuously( const Task_t *pTask );
+	
+	bool HasArmor( void ) { return m_flArmor > 0; }
+	float GetArmorCharge( void ) { return m_flArmor; }
+	void SetArmorCharge( float flcharge ) { m_flArmor = flcharge; }
 
 	class CCombineStandoffBehavior : public CAI_ComponentWithOuter<CNPC_Combine, CAI_StandoffBehavior>
 	{
@@ -305,6 +313,8 @@ private:
 	float			m_flShotDelay;
 	float			m_flStopMoveShootTime;
 	float			m_flDelayAttacksTime;
+	
+	float			m_flArmor;
 
 	CAI_Sentence< CNPC_Combine > m_Sentences;
 

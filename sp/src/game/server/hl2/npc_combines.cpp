@@ -65,7 +65,6 @@ void CNPC_CombineS::Spawn( void )
 	} */
 	
 	const char *pModelName = STRING( GetModelName() );
-	
 	bAlreadyElite = false;
 	
 	// Don't do this if we're already an elite.
@@ -84,7 +83,7 @@ void CNPC_CombineS::Spawn( void )
 	
 	HandleSpawnEquipment();
 
-	if( IsElite() )
+	if( IsElite() || FStrEq(STRING(m_spawnEquipment), "weapon_rpg") )
 	{
 		// Stronger, tougher.
 		SetHealth( sk_combine_guard_health.GetFloat() );
@@ -437,8 +436,16 @@ bool CNPC_CombineS::IsHeavyDamage( const CTakeDamageInfo &info )
 {
 	if ( m_nRecentDamage > RECENT_DAMAGE_THRESHOLD )
 	{
-		m_flRecentDamageTime = FLT_MAX;
-		return true;
+		if ( random->RandomInt(0,1) == 1 )
+		{
+			m_flRecentDamageTime = FLT_MAX;
+			return true;
+		}
+		else
+		{
+			m_nRecentDamage = 0;
+			m_flRecentDamageTime = 0;
+		}
 	}
 	
 	return false;

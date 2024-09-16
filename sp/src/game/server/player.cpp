@@ -1350,15 +1350,14 @@ int CBasePlayer::OnTakeDamage( const CTakeDamageInfo &inputInfo )
 
 	float flPunch = -2;
 
-	if( hl2_episodic.GetBool() && info.GetAttacker() && !FInViewCone( info.GetAttacker() ) ) // bookmark
+	if ( info.GetAttacker()->MyNPCPointer() != NULL )
 	{
-		if( info.GetDamage() > 10.0f )
-			flPunch = -10;
-		else
-			flPunch = RandomFloat( -5, -7 );
+		float flDist = ( info.GetAttacker()->GetAbsOrigin() - GetAbsOrigin() ).Length();
+		flPunch = clamp( flPunch * ( 2000 / flDist ), -8.0f, -3 ); // Clamp to a min of -3 and a max of -8.
 	}
 
 	m_Local.m_vecPunchAngle.SetX( flPunch );
+	m_Local.m_vecPunchAngle.SetY( random->RandomFloat( -flPunch, flPunch ) / 10 );
 
 	if (fTookDamage && !ftrivial && fmajor && flHealthPrev >= 75) 
 	{

@@ -71,7 +71,7 @@ public:
 	{		
 		// Handle NPCs first
 		static Vector npcCone;
-		npcCone = VECTOR_CONE_2DEGREES;
+		npcCone = VECTOR_CONE_3DEGREES;
 		
 		if ( GetOwner() && GetOwner()->IsNPC() )
 			return npcCone;
@@ -230,7 +230,7 @@ void CWeaponPistol::PrimaryAttack( void )
 	CBasePlayer *pOwner = ToBasePlayer( GetOwner() );
 	
 	if (( pOwner->m_nButtons & IN_ATTACK ) && ( pOwner->m_nButtons & IN_ATTACK2 ))
-	return;
+		return;
 
 	if ( ( gpGlobals->curtime - m_flLastAttackTime ) > 0.25f )
 	{
@@ -477,7 +477,7 @@ void CWeaponPistol::AddViewKick( void )
 
 	QAngle	viewPunch;
 	
-	viewPunch.x = -1.25f;
+	viewPunch.x = -0.75f;
 	viewPunch.y = random->RandomFloat( -0.1f,  0.1f );
 	viewPunch.z = 0.0f;
 	

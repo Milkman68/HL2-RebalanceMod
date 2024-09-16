@@ -203,6 +203,7 @@ private:
 	int SelectShoveSchedule( void );
 
 	bool TryToEnterPistolSlot( int nSquadSlot );
+	bool CanOccupyAttackSlot( void );
 
 	// Airboat schedule selection
 	int SelectAirboatCombatSchedule();
@@ -344,6 +345,7 @@ private:
 		COND_METROPOLICE_HIT_BY_BUGBAIT,
 		COND_METROPOLICE_SWITCHED_WEAPON,
 		COND_ATTACK_SLOT_AVAILABLE,
+		COND_ATTACK_SLOT_TAKEN,
 
 	};
 

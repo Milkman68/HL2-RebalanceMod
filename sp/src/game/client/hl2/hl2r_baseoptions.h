@@ -16,6 +16,7 @@ struct CheckButton_t
 	CheckButton	*Button;
 	char		Name[32];
 	char		Convar[128];
+	bool		bInvert;
 	
 	// Initializes a given CheckButton array.
 	void InitCheckButtons( Panel *parent, CheckButton_t checkButtons[], int size )
@@ -25,7 +26,7 @@ struct CheckButton_t
 			checkButtons[i].Button = new CheckButton(parent, checkButtons[i].Name, "");
 			
 			ConVarRef var( checkButtons[i].Convar );
-			checkButtons[i].Button->SetSelected(var.GetBool());
+			checkButtons[i].Button->SetSelected( checkButtons[i].bInvert ? !var.GetBool() : var.GetBool() );
 		}
 	}
 	
@@ -35,7 +36,7 @@ struct CheckButton_t
 		for ( int i = 0; i < size; i++ )
 		{
 			ConVarRef var( checkButtons[i].Convar );
-			var.SetValue( checkButtons[i].Button->IsSelected());
+			var.SetValue( checkButtons[i].bInvert ? !checkButtons[i].Button->IsSelected() : checkButtons[i].Button->IsSelected() );
 		}
 	}
 };

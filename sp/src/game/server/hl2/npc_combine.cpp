@@ -1161,7 +1161,7 @@ void CNPC_Combine::StartTask( const Task_t *pTask )
 		}
 	case TASK_PLAY_GRENADE_SEQUENCE:
 		{
-			if ( m_flThrowSpeed == COMBINE_GRENADE_TOSS_SPEED )
+			if ( m_flThrowSpeed <= COMBINE_GRENADE_TOSS_SPEED )
 			{
 				SetIdealActivity( ACT_SPECIAL_ATTACK1 );
 			}
@@ -1526,7 +1526,7 @@ void CNPC_Combine::BuildScheduleTestBits( void )
 		SetCustomInterruptCondition( COND_CAN_RANGE_ATTACK1 );
 	}
 	
-	if ( IsRunningApproachEnemySchedule() )
+	if ( HasStrategySlotRange( SQUAD_SLOT_ATTACK1, SQUAD_SLOT_ATTACK2 ) || IsRunningApproachEnemySchedule() )
 	{
 		SetCustomInterruptCondition( COND_COMBINE_ATTACK_SLOT_TAKEN );
 	}
@@ -1904,9 +1904,6 @@ int CNPC_Combine::SelectCombatSchedule()
 			} */
   			else if ( m_flDelayAttacksTime < gpGlobals->curtime && CanOccupyAttackSlot() )
 			{
-				if ( IsElite() )
-					return SCHED_COMBINE_ESTABLISH_LINE_OF_FIRE;
-				
 				// Try to charge in and break the enemy's cover!
 				return SCHED_ESTABLISH_LINE_OF_FIRE;
 			}
@@ -2231,12 +2228,11 @@ int CNPC_Combine::SelectScheduleAttack()
 	{
 		if ( HasCondition( COND_COMBINE_CAN_GRENADE_ENEMY ) && OccupyStrategySlot( SQUAD_SLOT_GRENADE1 ) )
 			return SCHED_RANGE_ATTACK2;
-		
 
 		// If we're not in the viewcone of the turret, run up and hit it. Do this a bit later to
 		// give other squadmembers a chance to throw a grenade before I run in.
-		if ( HasCondition( COND_SEE_ENEMY ) && OccupyStrategySlot( SQUAD_SLOT_GRENADE1 ) )
-			return SCHED_COMBINE_CHARGE_TURRET;
+		if ( HasCondition( COND_SEE_ENEMY ) && CanOccupyAttackSlot() )
+			return SCHED_COMBINE_CHARGE_TURRET; 
 	}
 
 	// When fighting against the player who's wielding a mega-physcannon, 
@@ -3085,7 +3081,7 @@ bool CNPC_Combine::CanThrowGrenade( const Vector &vecTarget )
 	// ---------------------------------------------------------------------
 	// Are any of my squad members near the intended grenade impact area?
 	// ---------------------------------------------------------------------
-	if ( m_pSquad )
+	if ( m_pSquad && !( GetEnemy() && GetEnemy()->Classify() == CLASS_COMBINE && FClassnameIs(GetEnemy(), "npc_turret_floor") ) )
 	{
 		if (m_pSquad->SquadMemberPathInRange( vecTarget, COMBINE_MIN_GRENADE_CLEAR_DIST ))
 		{
@@ -3135,7 +3131,7 @@ bool CNPC_Combine::CheckCanThrowGrenade( const Vector &vecTarget )
 		
 		// HACKHACK: We need to do this trace since soldiers behind waist-high cover will nade themselves 
 		// because the position of their throw animation is lower than their eyes.
-		AI_TraceLine( vecStart, vecTarget, MASK_SHOT|CONTENTS_GRATE, this, COLLISION_GROUP_NONE, &tr );
+		AI_TraceLine( vecStart, vecTarget, MASK_SOLID_BRUSHONLY, this, COLLISION_GROUP_NONE, &tr );
 		
 		// Do a high toss if this is the case!
 		if ( tr.fraction != 1.0 )
@@ -3144,7 +3140,7 @@ bool CNPC_Combine::CheckCanThrowGrenade( const Vector &vecTarget )
 		}
 		else
 		{
-			vecToss = VecCheckThrow( this, EyePosition(), vecTarget, m_flThrowSpeed, 1.0, &vecMins, &vecMaxs );
+			vecToss = VecCheckThrow( this, EyePosition(), vecTarget, flDist, 1.0, &vecMins, &vecMaxs );
 		}
 	}
 	else
@@ -3797,7 +3793,7 @@ bool CNPC_Combine::CanOccupyAttackSlot( void )
 		while ( pSquadmate )
 		{
 			CNPC_Combine *pCombine = dynamic_cast<CNPC_Combine*>(pSquadmate);
-			if( pSquadmate )
+			if( pCombine )
 			{
 				// Check if any squadmembers have a slot that currently isn't being used for attacking.
 				if ( pCombine->HasStrategySlotRange( SQUAD_SLOT_ATTACK1, SQUAD_SLOT_ATTACK2 ) && !pCombine->HasCondition( COND_CAN_RANGE_ATTACK1 ) )
@@ -3806,8 +3802,9 @@ bool CNPC_Combine::CanOccupyAttackSlot( void )
 					break;
 				}
 				
-				pSquadmate = m_pSquad->GetNextMember( &iter );
 			}
+			
+			pSquadmate = m_pSquad->GetNextMember( &iter );
 		}
 		
 		// If we found a member with an unused slot, take that slot for ourselves and interrupt their current schedule.
@@ -4365,10 +4362,7 @@ DEFINE_SCHEDULE
  ""
  "	Interrupts"
  "		COND_NEW_ENEMY"
- "		COND_CAN_RANGE_ATTACK1"
- "		COND_CAN_RANGE_ATTACK2"
- "		COND_CAN_MELEE_ATTACK1"
- "		COND_CAN_MELEE_ATTACK2"
+ "		COND_SEE_ENEMY"
  "		COND_HEAR_DANGER"
  "		COND_HEAR_MOVE_AWAY"
  "		COND_COMBINE_ATTACK_SLOT_AVAILABLE"
@@ -4645,7 +4639,7 @@ DEFINE_SCHEDULE
  SCHED_COMBINE_CHARGE_TURRET,
 
  "	Tasks"
- "		TASK_COMBINE_DEFER_SQUAD_GRENADES	0"
+ //"		TASK_COMBINE_DEFER_SQUAD_GRENADES	0"
  "		TASK_STOP_MOVING					0"
  "		TASK_SET_FAIL_SCHEDULE				SCHEDULE:SCHED_CHASE_ENEMY_FAILED"
  "		TASK_GET_CHASE_PATH_TO_ENEMY		300"

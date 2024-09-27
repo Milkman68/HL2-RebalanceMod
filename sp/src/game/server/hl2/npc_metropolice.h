@@ -310,6 +310,8 @@ private:
 	bool CanBecomeElite( void );
 	bool CanSupressEnemy( void );
 	
+	bool IsRunningFleeSchedule( void );
+	
 	void HandleRandomSpawnEquipment( void );
 	
 	Activity GetCoverActivity( CAI_Hint *pHint );

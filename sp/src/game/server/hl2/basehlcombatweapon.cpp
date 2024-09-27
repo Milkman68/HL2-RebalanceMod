@@ -357,11 +357,12 @@ void CHLSelectFireMachineGun::PrimaryAttack( void )
 		{
 			m_iBurstSize = GetBurstSize();
 			
+			m_flNextPrimaryAttack = gpGlobals->curtime + GetBurstCycleRate();
+			m_flNextSecondaryAttack = gpGlobals->curtime + GetBurstCycleRate();
+			
 			// Call the think function directly so that the first round gets fired immediately.
 			BurstThink();
 			SetThink( &CHLSelectFireMachineGun::BurstThink );
-			m_flNextPrimaryAttack = gpGlobals->curtime + GetBurstCycleRate();
-			m_flNextSecondaryAttack = gpGlobals->curtime + GetBurstCycleRate();
 
 			// Pick up the rest of the burst through the think function.
 			SetNextThink( gpGlobals->curtime + GetFireRate() );

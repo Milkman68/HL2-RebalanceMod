@@ -496,7 +496,7 @@ void CWeaponShotgun::PrimaryAttack( void )
 	// Fire the bullets, and force the first shot to be perfectly accuracy
 	pPlayer->FireBullets( sk_plr_num_shotgun_pellets.GetInt(), vecSrc, vecAiming, GetBulletSpread(), MAX_TRACE_LENGTH, m_iPrimaryAmmoType, 2 );
 	
-	QAngle viewPunch = QAngle( random->RandomFloat( -5, -5 ), random->RandomFloat( -0.6, 0.6 ), 0 );
+	QAngle viewPunch = QAngle( -5, random->RandomFloat( -0.6, 0.6 ), 0 );
 	
 	if ( sk_alternate_recoil.GetBool() )
 	{
@@ -583,7 +583,7 @@ void CWeaponShotgun::BurstThink( void )
 	pPlayer->FireBullets( sk_plr_num_shotgun_pellets.GetInt(), vecSrc, vecAiming, GetBulletSpread(), MAX_TRACE_LENGTH, m_iPrimaryAmmoType, 2 );
 
 	//Disorient the player
-	QAngle viewPunch = QAngle( random->RandomFloat( -6, -6 ), random->RandomFloat( -2, 2 ), 0 );
+	QAngle viewPunch = QAngle( -5, random->RandomFloat( -2, 2 ), 0 );
 	
 	if ( sk_alternate_recoil.GetBool() )
 	{
@@ -618,7 +618,7 @@ void CWeaponShotgun::BurstThink( void )
 		return;
 	}
 
-	SetNextThink( gpGlobals->curtime + 0.16 );
+	SetNextThink( gpGlobals->curtime + 0.12 );
 }
 
 //-----------------------------------------------------------------------------

@@ -44,10 +44,12 @@ extern ConVar sk_npc_dmg_crossbow;
 
 extern ConVar sk_alternate_recoil;
 
-ConVar sk_npc_head_crossbow("sk_npc_head_crossbow", "3" );
+//ConVar sk_npc_head_crossbow("sk_npc_head_crossbow", "3" );
 
-ConVar sk_crossbow_air_velocity("sk_crossbow_air_velocity", "2500" ); //2500
-ConVar sk_crossbow_water_velocity("sk_crossbow_water_velocity", "1500" ); //1500
+ConVar sk_crossbow_air_velocity("sk_crossbow_air_velocity", "2500" );
+ConVar sk_crossbow_water_velocity("sk_crossbow_water_velocity", "1500" );
+
+ConVar sk_crossbow_gravity("sk_crossbow_gravity", "0.2" );
 
 void TE_StickyBolt( IRecipientFilter& filter, float delay,	Vector vecDirection, const Vector *origin );
 
@@ -180,7 +182,7 @@ void CCrossbowBolt::Spawn( void )
 	SetMoveType( MOVETYPE_FLYGRAVITY, MOVECOLLIDE_FLY_CUSTOM );
 	UTIL_SetSize( this, -Vector(0.3f,0.3f,0.3f), Vector(0.3f,0.3f,0.3f) );
 	SetSolid( SOLID_BBOX );
-	SetGravity( 0.05f );
+	SetGravity( sk_crossbow_gravity.GetFloat() );
 	
 	// Make sure we're updated if we're underwater
 	UpdateWaterState();

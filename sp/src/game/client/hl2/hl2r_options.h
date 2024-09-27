@@ -46,6 +46,7 @@ private:
 //------------------------------------------------------------------------------
 CheckButton* ExplosiveCrabsButton;
 //CheckButton* FearMovementButton;
+CheckButton* WorseArmorButton;
 CheckButton* ShorterSprintButton;
 //CheckButton* LessAmmoButton;
 CheckButton* EnemyPromotionButton;
@@ -56,14 +57,15 @@ CheckButton* SmallerReservesButton;
 // List of all CheckButtons:
 CheckButton_t C_CheckButtons[] =
 {
-	{ ExplosiveCrabsButton, "ExplosiveCrabsButton", "hl2r_explosive_crabs" },
+	{ ExplosiveCrabsButton, "ExplosiveCrabsButton", "hl2r_explosive_crabs", false },
 	//{ FearMovementButton, "FearMovementButton", "hl2r_fear_style_movement" },
-	{ ShorterSprintButton, "ShorterSprintButton", "hl2r_shorter_sprint" },
+	{ WorseArmorButton, "WorseArmorButton", "player_old_armor", true },
+	{ ShorterSprintButton, "ShorterSprintButton", "hl2r_shorter_sprint", false },
 	//{ LessAmmoButton, "LessAmmoButton", "hl2r_less_ammo" },
-	{ EnemyPromotionButton, "EnemyPromotionButton", "hl2r_enemy_promotion" },
-	{ RandomWeaponsButton, "RandomWeaponsButton", "hl2r_random_weapons" },
-	{ ReducedAssistsButton, "ReducedAssistsButton", "hl2r_reduced_assists" },
-	{ SmallerReservesButton, "SmallerReservesButton", "hl2r_smaller_reserves" },
+	{ EnemyPromotionButton, "EnemyPromotionButton", "hl2r_enemy_promotion", false },
+	{ RandomWeaponsButton, "RandomWeaponsButton", "hl2r_random_weapons", false },
+	{ ReducedAssistsButton, "ReducedAssistsButton", "hl2r_reduced_assists", false },
+	{ SmallerReservesButton, "SmallerReservesButton", "hl2r_smaller_reserves", false },
 };
 //------------------------------------------------------------------------------
 // Game page

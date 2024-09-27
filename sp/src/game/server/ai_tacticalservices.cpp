@@ -381,6 +381,8 @@ int CAI_TacticalServices::FindCoverNode(const Vector &vNearPos, const Vector &vT
 	float flScore = 0;
 	
 	static int nSearchRandomizer = 0;		// tries to ensure the links are searched in a different order each time;
+	
+	bool bThreatReachable = GetOuter()->GetPathDistanceToPoint( GetAbsOrigin(), vThreatPos ) != NULL;
 
 	// Search until the list is empty bookmark
 	while( list.Count() )
@@ -414,7 +416,7 @@ int CAI_TacticalServices::FindCoverNode(const Vector &vNearPos, const Vector &vT
 					// If there's no desired dist, use the first node given to us (This is default behavior)
 					if ( flDesiredDist > 0.0f )
 					{
-						float flNewScore = GetOuter()->GetCoverPositionScore( vThreatPos, nodeOrigin, flDesiredDist );
+						float flNewScore = GetOuter()->GetCoverPositionScore( vThreatPos, nodeOrigin, flDesiredDist, bThreatReachable );
 							
 						if ( flNewScore > flScore )
 						{

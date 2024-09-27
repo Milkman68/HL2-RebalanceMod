@@ -48,7 +48,7 @@ public:
 	int		GetBurstSize( void );
 	
 	// The amount of delay we want to have between bursts.
-	float 	GetBurstCycleRate( void ){ return 0.3f; }
+	float 	GetBurstCycleRate( void ){ return 0.25f; }
 	float	GetFireDurationDecayMult ( void ) { return 100; }
 	
 	// NPC
@@ -68,7 +68,15 @@ public:
 
 	virtual const Vector& GetBulletSpread( void )
 	{
-		static Vector cone = VECTOR_CONE_1DEGREES; 
+		// Handle NPCs first
+		static Vector npcCone;
+		npcCone = VECTOR_CONE_3DEGREES / 2; // Approximate 1.5 degrees.
+		
+		if ( GetOwner() && GetOwner()->IsNPC() )
+			return npcCone;
+			
+		static Vector cone;
+		cone = VECTOR_CONE_1DEGREES;
 		return cone;
 	}
 

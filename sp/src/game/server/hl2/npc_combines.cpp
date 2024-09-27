@@ -386,7 +386,7 @@ void CNPC_CombineS::Event_Killed( const CTakeDamageInfo &info )
 		float flCurrentHealth = pPlayer->GetHealth();
 
 		// Attempt to drop health
-		if 	   ( pHL2GameRules->NPC_ShouldDropHealth( pPlayer ) || ( FStrEq(STRING(gpGlobals->mapname), "d3_c17_07" ) ) || ( ( FStrEq(STRING(gpGlobals->mapname), "d2_prison_07" ) ) /* && ( random->RandomInt( 0, 100 ) < 50 ) */ ) )
+		if ( pHL2GameRules->NPC_ShouldDropHealth( pPlayer ) )
 		{
 			if ( random->RandomInt( 0, 100 ) < 25 )
 			{

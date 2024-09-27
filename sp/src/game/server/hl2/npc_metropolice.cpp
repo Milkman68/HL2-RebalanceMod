@@ -3114,6 +3114,12 @@ Activity CNPC_MetroPolice::NPC_TranslateActivity( Activity newActivity )
 		if ( m_nNumWarnings >= METROPOLICE_MAX_WARNINGS )
 			return ACT_MELEE_ATTACK1;
 	}
+	
+	if ( IsRunningFleeSchedule() )
+	{
+		if ( newActivity == ACT_RUN )
+			newActivity = ACT_RUN_PROTECTED;		
+	}
 
 	newActivity = BaseClass::NPC_TranslateActivity( newActivity );
 
@@ -3268,18 +3274,19 @@ bool CNPC_MetroPolice::CanOccupyAttackSlot( void )
 		// Iterate through the squad.
 		while ( pSquadmate )
 		{
-			CNPC_MetroPolice *pCombine = dynamic_cast<CNPC_MetroPolice*>(pSquadmate);
-			if( pSquadmate )
+			CNPC_MetroPolice *pMetroCop = dynamic_cast<CNPC_MetroPolice*>(pSquadmate);
+			if( pMetroCop )
 			{
 				// Check if any squadmembers have a slot that currently isn't being used for attacking.
-				if ( pCombine->HasStrategySlotRange( SQUAD_SLOT_ATTACK1, SQUAD_SLOT_ATTACK2 ) && !pCombine->HasCondition( COND_CAN_RANGE_ATTACK1 ) )
+				if ( pMetroCop->HasStrategySlotRange( SQUAD_SLOT_ATTACK1, SQUAD_SLOT_ATTACK2 ) && !pMetroCop->HasCondition( COND_CAN_RANGE_ATTACK1 ) )
 				{
 					bOverrideSlot = true;
 					break;
 				}
 				
-				pSquadmate = m_pSquad->GetNextMember( &iter );
 			}
+			
+			pSquadmate = m_pSquad->GetNextMember( &iter );
 		}
 		
 		// If we found a member with an unused slot, take that slot for ourselves and interrupt their current schedule.
@@ -3287,6 +3294,9 @@ bool CNPC_MetroPolice::CanOccupyAttackSlot( void )
 		{
 			pSquadmate->VacateStrategySlot();
 			pSquadmate->SetCondition( COND_ATTACK_SLOT_TAKEN );
+			
+		//	NDebugOverlay::Box( pSquadmate->GetAbsOrigin(), GetHullMins(), GetHullMaxs(), 255,0,0, true, 5.0 );
+		//	NDebugOverlay::Box( GetAbsOrigin(), GetHullMins(), GetHullMaxs(), 0,255,0, true, 5.0 );
 		}
 		
 	}
@@ -3552,7 +3562,7 @@ int CNPC_MetroPolice::SelectCombatSchedule()
 		}
 	}
 
-	if ( !HasCondition( COND_SEE_ENEMY ) )
+	if ( HasCondition( COND_ENEMY_OCCLUDED ) )
 	{
 		if( CanDeployManhack() && OccupyStrategySlot( SQUAD_SLOT_POLICE_DEPLOY_MANHACK ) )
 		{
@@ -3570,6 +3580,14 @@ int CNPC_MetroPolice::SelectCombatSchedule()
 		
 		return SCHED_METROPOLICE_WAIT_IN_COVER;
 	}
+	
+	// --------------------------------------------------------------
+	// Enemy not occluded but isn't open to attack
+	// --------------------------------------------------------------
+	if ( !HasBaton() && HasCondition( COND_SEE_ENEMY ) && !HasCondition( COND_CAN_RANGE_ATTACK1 ) )
+	{
+		return SCHED_TAKE_COVER_FROM_ENEMY;
+	} 
 
 	nResult = SelectScheduleNoDirectEnemy();
 	if ( nResult != SCHED_NONE )
@@ -4625,6 +4643,9 @@ bool CNPC_MetroPolice::ShouldMoveAndShoot()
 	if ( HasCondition( COND_METROPOLICE_ON_FIRE ) )
 		return false;
 	
+	if ( IsRunningFleeSchedule() )
+		return false;
+	
 	if ( BaseClass::ShouldMoveAndShoot() && !HasCondition( COND_NO_PRIMARY_AMMO ) )
 	{
 		// If we already have, or can occupy an Attack Slot to move and shoot, do it. 
@@ -4731,7 +4752,7 @@ void CNPC_MetroPolice::StartTask( const Task_t *pTask )
 		break;
 		}
 		
-	case TASK_METROPOLICE_PLAY_COVER_SEQUENCE: //flankmark
+	case TASK_METROPOLICE_PLAY_COVER_SEQUENCE:
 		{
 			SetActivity( GetCoverActivity( NULL ) );
 		break;
@@ -5401,7 +5422,7 @@ void CNPC_MetroPolice::BuildScheduleTestBits( void )
 		ClearCustomInterruptCondition( COND_CAN_MELEE_ATTACK1 );
 	}
 	
-	if ( IsCurSchedule( SCHED_METROPOLICE_ESTABLISH_LINE_OF_FIRE )  )
+	if ( HasStrategySlotRange( SQUAD_SLOT_ATTACK1, SQUAD_SLOT_ATTACK2 ) || IsCurSchedule(SCHED_METROPOLICE_ESTABLISH_LINE_OF_FIRE) )
 	{
 		SetCustomInterruptCondition( COND_ATTACK_SLOT_TAKEN );
 	}
@@ -5795,6 +5816,7 @@ bool CNPC_MetroPolice::CanBecomeElite( void )
 				}
 				else if ( FStrEq(STRING(m_spawnEquipment), "weapon_smg1") )
 				{
+					m_fWeaponDrawn = true;
 					m_spawnEquipment = MAKE_STRING( "weapon_357" );
 				}
 			}
@@ -5918,6 +5940,19 @@ Vector CNPC_MetroPolice::GetActualShootPosition( const Vector &shootOrigin )
 	vecTargetPosition = vecEnemyOffset + vecEnemyLKP;
 	
 	return vecTargetPosition;
+}
+//-----------------------------------------------------------------------------
+// Purpose:
+//-----------------------------------------------------------------------------
+bool CNPC_MetroPolice::IsRunningFleeSchedule()
+{
+	if( IsCurSchedule( SCHED_RUN_FROM_ENEMY, false ) )
+		return true;
+	
+	if( IsCurSchedule( SCHED_TAKE_COVER_FROM_BEST_SOUND, false ) )
+		return true;
+	
+	return false;
 }
 //-----------------------------------------------------------------------------
 // Purpose:
@@ -6752,6 +6787,7 @@ DEFINE_SCHEDULE
 
  "	Tasks"
  "		TASK_STOP_MOVING			0"
+ "		TASK_FACE_ENEMY				0"
  ""
  "	Interrupts"
  "		COND_CAN_RANGE_ATTACK1"
@@ -6799,10 +6835,7 @@ DEFINE_SCHEDULE
  ""
  "	Interrupts"
  "		COND_NEW_ENEMY"
- "		COND_CAN_RANGE_ATTACK1"
- "		COND_CAN_RANGE_ATTACK2"
- "		COND_CAN_MELEE_ATTACK1"
- "		COND_CAN_MELEE_ATTACK2"
+ "		COND_SEE_ENEMY"
  "		COND_HEAR_DANGER"
  "		COND_HEAR_MOVE_AWAY"
  "		COND_ATTACK_SLOT_AVAILABLE"

@@ -100,7 +100,8 @@ static ConVar sv_maxusrcmdprocessticks( "sv_maxusrcmdprocessticks", "24", FCVAR_
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-static ConVar old_armor( "player_old_armor", "0" );
+//static ConVar old_armor( "player_old_armor", "0" );
+extern ConVar old_armor;
 
 static ConVar physicsshadowupdate_render( "physicsshadowupdate_render", "0" );
 bool IsInCommentaryMode( void );
@@ -1353,7 +1354,7 @@ int CBasePlayer::OnTakeDamage( const CTakeDamageInfo &inputInfo )
 	if ( info.GetAttacker()->MyNPCPointer() != NULL )
 	{
 		float flDist = ( info.GetAttacker()->GetAbsOrigin() - GetAbsOrigin() ).Length();
-		flPunch = clamp( flPunch * ( 2000 / flDist ), -8.0f, -3 ); // Clamp to a min of -3 and a max of -8.
+		flPunch = clamp( flPunch * ( 1500 / flDist ), -8.0f, -3 ); // Clamp to a min of -3 and a max of -8.
 	}
 
 	m_Local.m_vecPunchAngle.SetX( flPunch );

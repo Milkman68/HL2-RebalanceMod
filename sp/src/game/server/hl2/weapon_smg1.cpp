@@ -44,6 +44,8 @@ public:
 
 	int		GetMinBurst() { return 3; }
 	int		GetMaxBurst() { return 5; }
+	float	GetMinRestTime( void ) { return 0.3f; }
+	float	GetMaxRestTime( void ) { return 0.7f; }
 
 	//float 	GetBurstCycleRate( void ){ return 0.055; }
 	//int		GetBurstSize( void ){ return 3.0; }

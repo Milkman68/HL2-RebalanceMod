@@ -12691,7 +12691,7 @@ bool CAI_BaseNPC::IsCoverPosition( const Vector &vecThreat, const Vector &vecPos
 
 //-----------------------------------------------------------------------------
 
-float CAI_BaseNPC::GetCoverPositionScore( const Vector &vecThreat, const Vector &vecCover, float flIdealDist )
+float CAI_BaseNPC::GetCoverPositionScore( const Vector &vecThreat, const Vector &vecCover, float flIdealDist, bool bEnemyReachable )
 {
 	// Try to base the cover location on the desired distance
 	float flNodeScore = 0;
@@ -12712,7 +12712,8 @@ float CAI_BaseNPC::GetCoverPositionScore( const Vector &vecThreat, const Vector 
 	{
 		flNodeScore += 0.3;
 	}
-	else if ( GetPathDistanceToPoint( GetAbsOrigin(), vecThreat ) != NULL )
+	
+	if ( bEnemyReachable )
 	{
 		// If our enemy can path to us, prefer nodes that can't see our current position.
 		trace_t	tr;

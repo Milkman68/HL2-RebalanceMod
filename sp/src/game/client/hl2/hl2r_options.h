@@ -59,8 +59,8 @@ CheckButton_t C_CheckButtons[] =
 {
 	{ ExplosiveCrabsButton, "ExplosiveCrabsButton", "hl2r_explosive_crabs", false },
 	//{ FearMovementButton, "FearMovementButton", "hl2r_fear_style_movement" },
-	{ WorseArmorButton, "WorseArmorButton", "player_old_armor", true },
 	{ ShorterSprintButton, "ShorterSprintButton", "hl2r_shorter_sprint", false },
+	{ WorseArmorButton, "WorseArmorButton", "player_old_armor", false },
 	//{ LessAmmoButton, "LessAmmoButton", "hl2r_less_ammo" },
 	{ EnemyPromotionButton, "EnemyPromotionButton", "hl2r_enemy_promotion", false },
 	{ RandomWeaponsButton, "RandomWeaponsButton", "hl2r_random_weapons", false },

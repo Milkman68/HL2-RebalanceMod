@@ -1102,7 +1102,7 @@ int CBasePlayer::OnTakeDamage( const CTakeDamageInfo &inputInfo )
 	if ( !info.GetDamage() )
 		return 0;
 
-	if( old_armor.GetBool() )
+	if( !old_armor.GetBool() )
 	{
 		flBonus = OLD_ARMOR_BONUS;
 		flRatio = OLD_ARMOR_RATIO;
@@ -1166,7 +1166,7 @@ int CBasePlayer::OnTakeDamage( const CTakeDamageInfo &inputInfo )
 
 		flArmor = (info.GetDamage() - flNew) * flBonus;
 
-		if( !old_armor.GetBool() )
+		if( old_armor.GetBool() )
 		{
 			if( flArmor < 1.0 )
 			{

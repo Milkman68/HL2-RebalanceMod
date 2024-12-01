@@ -70,7 +70,7 @@ public:
 	{
 		// Handle NPCs first
 		static Vector npcCone;
-		npcCone = VECTOR_CONE_3DEGREES / 2; // Approximate 1.5 degrees.
+		npcCone = VECTOR_CONE_3DEGREES;
 		
 		if ( GetOwner() && GetOwner()->IsNPC() )
 			return npcCone;
@@ -80,7 +80,7 @@ public:
 		return cone;
 	}
 
-	const WeaponProficiencyInfo_t *GetProficiencyValues();
+//	const WeaponProficiencyInfo_t *GetProficiencyValues();
 
 protected:
 

@@ -510,7 +510,7 @@ void CWeaponAR2::AddViewKick( void )
 }
 
 //-----------------------------------------------------------------------------
-const WeaponProficiencyInfo_t *CWeaponAR2::GetProficiencyValues()
+/* const WeaponProficiencyInfo_t *CWeaponAR2::GetProficiencyValues()
 {
 	static WeaponProficiencyInfo_t proficiencyTable[] =
 	{
@@ -525,3 +525,4 @@ const WeaponProficiencyInfo_t *CWeaponAR2::GetProficiencyValues()
 
 	return proficiencyTable;
 }
+ */

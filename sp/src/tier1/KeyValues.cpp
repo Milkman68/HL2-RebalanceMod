@@ -2078,6 +2078,10 @@ bool EvaluateConditional( const char *str )
 	
 	if ( Q_stristr( str, "$LINUX" ) )
 		return IsLinux() ^ bNot;
+	
+	// No deck support implemented yet.
+	if ( Q_stristr( str, "$DECK" ) )
+		return IsDeck() ^ bNot;
 
 	if ( Q_stristr( str, "$POSIX" ) )
 		return IsPosix() ^ bNot;

@@ -36,7 +36,9 @@
 
 ConVar g_Language( "g_Language", "0", FCVAR_REPLICATED );
 ConVar sk_autoaim_mode( "sk_autoaim_mode", "1", FCVAR_ARCHIVE | FCVAR_REPLICATED );
-ConVar UseLegacySkillBehavior( "UseLegacySkillBehavior", "1" );
+
+ConVar hl2r_prioritize_workshop_skillmanifest( "hl2r_prioritize_workshop_skillmanifest", "0" );
+ConVar hl2r_prioritize_workshop_skillcfg( "hl2r_prioritize_workshop_skillcfg", "0" );
 
 #ifndef CLIENT_DLL
 ConVar log_verbose_enable( "log_verbose_enable", "0", FCVAR_GAMEDLL, "Set to 1 to enable verbose server log on the server." );
@@ -276,7 +278,6 @@ bool CGameRules::CanHavePlayerItem( CBasePlayer *pPlayer, CBaseCombatWeapon *pWe
 	// note: will fall through to here if GetItemInfo doesn't fill the struct!
 	return TRUE;
 }
-
 //=========================================================
 // load the SkillData struct with the proper values based on the skill level.
 //=========================================================
@@ -285,70 +286,98 @@ void CGameRules::RefreshSkillData ( bool forceUpdate )
 #ifndef CLIENT_DLL
 
 	GlobalEntity_Add( "skill.cfg", STRING(gpGlobals->mapname), GLOBAL_ON );
+	GlobalEntity_Add( "skill_episodic.cfg", STRING(gpGlobals->mapname), GLOBAL_ON );
 	
-	if ( GetSkillLevel() == 3 )
-	{
-		GlobalEntity_Add( "skill_3.cfg", STRING(gpGlobals->mapname), GLOBAL_ON );
-	}
-		
-	if ( GetSkillLevel() == 2 )
-	{
-		GlobalEntity_Add( "skill_2.cfg", STRING(gpGlobals->mapname), GLOBAL_ON );
-	}
+	GlobalEntity_Add( "hl2r_skill.cfg", STRING(gpGlobals->mapname), GLOBAL_ON );
+	GlobalEntity_Add( "hl2r_skill_episodic.cfg", STRING(gpGlobals->mapname), GLOBAL_ON );
 	
-	if ( GetSkillLevel() == 1 )
-	{
-		GlobalEntity_Add( "skill_1.cfg", STRING(gpGlobals->mapname), GLOBAL_ON );
-	}
+	GlobalEntity_Add( "skill_3.cfg", STRING(gpGlobals->mapname), GLOBAL_ON );
+	GlobalEntity_Add( "skill_2.cfg", STRING(gpGlobals->mapname), GLOBAL_ON );
+	GlobalEntity_Add( "skill_1.cfg", STRING(gpGlobals->mapname), GLOBAL_ON );
 
 #if !defined( TF_DLL ) && !defined( DOD_DLL )
 	char	szExec[256];
 #endif 
 
 	ConVarRef skill( "skill" );
-
 	SetSkillLevel( skill.IsValid() ? skill.GetInt() : 1 );
 
 #ifdef HL2_DLL
-	// HL2 current only uses one skill config file that represents MEDIUM skill level and
-	// synthesizes EASY and HARD. (sjb)
-	if ( UseLegacySkillBehavior.GetBool() )
+
+	// Load custom cfg's first if not prioritized.
+	// This prevents them from overriding any hl2r convar changes.
+	if ( !hl2r_prioritize_workshop_skillmanifest.GetBool() )
 	{
 		Q_snprintf( szExec,sizeof(szExec), "exec skill_manifest.cfg\n" );
-	}
-	else
-	{
-		// Execute the default skill.cfg no matter what.
-		Q_snprintf( szExec, sizeof(szExec), "exec skill.cfg\n" );
-		
-		engine->ServerCommand( szExec );
-		engine->ServerExecute();
-		
-		// Episodic file takes precedence
-		Q_snprintf( szExec, sizeof(szExec), "exec skill_episodic.cfg\n" );
-		
-		engine->ServerCommand( szExec );
-		engine->ServerExecute();
-	
-		
-		if ( GetSkillLevel() == 3 )
-		{
-			Q_snprintf( szExec, sizeof(szExec), "exec skill_3.cfg\n" );
-		}
-		
-		if ( GetSkillLevel() == 2 )
-		{
-			Q_snprintf(szExec, sizeof(szExec), "exec skill_2.cfg\n");
-		}
 			
-		if ( GetSkillLevel() == 1 )
-		{
-			Q_snprintf( szExec, sizeof(szExec), "exec skill_1.cfg\n" );
-		}
+		engine->ServerCommand( szExec );
+		engine->ServerExecute();
+	}
+	
+	if ( !hl2r_prioritize_workshop_skillcfg.GetBool() )
+	{
+		Q_snprintf( szExec, sizeof(szExec), "exec skill.cfg\n" );
+			
+		engine->ServerCommand( szExec );
+		engine->ServerExecute();
+			
+		Q_snprintf( szExec, sizeof(szExec), "exec skill_episodic.cfg\n" );
+			
+		engine->ServerCommand( szExec );
+		engine->ServerExecute();
+	}
+	
+	// Hl2r-specific .cfg's:
+	Q_snprintf( szExec, sizeof(szExec), "exec hl2r_skill.cfg\n" );
+		
+	engine->ServerCommand( szExec );
+	engine->ServerExecute();
+		
+	Q_snprintf( szExec, sizeof(szExec), "exec hl2r_skill_episodic.cfg\n" );
+		
+	engine->ServerCommand( szExec );
+	engine->ServerExecute();
+	
+	if ( GetSkillLevel() == 3 )
+	{
+		Q_snprintf( szExec, sizeof(szExec), "exec hl2r_skill_3.cfg\n" );
+	}
+		
+	if ( GetSkillLevel() == 2 )
+	{
+		Q_snprintf(szExec, sizeof(szExec), "exec hl2r_skill_2.cfg\n");
+	}
+		
+	if ( GetSkillLevel() == 1 )
+	{
+		Q_snprintf( szExec, sizeof(szExec), "exec hl2r_skill_1.cfg\n" );
 	}
 
 	engine->ServerCommand( szExec );
 	engine->ServerExecute();
+	
+	// Load custom cfg's last if they are prioritized.
+	// This allows them to override hl2r convar changes.
+	if ( hl2r_prioritize_workshop_skillcfg.GetBool() )
+	{
+		Q_snprintf( szExec, sizeof(szExec), "exec skill.cfg\n" );
+			
+		engine->ServerCommand( szExec );
+		engine->ServerExecute();
+			
+		Q_snprintf( szExec, sizeof(szExec), "exec skill_episodic.cfg\n" );
+			
+		engine->ServerCommand( szExec );
+		engine->ServerExecute();
+	}
+	
+	if ( hl2r_prioritize_workshop_skillmanifest.GetBool() )
+	{
+		Q_snprintf( szExec,sizeof(szExec), "exec skill_manifest.cfg\n" );
+			
+		engine->ServerCommand( szExec );
+		engine->ServerExecute();
+	}
 
 #endif // HL2_DLL
 #endif // CLIENT_DLL

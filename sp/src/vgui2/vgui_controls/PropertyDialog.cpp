@@ -11,11 +11,26 @@
 #include <vgui_controls/Button.h>
 #include <vgui_controls/PropertyDialog.h>
 #include <vgui_controls/PropertySheet.h>
+#include <vgui/ISurface.h>
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include <tier0/memdbgon.h>
 
 using namespace vgui;
+
+//------------------------------------------------------------------------------
+// Purpose: Helper function for determining screen proportion scaling values
+//------------------------------------------------------------------------------
+static int GetAdjustedSize( int iValue )
+{
+	int screenW, screenH;
+	surface()->GetScreenSize( screenW, screenH );
+	
+	float flRatio = (float)screenW / 1920.0f;
+	iValue *= (float)flRatio;
+	
+	return (int)iValue;
+}
 
 //-----------------------------------------------------------------------------
 // Purpose: Constructor
@@ -117,22 +132,22 @@ void PropertyDialog::PerformLayout()
 
 
 	// move the buttons to the bottom-right corner
-	int xpos = x + wide - 80;
-	int ypos = tall + y - 28;
+	int xpos = x + wide - GetAdjustedSize(80);
+	int ypos = tall + y - GetAdjustedSize(28);
 
 	if (_applyButton->IsVisible())
 	{
-		_applyButton->SetBounds(xpos, ypos, 72, 24);
-		xpos -= 80;
+		_applyButton->SetBounds(xpos, ypos, GetAdjustedSize(72), GetAdjustedSize(24) );
+		xpos -= GetAdjustedSize(80);
 	}
 
 	if (_cancelButton->IsVisible())
 	{
-		_cancelButton->SetBounds(xpos, ypos, 72, 24);
-		xpos -= 80;
+		_cancelButton->SetBounds(xpos, ypos, GetAdjustedSize(72), GetAdjustedSize(24) );
+		xpos -= GetAdjustedSize(80);
 	}
 
-	_okButton->SetBounds(xpos, ypos, 72, 24);
+	_okButton->SetBounds(xpos, ypos, GetAdjustedSize(72), GetAdjustedSize(24) );
 
 	_propertySheet->InvalidateLayout(); // tell the propertysheet to redraw!
 	Repaint();

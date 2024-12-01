@@ -145,6 +145,11 @@ private:
 	void LevelInit_ParseAllEntities( const char *pMapEntities );
 	void LoadMessageOfTheDay();
 	void LoadSpecificMOTDMsg( const ConVar &convar, const char *pszStringName );
+	
+	void LoadWorkshopAddons( void );
+	void LoadWorkshopCampaigns( void );
+	
+	bool IsValidCampaign( const char *filename );
 };
 
 

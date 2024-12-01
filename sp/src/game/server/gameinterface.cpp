@@ -556,6 +556,164 @@ void DrawAllDebugOverlays( void )
 	// A hack to draw point_message entities w/o developer required
 	DrawMessageEntities();
 }
+//-----------------------------------------------------------------------------
+// Purpose:
+//-----------------------------------------------------------------------------
+void CServerGameDLL::LoadWorkshopAddons( void )
+{
+	// Load our addon list.
+	KeyValues *pWorkshopFile = new KeyValues( "workshopaddonds" );		
+	if ( !pWorkshopFile->LoadFromFile( filesystem, "../../common/Half-Life 2/hl2_complete/cfg/workshop.txt", "GAME" ) )
+	{
+		pWorkshopFile->deleteThis();
+		return;
+	}
+	
+ 	KeyValues *pAddon = pWorkshopFile->GetFirstSubKey();
+	CUtlVector<char*> addonList;
+	
+	// Iterate through all id's listed in workshop.txt.
+	while ( pAddon )
+	{
+		if ( pAddon->GetBool() )
+		{
+			char tempstr[512];
+			
+			// Construct a filepath to this addon using its id.
+			Q_strncpy(tempstr,"../../workshop/content/220/", sizeof(tempstr));
+			Q_strncat(tempstr, pAddon->GetName(), sizeof(tempstr), COPY_ALL_CHARACTERS);
+			Q_strncat(tempstr, "/workshop_dir.vpk", sizeof(tempstr), COPY_ALL_CHARACTERS);
+			
+			// Once we're done, add the addon's full path to our list.
+			char *szDirectoryString = new char[512];
+			Q_strncpy( szDirectoryString, tempstr, 512 );
+			
+			// We need to format our addon list in reverse to respect load-order.
+			addonList.AddToHead( szDirectoryString );
+		}
+		
+		pAddon = pAddon->GetNextKey();
+	}
+	
+	// Mount the addons through our list of directories.
+	for ( int i = 0; i < addonList.Count(); i++ )
+		filesystem->AddSearchPath( addonList[i], "GAME", PATH_ADD_TO_HEAD );
+	
+	pWorkshopFile->deleteThis();
+} 
+//-----------------------------------------------------------------------------
+// Purpose:
+//-----------------------------------------------------------------------------
+void CServerGameDLL::LoadWorkshopCampaigns( void )
+{
+	// Find our workshop file.
+	KeyValues *pWorkshopFile = new KeyValues( "workshopaddonds" );		
+	if ( !pWorkshopFile->LoadFromFile( filesystem, "../../common/Half-Life 2/hl2_complete/cfg/workshop.txt", "GAME" ) )
+	{
+		pWorkshopFile->deleteThis();
+		return;
+	}
+	
+	// We need to find campaigns through manual directory searching as their id's are not listed anywhere.
+	FileFindHandle_t findHandle;
+	const char *pszFileName = g_pFullFileSystem->FindFirst( "../../workshop/content/220\\*.*", &findHandle );
+	
+	// Is this folder a campaign?
+	while ( pszFileName )
+	{
+		if ( IsValidCampaign(pszFileName) )
+		{
+			// Add patcher system here: (make sure the script file accounts for what game is being ran.)
+			
+			
+			
+ 			char tempstr[512];
+			
+			// Construct a filepath to this campaign using its id.
+			Q_strncpy(tempstr,"../../workshop/content/220/", sizeof(tempstr));
+			Q_strncat(tempstr, pszFileName, sizeof(tempstr), COPY_ALL_CHARACTERS);
+			Q_strncat(tempstr, "/workshop_dir.vpk", sizeof(tempstr), COPY_ALL_CHARACTERS);
+			
+			filesystem->AddSearchPath( tempstr, "GAME", PATH_ADD_TO_TAIL );
+			DevMsg("File name is: %s\n", pszFileName );
+		}
+		pszFileName = g_pFullFileSystem->FindNext( findHandle );
+	}
+	
+	g_pFullFileSystem->FindClose( findHandle );
+	pWorkshopFile->deleteThis();
+}
+//-----------------------------------------------------------------------------
+// Purpose:
+//-----------------------------------------------------------------------------
+bool CServerGameDLL::IsValidCampaign( const char *filename )
+{
+	// Don't accept any invalid directories.
+	if ( !Q_stricmp( filename, ".." ) || !Q_stricmp( filename, "." ) || !Q_stricmp( filename, "sound" ) )
+		return false;
+	
+	// Find our workshop file.
+	KeyValues *pWorkshopFile = new KeyValues( "workshopaddonds" );		
+	if ( !pWorkshopFile->LoadFromFile( filesystem, "../../common/Half-Life 2/hl2_complete/cfg/workshop.txt", "GAME" ) )
+	{
+		pWorkshopFile->deleteThis();
+		return false;
+	}
+		
+	KeyValues *pAddon = pWorkshopFile->GetFirstSubKey();
+	bool bIsCampaign = true;
+		
+	// We need to iterate through workshop.txt as it lists all non-campaign addon's id's,
+	// making it possible to check if this directory contains a campaign.
+	while ( pAddon )
+	{
+		if ( !Q_stricmp( filename, pAddon->GetName() ) )
+		{
+			bIsCampaign = false;
+			break;
+		}
+		pAddon = pAddon->GetNextKey();
+	}
+		
+	if ( !bIsCampaign )
+		return false;
+		
+	char tempstr[512];
+			
+	// Construct a filepath to this folder using this folder's name.
+	Q_strncpy(tempstr,"../../workshop/content/220/", sizeof(tempstr));
+	Q_strncat(tempstr, filename, sizeof(tempstr), COPY_ALL_CHARACTERS);
+	Q_strncat(tempstr, "\\*.*", sizeof(tempstr), COPY_ALL_CHARACTERS);
+		
+		
+	char *szDirectoryString = new char[512];
+	Q_strncpy( szDirectoryString, tempstr, 512 );
+		
+	FileFindHandle_t addonFindHandle;
+	const char *pszAddonFileName = g_pFullFileSystem->FindFirst( szDirectoryString, &addonFindHandle );
+		
+	bIsCampaign = false;
+		
+	// Make sure this folder actually has a .vpk file, if not throw it away as a dud.
+	while ( pszAddonFileName )
+	{
+		if ( !Q_stricmp( pszAddonFileName, "workshop_dir.vpk" ) )
+		{
+			bIsCampaign = true;
+			break;
+		}
+		pszAddonFileName = g_pFullFileSystem->FindNext( addonFindHandle );
+	}
+		
+	g_pFullFileSystem->FindClose( addonFindHandle );
+		
+	if ( !bIsCampaign )
+		return false;
+	
+	pWorkshopFile->deleteThis();
+	return true;
+	
+}
 
 CServerGameDLL g_ServerGameDLL;
 // INTERFACEVERSION_SERVERGAMEDLL_VERSION_8 is compatible with the latest since we're only adding things to the end, so expose that as well.
@@ -636,6 +794,10 @@ bool CServerGameDLL::DLLInit( CreateInterfaceFn appSystemFactory,
 	// Yes, both the client and game .dlls will try to Connect, the soundemittersystem.dll will handle this gracefully
 	if ( !soundemitterbase->Connect( appSystemFactory ) )
 		return false;
+	
+	// Load our workshop content.
+	LoadWorkshopAddons();
+//	LoadWorkshopCampaigns();
 
 	// cache the globals
 	gpGlobals = pGlobals;

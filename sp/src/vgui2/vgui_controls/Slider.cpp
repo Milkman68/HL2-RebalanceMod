@@ -30,6 +30,19 @@ DECLARE_BUILD_FACTORY( Slider );
 
 static const float NOB_SIZE = 8.0f;
 
+//------------------------------------------------------------------------------
+// Purpose: Helper function for determining screen proportion scaling values
+//------------------------------------------------------------------------------
+static int GetAdjustedSize( int iValue )
+{
+	int screenW, screenH;
+	surface()->GetScreenSize( screenW, screenH );
+	
+	float flRatio = (float)screenW / 1920.0f;
+	iValue *= (float)flRatio;
+	
+	return (int)iValue;
+}
 //-----------------------------------------------------------------------------
 // Purpose: Create a slider bar with ticks underneath it
 //-----------------------------------------------------------------------------
@@ -52,7 +65,7 @@ Slider::Slider(Panel *parent, const char *panelName ) : BaseClass(parent, panelN
 	m_bUseSubRange = false;
 	m_bInverted = false;
 
-	SetThumbWidth( 8 );
+	SetThumbWidth( GetAdjustedSize(8) );
 	RecomputeNobPosFromValue();
 	AddActionSignalTarget(this);
 	SetBlockDragChaining( true );
@@ -334,7 +347,7 @@ void Slider::ApplySettings(KeyValues *inResourceData)
 	int thumbWidth = inResourceData->GetInt("thumbwidth", 0);
 	if (thumbWidth != 0)
 	{
-		SetThumbWidth(thumbWidth);
+		SetThumbWidth(GetAdjustedSize(thumbWidth));
 	}
 
 	SetTickCaptions(left, right);
@@ -386,9 +399,9 @@ void Slider::GetTrackRect( int& x, int& y, int& w, int& h )
 	GetPaintSize( wide, tall );
 
 	x = 0;
-	y = 8;
+	y = GetAdjustedSize(8);
 	w = wide - (int)_nobSize;
-	h = 4;
+	h = GetAdjustedSize(4);
 }
 
 //-----------------------------------------------------------------------------
@@ -416,7 +429,7 @@ void Slider::DrawTicks()
 	// Figure out how to draw the ticks
 //	GetPaintSize( wide, tall );
 
-	float fwide  = (float)wide;
+	float fwide  = (float)GetAdjustedSize( wide );
 	float freepixels = fwide - _nobSize;
 
 	float leftpixel = _nobSize / 2.0f;
@@ -424,7 +437,7 @@ void Slider::DrawTicks()
 	float pixelspertick = freepixels / ( m_nNumTicks );
 
 	y += (int)_nobSize;
-	int tickHeight = 5;
+	int tickHeight = GetAdjustedSize(5);
 
     if (IsEnabled())
     {
@@ -464,7 +477,7 @@ void Slider::DrawTickLabels()
 
 	// Figure out how to draw the ticks
 //	GetPaintSize( wide, tall );
-	y += (int)NOB_SIZE + 4;
+	y += GetAdjustedSize( (int)NOB_SIZE + 4 );
 
 	// Draw Start and end range values
     if (IsEnabled())
@@ -524,7 +537,7 @@ void Slider::DrawNob()
 #endif
 	surface()->DrawSetColor(col);
 
-	int nobheight = 16;
+	int nobheight = GetAdjustedSize(16);
 
 	surface()->DrawFilledRect(
 		_nobPos[0], 

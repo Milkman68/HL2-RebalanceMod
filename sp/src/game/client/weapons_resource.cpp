@@ -110,8 +110,30 @@ void WeaponsResource::LoadWeaponSprites( WEAPON_FILE_INFO_HANDLE hWeaponFileInfo
 	Q_snprintf(sz, sizeof( sz ), "scripts/%s", pWeaponInfo->szClassName);
 
 	CUtlDict< CHudTexture *, int > tempList;
-
 	LoadHudTextures( tempList, sz, g_pGameRules->GetEncryptionKey() );
+	
+	if ( tempList.Count() )
+	{
+		Q_strncat(sz, "_override", sizeof(sz), COPY_ALL_CHARACTERS);
+		
+		CUtlDict< CHudTexture *, int > tempList2;
+		LoadHudTextures( tempList2, sz, g_pGameRules->GetEncryptionKey() );
+		
+		if ( tempList2.Count() )
+		{
+			int numElements = tempList.Count();
+			for ( int i = 0; i < numElements; i++ )
+			{
+				
+				int iOverrideElementIndex = tempList2.Find( tempList.GetElementName(i) );
+				if ( iOverrideElementIndex != tempList.InvalidIndex() )
+				{
+					tempList[i] = tempList2[iOverrideElementIndex];
+		//			DevMsg("Overriden variable is: %s\n",  tempList.GetElementName(i) );
+				}
+			}
+		}
+	}
 
 	if ( !tempList.Count() )
 	{

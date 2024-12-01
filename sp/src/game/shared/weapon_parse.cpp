@@ -285,16 +285,36 @@ bool ReadWeaponDataFromFileForSlot( IFileSystem* filesystem, const char *szWeapo
 	char sz[128];
 	Q_snprintf( sz, sizeof( sz ), "scripts/%s", szWeaponName );
 
-	KeyValues *pKV = ReadEncryptedKVFile( filesystem, sz, pICEKey,
-#if defined( DOD_DLL )
-		true			// Only read .ctx files!
-#else
-		false
-#endif
-		);
+	KeyValues *pKV = ReadEncryptedKVFile( filesystem, sz, pICEKey, false );
 
 	if ( !pKV )
 		return false;
+	
+	Q_strncat(sz, "_override", sizeof(sz), COPY_ALL_CHARACTERS);
+	KeyValues *pKV2 = ReadEncryptedKVFile( filesystem, sz, pICEKey, false );
+	
+	if ( pKV2 )
+	{
+		DevMsg("Override script name is: %s\n", sz );
+		
+		for ( KeyValues *sub = pKV->GetFirstSubKey(); sub != NULL; sub = sub->GetNextKey() )
+		{
+			if ( pKV2->FindKey( sub->GetName() ) )
+			{
+				if ( sub->GetString() == NULL )
+					continue;
+				
+				if ( Q_stricmp( sub->GetString(), "TextureData" ) == 0 )
+					continue;
+				
+				if ( Q_stricmp( sub->GetString(), "SoundData" ) == 0 )
+					continue;
+				
+		//		DevMsg("Overriden variable is: %s\n",  sub->GetName() );
+				pKV->SetString( sub->GetName(), pKV2->GetString( sub->GetName() ) );
+			}
+		}
+	}
 
 	pFileInfo->Parse( pKV, szWeaponName );
 

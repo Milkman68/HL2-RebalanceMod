@@ -56,9 +56,6 @@
 extern ConVar sk_npc_head;
 extern ConVar hl2r_explosive_crabs;
 
-extern ConVar sk_npc_head_crossbow;
-extern ConVar sk_plr_dmg_crossbow;
-
 #define ZOMBIE_BULLET_DAMAGE_SCALE 0.5f
 
 int g_interactionZombieMeleeWarning;
@@ -658,34 +655,12 @@ int CNPC_BaseZombie::MeleeAttack1Conditions ( float flDot, float flDist )
 void CNPC_BaseZombie::TraceAttack( const CTakeDamageInfo &info, const Vector &vecDir, trace_t *ptr, CDmgAccumulator *pAccumulator )
 {
 	CTakeDamageInfo infoCopy = info;
-
-	// Always count crossbow shots as headshots.
-	bool bCrossbow = info.GetAmmoType() == GetAmmoDef()->Index("Xbow");
 	
 	// Keep track of headshots so we can determine whether to pop off our headcrab.
-	if (ptr->hitgroup == HITGROUP_HEAD || bCrossbow)
+	if (ptr->hitgroup == HITGROUP_HEAD )
 	{
 		m_bHeadShot = true;
 	}
-/* 	float fCrossbowChargedShot = sk_plr_dmg_crossbow.GetFloat();
-	
-	// Makes zombies burn for a little longer.
-	if( info.GetDamage() == fCrossbowChargedShot && info.GetAmmoType() == GetAmmoDef()->Index("Xbow") )
-	{
-		infoCopy.ScaleDamage( 0.75 );
-	} */
-
-/* 	if( infoCopy.GetDamageType() & DMG_BUCKSHOT )
-	{
-		// Zombie gets across-the-board damage reduction for buckshot. This compensates for the recent changes which
-		// make the shotgun much more powerful, and returns the zombies to a level that has been playtested extensively.(sjb)
-		// This normalizes the buckshot damage to what it used to be on normal (5 dmg per pellet. Now it's 8 dmg per pellet). 
-		infoCopy.ScaleDamage( 0.625 );
-	} */
-/* 	if ( infoCopy.GetAmmoType() == GetAmmoDef()->Index("Crossbow") )
-	{
-		infoCopy.ScaleDamage( 0.5f );
-	}  */
 	
 	//Take extra damage from vehicles.
 	CBaseCombatCharacter *npcEnemy = infoCopy.GetAttacker()->MyCombatCharacterPointer();
@@ -827,11 +802,9 @@ int CNPC_BaseZombie::OnTakeDamage_Alive( const CTakeDamageInfo &inputInfo )
 	{
 		info.ScaleDamage( 1.5 ); // Fixes some traps in ravenholm not killing zombies.
 	}
-	
-	bool bCrossbow = info.GetAmmoType() == GetAmmoDef()->Index("Xbow");
 
 	// Take some percentage of damage from bullets (unless hit in the crab). Always take full buckshot & sniper damage
-	if ( !bCrossbow && !m_bHeadShot && (info.GetDamageType() & DMG_BULLET) && !(info.GetDamageType() & (DMG_SNIPER)) )
+	if ( !m_bHeadShot && (info.GetDamageType() & DMG_BULLET) && !(info.GetDamageType() & (DMG_SNIPER)) )
 	{	
 		info.ScaleDamage( ZOMBIE_BULLET_DAMAGE_SCALE );
 	}

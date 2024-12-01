@@ -5,8 +5,59 @@ using namespace vgui;
 #include <vgui_controls/PropertySheet.h>
 #include <vgui_controls/ScrollableEditablePanel.h>
 #include "ienginevgui.h"
+#include <filesystem.h>
+#include <vgui/ISurface.h>
 #include "hl2r_options.h"
 
+#define PANEL_WIDTH 422
+#define PANEL_HEIGHT 590
+
+#define PANEL_SCROLLABLE_HEIGHT 675
+
+//------------------------------------------------------------------------------
+// Purpose : Code for hooking into the base GameUI panel. Credit goes to: 
+// https://github.com/HL2RP/HL2RP
+//------------------------------------------------------------------------------
+static VPANEL FindChildPanel(VPANEL parent, CUtlStringList& pathNames, int index = 0)
+{
+	if (index >= pathNames.Size())
+	{
+		return parent;
+	}
+
+	for (auto child : g_pVGuiPanel->GetChildren(parent))
+	{
+		if (Q_strcmp(g_pVGuiPanel->GetName(child), pathNames[index]) == 0)
+		{
+			return FindChildPanel(child, pathNames, index + 1);
+		}
+	}
+
+	return 0;
+}
+
+static Panel* FindGameUIChildPanel(const char* pPath)
+{
+	CUtlStringList pathNames;
+	Q_SplitString(pPath, "/", pathNames);
+	return g_pVGuiPanel->GetPanel(FindChildPanel(enginevgui->GetPanel(PANEL_GAMEUIDLL), pathNames), "GameUI");
+}
+
+//------------------------------------------------------------------------------
+// Purpose: Helper function for determining screen proportion scaling values
+//------------------------------------------------------------------------------
+static int GetAdjustedSize( int iValue )
+{
+	int screenW, screenH;
+	surface()->GetScreenSize( screenW, screenH );
+	
+	float flRatio = (float)screenW / 1920.0f;
+	iValue *= (float)flRatio;
+	
+	DevMsg("flRatio is: %f\n", flRatio );
+	
+	return (int)iValue;
+}
 //------------------------------------------------------------------------------
 // Purpose : HL2R's challenge options parent panel
 //------------------------------------------------------------------------------
@@ -26,7 +77,7 @@ void CChallengesHL2RBasePanel::OnApplyChanges()
 CSubOptionsChallengesHL2R::CSubOptionsChallengesHL2R(vgui::Panel* parent) : EditablePanel(parent, NULL)
 {
  	CheckButtonRef.InitCheckButtons( this, C_CheckButtons, ARRAYSIZE(C_CheckButtons) );
-	SetBounds(0, 0, 422, 675);
+	SetBounds(0, 0, GetAdjustedSize(PANEL_WIDTH), GetAdjustedSize(PANEL_SCROLLABLE_HEIGHT) );
 	
 	toggleAllButton = new Button(this, "toggleAllButton", "");
 	toggleAllButton->SetCommand("toggleall");
@@ -109,10 +160,11 @@ void CSubVisualOptionsHL2R::OnControlModified()
 //------------------------------------------------------------------------------
 // Purpose : HL2R's Options panel
 //------------------------------------------------------------------------------
-CHL2RMenu::CHL2RMenu(vgui::VPANEL parent) : BaseClass(NULL, "HL2RMenu")
+CHL2RMenu::CHL2RMenu() : PropertyDialog(FindGameUIChildPanel("BaseGameUIPanel"), "OtherSettings")
 {
 	SetDeleteSelfOnClose(true);
-	SetBounds(0, 0, 422, 590);
+	SetCloseButtonVisible(false);
+	SetBounds(0, 0, GetAdjustedSize(PANEL_WIDTH), GetAdjustedSize(PANEL_HEIGHT) );
 	SetSizeable( false );
 	MoveToCenterOfScreen();
 
@@ -157,14 +209,21 @@ void CHL2RMenu::OnClose()
 	isHL2RActive = false;
 }
 
+void CHL2RMenu::OnScreenSizeChanged(int iOldWide, int iOldTall)
+{
+	BaseClass::OnScreenSizeChanged(iOldWide, iOldTall);
+	
+	BaseClass::OnClose();
+	isHL2RActive = false;
+}
+
 CHL2RMenu* HL2RMenu = NULL;
 
 CON_COMMAND(EnableHL2RPanel, "Turns on the HL2R options Panel")
 {
-	VPANEL gameToolParent = enginevgui->GetPanel(PANEL_CLIENTDLL_TOOLS);
 	if (!isHL2RActive)
 	{
-		HL2RMenu = new CHL2RMenu(gameToolParent);
+		HL2RMenu = new CHL2RMenu();
 		isHL2RActive = true;
 	}
 

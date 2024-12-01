@@ -92,6 +92,7 @@
 		#define IsPC() true
 		#define IsConsole() false
 		#define IsX360() false
+		#define IsDeck() false
 		#define IsPS3() false
 		#define IS_WINDOWS_PC
 		#define PLATFORM_WINDOWS_PC 1 // Windows PC
@@ -113,6 +114,7 @@
 		#define IsPC() false
 		#define IsConsole() true
 		#define IsX360() true
+		#define IsDeck() false
 		#define IsPS3() false
 	#endif
 	// Adding IsPlatformOpenGL() to help fix a bunch of code that was using IsPosix() to infer if the DX->GL translation layer was being used.
@@ -126,6 +128,7 @@
 	#define IsWindows() false
 	#define IsConsole() false
 	#define IsX360() false
+	#define IsDeck() false
 	#define IsPS3() false
 	#if defined( LINUX )
 		#define IsLinux() true

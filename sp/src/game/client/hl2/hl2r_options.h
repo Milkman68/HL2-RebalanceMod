@@ -159,13 +159,14 @@ class CHL2RMenu : public vgui::PropertyDialog
 	DECLARE_CLASS_SIMPLE(CHL2RMenu, vgui::PropertyDialog);
 
 public:
-	CHL2RMenu(vgui::VPANEL parent);
+	CHL2RMenu();
 	~CHL2RMenu() {}
 	virtual void Activate();
 
 protected:
 	virtual void OnThink();
 	virtual void OnClose();
+	virtual void OnScreenSizeChanged(int iOldWide, int iOldTall);
 
 private:
 	CSubOptionsChallengesHL2R* m_pSubOptionsChallengesHL2R;

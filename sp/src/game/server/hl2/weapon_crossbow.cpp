@@ -26,6 +26,7 @@
 #include "decals.h"
 #include "func_break.h"
 #include "soundenvelope.h"
+#include "npc_combine.h"
 
 #ifdef PORTAL
 	#include "portal_util_shared.h"
@@ -323,14 +324,18 @@ void CCrossbowBolt::BoltTouch( CBaseEntity *pOther )
 			dmgInfo.SetDamagePosition( tr.endpos );
 			pOther->DispatchTraceAttack( dmgInfo, vecNormalizedVel, &tr );
 			
-			CBaseAnimating *pAnim;
-			
-			pAnim = dynamic_cast<CBaseAnimating*>(pOther);
-			
 			// Only ignite at full charge.
-			if( pAnim && m_flDamage == sk_plr_dmg_crossbow_charged.GetFloat() )
+			if( m_flDamage == sk_plr_dmg_crossbow_charged.GetFloat() )
 			{
-				pAnim->Ignite( 30.0f );
+				CNPC_Combine *pElite = dynamic_cast<CNPC_Combine*>(pOther);
+				if ( !pElite || !pElite->IsElite() )
+				{
+					CBaseAnimating *pAnim;
+					pAnim = dynamic_cast<CBaseAnimating*>(pOther);
+					
+					if ( pAnim )
+						pAnim->Ignite( 30.0f );
+				}
 			}
 
 			CBasePlayer *pPlayer = ToBasePlayer( GetOwnerEntity() );

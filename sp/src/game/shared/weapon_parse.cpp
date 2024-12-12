@@ -293,25 +293,23 @@ bool ReadWeaponDataFromFileForSlot( IFileSystem* filesystem, const char *szWeapo
 	Q_strncat(sz, "_override", sizeof(sz), COPY_ALL_CHARACTERS);
 	KeyValues *pKV2 = ReadEncryptedKVFile( filesystem, sz, pICEKey, false );
 	
+	// Check for any override scripts.
 	if ( pKV2 )
 	{
-		DevMsg("Override script name is: %s\n", sz );
-		
-		for ( KeyValues *sub = pKV->GetFirstSubKey(); sub != NULL; sub = sub->GetNextKey() )
+		for ( KeyValues *sub = pKV2->GetFirstSubKey(); sub != NULL; sub = sub->GetNextKey() )
 		{
-			if ( pKV2->FindKey( sub->GetName() ) )
+			if ( sub->GetString() == NULL )
+					continue;
+				
+			if ( pKV->FindKey( sub->GetName() ) )
 			{
-				if ( sub->GetString() == NULL )
-					continue;
-				
-				if ( Q_stricmp( sub->GetString(), "TextureData" ) == 0 )
-					continue;
-				
-				if ( Q_stricmp( sub->GetString(), "SoundData" ) == 0 )
-					continue;
-				
 		//		DevMsg("Overriden variable is: %s\n",  sub->GetName() );
 				pKV->SetString( sub->GetName(), pKV2->GetString( sub->GetName() ) );
+			}
+			else
+			{
+		//		DevMsg("Additional variable is: %s\n",  sub->GetName() );
+				pKV->AddSubKey(sub);
 			}
 		}
 	}
@@ -352,6 +350,7 @@ FileWeaponInfo_t::FileWeaponInfo_t()
 	szAmmo1[0] = 0;
 	szAmmo2[0] = 0;
 	memset( aShootSounds, 0, sizeof( aShootSounds ) );
+	memset( aAnimNames, 0, sizeof( aAnimNames ) );
 	iAmmoType = 0;
 	iAmmo2Type = 0;
 	m_bMeleeWeapon = false;
@@ -480,5 +479,26 @@ void FileWeaponInfo_t::Parse( KeyValues *pKeyValuesData, const char *szWeaponNam
 			}
 		}
 	}
-}
+	
+	memset( aAnimNames, 0, sizeof( aAnimNames ) );
+	KeyValues *pAnimSpeedSection = pKeyValuesData->FindKey( "AnimSpeed" );
+	if ( pAnimSpeedSection  )
+	{
+		KeyValues *pTemp = pAnimSpeedSection->GetFirstSubKey();
+		for ( int i = 0; i < MAX_WEAPON_ANIM_STRINGS; i++ )
+		{
+			if (!pTemp)
+				continue;
+			
+			if ( pTemp->GetName() && pTemp->GetFloat() )
+			{
+				Q_strncpy( aAnimNames[i], pTemp->GetName(), MAX_WEAPON_STRING );
+				fAnimSpeed[i] = pTemp->GetFloat();
+			}
+			
+			pTemp = pTemp->GetNextKey();
+		}
+	}
+}			
+		
 

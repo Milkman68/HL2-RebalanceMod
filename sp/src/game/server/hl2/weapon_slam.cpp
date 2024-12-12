@@ -23,7 +23,6 @@
 #define	SLAM_PRIMARY_VOLUME		450
 #define	SLAM_GRACE_PERIOD		1.0f
 
-extern ConVar deployspeedmult;
 ConVar sk_plr_dmg_slam( "sk_plr_dmg_slam","0");
 ConVar sk_slam_radius( "sk_slam_radius","0");
 
@@ -892,25 +891,6 @@ bool CWeapon_SLAM::Deploy( void )
 	}
 
 	return DefaultDeploy( (char*)GetViewModel(), (char*)GetWorldModel(), iActivity, (char*)GetAnimPrefix() );
-}
-//-----------------------------------------------------------------------------
-// Purpose:
-//-----------------------------------------------------------------------------
-float CWeapon_SLAM::GetActivityAnimSpeed( Activity ideal )
-{
-	switch ( ideal )
-	{
-		
-	// Speed up all draw anims.
-	case ACT_SLAM_THROW_DRAW:
-	case ACT_SLAM_THROW_ND_DRAW:
-	case ACT_SLAM_DETONATOR_DRAW:
-	case ACT_SLAM_DETONATOR_THROW_DRAW:
-	case ACT_SLAM_TRIPMINE_DRAW:
-		return deployspeedmult.GetFloat() * 1.2;
-	}
-	
-	return 1.3;
 }
 //-----------------------------------------------------------------------------
 // Purpose:

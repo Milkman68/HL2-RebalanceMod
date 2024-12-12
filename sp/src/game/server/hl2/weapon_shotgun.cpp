@@ -58,7 +58,7 @@ public:
 		static Vector vitalAllyCone = VECTOR_CONE_3DEGREES;
 		static Vector cone;
 				
-		CBasePlayer *pPlayer = ToBasePlayer( GetOwner() );
+	//	CBasePlayer *pPlayer = ToBasePlayer( GetOwner() );
 
 		if( GetOwner() && (GetOwner()->Classify() == CLASS_PLAYER_ALLY_VITAL) )
 		{
@@ -66,14 +66,14 @@ public:
 			// to be at least as deadly as she would be with her pistol to stay interesting (sjb)
 			return vitalAllyCone;
 		}
-		if ( GetOwner() && pPlayer && m_bAltFiring)
-		{
-			cone = VECTOR_CONE_8DEGREES;
-		}
-		else
-		{
-			cone = VECTOR_CONE_6DEGREES;	
-		}
+		// if ( GetOwner() && pPlayer && m_bAltFiring)
+		// {
+			// cone = VECTOR_CONE_8DEGREES;
+		// }
+		// else
+		// {
+			cone = VECTOR_CONE_5DEGREES;	
+//		}
 
 		return cone;
 	}
@@ -583,7 +583,7 @@ void CWeaponShotgun::BurstThink( void )
 	pPlayer->FireBullets( sk_plr_num_shotgun_pellets.GetInt(), vecSrc, vecAiming, GetBulletSpread(), MAX_TRACE_LENGTH, m_iPrimaryAmmoType, 2 );
 
 	//Disorient the player
-	QAngle viewPunch = QAngle( -5, random->RandomFloat( -2, 2 ), 0 );
+	QAngle viewPunch = QAngle( -4, random->RandomFloat( -2, 2 ), 0 );
 	
 	if ( sk_alternate_recoil.GetBool() )
 	{

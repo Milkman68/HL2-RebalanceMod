@@ -54,14 +54,14 @@ public:
 	bool	Reload( void );
 
 	float	GetFireRate( void ) 
-	{ return 0.055f; }	// 13.3hz
+	{ return 0.05f; }	// 13.3hz
 	int		CapabilitiesGet( void ) { return bits_CAP_WEAPON_RANGE_ATTACK1; }
 	int 	WeaponRangeAttack2Condition( float flDot, float flDist );
 	Activity	GetPrimaryAttackActivity( void );
 
 	virtual const Vector& GetBulletSpread( void )
 	{
-		static const Vector cone = VECTOR_CONE_4DEGREES; // 3
+		static const Vector cone = VECTOR_CONE_7DEGREES / 2; // 3
 		return cone;
 	}
 

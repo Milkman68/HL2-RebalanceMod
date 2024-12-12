@@ -185,6 +185,7 @@ private:
 		SCHED_COMBINE_RANGE_ATTACK2,
 		SCHED_COMBINE_RANGE_ATTACK1_RPG,
 		SCHED_COMBINE_TAKE_COVER1,
+		SCHED_COMBINE_REPOSITION,
 		SCHED_COMBINE_TAKE_COVER_FROM_BEST_SOUND,
 		SCHED_COMBINE_RUN_AWAY_FROM_BEST_SOUND,
 		SCHED_COMBINE_GRENADE_COVER1,
@@ -264,6 +265,7 @@ private:
 	void DelaySquadAdvances( float flTime );
 	
 	bool IsValidEnemy( CBaseEntity *pEnemy );
+	float GetLOSPositionScore( const Vector &vecThreat, const Vector &vecPos, float flIdealDist, bool bFirstNode = false );
 
 	// Chase the enemy, updating the target position as the player moves
 	void StartTaskChaseEnemyContinuously( const Task_t *pTask );

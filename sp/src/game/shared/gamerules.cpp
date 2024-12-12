@@ -289,7 +289,7 @@ void CGameRules::RefreshSkillData ( bool forceUpdate )
 	GlobalEntity_Add( "skill_episodic.cfg", STRING(gpGlobals->mapname), GLOBAL_ON );
 	
 	GlobalEntity_Add( "hl2r_skill.cfg", STRING(gpGlobals->mapname), GLOBAL_ON );
-	GlobalEntity_Add( "hl2r_skill_episodic.cfg", STRING(gpGlobals->mapname), GLOBAL_ON );
+//	GlobalEntity_Add( "hl2r_skill_episodic.cfg", STRING(gpGlobals->mapname), GLOBAL_ON );
 	
 	GlobalEntity_Add( "skill_3.cfg", STRING(gpGlobals->mapname), GLOBAL_ON );
 	GlobalEntity_Add( "skill_2.cfg", STRING(gpGlobals->mapname), GLOBAL_ON );
@@ -333,24 +333,24 @@ void CGameRules::RefreshSkillData ( bool forceUpdate )
 	engine->ServerCommand( szExec );
 	engine->ServerExecute();
 		
-	Q_snprintf( szExec, sizeof(szExec), "exec hl2r_skill_episodic.cfg\n" );
+//	Q_snprintf( szExec, sizeof(szExec), "exec hl2r_skill_episodic.cfg\n" );
 		
-	engine->ServerCommand( szExec );
-	engine->ServerExecute();
+//	engine->ServerCommand( szExec );
+//	engine->ServerExecute();
 	
 	if ( GetSkillLevel() == 3 )
 	{
-		Q_snprintf( szExec, sizeof(szExec), "exec hl2r_skill_3.cfg\n" );
+		Q_snprintf( szExec, sizeof(szExec), "exec skill_3.cfg\n" );
 	}
 		
 	if ( GetSkillLevel() == 2 )
 	{
-		Q_snprintf(szExec, sizeof(szExec), "exec hl2r_skill_2.cfg\n");
+		Q_snprintf(szExec, sizeof(szExec), "exec skill_2.cfg\n");
 	}
 		
 	if ( GetSkillLevel() == 1 )
 	{
-		Q_snprintf( szExec, sizeof(szExec), "exec hl2r_skill_1.cfg\n" );
+		Q_snprintf( szExec, sizeof(szExec), "exec skill_1.cfg\n" );
 	}
 
 	engine->ServerCommand( szExec );

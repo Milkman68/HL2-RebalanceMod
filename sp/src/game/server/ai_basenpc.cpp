@@ -12730,13 +12730,16 @@ float CAI_BaseNPC::GetCoverPositionScore( const Vector &vecThreat, const Vector 
 
 //-----------------------------------------------------------------------------
 
-float CAI_BaseNPC::GetLOSPositionScore( const Vector &vecThreat, const Vector &vecPos, float flIdealDist )
+float CAI_BaseNPC::GetLOSPositionScore( const Vector &vecThreat, const Vector &vecPos, float flIdealDist, bool bFirstNode )
 {
 	float flNodeScore = 0;
 
 	// Setup our distance metrics.
 	float flNodeDist = ( vecThreat - vecPos ).Length();
 	float flNearDist = ( GetAbsOrigin() - vecPos ).Length();
+	
+	// Score it based on how close it is to the desired distance from the threat.
+	flNodeScore += ( flIdealDist - fabsf(flNodeDist - flIdealDist) ) / flIdealDist;
 
 	// Bias out nodes that are farther away from us than the enemy.
 	flNodeScore += 1.0 - ( flNearDist / flNodeDist );
@@ -12757,8 +12760,16 @@ float CAI_BaseNPC::GetLOSPositionScore( const Vector &vecThreat, const Vector &v
 		
 	if ( tr.fraction != 1.0 )
 	{
-		// Give bonus score if this node can double as a cover posistion.
-		flNodeScore += 0.5;
+		// If this node can double as a cover posistion and it's the one we're on, give a huge score bonus.
+		if ( bFirstNode )
+		{
+			flNodeScore += 1.5;
+		}
+		else
+		{
+			// Otherwise just give a smaller bonus.
+			flNodeScore += 0.5;
+		}
 	}
 	
 	return flNodeScore;

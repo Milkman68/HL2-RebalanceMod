@@ -42,6 +42,7 @@ CAI_MoveAndShootOverlay::CAI_MoveAndShootOverlay() : m_bMovingAndShooting(false)
 {
 	m_flSuspendUntilTime = MOVESHOOT_DO_NOT_SUSPEND;
 	m_bNoShootWhileMove = false;
+	m_bAllowReloading = true;
 }
 
 //-------------------------------------
@@ -264,8 +265,13 @@ void CAI_MoveAndShootOverlay::RunShootWhileMove()
 		else 
 		{
 			if ( pOuter->HasCondition( COND_NO_PRIMARY_AMMO, false ) )
-			{
-				if ( pOuter->GetNavigator()->GetPathTimeToGoal() > 1.0 )
+			{	
+				if ( !m_bAllowReloading )
+				{
+					EndShootWhileMove();
+					return;
+				}
+				else if ( pOuter->GetNavigator()->GetPathTimeToGoal() > 1.0 )
 				{
 					activity = pOuter->TranslateActivity( ACT_GESTURE_RELOAD );
 					if ( activity != ACT_INVALID && GetOuter()->HaveSequenceForActivity( activity ) )

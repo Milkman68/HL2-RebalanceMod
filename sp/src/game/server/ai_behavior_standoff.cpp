@@ -23,6 +23,7 @@
 #define GOAL_POSITION_INVALID	Vector( FLT_MAX, FLT_MAX, FLT_MAX )
 
 ConVar DrawBattleLines( "ai_drawbattlelines", "0", FCVAR_CHEAT );
+ConVar enemies_abandon_standoff("enemies_abandon_standoff", "1", FCVAR_REPLICATED | FCVAR_ARCHIVE );
 
 
 static AI_StandoffParams_t AI_DEFAULT_STANDOFF_PARAMS = { AIHCR_MOVE_ON_COVER, true, 1.5, 2.5, 1, 3, 25, 0 };
@@ -427,6 +428,12 @@ void CAI_StandoffBehavior::GatherConditions()
 					}
 				}
 			}
+		}
+		
+		if ( enemies_abandon_standoff.GetBool() && ( FClassnameIs(GetOuter(), "npc_combine_s") || FClassnameIs(GetOuter(), "npc_metropolice") ) )
+		{
+		//	DevMsg("Abandoned standoff!\n");
+			bAbandonStandoff = true;
 		}
 	}
 

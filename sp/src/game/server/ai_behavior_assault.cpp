@@ -13,6 +13,7 @@
 #include "tier0/memdbgon.h"
 
 ConVar ai_debug_assault("ai_debug_assault", "0");
+ConVar enemies_abandon_assault("enemies_abandon_assault", "1", FCVAR_REPLICATED | FCVAR_ARCHIVE );
 
 BEGIN_DATADESC( CRallyPoint )
 	DEFINE_KEYFIELD( m_AssaultPointName, FIELD_STRING, "assaultpoint" ),
@@ -335,7 +336,7 @@ void CAI_AssaultBehavior::ClearAssaultPoint( void )
 	m_AssaultPointName = m_hAssaultPoint->m_NextAssaultPointName;
 
 	// Do we need to move to another assault point?
-	if( m_hAssaultPoint->m_NextAssaultPointName != NULL_STRING )
+	if( m_hAssaultPoint->m_NextAssaultPointName != NULL_STRING && !ShouldAbandonAssault() )
 	{
 		CAssaultPoint *pNextPoint = FindAssaultPoint( m_hAssaultPoint->m_NextAssaultPointName );
 		
@@ -436,6 +437,12 @@ void CAI_AssaultBehavior::GatherConditions( void )
 	{
 		// Don't get distracted. Die trying if you have to.
 		ClearCondition( COND_HEAR_DANGER );
+	}
+	
+	if ( ShouldAbandonAssault() )
+	{
+	//	DevMsg("Abandoned assault!\n");
+		ClearAssaultPoint();
 	}
 }
 
@@ -1331,7 +1338,7 @@ void CAI_AssaultBehavior::BuildScheduleTestBits()
 	BaseClass::BuildScheduleTestBits();
 
 	// If we're allowed to divert, add the appropriate interrupts to our movement schedules
-	if ( IsAllowedToDivert() )
+	if ( IsAllowedToDivert() || ShouldAbandonAssault() )
 	{
 		if ( IsCurSchedule( SCHED_MOVE_TO_ASSAULT_POINT ) ||
 			IsCurSchedule( SCHED_MOVE_TO_RALLY_POINT ) || 
@@ -1516,6 +1523,30 @@ int CAI_AssaultBehavior::SelectSchedule()
 }
 
 //-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+bool CAI_AssaultBehavior::ShouldAbandonAssault( void )
+{
+	if ( !enemies_abandon_assault.GetBool() )
+		return false;
+	
+	if ( !GetEnemy() )
+		return false;
+	
+	if ( !GetOuter()->GetActiveWeapon() )
+		return false;
+	
+	if ( !FClassnameIs(GetOuter(), "npc_combine_s") && !FClassnameIs(GetOuter(), "npc_metropolice") )
+		return false;
+		
+	float flDist = ( GetEnemy()->GetAbsOrigin() - GetOuter()->GetAbsOrigin() ).Length();
+	if ( flDist > GetOuter()->GetActiveWeapon()->m_fMaxRange1 )
+		return false;
+	
+	return true;
+}
+
+//-----------------------------------------------------------------------------
 //
 // CAI_AssaultGoal
 //
@@ -1610,7 +1641,6 @@ void CAI_AssaultGoal::InputBeginAssault( inputdata_t &inputdata )
 		}
 	}
 }
-
 
 AI_BEGIN_CUSTOM_SCHEDULE_PROVIDER(CAI_AssaultBehavior)
 

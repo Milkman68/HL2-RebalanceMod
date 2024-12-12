@@ -63,7 +63,6 @@ ConVar tf_weapon_criticals_bucket_default( "tf_weapon_criticals_bucket_default",
 extern ConVar hl2r_realistic_reload;
 extern ConVar hl2r_hudhints;
 ConVar sk_alternate_recoil( "sk_alternate_recoil", "0" );
-ConVar deployspeedmult( "deployspeedmult", "1.4" );
 
 CBaseCombatWeapon::CBaseCombatWeapon()
 {
@@ -2459,9 +2458,12 @@ bool CBaseCombatWeapon::SetIdealActivity( Activity ideal )
 //-----------------------------------------------------------------------------
 float CBaseCombatWeapon::GetActivityAnimSpeed( Activity ideal )
 {
-	// Global deploy speed modifier
-	if ( ideal == ACT_VM_DRAW )
-		return deployspeedmult.GetFloat();
+	for ( int i = 0; i < MAX_WEAPON_ANIM_STRINGS; i++ )
+	{
+		Activity WpnDataActivity = (Activity)ActivityList_IndexForName( GetWpnData().aAnimNames[i] );
+		if ( ideal == WpnDataActivity )
+			return GetWpnData().fAnimSpeed[i];
+	}
 	
 	return 1.0;
 }

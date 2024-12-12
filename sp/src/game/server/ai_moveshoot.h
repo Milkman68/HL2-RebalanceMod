@@ -30,6 +30,7 @@ public:
 	void EndShootWhileMove();
 	void SuspendMoveAndShoot( float flDuration );
 	bool IsSuspended() { return m_flSuspendUntilTime > gpGlobals->curtime; }
+	void AllowReloading( bool allowreload ) { m_bAllowReloading = allowreload; }
 
 	void SetInitialDelay( float delay );
 
@@ -43,6 +44,7 @@ private:
 
 	bool	m_bMovingAndShooting;
 	bool	m_bNoShootWhileMove;
+	bool	m_bAllowReloading;
 	bool	m_bInInitialDelay;
 	float	m_initialDelay;
 	float	m_flSuspendUntilTime;

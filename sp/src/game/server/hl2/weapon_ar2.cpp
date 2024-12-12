@@ -145,7 +145,7 @@ float CWeaponAR2::GetFireRate( void )
 	{
 		return 0.14;
 	} */
-	return sk_weapon_ar2_burst_fire.GetBool() ? 0.07 : 0.14;
+	return sk_weapon_ar2_burst_fire.GetBool() ? 0.06 : 0.14;
 }
 int	CWeaponAR2::GetBurstSize( void )
 {
@@ -506,7 +506,7 @@ void CWeaponAR2::AddViewKick( void )
 	if (!pPlayer)
 		return;
 	
-	DoMachineGunKick( pPlayer, MAX_VERTICAL_KICK, m_fFireDuration, SLIDE_LIMIT );
+	DoMachineGunKick( pPlayer, MAX_VERTICAL_KICK, m_fFireDuration + 1.0f, SLIDE_LIMIT );
 }
 
 //-----------------------------------------------------------------------------

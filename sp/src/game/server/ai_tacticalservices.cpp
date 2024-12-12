@@ -666,7 +666,7 @@ int CAI_TacticalServices::FindLosNode( const Vector &vThreatPos, const Vector &v
 							{
 							//	NDebugOverlay::Box( nodeOrigin, Vector(5, 5, 5), -Vector(5, 5, 5), 255,0,0, true, 10 );
 								
-								float flNewScore = GetOuter()->GetLOSPositionScore( vThreatPos, nodeOrigin, flDesiredDist );
+								float flNewScore = GetOuter()->GetLOSPositionScore( vThreatPos, nodeOrigin, flDesiredDist, iMyNode == iIdealNode );
 									
 								if ( flNewScore > flScore )
 								{
@@ -717,12 +717,24 @@ int CAI_TacticalServices::FindLosNode( const Vector &vThreatPos, const Vector &v
 				continue;
 
 			int newID = nodeLink->DestNodeID(nodeIndex);
+			
 
 			// If not already visited, add to the list
 			if (!wasVisited.IsBitSet(newID))
 			{
 				float dist = (GetLocalOrigin() - GetNetwork()->GetNode(newID)->GetPosition(GetHullType())).LengthSqr();
-				list.Insert( AI_NearNode_t(newID, dist) );
+				if ( flDesiredDist > 0.0f )
+				{
+					float threatDist = (vThreatPos - nodeOrigin).LengthSqr();
+					
+					if ( threatDist > flDesiredDist * 0.25f )
+						list.Insert( AI_NearNode_t(newID, dist) );
+				}
+				else
+				{
+					list.Insert( AI_NearNode_t(newID, dist) );
+				}
+				
 				wasVisited.Set( newID );
 			}
 		}
@@ -732,8 +744,12 @@ int CAI_TacticalServices::FindLosNode( const Vector &vThreatPos, const Vector &v
 	{
 	//	Vector nodeOrigin = GetNetwork()->GetNode(iIdealNode)->GetPosition(GetHullType());
 	//	NDebugOverlay::Box( nodeOrigin, GetOuter()->GetHullMins(), GetOuter()->GetHullMaxs(), 0,255,0, true, 10 );
-		
-		return iIdealNode;
+	
+	//	DevMsg("Score is: %f\n", flScore );
+	
+		bool bThreatReachable = GetOuter()->GetPathDistanceToPoint( GetAbsOrigin(), vThreatPos ) != NULL;
+		if ( !bThreatReachable || flScore > 0.25 || flDesiredDist <= 0.0f )
+			return iIdealNode;
 	}
 	
 	// We failed.  No range attack node node was found

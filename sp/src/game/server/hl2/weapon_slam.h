@@ -68,7 +68,6 @@ public:
 	void				SatchelThrow( void );
 	bool				Deploy( void );
 	bool				Holster( CBaseCombatWeapon *pSwitchingTo = NULL );
-	float				GetActivityAnimSpeed( Activity ideal );
 	bool				HasAnyAmmo( void );
 	void 				ItemHolsterFrame( void );
 

@@ -53,6 +53,9 @@ int GetWeaponSoundFromString( const char *pszString );
 #define MAX_WEAPON_PREFIX	16
 #define MAX_WEAPON_AMMO_NAME		32
 
+
+#define MAX_WEAPON_ANIM_STRINGS		16
+
 #define WEAPON_PRINTNAME_MISSING "!!! Missing printname on weapon"
 
 class CHudTexture;
@@ -101,6 +104,10 @@ public:
 
 	// Sound blocks
 	char					aShootSounds[NUM_SHOOT_SOUND_TYPES][MAX_WEAPON_STRING];	
+	
+	// Animations blocks
+	char					aAnimNames[MAX_WEAPON_ANIM_STRINGS][MAX_WEAPON_STRING];	
+	float					fAnimSpeed[MAX_WEAPON_ANIM_STRINGS];
 
 	int						iAmmoType;
 	int						iAmmo2Type;

@@ -38,7 +38,7 @@ static int GetAdjustedSize( int iValue )
 	int screenW, screenH;
 	surface()->GetScreenSize( screenW, screenH );
 	
-	float flRatio = (float)screenW / 1920.0f;
+	float flRatio = MAX( 1.0f, (float)screenW / 1920.0f );
 	iValue *= (float)flRatio;
 	
 	return (int)iValue;

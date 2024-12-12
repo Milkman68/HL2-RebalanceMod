@@ -353,6 +353,7 @@ void CNPC_Combine::Spawn( void )
 	// Can be in a squad
 	CapabilitiesAdd( bits_CAP_SQUAD);
 	CapabilitiesAdd( bits_CAP_USE_WEAPONS );
+	CapabilitiesAdd( bits_CAP_USE_SHOT_REGULATOR );
 
 	CapabilitiesAdd( bits_CAP_DUCK );				// In reloading and cover
 	
@@ -367,7 +368,9 @@ void CNPC_Combine::Spawn( void )
 	m_HackedGunPos = Vector ( 0, 0, 55 );
 
 	m_flStopMoveShootTime = FLT_MAX; // Move and shoot defaults on.
-	m_MoveAndShootOverlay.SetInitialDelay( 0.15 ); // But with a bit of a delay.
+	m_MoveAndShootOverlay.SetInitialDelay( 0.15 );
+	
+	m_MoveAndShootOverlay.AllowReloading( false );
 
 	m_flNextLostSoundTime		= 0;
 	m_flAlertPatrolTime			= 0;
@@ -477,15 +480,12 @@ void CNPC_Combine::GatherConditions()
 			}
 		}
 		
-		if ( !IsElite() )
+		if ( gpGlobals->curtime > m_flNextGrenadeCheck )
 		{
-			if ( gpGlobals->curtime > m_flNextGrenadeCheck )
-			{
-				if ( CanGrenadeEnemy( true ) )
-					SetCondition( COND_COMBINE_CAN_GRENADE_ENEMY );
-				else
-					ClearCondition( COND_COMBINE_CAN_GRENADE_ENEMY );
-			}
+			if ( CanGrenadeEnemy( true ) )
+				SetCondition( COND_COMBINE_CAN_GRENADE_ENEMY );
+			else
+				ClearCondition( COND_COMBINE_CAN_GRENADE_ENEMY );
 		}
 		
 		if ( IsElite() || hl2r_enemies_altfire.GetBool() )
@@ -583,13 +583,8 @@ void CNPC_Combine::PrescheduleThink()
 //-----------------------------------------------------------------------------
 void CNPC_Combine::DelayAltFireAttack( float flDelay )
 {
-	float flNextAltFire = gpGlobals->curtime + flDelay;
-
-	if( flNextAltFire > m_flNextAltFireTime )
-	{
-		// Don't let this delay order preempt a previous request to wait longer.
-		m_flNextAltFireTime = flNextAltFire;
-	}
+	m_flNextAltFireTime = gpGlobals->curtime + flDelay;
+	ClearCondition( COND_COMBINE_CAN_ALTFIRE_ENEMY );
 }
 
 //-----------------------------------------------------------------------------
@@ -649,52 +644,29 @@ float CNPC_Combine::MaxYawSpeed( void )
 //-----------------------------------------------------------------------------
 bool CNPC_Combine::ShouldMoveAndShoot()
 {
-	// Set this timer so that gpGlobals->curtime can't catch up to it. 
-	// Essentially, we're saying that we're not going to interfere with 
-	// what the AI wants to do with move and shoot. 
-	//
-	// If any code below changes this timer, the code is saying 
-	// "It's OK to move and shoot until gpGlobals->curtime == m_flStopMoveShootTime"
+	if( !IsElite() && !m_AssaultBehavior.HasAssaultCue() )
+		return false; 
 	
-	if ( IsElite() )
-		return true;
+	if ( !GetEnemy() )
+		return false;
+	
+	if ( !GetActiveWeapon() )
+		return false;
 	
   	if( IsCurSchedule( SCHED_COMBINE_HIDE_AND_RELOAD, false ) )
-	{
-		m_flStopMoveShootTime = gpGlobals->curtime + random->RandomFloat( 0.4f, 0.6f );
 		return false;
-	}
 
-	//if ( m_bEnemyGrenade )
-	//{
-		if ( !IsElite() && IsRunningFleeSchedule() )
-			return false;
-	//}
-	
-	if ( HasCondition( COND_NO_PRIMARY_AMMO ) )
-	{
-		m_MoveAndShootOverlay.SuspendMoveAndShoot( 5 );
+	if ( IsRunningFleeSchedule() )
 		return false;
-	}
 
- 	if( IsCurSchedule( SCHED_COMBINE_TAKE_COVER1, false ) )
-	{
-		m_flStopMoveShootTime = gpGlobals->curtime + random->RandomFloat( 0.4f, 0.6f );
-		return false; 
-	} 
+ //	if( IsCurSchedule( SCHED_COMBINE_TAKE_COVER1, false ) )
+//		return false; 
 	
 	if ( BaseClass::ShouldMoveAndShoot() )
 	{
-		// If we already have, or can occupy an Attack Slot to move and shoot, do it. 
-		// Otherwise, just run in the direction you're facing.
-		if( HasStrategySlotRange( SQUAD_SLOT_ATTACK1, SQUAD_SLOT_ATTACK2 ) )
-		{
-			return true; // already have the slot I need
-		}
-		else if( CanOccupyAttackSlot() )
-		{
+		float flDistToEnemy = ( GetEnemy()->GetAbsOrigin() - GetAbsOrigin() ).Length();
+		if( flDistToEnemy < GetActiveWeapon()->m_fMaxRange1 && CanOccupyAttackSlot() )
 			return true;
-		}
 	}
 	
 	return false;
@@ -1329,12 +1301,12 @@ void CNPC_Combine::RunTask( const Task_t *pTask )
 			{
 				if ( IsActivityFinished() )
 				{
-					if ( HasCondition( COND_ENEMY_OCCLUDED ) /* && !CanSuppressEnemy() */ )
+					if ( HasCondition( COND_ENEMY_OCCLUDED )/*  && !CanSuppressEnemy() */ )
 					{
 						TaskComplete();
 					}
 					else
-					{
+					{ 
 						// DevMsg("ACT_RANGE_ATTACK1\n");
 						OnRangeAttack1();
 						ResetIdealActivity( ACT_RANGE_ATTACK1 );
@@ -1521,11 +1493,9 @@ void CNPC_Combine::BuildScheduleTestBits( void )
 		ClearCondition( COND_GOT_PUNTED );
 	}
 	
-	if ( GetEnemy() != NULL && ( IsRunningApproachEnemySchedule() && !IsElite() ) )//bookmark
-	{
+ 	if ( GetEnemy() != NULL && ( IsRunningApproachEnemySchedule() && !IsElite() ) )//bookmark
 		SetCustomInterruptCondition( COND_CAN_RANGE_ATTACK1 );
-	}
-	
+	 
 	if ( HasStrategySlotRange( SQUAD_SLOT_ATTACK1, SQUAD_SLOT_ATTACK2 ) || IsRunningApproachEnemySchedule() )
 	{
 		SetCustomInterruptCondition( COND_COMBINE_ATTACK_SLOT_TAKEN );
@@ -1534,11 +1504,6 @@ void CNPC_Combine::BuildScheduleTestBits( void )
 	{
 		ClearCustomInterruptCondition( COND_COMBINE_ATTACK_SLOT_TAKEN );
 	}
-	
- 	if ( IsElite() )
-	{
-		ClearCustomInterruptCondition( COND_HEAVY_DAMAGE );
-	} 
 }
 //-----------------------------------------------------------------------------
 // Purpose: Translate base class activities into combot activites
@@ -1570,7 +1535,7 @@ Activity CNPC_Combine::NPC_TranslateActivity( Activity eNewActivity )
 		}
 	}
 
-	if ( m_AssaultBehavior.IsRunning() )
+/* 	if ( m_AssaultBehavior.IsRunning() )
 	{
 		switch ( eNewActivity )
 		{
@@ -1586,7 +1551,7 @@ Activity CNPC_Combine::NPC_TranslateActivity( Activity eNewActivity )
 			eNewActivity = ACT_RUN_AIM;
 			break;
 		}
-	}
+	} */
 	
 	if ( !IsElite() && IsRunningFleeSchedule() )
 	{
@@ -1595,20 +1560,21 @@ Activity CNPC_Combine::NPC_TranslateActivity( Activity eNewActivity )
 	}
 		
 	
-	if ( IsElite() && GetEnemy() != NULL )
+ 	if ( IsElite() && GetEnemy() != NULL )
 	{
 		switch ( eNewActivity )
 		{
-			
+		
 		case ACT_RUN_AIM:
-			eNewActivity = ACT_WALK_AIM;
+			if ( !m_AssaultBehavior.HasAssaultCue() )
+				eNewActivity = ACT_WALK_AIM;
 			break;
 			
 		case ACT_MELEE_ATTACK1:
 			eNewActivity = ACT_MELEE_ATTACK2;
 			break;
 		}
-	}
+	} 
 	
 	CWeaponRPG *pRPG = dynamic_cast<CWeaponRPG*>(GetActiveWeapon());
 	if ( pRPG )
@@ -2137,11 +2103,11 @@ int CNPC_Combine::SelectSchedule( void )
 			}
 
 			// Don't patrol if I'm in the middle of an assault, because I'll never return to the assault. 
-			if ( !m_AssaultBehavior.HasAssaultCue() )
-			{
+		//	if ( !m_AssaultBehavior.HasAssaultCue() )
+		//	{
 				if( m_bShouldPatrol || HasCondition( COND_COMBINE_SHOULD_PATROL ) )
 					return SCHED_COMBINE_PATROL;
-			}
+		//	}
 		}
 		break;
 
@@ -2181,12 +2147,12 @@ int CNPC_Combine::SelectFailSchedule( int failedSchedule, int failedTask, AI_Tas
 		{
 			if( failedSchedule == SCHED_COMBINE_HIDE_AND_RELOAD  )
 				return SCHED_RELOAD;
-			
-			if ( HasCondition( COND_COMBINE_CAN_GRENADE_ENEMY ) && OccupyStrategySlot( SQUAD_SLOT_GRENADE1 ) )
-				return SCHED_RANGE_ATTACK2;
 	
 			if ( HasCondition( COND_CAN_RANGE_ATTACK1 ) && CanOccupyAttackSlot() )
 				return SCHED_RANGE_ATTACK1;
+			
+			if ( HasCondition( COND_COMBINE_CAN_GRENADE_ENEMY ) && OccupyStrategySlot( SQUAD_SLOT_GRENADE1 ) )
+				return SCHED_RANGE_ATTACK2;
 		}
 		
 		return SCHED_FAIL;
@@ -2300,7 +2266,8 @@ int CNPC_Combine::SelectScheduleAttack()
 		// Throw a grenade if not allowed to engage with weapon.
 		if ( HasCondition( COND_COMBINE_CAN_GRENADE_ENEMY ) )
 		{
-			if ( OccupyStrategySlot( SQUAD_SLOT_GRENADE1 ) )
+			bool bTakenDamage = m_nRecentDamage > RECENT_DAMAGE_THRESHOLD;
+			if ( !bTakenDamage && OccupyStrategySlot( SQUAD_SLOT_GRENADE1 ) )
 			{
 				return SCHED_RANGE_ATTACK2;
 			}
@@ -2383,18 +2350,18 @@ int CNPC_Combine::TranslateSchedule( int scheduleType )
 		{
 			if( HasCondition( COND_SEE_ENEMY ) )
 			{
-				return SCHED_COMBAT_FACE;
+				return SCHED_TAKE_COVER_FROM_ENEMY;
 			}
 			else if ( !m_AssaultBehavior.HasAssaultCue() )
 			{
 				// Don't patrol if I'm in the middle of an assault, because 
 				// I'll never return to the assault. 
-				if ( GetEnemy() )
-				{
-					RememberUnreachable( GetEnemy() );
-				}
+		//		if ( GetEnemy() )
+		//		{
+		//			RememberUnreachable( GetEnemy() );
+		//		}
 
-				return TranslateSchedule( SCHED_COMBINE_PATROL );
+				return TranslateSchedule( SCHED_COMBINE_WAIT_IN_COVER );
 			}
 		}
 		break;
@@ -2613,7 +2580,7 @@ void CNPC_Combine::HandleAnimEvent( animevent_t *pEvent )
 				GetActiveWeapon()->Operator_HandleAnimEvent( &fakeEvent, this );
 
 				// Stop other squad members from combine balling for a while.
-				DelaySquadAltFireAttack( 5.0f );
+				DelaySquadAltFireAttack( 10.0f );
 
 				// I'm disabling this decrementor. At the time of this change, the elites
 				// don't bother to check if they have grenades anyway. This means that all
@@ -3187,6 +3154,9 @@ bool CNPC_Combine::CanAltFireEnemy( bool bUseFreeKnowledge )
 
 	if( !GetEnemy() )
 		return false;
+	
+	if ( !GetActiveWeapon() )
+		return false;
 
 //	if (gpGlobals->curtime < m_flNextGrenadeCheck )
 //		return false;
@@ -3228,8 +3198,8 @@ bool CNPC_Combine::CanAltFireEnemy( bool bUseFreeKnowledge )
 		// ---------------------------------------------------------------------
 		trace_t tr;
 
-		Vector mins( -5, -5, -5 );
-		Vector maxs( 5, 5, 5 );
+		Vector mins( -10, -10, -10 );
+		Vector maxs( 10, 10, 10 );
 
 		Vector vShootPosition = EyePosition();
 
@@ -3244,9 +3214,6 @@ bool CNPC_Combine::CanAltFireEnemy( bool bUseFreeKnowledge )
 		if ( IRelationType( tr.m_pEnt ) == D_LI )
 			return false;
 		
-		// Do a smaller trace to make sure we don't blow ourselves up with a prop or some geometry.
-		UTIL_TraceLine( vShootPosition, vecTarget, MASK_SHOT, this, COLLISION_GROUP_NONE, &tr );
-		
 		float flLength = (vShootPosition - vecTarget).Length();
 		flLength *= tr.fraction;
 		
@@ -3258,7 +3225,6 @@ bool CNPC_Combine::CanAltFireEnemy( bool bUseFreeKnowledge )
 		// Are any friendlies near the intended grenade impact area?
 		// ---------------------------------------------------------------------
 		CBaseEntity *pTarget = NULL;
-
 		while ( ( pTarget = gEntList.FindEntityInSphere( pTarget, vecTarget, COMBINE_MIN_GRENADE_CLEAR_DIST ) ) != NULL )
 		{
 			//Check to see if the default relationship is hatred, and if so intensify that
@@ -3362,7 +3328,7 @@ bool CNPC_Combine::CanSuppressEnemy( void )
 //-----------------------------------------------------------------------------
 bool CNPC_Combine::CanGrenadeEnemy( bool bUseFreeKnowledge )
 {
-	if( IsElite() )
+	if( IsElite() && GetActiveWeapon() && GetActiveWeapon()->CapabilitiesGet() & bits_CAP_WEAPON_RANGE_ATTACK2 )
 		return false;
 
 	CBaseEntity *pEnemy = GetEnemy();
@@ -3576,7 +3542,7 @@ WeaponProficiency_t CNPC_Combine::CalcWeaponProficiency( CBaseCombatWeapon *pWea
 			m_nSkin = COMBINE_SKIN_SHOTGUNNER;
 		}
 
-		return WEAPON_PROFICIENCY_AVERAGE;
+		return WEAPON_PROFICIENCY_VERY_GOOD;
 	}
 	else if( FClassnameIs( pWeapon, "weapon_smg1" ) )
 	{
@@ -3772,14 +3738,6 @@ bool CNPC_Combine::CanOccupyAttackSlot( void )
 	
 	if ( !m_bUseAttackSlots )
 		return true; */
-
-	if ( IsElite() )
-	{
-		if ( OccupyStrategySlot(SQUAD_SLOT_ATTACK_ELITE) )
-		{
-			return true;
-		}
-	}
 	
 	// We can attack but no slots are available.
 	if ( IsStrategySlotRangeOccupied(SQUAD_SLOT_ATTACK1, SQUAD_SLOT_ATTACK2) && HasCondition( COND_CAN_RANGE_ATTACK1 ) )
@@ -3796,10 +3754,14 @@ bool CNPC_Combine::CanOccupyAttackSlot( void )
 			if( pCombine )
 			{
 				// Check if any squadmembers have a slot that currently isn't being used for attacking.
-				if ( pCombine->HasStrategySlotRange( SQUAD_SLOT_ATTACK1, SQUAD_SLOT_ATTACK2 ) && !pCombine->HasCondition( COND_CAN_RANGE_ATTACK1 ) )
+				if ( pCombine->HasStrategySlotRange( SQUAD_SLOT_ATTACK1, SQUAD_SLOT_ATTACK2 ) )
 				{
-					bOverrideSlot = true;
-					break;
+					if ( !pCombine->HasCondition( COND_CAN_RANGE_ATTACK1 ) ||
+					pCombine->IsCurSchedule( SCHED_COMBINE_TAKE_COVER1 ) )
+					{
+						bOverrideSlot = true;
+						break;
+					}
 				}
 				
 			}
@@ -3936,6 +3898,54 @@ bool CNPC_Combine::IsValidEnemy( CBaseEntity *pEnemy )
 	}
 
 	return BaseClass::IsValidEnemy( pEnemy );
+}
+//-----------------------------------------------------------------------------
+// Purpose:
+//-----------------------------------------------------------------------------
+float CNPC_Combine::GetLOSPositionScore( const Vector &vecThreat, const Vector &vecPos, float flIdealDist, bool bFirstNode )
+{
+	float flNodeScore = 0;
+
+	// Setup our distance metrics.
+	float flNodeDist = ( vecThreat - vecPos ).Length();
+	float flNearDist = ( GetAbsOrigin() - vecPos ).Length();
+	
+	// Score it based on how close it is to the desired distance from the threat. (Elites don't care about this.)
+	if ( !IsElite() )
+		flNodeScore += ( flIdealDist - fabsf(flNodeDist - flIdealDist) ) / flIdealDist;
+
+	// Bias out nodes that are farther away from us than the enemy.
+	flNodeScore += 1.0 - ( flNearDist / flNodeDist );
+		
+	SetForceCrouchCover( true );
+		
+	// Temporarily get our crouch cover activity offset.
+	Activity nCoverActivity = GetCoverActivity( NULL );
+	Vector vEyeOffset = EyeOffset(nCoverActivity);
+	
+	SetForceCrouchCover( false );
+	
+	// By default, we ignore the viewer (me) when determining cover positions
+	CTraceFilterLOS filter( NULL, COLLISION_GROUP_NONE, this );
+	
+	trace_t tr;
+	AI_TraceLOS( vecPos + vEyeOffset, vecThreat, this, &tr, &filter );
+		
+	if ( tr.fraction != 1.0 )
+	{
+		// If this node can double as a cover posistion and it's the one we're on, give a huge score bonus.
+		if ( bFirstNode )
+		{
+			flNodeScore += 1.5;
+		}
+		else
+		{
+			// Otherwise just give a smaller bonus.
+			flNodeScore += 0.5;
+		}
+	}
+	
+	return flNodeScore;
 }
 //-----------------------------------------------------------------------------
 //
@@ -4100,7 +4110,7 @@ DEFINE_SCHEDULE
  SCHED_COMBINE_ESTABLISH_LINE_OF_FIRE,
 
  "	Tasks "
- "		TASK_SET_FAIL_SCHEDULE			SCHEDULE:SCHED_FAIL_ESTABLISH_LINE_OF_FIRE"
+ "		TASK_SET_FAIL_SCHEDULE			SCHEDULE:SCHED_TAKE_COVER_FROM_ENEMY"
  "		TASK_SET_TOLERANCE_DISTANCE		48"
  "		TASK_GET_PATH_TO_ENEMY_LOS_IN_WEAPON_RANGE	0"
  "		TASK_COMBINE_SET_STANDING		1"
@@ -4126,7 +4136,7 @@ DEFINE_SCHEDULE
  SCHED_COMBINE_ESTABLISH_LINE_OF_FIRE_LKP,
 
  "	Tasks "
- "		TASK_SET_FAIL_SCHEDULE			SCHEDULE:SCHED_FAIL_ESTABLISH_LINE_OF_FIRE"
+ "		TASK_SET_FAIL_SCHEDULE			SCHEDULE:SCHED_COMBINE_REPOSITION"
  "		TASK_SET_TOLERANCE_DISTANCE		48"
  "		TASK_GET_PATH_TO_ENEMY_LKP_LOS_IN_WEAPON_RANGE	0"
  "		TASK_COMBINE_SET_STANDING		1"
@@ -4366,6 +4376,8 @@ DEFINE_SCHEDULE
  "		COND_HEAR_DANGER"
  "		COND_HEAR_MOVE_AWAY"
  "		COND_COMBINE_ATTACK_SLOT_AVAILABLE"
+ "		COND_COMBINE_CAN_GRENADE_ENEMY"
+ "		COND_COMBINE_CAN_ALTFIRE_ENEMY"
  )
 
  //=========================================================
@@ -4391,6 +4403,7 @@ DEFINE_SCHEDULE
  "		COND_CAN_MELEE_ATTACK2"
  "		COND_HEAR_DANGER"
  "		COND_HEAR_MOVE_AWAY"
+ "		COND_HEAVY_DAMAGE"
  )
 
  DEFINE_SCHEDULE
@@ -4403,6 +4416,37 @@ DEFINE_SCHEDULE
  "	Interrupts"
  )
 
+ //=========================================================
+ // SCHED_COMBINE_REPOSITION
+ //=========================================================
+ DEFINE_SCHEDULE	
+ (
+ SCHED_COMBINE_REPOSITION,
+
+ "	Tasks"
+ "		TASK_SET_FAIL_SCHEDULE		SCHEDULE:SCHED_COMBINE_TAKECOVER_FAILED"
+ "		TASK_STOP_MOVING				0"
+ "		TASK_FIND_COVER_FROM_ENEMY_IN_WEAPON_RANGE	0"
+ "		TASK_RUN_PATH				0"
+ "		TASK_WAIT_FOR_MOVEMENT		0"
+ "		TASK_REMEMBER				MEMORY:INCOVER"
+ "		TASK_FACE_ENEMY				0"
+ "		TASK_SET_SCHEDULE			SCHEDULE:SCHED_COMBINE_WAIT_IN_COVER"
+ ""
+ "	Interrupts"
+ "		COND_NEW_ENEMY"
+ "		COND_ENEMY_DEAD"
+ "		COND_CAN_RANGE_ATTACK1"
+ "		COND_CAN_RANGE_ATTACK2"
+ "		COND_COMBINE_CAN_GRENADE_ENEMY"
+ "		COND_COMBINE_CAN_ALTFIRE_ENEMY"
+ "		COND_CAN_MELEE_ATTACK1"
+ "		COND_CAN_MELEE_ATTACK2"
+ "		COND_HEAR_DANGER"
+ "		COND_HEAR_MOVE_AWAY"
+ "		COND_HEAVY_DAMAGE"
+ )
+ 
  //=========================================================
  // SCHED_COMBINE_GRENADE_COVER1
  //=========================================================

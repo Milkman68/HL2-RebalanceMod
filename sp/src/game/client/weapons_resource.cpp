@@ -114,6 +114,7 @@ void WeaponsResource::LoadWeaponSprites( WEAPON_FILE_INFO_HANDLE hWeaponFileInfo
 	
 	if ( tempList.Count() )
 	{
+		// Check for override scripts.
 		Q_strncat(sz, "_override", sizeof(sz), COPY_ALL_CHARACTERS);
 		
 		CUtlDict< CHudTexture *, int > tempList2;
@@ -124,7 +125,6 @@ void WeaponsResource::LoadWeaponSprites( WEAPON_FILE_INFO_HANDLE hWeaponFileInfo
 			int numElements = tempList.Count();
 			for ( int i = 0; i < numElements; i++ )
 			{
-				
 				int iOverrideElementIndex = tempList2.Find( tempList.GetElementName(i) );
 				if ( iOverrideElementIndex != tempList.InvalidIndex() )
 				{

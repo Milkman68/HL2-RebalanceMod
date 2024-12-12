@@ -335,7 +335,7 @@ void CNPC_CombineS::Event_Killed( const CTakeDamageInfo &info )
 	if ( pPlayer != NULL )
 	{
 		// Elites drop alt-fire ammo, so long as they weren't killed by dissolving.
-		if( IsElite() && GetActiveWeapon()->UsesSecondaryAmmo() )
+		if( IsElite() && GetActiveWeapon() && GetActiveWeapon()->UsesSecondaryAmmo() )
 		{
 #ifdef HL2_EPISODIC
 			if ( HasSpawnFlags( SF_COMBINE_NO_AR2DROP ) == false )
@@ -436,7 +436,7 @@ bool CNPC_CombineS::IsHeavyDamage( const CTakeDamageInfo &info )
 {
 	if ( m_nRecentDamage > RECENT_DAMAGE_THRESHOLD )
 	{
-		if ( random->RandomInt(0,1) == 1 )
+		if ( info.GetDamage() > 20 || random->RandomInt(0,1) == 1 )
 		{
 			m_flRecentDamageTime = FLT_MAX;
 			return true;
@@ -547,10 +547,13 @@ void CNPC_CombineS::HandleSpawnEquipment( void )
 //-----------------------------------------------------------------------------
 void CNPC_CombineS::DoPromotion( void )
 {
+	SetModelName( MAKE_STRING( "models/combine_super_soldier.mdl" ) );
+	return;
+	
 	// Our model name
 	const char *pModelName = STRING( GetModelName() );
 	
-	// We have to do this because our weapon is only equipped after we're spawned.
+ 	// We have to do this because our weapon is only equipped after we're spawned.
 	bool bHasShotgun = ( FStrEq(STRING(m_spawnEquipment), "weapon_shotgun") || FStrEq(STRING(m_spawnEquipment), "weapon_357") );
 	
 	if ( !bHasShotgun )
@@ -558,7 +561,7 @@ void CNPC_CombineS::DoPromotion( void )
 		if ( !Q_stricmp( pModelName, "models/combine_soldier_prisonguard.mdl" )  )
 		{
 			if ( FStrEq(STRING(m_spawnEquipment), "weapon_smg1") )
-			{
+			{ 
 				SetModelName( MAKE_STRING( "models/combine_super_soldier.mdl" ) );
 				if ( random->RandomInt(0, 1) < 1 )
 				{

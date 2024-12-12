@@ -276,6 +276,8 @@ public:
 private:
 	void			OnScheduleChange();
 	virtual int		SelectSchedule();
+	
+	bool			ShouldAbandonAssault();
 
 	AssaultCue_t	m_AssaultCue;			// the cue we're waiting for to begin the assault
 	AssaultCue_t	m_ReceivedAssaultCue;	// the last assault cue we received from someone/thing external.
@@ -286,6 +288,8 @@ private:
 	// Diversion
 	bool			m_bDiverting;
 	float			m_flLastSawAnEnemyAt;
+	
+	bool			m_bAbandonAssault;
 
 	float			m_flTimeDeferScheduleSelection;
 

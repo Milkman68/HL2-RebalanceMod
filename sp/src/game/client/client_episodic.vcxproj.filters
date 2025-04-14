@@ -31,6 +31,9 @@
     <Filter Include="Source Files\HL2 DLL">
       <UniqueIdentifier>{3C43D38A-46AF-2183-A5E5-44383B1D2652}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\HL2R">
+      <UniqueIdentifier>{DE940DE2-9200-5C7D-F9E1-B7A2E33718E2}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source Files\Precompiled Header">
       <UniqueIdentifier>{A7D26A13-21F4-C6B5-5922-8A4FB05AF07D}</UniqueIdentifier>
     </Filter>
@@ -1862,9 +1865,6 @@
     <ClInclude Include="..\..\game\shared\hl2\hl2_shareddefs.h">
       <Filter>Source Files\HL2 DLL</Filter>
     </ClInclude>
-    <ClInclude Include="hl2\hl2r_options.h">
-      <Filter>Source Files\HL2 DLL</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\game\shared\hl2\hl_gamemovement.h">
       <Filter>Source Files\HL2 DLL</Filter>
     </ClInclude>
@@ -1876,6 +1876,18 @@
     </ClInclude>
     <ClInclude Include="..\..\game\shared\episodic\npc_advisor_shared.h">
       <Filter>Source Files\HL2 DLL</Filter>
+    </ClInclude>
+    <ClInclude Include="hl2\hl2r_baseoptions.h">
+      <Filter>Source Files\HL2R</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\game\shared\hl2\hl2r_campaign_database.h">
+      <Filter>Source Files\HL2R</Filter>
+    </ClInclude>
+    <ClInclude Include="hl2\hl2r_campaign_panel.h">
+      <Filter>Source Files\HL2R</Filter>
+    </ClInclude>
+    <ClInclude Include="hl2\hl2r_options.h">
+      <Filter>Source Files\HL2R</Filter>
     </ClInclude>
     <ClInclude Include="sixense\in_sixense.h">
       <Filter>Source Files\Sixense</Filter>
@@ -3136,9 +3148,6 @@
     <ClCompile Include="..\..\game\shared\hl2\hl2_usermessages.cpp">
       <Filter>Source Files\HL2 DLL</Filter>
     </ClCompile>
-    <ClCompile Include="hl2\hl2r_options.cpp">
-      <Filter>Source Files\HL2 DLL</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\game\shared\hl2\hl_gamemovement.cpp">
       <Filter>Source Files\HL2 DLL</Filter>
     </ClCompile>
@@ -3207,6 +3216,15 @@
     </ClCompile>
     <ClCompile Include="hl2\vgui_rootpanel_hl2.cpp">
       <Filter>Source Files\HL2 DLL</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\game\shared\hl2\hl2r_campaign_database.cpp">
+      <Filter>Source Files\HL2R</Filter>
+    </ClCompile>
+    <ClCompile Include="hl2\hl2r_campaign_panel.cpp">
+      <Filter>Source Files\HL2R</Filter>
+    </ClCompile>
+    <ClCompile Include="hl2\hl2r_options.cpp">
+      <Filter>Source Files\HL2R</Filter>
     </ClCompile>
     <ClCompile Include="stdafx.cpp">
       <Filter>Source Files\Precompiled Header</Filter>

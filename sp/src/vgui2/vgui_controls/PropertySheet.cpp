@@ -34,6 +34,20 @@ using namespace vgui;
 
 namespace vgui
 {
+	
+//------------------------------------------------------------------------------
+// Purpose: Helper function for determining screen proportion scaling values
+//------------------------------------------------------------------------------
+static int GetAdjustedSize( int iValue )
+{
+	int screenW, screenH;
+	surface()->GetScreenSize( screenW, screenH );
+	
+	float flRatio = MAX( MAX( 1.0f, (float)screenW / 1920.0f ), MAX( 1.0f, (float)screenH / 1080.0f ) );
+	iValue *= (float)flRatio;
+	
+	return (int)iValue;
+}
 
 class ContextLabel : public Label
 {
@@ -338,8 +352,8 @@ public:
 			GetSize(wide, tall);
 			GetContentSize(contentWide, contentTall);
 
-			wide = max(m_bMaxTabWidth, contentWide + 10);  // 10 = 5 pixels margin on each side
-			wide += m_pContextLabel ? 10 : 0;
+			wide = max(m_bMaxTabWidth, contentWide + GetAdjustedSize(10) );  // 10 = 5 pixels margin on each side
+			wide += m_pContextLabel ? GetAdjustedSize(10) : 0;
 			SetSize(wide, tall);
 		}
 
@@ -913,16 +927,18 @@ void PropertySheet::ApplySchemeSettings(IScheme *pScheme)
 	//		This led to problems when we changes resolutions, so now we recalcuate the absolute 
 	//      size from the relative size each time (based on proportionality)
 	//=============================================================================
-	if ( IsProportional() )
+/* 	if ( IsProportional() )
 	{
 		m_iTabHeight = scheme()->GetProportionalScaledValueEx( GetScheme(), m_iSpecifiedTabHeight );
-		m_iTabHeightSmall = scheme()->GetProportionalScaledValueEx( GetScheme(), m_iSpecifiedTabHeightSmall );
-	}
+		m_iTabHeightSmall = scheme()->GetProportionalScaledValueEx( GetScheme(), m_iSpecifiedTabHeightSmall ); */
+		m_iTabHeight = GetAdjustedSize( m_iSpecifiedTabHeight );
+		m_iTabHeightSmall = GetAdjustedSize( m_iSpecifiedTabHeightSmall );
+/* 	}
 	else
 	{
 		m_iTabHeight = m_iSpecifiedTabHeight;
 		m_iTabHeightSmall = m_iSpecifiedTabHeightSmall;
-	}
+	} */
 	//=============================================================================
 	// HPE_END
 	//=============================================================================
@@ -949,7 +965,8 @@ void PropertySheet::ApplySettings(KeyValues *inResourceData)
 	KeyValues *pTabWidthKV = inResourceData->FindKey( "tabwidth" );
 	if ( pTabWidthKV )
 	{
-		_tabWidth = scheme()->GetProportionalScaledValueEx(GetScheme(), pTabWidthKV->GetInt());
+	//	_tabWidth = scheme()->GetProportionalScaledValueEx(GetScheme(), pTabWidthKV->GetInt());
+		_tabWidth = GetAdjustedSize(pTabWidthKV->GetInt());
 		for (int i = 0; i < m_PageTabs.Count(); i++)
 		{
 			m_PageTabs[i]->SetTabWidth( _tabWidth );

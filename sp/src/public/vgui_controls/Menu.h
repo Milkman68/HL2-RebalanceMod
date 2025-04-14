@@ -215,6 +215,8 @@ public:
 	virtual void ActivateItemByRow(int row);
 	virtual int GetActiveItem();		// returns the itemID (not the row) of the active item
 
+	virtual void SetActiveItemInvalid();
+
 	// Return the number of items currently in the menu list
 	virtual int GetItemCount();
 

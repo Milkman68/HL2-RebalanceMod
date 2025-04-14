@@ -376,6 +376,14 @@ int ComboBox::GetActiveItem()
 }
 
 //-----------------------------------------------------------------------------
+// Purpose: Invalidates the active item value.
+//-----------------------------------------------------------------------------
+void ComboBox::SetActiveItemInvalid()
+{
+	return m_pDropDown->SetActiveItemInvalid();
+}
+
+//-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
 KeyValues *ComboBox::GetActiveItemUserData()

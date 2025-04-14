@@ -327,15 +327,11 @@ void CCrossbowBolt::BoltTouch( CBaseEntity *pOther )
 			// Only ignite at full charge.
 			if( m_flDamage == sk_plr_dmg_crossbow_charged.GetFloat() )
 			{
-				CNPC_Combine *pElite = dynamic_cast<CNPC_Combine*>(pOther);
-				if ( !pElite || !pElite->IsElite() )
-				{
-					CBaseAnimating *pAnim;
-					pAnim = dynamic_cast<CBaseAnimating*>(pOther);
+				CBaseAnimating *pAnim;
+				pAnim = dynamic_cast<CBaseAnimating*>(pOther);
 					
-					if ( pAnim )
-						pAnim->Ignite( 30.0f );
-				}
+				if ( pAnim )
+					pAnim->Ignite( 30.0f );
 			}
 
 			CBasePlayer *pPlayer = ToBasePlayer( GetOwnerEntity() );

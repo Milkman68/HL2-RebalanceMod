@@ -1060,7 +1060,7 @@ void KeyValues::AddSubkeyUsingKnownLastChild( KeyValues *pSubkey, KeyValues *pLa
 {
 	// Make sure the subkey isn't a child of some other keyvalues
 	Assert( pSubkey != NULL );
-	Assert( pSubkey->m_pPeer == NULL );
+//	Assert( pSubkey->m_pPeer == NULL );
 
 	// Empty child list?
 	if ( pLastChild == NULL )

@@ -146,10 +146,8 @@ private:
 	void LoadMessageOfTheDay();
 	void LoadSpecificMOTDMsg( const ConVar &convar, const char *pszStringName );
 	
-	void LoadWorkshopAddons( void );
-	void LoadWorkshopCampaigns( void );
-	
-	bool IsValidCampaign( const char *filename );
+	// Mod loading:
+	void LoadAddons( void );
 };
 
 

@@ -12,6 +12,7 @@
 
 #include <vgui_controls/QueryBox.h>
 #include <vgui_controls/TextImage.h>
+#include <vgui/ISurface.h>
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include <tier0/memdbgon.h>
@@ -22,6 +23,19 @@
 
 using namespace vgui;
 
+//------------------------------------------------------------------------------
+// Purpose: Helper function for determining screen proportion scaling values
+//------------------------------------------------------------------------------
+static int GetAdjustedSize( int iValue )
+{
+	int screenW, screenH;
+	surface()->GetScreenSize( screenW, screenH );
+	
+	float flRatio = MAX( MAX( 1.0f, (float)screenW / 1920.0f ), MAX( 1.0f, (float)screenH / 1080.0f ) );
+	iValue *= (float)flRatio;
+	
+	return (int)iValue;
+}
 //-----------------------------------------------------------------------------
 // Purpose: Constructor
 //-----------------------------------------------------------------------------
@@ -88,11 +102,13 @@ void QueryBox::PerformLayout()
 
 	int oldWide, oldTall;
 	m_pCancelButton->GetSize(oldWide, oldTall);
+
+	int iAdjusted = GetAdjustedSize(10);
 	
 	int btnWide, btnTall;
 	m_pCancelButton->GetContentSize(btnWide, btnTall);
-	btnWide = max(oldWide, btnWide + 10);
-	btnTall = max(oldTall, btnTall + 10);
+	btnWide = max(oldWide, btnWide + iAdjusted);
+	btnTall = max(oldTall, btnTall + iAdjusted);
 	m_pCancelButton->SetSize(btnWide, btnTall);
 
 //nt boxWidth, boxTall;
@@ -100,8 +116,8 @@ void QueryBox::PerformLayout()
 //	wide = max(wide, btnWide * 2 + 100);
 //	SetSize(wide, tall);
 
-	m_pOkButton->SetPos((wide/2)-(m_pOkButton->GetWide())-1 + x, tall - m_pOkButton->GetTall() - 15);
-	m_pCancelButton->SetPos((wide/2) + x+16, tall - m_pCancelButton->GetTall() - 15);
+	m_pOkButton->SetPos((wide/2)-(m_pOkButton->GetWide())-GetAdjustedSize(1) + x, tall - m_pOkButton->GetTall() - GetAdjustedSize(15));
+	m_pCancelButton->SetPos((wide/2) + x+GetAdjustedSize(16), tall - m_pCancelButton->GetTall() - GetAdjustedSize(15));
 
 }
 

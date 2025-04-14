@@ -30,6 +30,20 @@
 
 using namespace vgui;
 
+//------------------------------------------------------------------------------
+// Purpose: Helper function for determining screen proportion scaling values
+//------------------------------------------------------------------------------
+static int GetAdjustedSize( int iValue )
+{
+	int screenW, screenH;
+	surface()->GetScreenSize( screenW, screenH );
+	
+	float flRatio = MAX( MAX( 1.0f, (float)screenW / 1920.0f ), MAX( 1.0f, (float)screenH / 1080.0f ) );
+	iValue *= (float)flRatio;
+	
+	return (int)iValue;
+}
+
 enum
 {
 	BUTTON_HEIGHT_DEFAULT = 20,
@@ -1233,7 +1247,7 @@ bool SectionedListPanel::AddColumnToSection(int sectionID, const char *columnNam
 	wcsncpy(column.m_szColumnText, columnText,  sizeof(column.m_szColumnText) / sizeof(wchar_t));
 	column.m_szColumnText[sizeof(column.m_szColumnText) / sizeof(wchar_t) - 1] = 0;
 	column.m_iColumnFlags = columnFlags;
-	column.m_iWidth = width;
+	column.m_iWidth = GetAdjustedSize(width);
 	column.m_hFallbackFont = fallbackFont;
 	return true;
 }

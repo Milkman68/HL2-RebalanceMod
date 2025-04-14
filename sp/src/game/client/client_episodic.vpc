@@ -126,8 +126,26 @@ $Project "Client (Episodic)"
 			$File	"$SRCDIR\game\shared\hl2\survival_gamerules.cpp"
 			$File	"hl2\vgui_rootpanel_hl2.cpp"
 			$File	"episodic\c_npc_puppet.cpp"
+		}
+		
+		$Folder	"HL2R"
+		{
 			$File	"hl2\hl2r_options.cpp"
 			$File	"hl2\hl2r_options.h"
+			$File	"hl2\hl2r_baseoptions.h"
+			$File	"hl2\hl2r_campaign_panel.cpp"
+			$File	"hl2\hl2r_campaign_panel.h"
+			$File	"$SRCDIR\game\shared\hl2\hl2r_campaign_database.cpp"
+			{
+				$Configuration
+				{
+					$Compiler
+					{
+						$Create/UsePrecompiledHeader	"Not Using Precompiled Headers"
+					}
+				}
+			}
+			$File	"$SRCDIR\game\shared\hl2\hl2r_campaign_database.h"
 		}
 	}
 	

@@ -133,6 +133,10 @@ public:
 	// InvalidateItem(itemID) needs to be called if the KeyValues are modified
 	virtual KeyValues *GetItemData(int itemID);
 
+	// returns the data of THE selected item
+	// InvalidateItem(itemID) needs to be called if the KeyValues are modified
+	virtual KeyValues *GetSelectedItemData() {return GetItemData(GetSelectedItem());}
+
 	// returns what section an item is in
 	virtual int GetItemSection(int itemID);
 

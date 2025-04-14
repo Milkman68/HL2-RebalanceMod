@@ -38,7 +38,7 @@ static int GetAdjustedSize( int iValue )
 	int screenW, screenH;
 	surface()->GetScreenSize( screenW, screenH );
 	
-	float flRatio = MAX( 1.0f, (float)screenW / 1920.0f );
+	float flRatio = MAX( MAX( 1.0f, (float)screenW / 1920.0f ), MAX( 1.0f, (float)screenH / 1080.0f ) );
 	iValue *= (float)flRatio;
 	
 	return (int)iValue;
@@ -429,7 +429,7 @@ void Slider::DrawTicks()
 	// Figure out how to draw the ticks
 //	GetPaintSize( wide, tall );
 
-	float fwide  = (float)GetAdjustedSize( wide );
+	float fwide = wide;
 	float freepixels = fwide - _nobSize;
 
 	float leftpixel = _nobSize / 2.0f;

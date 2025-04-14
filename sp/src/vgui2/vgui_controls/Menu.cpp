@@ -71,7 +71,8 @@ Menu::Menu(Panel *parent, const char *panelName) : Panel(parent, panelName)
 	m_bUseMenuManager = true;
 	m_iInputMode = MOUSE;
 	m_iCheckImageWidth = 0;
-	m_iActivatedItem = 0;
+//	m_iActivatedItem = 0;
+	m_iActivatedItem = -1; // Return -1 if nothing is selected.
 
 	m_bUseFallbackFont = false;
 	m_hFallbackItemFont = INVALID_FONT;
@@ -2007,6 +2008,14 @@ void Menu::OnMenuItemSelected(Panel *panel)
 int Menu::GetActiveItem()
 {
 	return m_iActivatedItem;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void Menu::SetActiveItemInvalid()
+{
+	 m_iActivatedItem = -1;
 }
 
 //-----------------------------------------------------------------------------

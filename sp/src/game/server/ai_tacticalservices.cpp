@@ -504,7 +504,7 @@ int CAI_TacticalServices::FindCoverNode(const Vector &vNearPos, const Vector &vT
 		
 		GetOuter()->SetForceCrouchCover( bWantCrouch );
 		
-		DebugFindCover( pNode->GetId(), vEyePos, vThreatEyePos, 0, 255, 0 );
+//		DebugFindCover( pNode->GetId(), vEyePos, vThreatEyePos, 0, 255, 0 );
 		return iIdealNode;
 	}
 

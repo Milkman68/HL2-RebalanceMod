@@ -19,6 +19,20 @@
 
 using namespace vgui;
 
+//------------------------------------------------------------------------------
+// Purpose: Helper function for determining screen proportion scaling values
+//------------------------------------------------------------------------------
+static int GetAdjustedSize( int iValue )
+{
+	int screenW, screenH;
+	surface()->GetScreenSize( screenW, screenH );
+	
+	float flRatio = MAX( MAX( 1.0f, (float)screenW / 1920.0f ), MAX( 1.0f, (float)screenH / 1080.0f ) );
+	iValue *= (float)flRatio;
+	
+	return (int)iValue;
+}
+
 #ifndef max
 #define max(a,b)            (((a) > (b)) ? (a) : (b))
 #endif
@@ -146,8 +160,8 @@ void MessageBox::ApplySchemeSettings(IScheme *pScheme)
 	m_pMessageLabel->GetContentSize(wide, tall);
 	m_pMessageLabel->SetSize(wide, tall);
 
-	wide += 100;
-	tall += 100;
+	wide += GetAdjustedSize(80);
+	tall += GetAdjustedSize(90);
 	SetSize(wide, tall);
 
 	if ( m_bShowMessageBoxOverCursor )
@@ -257,8 +271,8 @@ void MessageBox::PerformLayout()
 	
 	int btnWide, btnTall;
 	m_pOkButton->GetContentSize(btnWide, btnTall);
-	btnWide = max(oldWide, btnWide + 10);
-	btnTall = max(oldTall, btnTall + 10);
+	btnWide = max(oldWide, btnWide + GetAdjustedSize(10));
+	btnTall = max(oldTall, btnTall + GetAdjustedSize(10));
 	m_pOkButton->SetSize(btnWide, btnTall);
 
 	int btnWide2 = 0, btnTall2 = 0;
@@ -267,26 +281,26 @@ void MessageBox::PerformLayout()
 		m_pCancelButton->GetSize(oldWide, oldTall);
 		
 		m_pCancelButton->GetContentSize(btnWide2, btnTall2);
-		btnWide2 = max(oldWide, btnWide2 + 10);
-		btnTall2 = max(oldTall, btnTall2 + 10);
+		btnWide2 = max(oldWide, btnWide2 + GetAdjustedSize(10));
+		btnTall2 = max(oldTall, btnTall2 + GetAdjustedSize(10));
 		m_pCancelButton->SetSize(btnWide2, btnTall2);
 	}
 
-	boxWidth = max(boxWidth, m_pMessageLabel->GetWide() + 100);
-	boxWidth = max(boxWidth, (btnWide + btnWide2) * 2 + 30);
+	boxWidth = max(boxWidth, m_pMessageLabel->GetWide() + GetAdjustedSize(100));
+	boxWidth = max(boxWidth, (btnWide + btnWide2) * 2 + GetAdjustedSize(30));
 	SetSize(boxWidth, boxTall);
 
 	GetSize(boxWidth, boxTall);
 
-	m_pMessageLabel->SetPos((wide/2)-(m_pMessageLabel->GetWide()/2) + x, y + 5 );
+	m_pMessageLabel->SetPos((wide/2)-(m_pMessageLabel->GetWide()/2) + x, y + GetAdjustedSize(5) );
 	if ( !m_pCancelButton->IsVisible() )
 	{
-		m_pOkButton->SetPos((wide/2)-(m_pOkButton->GetWide()/2) + x, tall - m_pOkButton->GetTall() - 15);
+		m_pOkButton->SetPos((wide/2)-(m_pOkButton->GetWide()/2) + x, tall - m_pOkButton->GetTall() - GetAdjustedSize(15));
 	}
 	else
 	{
-		m_pOkButton->SetPos((wide/4)-(m_pOkButton->GetWide()/2) + x, tall - m_pOkButton->GetTall() - 15);
-		m_pCancelButton->SetPos((3*wide/4)-(m_pOkButton->GetWide()/2) + x, tall - m_pOkButton->GetTall() - 15);
+		m_pOkButton->SetPos((wide/4)-(m_pOkButton->GetWide()/2) + x, tall - m_pOkButton->GetTall() - GetAdjustedSize(15));
+		m_pCancelButton->SetPos((3*wide/4)-(m_pOkButton->GetWide()/2) + x, tall - m_pOkButton->GetTall() - GetAdjustedSize(15));
 	}
 
 	BaseClass::PerformLayout();

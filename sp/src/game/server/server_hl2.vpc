@@ -271,5 +271,20 @@ $Project "Server (HL2)"
 				$File	"hl2\weapon_flaregun.h"
 			}
 		}
+		
+		$Folder	"HL2R"
+		{
+			$File	"$SRCDIR\game\shared\hl2\hl2r_campaign_database.cpp"
+			{
+				$Configuration
+				{
+					$Compiler
+					{
+						$Create/UsePrecompiledHeader	"Not Using Precompiled Headers"
+					}
+				}
+			}
+			$File	"$SRCDIR\game\shared\hl2\hl2r_campaign_database.h"
+		}
 	}
 }

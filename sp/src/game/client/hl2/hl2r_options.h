@@ -4,155 +4,27 @@
 #pragma once
 #endif
 
-#include "vgui_controls/PropertyPage.h"
 #include "hl2r_baseoptions.h"
 
 //------------------------------------------------------------------------------
-// Challenge parent panel
+// Challenge panel
 //------------------------------------------------------------------------------
-class CChallengesHL2RBasePanel : public vgui::ScrollableEditablePanel
+class CSubChallengePanel : public CSubPanel
 {
-	DECLARE_CLASS_SIMPLE(CChallengesHL2RBasePanel, vgui::ScrollableEditablePanel);
-
-public:
-	CChallengesHL2RBasePanel(vgui::Panel* parent, vgui::EditablePanel* child);
-	~CChallengesHL2RBasePanel() {}
+	DECLARE_CLASS_SIMPLE(CSubChallengePanel, CSubPanel);
 	
-	// Called when the OK / Apply button is pressed.  Changed data should be written into document.
-	MESSAGE_FUNC( OnApplyChanges, "ApplyChanges" );
-};
-//------------------------------------------------------------------------------
-// Challenge page
-//------------------------------------------------------------------------------
-class CSubOptionsChallengesHL2R : public vgui::EditablePanel
-{
-	DECLARE_CLASS_SIMPLE(CSubOptionsChallengesHL2R, vgui::EditablePanel);
-
 public:
-	CSubOptionsChallengesHL2R(vgui::Panel* parent);
-	~CSubOptionsChallengesHL2R() {}
-
-	MESSAGE_FUNC( OnApplyChanges, "ApplyChanges" );
-
-protected:
+	CSubChallengePanel( vgui::Panel* parent ) : CSubPanel(parent) {}
+	~CSubChallengePanel() {}
+	
+	virtual void SubPanelInit( void );
 	virtual void OnCommand(const char* pcCommand);
-private:
-	MESSAGE_FUNC_PTR(OnCheckButtonChecked, "CheckButtonChecked", panel);
 	
+private:
 	Button* toggleAllButton;
 };
 //------------------------------------------------------------------------------
-// Challenge page elements
-//------------------------------------------------------------------------------
-CheckButton* ExplosiveCrabsButton;
-//CheckButton* FearMovementButton;
-CheckButton* WorseArmorButton;
-CheckButton* ShorterSprintButton;
-//CheckButton* LessAmmoButton;
-CheckButton* EnemyPromotionButton;
-CheckButton* RandomWeaponsButton;
-CheckButton* ReducedAssistsButton;
-CheckButton* SmallerReservesButton;
-
-// List of all CheckButtons:
-CheckButton_t C_CheckButtons[] =
-{
-	{ ExplosiveCrabsButton, "ExplosiveCrabsButton", "hl2r_explosive_crabs", false },
-	//{ FearMovementButton, "FearMovementButton", "hl2r_fear_style_movement" },
-	{ ShorterSprintButton, "ShorterSprintButton", "hl2r_shorter_sprint", false },
-	{ WorseArmorButton, "WorseArmorButton", "player_old_armor", false },
-	//{ LessAmmoButton, "LessAmmoButton", "hl2r_less_ammo" },
-	{ EnemyPromotionButton, "EnemyPromotionButton", "hl2r_enemy_promotion", false },
-	{ RandomWeaponsButton, "RandomWeaponsButton", "hl2r_random_weapons", false },
-	{ ReducedAssistsButton, "ReducedAssistsButton", "hl2r_reduced_assists", false },
-	{ SmallerReservesButton, "SmallerReservesButton", "hl2r_smaller_reserves", false },
-};
-//------------------------------------------------------------------------------
-// Game page
-//------------------------------------------------------------------------------
-class CSubGameOptionsHL2R : public vgui::PropertyPage
-{
-	DECLARE_CLASS_SIMPLE(CSubGameOptionsHL2R, vgui::PropertyPage);
-
-public:
-	CSubGameOptionsHL2R(vgui::Panel* parent);
-	~CSubGameOptionsHL2R() {}
-	
-	virtual void OnApplyChanges();
-
-private:
-	MESSAGE_FUNC( OnControlModified, "ControlModified" );
-	MESSAGE_FUNC( OnTextChanged, "TextChanged" )
-	{
-		OnControlModified();
-	}
-	MESSAGE_FUNC_PARAMS( OnSliderMoved, "SliderMoved", data )
-	{
-		OnControlModified();
-	}
-};
-//------------------------------------------------------------------------------
-// Game page elements
-//------------------------------------------------------------------------------
-ComboBox* EpisodicLightBox;
-ComboBox* ZoomToggleBox;
-
-// List of all BoxButtons:
-BoxButton_t G_BoxButtons[] =
-{
-	{ EpisodicLightBox, "EpisodicLightBox", { "#hl2r_on", "#hl2r_off" }, "hl2r_episodic_flashlight", true },
-	{ ZoomToggleBox, "ZoomToggleBox", { "#hl2r_on", "#hl2r_off" }, "hl2r_togglezoom", true },
-};
-
-Slider* viewRollSlider;
-Slider* WeaponFOVSlider;
-
-// List of all TickSliders:
-TickSlider_t G_TickSliders[] =
-{
-	{ viewRollSlider, "viewRollSlider", 0, 10, 10, 1, "hl2r_rollangle"},
-	{ WeaponFOVSlider, "WeaponFOVSlider", 54, 90, 12, 3, "viewmodel_fov" },
-};
-//------------------------------------------------------------------------------
-// Visual page
-//------------------------------------------------------------------------------
-class CSubVisualOptionsHL2R : public vgui::PropertyPage
-{
-	DECLARE_CLASS_SIMPLE(CSubVisualOptionsHL2R, vgui::PropertyPage);
-
-public:
-	CSubVisualOptionsHL2R(vgui::Panel* parent);
-	~CSubVisualOptionsHL2R() {}
-	
-	virtual void OnApplyChanges();
-
-private:
-	MESSAGE_FUNC( OnControlModified, "ControlModified" );
-	MESSAGE_FUNC( OnTextChanged, "TextChanged" )
-	{
-		OnControlModified();
-	}
-};
-//------------------------------------------------------------------------------
-// Visual page elements
-//------------------------------------------------------------------------------
-ComboBox* QuickinfoBox;
-ComboBox* MinCrosshairBox;
-ComboBox* HudHintBox;
-ComboBox* LightDetailBox;
-ComboBox* ProjectedMuzzleflashBox;
-
-// List of all BoxButtons:
-BoxButton_t V_BoxButtons[] =
-{
-	{ QuickinfoBox, "QuickinfoBox", { "#hl2r_on", "#hl2r_off" }, "hud_quickinfo", true },
-	{ MinCrosshairBox, "MinCrosshairBox", { "#hl2r_on", "#hl2r_off" }, "hl2r_old_crosshair", /* true */ false }, // Renamed to "New Crosshairs" in the options.
-	{ HudHintBox, "HudHintBox", { "#hl2r_on", "#hl2r_off" }, "hl2r_hudhints", true },
-	{ LightDetailBox, "LightDetailBox", { "#hl2r_default", "#hl2r_less", "#hl2r_none" }, "hl2r_dynamic_light_level", false },
-	{ ProjectedMuzzleflashBox, "ProjectedMuzzleflashBox", { "#hl2r_on", "#hl2r_off" }, "hl2r_projected_muzzleflash", true },
-};
-//------------------------------------------------------------------------------
-// Main panel
+// Parent panel
 //------------------------------------------------------------------------------
 class CHL2RMenu : public vgui::PropertyDialog
 {
@@ -161,20 +33,60 @@ class CHL2RMenu : public vgui::PropertyDialog
 public:
 	CHL2RMenu();
 	~CHL2RMenu() {}
+	
 	virtual void Activate();
-
-protected:
 	virtual void OnThink();
+	
 	virtual void OnClose();
 	virtual void OnScreenSizeChanged(int iOldWide, int iOldTall);
+};
+//------------------------------------------------------------------------------
+// Challenge panel elements
+//------------------------------------------------------------------------------
+CheckButton_t challenges_CheckButtons[] =
+{
+	{ "ExplosiveCrabsButton", "hl2r_explosive_crabs", false, 7 }, // The 0th index contains this array's size.
+	{ "ShorterSprintButton", "hl2r_shorter_sprint", false },
+	{ "WorseArmorButton", "player_old_armor", false },
+	{ "EnemyPromotionButton", "hl2r_enemy_promotion", false },
+	{ "RandomWeaponsButton", "hl2r_random_weapons", false },
+	{ "ReducedAssistsButton", "hl2r_reduced_assists", false },
+	{ "SmallerReservesButton", "hl2r_smaller_reserves", false },
+};
+//------------------------------------------------------------------------------
+// Game panel elements
+//------------------------------------------------------------------------------
+BoxButton_t game_BoxButtons[] =
+{
+	// The 0th index contains this array's size.
+	{ "EpisodicLightBox", { "#hl2r_on", "#hl2r_off" }, "hl2r_episodic_flashlight", true, 2 }, // The 0th index contains this array's size.
+	{ "ZoomToggleBox", { "#hl2r_on", "#hl2r_off" }, "hl2r_togglezoom", true },
+};
 
-private:
-	CSubOptionsChallengesHL2R* m_pSubOptionsChallengesHL2R;
-	CChallengesHL2RBasePanel* m_pChallengesHL2RBasePanel;
-	
-	CSubGameOptionsHL2R* m_pSubGameOptionsHL2R;
-	
-	CSubVisualOptionsHL2R* m_pSubVisualOptionsHL2R;
+TickSlider_t game_TickSliders[] =
+{
+	{ "viewRollSlider", 0, 10, 10, 1, "hl2r_rollangle", 2 }, // The 0th index contains this array's size.
+	{ "WeaponFOVSlider", 54, 90, 12, 3, "viewmodel_fov" },
+};
+//------------------------------------------------------------------------------
+// Visual panel elements
+//------------------------------------------------------------------------------
+BoxButton_t visuals_BoxButtons[] =
+{
+	{ "QuickinfoBox", { "#hl2r_on", "#hl2r_off" }, "hud_quickinfo", true, 5 }, // The 0th index contains this array's size.
+	{ "MinCrosshairBox", { "#hl2r_on", "#hl2r_off" }, "hl2r_old_crosshair",  false }, // Renamed to "New Crosshairs" in the options.
+	{ "HudHintBox", { "#hl2r_on", "#hl2r_off" }, "hl2r_hudhints", true },
+	{ "LightDetailBox", { "#hl2r_default", "#hl2r_less", "#hl2r_none" }, "hl2r_dynamic_light_level", false },
+	{ "ProjectedMuzzleflashBox", { "#hl2r_on", "#hl2r_off" }, "hl2r_projected_muzzleflash", true },
+};
+//------------------------------------------------------------------------------
+// Parent panel pages
+//------------------------------------------------------------------------------
+OptionsTab_t hl2r_OptionsTabs[] =
+{
+	{ "GamePage",  NULL, NULL, game_BoxButtons, game_TickSliders, 0.0f, 3 }, // The 0th index contains this array's size.
+	{ "VisualsPage", NULL, NULL, visuals_BoxButtons, NULL, 0.0f },
+	{ "ChallengePage", challenges_CheckButtons, NULL, NULL, NULL, 15.0f },
 };
 
 #endif

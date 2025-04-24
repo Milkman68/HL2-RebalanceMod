@@ -19,7 +19,17 @@ using namespace vgui;
 #include "vgui/Iinput.h"
 #include <vgui_controls/QueryBox.h>
 #include <vgui_controls/MessageBox.h>
+#include <vgui_controls/HTML.h>
+#include <vgui_controls/ImagePanel.h>
+#include <vgui_controls/Divider.h>
 #include "hl2r_campaign_database.h"
+
+// TODO:
+// Mount function only works like 1/20th of the time.
+// Could add a nice loading bar for scanning maybe?
+// black out and turn invisible edit mini-panel if no campaign is selected.
+// add "starting map" to campaign struct.
+// add new tab for managing exclusively mounted campaigns.
 
 //------------------------------------------------------------------------------
 // Purpose : Code for hooking into the base GameUI panel. Credit goes to: 
@@ -70,21 +80,19 @@ CCampaignListPanel::CCampaignListPanel(vgui::Panel* parent ) : EditablePanel(par
 {
 	m_ListPanel = new SectionedListPanel(this, "listpanel_campaignlist");
 
-	m_EditButton = new Button(this, "EditButton", "");
-	m_EditButton->SetCommand("edititem");
-
 	m_MountButton = new Button(this, "MountButton", "");
 	m_MountButton->SetCommand("mountitem");
 
-	m_OpenInBrowserButton = new Button(this, "OpenInBrowserButton", "");
-	m_OpenInBrowserButton->SetCommand("openiteminbrowser");
+	m_CampaignScanButton = new Button(this, "CampaignScanButton", "");
+	m_CampaignScanButton->SetCommand("scancampaigns");
 
-	m_EditButton->SetEnabled(false);
-	m_MountButton->SetEnabled(false);
-	m_OpenInBrowserButton->SetEnabled(false);
+	m_CampaignWindowBackground = new ImagePanel( this, "CampaignWindowBackground" );
+	m_CampaignWindowDivider = new Divider(this, "CampaignWindowDivider");
 
-	m_ViewInvalidButton = new CheckButton(this, "ViewInvalidButton", "");
-	m_ViewInvalidButton->SetSelected(false);
+	m_CampaignWindow = new HTML(this, "CampaignWindow");
+
+	m_CampaignWindow->DisableBrowserClicks(true);
+	m_CampaignWindow->SetContextMenuEnabled(false);
 
 	LoadControlSettings("resource/ui/hl2r_campaignlist.res");
 
@@ -94,14 +102,44 @@ CCampaignListPanel::CCampaignListPanel(vgui::Panel* parent ) : EditablePanel(par
 //------------------------------------------------------------------------------
 // Purpose:
 //------------------------------------------------------------------------------
+void CCampaignListPanel::ApplySchemeSettings(IScheme* pScheme)
+{
+	m_BackgroundColor = pScheme->GetColor("AchievementsLightGrey", Color(255, 255, 255, 255));
+	m_CampaignWindowBackground->SetFillColor(m_BackgroundColor);
+
+	BaseClass::ApplySchemeSettings(pScheme);
+}
+//------------------------------------------------------------------------------
+// Purpose:
+//------------------------------------------------------------------------------
 void CCampaignListPanel::ItemSelected(int itemID)
 {
+	// Buttons:
 	bool bHasItemSelected = m_ListPanel->IsItemIDValid(itemID);
 	bool bCanItemBeMounted = m_ListPanel->GetItemSection(itemID) == 1;
 
 	m_MountButton->SetEnabled(bHasItemSelected && bCanItemBeMounted);
-	m_EditButton->SetEnabled(bHasItemSelected);
-	m_OpenInBrowserButton->SetEnabled(bHasItemSelected);
+	if ( m_ListPanel->GetSelectedItem() != -1 )
+	{
+		// Get the ID of the selected campaign and parse it into a url that can be opened.
+		const char* szCampaignID = m_ListPanel->GetSelectedItemData()->GetString("id");
+
+		char szURL[128];
+		Q_snprintf(szURL, sizeof(szURL), "https://steamcommunity.com/sharedfiles/filedetails?id=%s", szCampaignID );
+
+		m_CampaignWindow->OpenURL(szURL, "" );
+	}
+	else
+	{
+		m_CampaignWindow->SetVisible(false);
+	}
+}
+//------------------------------------------------------------------------------
+// Purpose:
+//------------------------------------------------------------------------------
+void CCampaignListPanel::OnFinishRequest()
+{
+	m_CampaignWindow->SetVisible(true);
 }
 //------------------------------------------------------------------------------
 // Purpose:
@@ -135,19 +173,6 @@ void CCampaignListPanel::CreateListColunms(void)
 	m_ListPanel->AddColumnToSection(1, "namelabel", "#hl2r_list_unmounted", SectionedListPanel::COLUMN_BRIGHT, NAME_WIDTH);
 	m_ListPanel->AddColumnToSection(1, "id", "#hl2r_list_id", SectionedListPanel::COLUMN_BRIGHT, ID_WIDTH);
 	m_ListPanel->AddColumnToSection(1, "gamelabel", "#hl2r_list_gametype", SectionedListPanel::COLUMN_BRIGHT, GAME_WIDTH);
-
-	m_ListPanel->AddSection(2, "column2");
-	m_ListPanel->AddColumnToSection(2, "namelabel", "#hl2r_list_undefined", SectionedListPanel::COLUMN_BRIGHT, NAME_WIDTH);
-	m_ListPanel->AddColumnToSection(2, "id", "#hl2r_list_id", SectionedListPanel::COLUMN_BRIGHT, ID_WIDTH);
-	m_ListPanel->AddColumnToSection(2, "gamelabel", "#hl2r_list_gametype", SectionedListPanel::COLUMN_BRIGHT, GAME_WIDTH);
-
-	if ( !m_ViewInvalidButton->IsSelected() )
-		return;
-
-	m_ListPanel->AddSection(3, "column3");
-	m_ListPanel->AddColumnToSection(3, "namelabel", "#hl2r_list_invalid", SectionedListPanel::COLUMN_BRIGHT, NAME_WIDTH);
-	m_ListPanel->AddColumnToSection(3, "id", "#hl2r_list_id", SectionedListPanel::COLUMN_BRIGHT, ID_WIDTH);
-	m_ListPanel->AddColumnToSection(3, "gamelabel", "#hl2r_list_gametype", SectionedListPanel::COLUMN_BRIGHT, GAME_WIDTH);
 }
 //------------------------------------------------------------------------------
 // Purpose:
@@ -159,21 +184,8 @@ void CCampaignListPanel::CreateList(void)
 		KeyValues *pCampaign = GetCampaignDatabase()->GetKeyValuesFromData(i);
 
 		// Don't do anything if this shouldn't be visible.
-		if (!pCampaign->GetBool("visible"))
+		if (!pCampaign->GetBool("installed"))
 			continue;
-
-		// If invalid, add to the invalid column only if enabled.
-		if (pCampaign->GetBool("invalid") )
-		{
-			if ( !m_ViewInvalidButton->IsSelected() )
-				continue;
-
-			pCampaign->SetString("gamelabel", "#hl2r_list_invalid_label");
-			pCampaign->SetString("namelabel", "#hl2r_list_invalid_label");
-
-			m_ListPanel->AddItem(3, pCampaign);
-			continue;
-		}
 
 		const char *pCampaignName = pCampaign->GetString("Name");
 		pCampaignName = !Q_stricmp(pCampaignName, "undefined" ) ? "#hl2r_list_undefined_label" : pCampaignName;
@@ -199,16 +211,8 @@ void CCampaignListPanel::CreateList(void)
 			break;
 		}
 
-		if ( !Q_stricmp(pCampaignName, "undefined" ) || pCampaign->GetInt("Game") == GAME_INVALID)
-		{
-			// Add to the "undefined" column
-			m_ListPanel->AddItem(2, pCampaign);
-		}
-		else
-		{
-			int column = pCampaign->GetBool("mounted") ? 0 : 1;
-			m_ListPanel->AddItem(column, pCampaign);
-		}
+		int column = pCampaign->GetBool("mounted") ? 0 : 1;
+		m_ListPanel->AddItem(column, pCampaign);
 	}
 }
 //------------------------------------------------------------------------------
@@ -216,7 +220,7 @@ void CCampaignListPanel::CreateList(void)
 //------------------------------------------------------------------------------
 void CCampaignListPanel::OnCommand(const char* pcCommand)
 {
-	if (!stricmp(pcCommand, "edititem"))
+/*	if (!stricmp(pcCommand, "edititem"))
 	{
 		// Create a temporary editor panel for the campaign we selected.
 		const char *SelectedItemID = m_ListPanel->GetSelectedItemData()->GetString("id");
@@ -227,17 +231,7 @@ void CCampaignListPanel::OnCommand(const char* pcCommand)
 		pEditPanel->Activate();
 		pEditPanel->AddActionSignalTarget(this);
 	}
-	else if (!stricmp(pcCommand, "openiteminbrowser"))
-	{
-		// Get the ID of the selected campaign and parse it into a url that can be opened.
-		const char* szCampaignID = m_ListPanel->GetSelectedItemData()->GetString("id");
-
-		char szURL[128];
-		Q_snprintf(szURL, sizeof(szURL), "https://steamcommunity.com/sharedfiles/filedetails?id=%s", szCampaignID );
-
-		system()->ShellExecute("open", szURL);
-	}
-	else if (!stricmp(pcCommand, "mountitem"))
+	else */if (!stricmp(pcCommand, "mountitem"))
 	{
 		// Create a disclaimer box confirming if this is our intended action.
 		QueryBox *box = new QueryBox("#hl2r_list_mountdisclaimer_title", "#hl2r_list_mountdisclaimer_text", this);
@@ -249,29 +243,73 @@ void CCampaignListPanel::OnCommand(const char* pcCommand)
 	else if (!stricmp(pcCommand, "mountconfirmed"))
 	{
 		const char* szCampaignID = m_ListPanel->GetItemData(m_ListPanel->GetSelectedItem())->GetString("id");
-
-		switch (GetCampaignDatabase()->MountCampaign(szCampaignID))
-		{
-		case SUCESSFULLY_MOUNTED:
-			{
-			//	engine->ClientCmd("Quit");
-			}
-			break;
-
-		case FAILED_TO_UNPACK_VPK:
-			{
-				MessageBox *box = new MessageBox("#hl2r_list_mounterror_title", "#hl2r_list_mounterror_1", this);
-				box->DoModal();
-				break;
-			}
-
-		default:
-			break;
-		}
+		HandleCampaignMount(szCampaignID);
+	}
+	else if (!stricmp(pcCommand, "scancampaigns"))
+	{
+		// Create a disclaimer box confirming if this is our intended action.
+		QueryBox *box = new QueryBox("#hl2r_list_scandisclaimer_title", "#hl2r_list_scandisclaimer_text", this);
+		box->SetOKButtonText("#hl2r_list_scandisclaimer_accept");
+		box->SetOKCommand(new KeyValues("Command", "command", "scanconfirmed"));
+		box->AddActionSignalTarget(this);
+		box->DoModal();
+	}
+	else if (!stricmp(pcCommand, "scanconfirmed"))
+	{
+		HandleCampaignScan();
 	}
 
 	BaseClass::OnCommand(pcCommand);
 }
+//------------------------------------------------------------------------------
+// Purpose:
+//------------------------------------------------------------------------------
+void CCampaignListPanel::HandleCampaignMount( const char *szCampaignID )
+{
+
+switch (GetCampaignDatabase()->MountCampaign(szCampaignID))
+	{
+	case SUCESSFULLY_MOUNTED:
+		{
+			MessageBox *box = new MessageBox("#hl2r_list_mountsucess_title", "#hl2r_list_mountsucess_text", this);
+			box->SetOKButtonText("#hl2r_list_mountsucess_accept");
+			box->DoModal();
+			break;
+		}
+
+	case MISSING_HLEXTRACT:
+		{
+			MessageBox *box = new MessageBox("#hl2r_list_mounterror_title", "#hl2r_list_mounterror_text_1", this);
+			box->DoModal();
+			break;
+		}
+
+	case FAILED_TO_EXTRACT_VPK:
+		{
+			MessageBox *box = new MessageBox("#hl2r_list_mounterror_title", "#hl2r_list_mounterror_text_2", this);
+			box->DoModal();
+			break;
+		}
+
+	case VPK_MISSING_MAPS:
+		{
+			MessageBox *box = new MessageBox("#hl2r_list_mounterror_title", "#hl2r_list_mounterror_text_3", this);
+			box->DoModal();
+			break;
+		}
+	}
+}
+//------------------------------------------------------------------------------
+// Purpose:
+//------------------------------------------------------------------------------
+void CCampaignListPanel::HandleCampaignScan( void )
+{
+	GetCampaignDatabase()->DoCampaignScan();
+	GetCampaignDatabase()->WriteListToScript();
+
+	RefreshList();
+}
+/*
 //------------------------------------------------------------------------------
 // Edit panel
 //------------------------------------------------------------------------------
@@ -460,6 +498,7 @@ void CCampaignEditPanel::OnCheckButtonChecked(vgui::Panel *panel)
 		m_bControlsInvalidated = false;
 	}
 }
+*/
 //------------------------------------------------------------------------------
 // Parent panel
 //------------------------------------------------------------------------------

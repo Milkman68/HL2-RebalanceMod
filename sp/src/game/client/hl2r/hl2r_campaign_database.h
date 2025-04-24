@@ -21,7 +21,9 @@ enum EGameType
 enum EMountReturnCode
 {
 	SUCESSFULLY_MOUNTED = 0,
-	FAILED_TO_UNPACK_VPK,
+	MISSING_HLEXTRACT,
+	FAILED_TO_EXTRACT_VPK,
+	VPK_MISSING_MAPS,
 };
 
 struct CampaignData_t
@@ -30,8 +32,7 @@ struct CampaignData_t
 	char	name[256];	// What this campaign is labeled as.
 	int		game;		// What game is this campaign for?
 	bool	mounted;	// Is this the currently mounted campaign?
-	bool	visible;	// Left as 0 if this campaign is no longer installed.
-	bool	invalid;	// Is 1 if this campaign is actually a mod.
+	bool	installed;	// Left as 0 if this campaign is no longer installed.
 };
 
 class CCampaignDatabase
@@ -50,25 +51,27 @@ public:
 	KeyValues*		GetKeyValuesFromData( int index );
 	int				GetCampaignCount( void );
 
-#ifdef CLIENT_DLL
 	// Mounting functions:
 	EMountReturnCode MountCampaign(const char *pFileName);
-#endif
+	void			DoCampaignScan( void );
 
 private:
 
 	KeyValues *pCampaignScript;
 	CUtlVector<CampaignData_t>	m_Campaigns;
 
-	bool		IsCampaignDirectory( const char *filename);
-	void		BuildCampaignScript( void );
-	KeyValues	*GetCampaignScript( void );
+	bool		IsCampaignDirectory( const char *pCampaignID);
+	bool		IsMapReplacement( const char *pMap );
 
-#ifdef CLIENT_DLL
 	// Mounting functions:
+	bool		HLExtractInstalled( void );
+
 	const char	*GetSteamAppsDir(void);
-	bool		UnpackCampaignVPK(const char *pFileName);
-#endif
+	const char	*ParseExtractCMD( const char *pCampaignID, const char *pAppend = NULL );
+
+	const char	*GetOutputFromHLE( const char *pCampaignID, const char *pCommand );
+	bool		ExtractCampaignVPK( const char *pCampaignID );
+
 };
 
 CCampaignDatabase *GetCampaignDatabase();

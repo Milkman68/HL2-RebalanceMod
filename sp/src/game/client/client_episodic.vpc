@@ -130,12 +130,12 @@ $Project "Client (Episodic)"
 		
 		$Folder	"HL2R"
 		{
-			$File	"hl2\hl2r_options.cpp"
-			$File	"hl2\hl2r_options.h"
-			$File	"hl2\hl2r_baseoptions.h"
-			$File	"hl2\hl2r_campaign_panel.cpp"
-			$File	"hl2\hl2r_campaign_panel.h"
-			$File	"$SRCDIR\game\shared\hl2\hl2r_campaign_database.cpp"
+			$File	"hl2r\hl2r_options.cpp"
+			$File	"hl2r\hl2r_options.h"
+			$File	"hl2r\hl2r_baseoptions.h"
+			$File	"hl2r\hl2r_campaign_panel.cpp"
+			$File	"hl2r\hl2r_campaign_panel.h"
+			$File	"hl2r\hl2r_campaign_database.cpp"
 			{
 				$Configuration
 				{
@@ -145,7 +145,7 @@ $Project "Client (Episodic)"
 					}
 				}
 			}
-			$File	"$SRCDIR\game\shared\hl2\hl2r_campaign_database.h"
+			$File	"hl2r\hl2r_campaign_database.h"
 		}
 	}
 	

@@ -19,9 +19,6 @@
     <Filter Include="Source Files\HL2 DLL\unused">
       <UniqueIdentifier>{A52C827A-EB95-73A5-F031-C0395B5E2677}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\HL2R">
-      <UniqueIdentifier>{DE940DE2-9200-5C7D-F9E1-B7A2E33718E2}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\Precompiled Header">
       <UniqueIdentifier>{A7D26A13-21F4-C6B5-5922-8A4FB05AF07D}</UniqueIdentifier>
     </Filter>
@@ -1772,9 +1769,6 @@
     <ClInclude Include="hl2\weapon_flaregun.h">
       <Filter>Source Files\HL2 DLL\unused</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\game\shared\hl2\hl2r_campaign_database.h">
-      <Filter>Source Files\HL2R</Filter>
-    </ClInclude>
     <ClInclude Include="plasma.h">
       <Filter>Source Files\temporary entities</Filter>
     </ClInclude>
@@ -3360,9 +3354,6 @@
     </ClCompile>
     <ClCompile Include="hl2\weapon_flaregun.cpp">
       <Filter>Source Files\HL2 DLL\unused</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\game\shared\hl2\hl2r_campaign_database.cpp">
-      <Filter>Source Files\HL2R</Filter>
     </ClCompile>
     <ClCompile Include="stdafx.cpp">
       <Filter>Source Files\Precompiled Header</Filter>

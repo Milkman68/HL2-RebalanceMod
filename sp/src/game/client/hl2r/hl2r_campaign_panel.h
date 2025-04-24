@@ -6,7 +6,7 @@
 
 #include "hl2r_campaign_database.h"
 
-#define PANEL_WIDTH 512
+#define PANEL_WIDTH 896
 #define PANEL_HEIGHT 640
 
 #define EDITPANEL_WIDTH 400
@@ -25,7 +25,10 @@ public:
 
 	MESSAGE_FUNC_INT( ItemSelected, "ItemSelected", itemID );
 	MESSAGE_FUNC_PTR( OnCheckButtonChecked, "CheckButtonChecked",) {RefreshList();}
-	virtual void OnCommand(const char* pcCommand);
+	MESSAGE_FUNC( OnFinishRequest, "OnFinishRequest" );
+
+	virtual void OnCommand(const char* pcCommand); 
+	virtual void ApplySchemeSettings(IScheme* pScheme);
 
 	void RefreshList( void );
 
@@ -33,20 +36,29 @@ private:
 	void CreateListColunms( void );
 	void CreateList( void );
 
+	void HandleCampaignMount( const char *szCampaignID );
+	void HandleCampaignScan( void );
+
 private:
 	SectionedListPanel	*m_ListPanel;
 
-	Button			*m_EditButton;
+	// Buttons:
 	Button			*m_MountButton;
-	Button			*m_OpenInBrowserButton;
-	Button			*m_HelpButton;
+	Button			*m_CampaignScanButton;
 
-	CheckButton		*m_ViewInvalidButton;
+	// HTML Window:
+	HTML			*m_CampaignWindow;
+	Divider			*m_CampaignWindowDivider;
+	ImagePanel		*m_CampaignWindowBackground;
+
+	// Colors:
+	Color			m_BackgroundColor;
 };
 
 //-----------------------------------------------------------------------------
 // Purpose: A dialog for editing a single campaign item's parameters.
 //-----------------------------------------------------------------------------
+/*
 class CCampaignEditPanel : public PropertyDialog
 {
 	DECLARE_CLASS_SIMPLE( CCampaignEditPanel, Frame );
@@ -75,7 +87,7 @@ private:
 	KeyValues	*m_pPrevSettings;
 	bool		m_bControlsInvalidated;
 };
-
+*/
 //------------------------------------------------------------------------------
 // Parent panel
 //------------------------------------------------------------------------------

@@ -69,6 +69,7 @@ public:
 	virtual void SetContextMenuEnabled(bool state);
 	virtual void SetViewSourceEnabled( bool state );
 	virtual void NewWindowsOnly( bool state );
+	virtual void DisableBrowserClicks( bool disable );
 
 	bool IsScrolledToBottom();
 	bool IsScrollbarVisible();
@@ -239,6 +240,7 @@ private:
 	bool m_bContextMenuEnabled;
 	int	m_iScrollbarSize;
 	bool m_bNewWindowsOnly;
+	bool m_bBrowserClicksDisabled;
 	int m_nViewSourceAllowedIndex;
 	CUtlString m_sDragURL;
 	int m_iDragStartX, m_iDragStartY;

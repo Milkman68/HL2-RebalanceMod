@@ -1877,16 +1877,16 @@
     <ClInclude Include="..\..\game\shared\episodic\npc_advisor_shared.h">
       <Filter>Source Files\HL2 DLL</Filter>
     </ClInclude>
-    <ClInclude Include="hl2\hl2r_baseoptions.h">
+    <ClInclude Include="hl2r\hl2r_baseoptions.h">
       <Filter>Source Files\HL2R</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\game\shared\hl2\hl2r_campaign_database.h">
+    <ClInclude Include="hl2r\hl2r_campaign_database.h">
       <Filter>Source Files\HL2R</Filter>
     </ClInclude>
-    <ClInclude Include="hl2\hl2r_campaign_panel.h">
+    <ClInclude Include="hl2r\hl2r_campaign_panel.h">
       <Filter>Source Files\HL2R</Filter>
     </ClInclude>
-    <ClInclude Include="hl2\hl2r_options.h">
+    <ClInclude Include="hl2r\hl2r_options.h">
       <Filter>Source Files\HL2R</Filter>
     </ClInclude>
     <ClInclude Include="sixense\in_sixense.h">
@@ -3217,13 +3217,13 @@
     <ClCompile Include="hl2\vgui_rootpanel_hl2.cpp">
       <Filter>Source Files\HL2 DLL</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\game\shared\hl2\hl2r_campaign_database.cpp">
+    <ClCompile Include="hl2r\hl2r_campaign_database.cpp">
       <Filter>Source Files\HL2R</Filter>
     </ClCompile>
-    <ClCompile Include="hl2\hl2r_campaign_panel.cpp">
+    <ClCompile Include="hl2r\hl2r_campaign_panel.cpp">
       <Filter>Source Files\HL2R</Filter>
     </ClCompile>
-    <ClCompile Include="hl2\hl2r_options.cpp">
+    <ClCompile Include="hl2r\hl2r_options.cpp">
       <Filter>Source Files\HL2R</Filter>
     </ClCompile>
     <ClCompile Include="stdafx.cpp">

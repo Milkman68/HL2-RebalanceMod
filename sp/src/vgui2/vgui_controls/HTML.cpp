@@ -217,6 +217,7 @@ m_HideTooltip( this, &HTML::BrowserHideToolTip )
 	m_bScrollBarEnabled = true;
 	m_bContextMenuEnabled = true; 
 	m_bNewWindowsOnly = false;
+	m_bBrowserClicksDisabled = false;
 	m_iMouseX = m_iMouseY = 0;
 	m_iDragStartX = m_iDragStartY = 0;
 	m_nViewSourceAllowedIndex = -1;
@@ -613,6 +614,10 @@ ISteamHTMLSurface::EHTMLMouseButton ConvertMouseCodeToCEFCode( MouseCode code )
 //-----------------------------------------------------------------------------
 void HTML::OnMousePressed(MouseCode code)
 {
+	// Don't allow any mouse interaction with the page if we're in view-only mode.
+	if ( m_bBrowserClicksDisabled )
+		return;
+
 	m_sDragURL = NULL;
 
 	// mouse4 = back button
@@ -698,6 +703,9 @@ void HTML::OnMouseReleased(MouseCode code)
 //-----------------------------------------------------------------------------
 void HTML::OnCursorMoved(int x,int y)
 {
+	if ( m_bBrowserClicksDisabled )
+		return;
+
 	// Only do this when we are over the current panel
 	if ( vgui::input()->GetMouseOver() == GetVPanel() )
 	{
@@ -1079,6 +1087,15 @@ void HTML::SetViewSourceEnabled(bool state)
 void HTML::NewWindowsOnly( bool state )
 {
 	m_bNewWindowsOnly = state;
+}
+
+
+//-----------------------------------------------------------------------------
+// Purpose: data accessor
+//-----------------------------------------------------------------------------
+void HTML::DisableBrowserClicks( bool disable )
+{
+	m_bBrowserClicksDisabled = disable;
 }
 
 

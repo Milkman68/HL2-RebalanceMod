@@ -65,66 +65,51 @@ bool CCampaignDatabase::IsCampaignLoaderMod()
 //-----------------------------------------------------------------------------
 void CCampaignDatabase::DoCampaignScan( void )
 {
-	bool bChanged = false;
-
 	// We need to find campaigns through manual directory searching as their id's are not listed anywhere.
 	FileFindHandle_t fh;
 	for ( const char *dirName = g_pFullFileSystem->FindFirst( "../../workshop/content/220\\*.*", &fh ); dirName; dirName = g_pFullFileSystem->FindNext( fh ))
 	{
-		bool bIsCampaign = IsCampaignDirectory(dirName);
-
-		CampaignData_t *pListedCampaign = GetCampaignDatabase()->GetCampaignDataFromID(dirName);
-		if ( pListedCampaign != NULL )
-		{
-			// Don't list this campaign as visible if it is no longer a campaign.
-			// This can occur if it was unsubscribed from and the directory no longer contains a vpk.
-			if ( pListedCampaign->installed != bIsCampaign )
-			{
-				pListedCampaign->installed = bIsCampaign;
-				bChanged = true;
-			}
+		// Check if this directory is worth scanning for maps.
+		// We do this to minimize the amount of time hlextract.exe has to run then close.
+		if ( !PotentialCampaignVPK(dirName) )
 			continue;
-		}
 
-		// We found a campaign directory that isn't "listed" in the script. 
+		CUtlVector<const char *> list;
+		if ( !ScanForMapsInVPK(dirName, &list) )
+			continue;
+
+		// We found a campaign directory that isn't listed in the script. 
 		// Create a blank entry for it in our script.
-		if ( bIsCampaign )
-		{
-			int i = m_Campaigns.AddToTail();
-			CampaignData_t *pNewCampaign = &m_Campaigns[i];
+		int i = m_Campaigns.AddToTail();
+		CampaignData_t* pNewCampaign = &m_Campaigns[i];
 
-			V_strcpy_safe(pNewCampaign->id, dirName);
-			V_strcpy_safe(pNewCampaign->name, "undefined");
-			pNewCampaign->game = GAME_INVALID;
-			pNewCampaign->mounted = false;
-			pNewCampaign->installed = true;
-
-			bChanged = true;
-		}
+		V_strcpy_safe(pNewCampaign->id, dirName);
+		V_strcpy_safe(pNewCampaign->name, "undefined");
+		pNewCampaign->game = GAME_INVALID;
+		pNewCampaign->mounted = false;
+		pNewCampaign->installed = true;
+		pNewCampaign->maplist = list;
 	}
 
 	g_pFullFileSystem->FindClose( fh );
-
-	if ( !bChanged )
-		GetCampaignDatabase()->WriteListToScript();
+	GetCampaignDatabase()->WriteListToScript();
 }
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-bool CCampaignDatabase::IsCampaignDirectory( const char *pCampaignID)
+bool CCampaignDatabase::PotentialCampaignVPK( const char *pAddonID)
 {
 	// Don't accept any invalid directories.
-	if ( !Q_stricmp( pCampaignID, ".." ) || !Q_stricmp( pCampaignID, "." ) || !Q_stricmp( pCampaignID, "sound" ) )
+	if ( !Q_stricmp( pAddonID, ".." ) || !Q_stricmp( pAddonID, "." ) || !Q_stricmp( pAddonID, "sound" ) )
 	{
 		return false;
 	}
 
-	// Filter out ID's that're listed in the workshop file, as that would make them addons.
-	// This brings the added benefit of not having to run HLE in as many instances, which makes the process overall faster.
+	// Filter out ID's that're listed in the workshop file, as that would make them mods.
 	KeyValues *pWorkshopFile = new KeyValues( "workshopaddons" );		
-	if ( pWorkshopFile->LoadFromFile( filesystem, "../../common/Half-Life 2/hl2_complete/cfg/workshop.txt", "GAME" ) && pWorkshopFile->FindKey(pCampaignID) )
+	if ( pWorkshopFile->LoadFromFile( filesystem, "../../common/Half-Life 2/hl2_complete/cfg/workshop.txt", "GAME" ) && pWorkshopFile->FindKey(pAddonID) )
 	{
-		if ( pWorkshopFile->FindKey(pCampaignID) )
+		if ( pWorkshopFile->FindKey(pAddonID) )
 		{
 			pWorkshopFile->deleteThis();
 			return false;
@@ -134,36 +119,77 @@ bool CCampaignDatabase::IsCampaignDirectory( const char *pCampaignID)
 
 	// Check that the workshop folder this ID points to even currently contains a VPK.
 	char szVpkPath[512];
-	V_sprintf_safe( szVpkPath, "%s\\workshop\\content\\220\\%s/workshop_dir.vpk", GetSteamAppsDir(), pCampaignID);
+	V_sprintf_safe( szVpkPath, "%s\\workshop\\content\\220\\%s/workshop_dir.vpk", GetSteamAppsDir(), pAddonID);
 
-	if ( !g_pFullFileSystem->FileExists( szVpkPath ) )
+	bool bContainsVPK = g_pFullFileSystem->FileExists( szVpkPath );
+
+	// Is this ID already part of our campaign list?
+	CampaignData_t *pListedCampaign = GetCampaignDatabase()->GetCampaignDataFromID(pAddonID);
+	if ( pListedCampaign != NULL )
+	{
+		// Don't list this campaign as visible if it is no longer a campaign.
+		// This can occur if it was unsubscribed from and the directory no longer contains a vpk.
+		if ( pListedCampaign->installed != bContainsVPK )
+		{
+			pListedCampaign->installed = bContainsVPK;
+			GetCampaignDatabase()->WriteListToScript();
+		}
+
 		return false;
+	}
 
-	// Check with HLExtract that this VPK is infact a campaign. We check this by checking if it contains
-	// a maps folder, and that folder doesn't contain any maps that have the same name as any HL2 map. 
-	char output[2048];
-	V_sprintf_safe(output, GetOutputFromHLE(pCampaignID, "cd maps\r\ndir") );
+	return true;
+}
+//-----------------------------------------------------------------------------
+// Purpose: Scan the vpk in this directory for any maps, if there are any
+// output it to a CUtlVector
+//-----------------------------------------------------------------------------
+bool CCampaignDatabase::ScanForMapsInVPK( const char *pAddonID, CUtlVector<const char *> *list )
+{
+	// Start up hlextract and get the output of the console window from running the
+	// "dir" command.
+	static char output[2048];
+	V_sprintf_safe(output, GetOutputFromHLE(pAddonID, "cd maps\r\ndir") );
 
+	// This only appears in hllib's console if the cd command was successful.
 	if ( !V_stristr(output, "Directory of root\\maps:") )
 		return false;
-
-	V_sprintf_safe(output, V_stristr(output, "  ") );
-
+	 
+	// Remove all space characters.
 	char substr[2048];
-	V_StrSubst(output, ".bsp", "", substr, 2048 );
-	V_sprintf_safe(output, substr);
-
 	V_StrSubst(output, " ", "", substr, 2048 );
 	V_sprintf_safe(output, substr);
 
+	// Remove all carriage return characters.
 	V_StrSubst(output, "\r", "", substr, 2048 );
 	V_sprintf_safe(output, substr);
 
+	// Split the rest of the string into tokens separated by linebreaks.
 	char *pszToken = strtok( output, "\n" );
 	while ( pszToken != NULL )
 	{
+		// Throw this away if this is determined to just be 
+		// a map replacement addon.
 		if ( IsMapReplacement(pszToken) )
 			return false;
+
+		// This token has a map file.
+		if ( V_stristr(pszToken, ".bsp") )
+		{
+			char mapname[256];
+			V_sprintf_safe(mapname, pszToken);
+
+			// Remove the .bsp part and output it to our passed list.
+			V_StrSubst(mapname, ".bsp", "", substr, 2048 );
+			V_sprintf_safe(mapname, substr);
+
+			int len = V_strlen( mapname );
+			char *out = new char[ len + 1 ];
+			V_memcpy( out, mapname, len );
+			out[ len ] = 0;
+
+			list->AddToTail(out);
+		}
 
 		pszToken = strtok( NULL, "\n" );
 	}
@@ -175,27 +201,31 @@ bool CCampaignDatabase::IsCampaignDirectory( const char *pCampaignID)
 //-----------------------------------------------------------------------------
 bool CCampaignDatabase::IsMapReplacement( const char *pMap )
 {
+	static char *configBuffer = NULL;
+
 	char szMaplistPath[ 1024 ];
 	V_sprintf_safe(szMaplistPath, "%s\\default_maplist.txt", engine->GetGameDirectory() );
 
-	FileHandle_t fh = filesystem->Open( szMaplistPath, "rb" );
-	if ( fh != FILESYSTEM_INVALID_HANDLE )
+	if ( configBuffer == NULL )
 	{
+		FileHandle_t fh = filesystem->Open( szMaplistPath, "rb" );
+		if ( fh == FILESYSTEM_INVALID_HANDLE )
+			return false;
+
 		// read file into memory
 		int size = filesystem->Size(fh);
-		char *configBuffer = new char[ size + 1 ];
+		char *buf = new char[size + 1];
 
-		filesystem->Read( configBuffer, size, fh );
-		configBuffer[size] = 0;
-		filesystem->Close( fh );
+		filesystem->Read(buf, size, fh);
+		buf[size] = 0;
+		filesystem->Close(fh);
 
-		const char *search = Q_stristr(configBuffer, pMap );
-		if ( search )
-			return true;
-
-		// free
-		delete [] configBuffer;
+		configBuffer = buf;
 	}
+
+	const char *search = Q_stristr(configBuffer, pMap );
+	if ( search )
+		return true;
 
 	return false;
 }
@@ -224,7 +254,7 @@ void CCampaignDatabase::WriteListToScript( void )
 {
 	pCampaignScript->Clear();
 	for ( int i = 0; i < GetCampaignCount(); i++ )
-		pCampaignScript->AddSubKey( GetKeyValuesFromData(i) );
+		pCampaignScript->AddSubKey( GetKeyValuesFromCampaign(GetCampaignData(i)) );
 
 	CUtlBuffer buf( 0, 0, CUtlBuffer::TEXT_BUFFER );
 	pCampaignScript->RecursiveSaveToFile( buf, 0 );
@@ -262,21 +292,51 @@ CampaignData_t *CCampaignDatabase::GetCampaignDataFromID(const char *id)
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-KeyValues* CCampaignDatabase::GetKeyValuesFromData( int index )
+int CCampaignDatabase::GetCampaignIndex( CampaignData_t *campaign )
 {
+	for (int i = 0; i < GetCampaignDatabase()->GetCampaignCount(); i++ )
+	{
+		CampaignData_t *pCampaign = GetCampaignDatabase()->GetCampaignData(i);
+		if ( pCampaign && pCampaign == campaign )
+			return i;
+	}
+
+	return NULL;
+}
+//-----------------------------------------------------------------------------
+// Purpose:
+//-----------------------------------------------------------------------------
+KeyValues* CCampaignDatabase::GetKeyValuesFromCampaign( CampaignData_t *campaign )
+{
+	int campaignIndex = GetCampaignIndex(campaign);
+
 	char keyname[512];
-	V_sprintf_safe(keyname, "%d", index);
+	V_sprintf_safe(keyname, "%d", campaignIndex);
 	KeyValues *pData = new KeyValues(keyname);
 
 	if ( !pData )
 		return NULL;
 
-	CampaignData_t *pCampaign = GetCampaignDatabase()->GetCampaignData(index);
+	KeyValues *pMaplist = new KeyValues("maplist");
+
+	if ( !pMaplist )
+		return NULL;
+
+	CampaignData_t *pCampaign = GetCampaignDatabase()->GetCampaignData(campaignIndex);
+	
+	for (int i = 0; i < pCampaign->maplist.Count(); i++ )
+	{
+		char mapindex[512];
+		V_sprintf_safe(mapindex, "%d", i);
+		pMaplist->SetString(mapindex, pCampaign->maplist[i]);
+	}
+
 	pData->SetString("id",		pCampaign->id);
 	pData->SetString("name",	pCampaign->name);
 	pData->SetInt("game",		pCampaign->game);
 	pData->SetBool("mounted",	pCampaign->mounted);
 	pData->SetBool("installed",	pCampaign->installed);
+	pData->AddSubKey(pMaplist);
 
 	return pData;
 }
@@ -330,9 +390,10 @@ bool CCampaignDatabase::HLExtractInstalled(void)
 }
 
 //-----------------------------------------------------------------------------
-// Purpose:
+// Purpose: Helper function to setup a string that can be sent to CreateProcessA
+// to start hlextract.
 //-----------------------------------------------------------------------------
-const char *CCampaignDatabase::ParseExtractCMD( const char *pCampaignID, const char *pAppend )
+const char *CCampaignDatabase::ParseCMD( const char *pCampaignID, const char *pAppend )
 {
 	char szHLExtractPath[512];
 	V_sprintf_safe( szHLExtractPath, "%s\\hllib\\bin\\x64\\HLExtract.exe", engine->GetGameDirectory() );
@@ -348,11 +409,11 @@ const char *CCampaignDatabase::ParseExtractCMD( const char *pCampaignID, const c
 
 	return szCommandLine;
 }
-#define BUFFER_SIZE 4096
 //-----------------------------------------------------------------------------
-// Purpose:
+// Purpose: Run hlextract to get the output of the CLI.
+// This can be used to get information about a specific .vpk.
 //-----------------------------------------------------------------------------
-const char *CCampaignDatabase::GetOutputFromHLE( const char *pCampaignID, const char *pCommand )
+const char *CCampaignDatabase::GetOutputFromHLE( const char *pAddonID, const char *pCommand )
 {
 	static char szOutputBuffer[2048];
 	memset(szOutputBuffer, 0, sizeof(szOutputBuffer));
@@ -376,7 +437,7 @@ const char *CCampaignDatabase::GetOutputFromHLE( const char *pCampaignID, const 
 	PROCESS_INFORMATION pi = {};
 
 	char cmd[1024];
-	V_sprintf_safe(cmd, ParseExtractCMD(pCampaignID, " -c"));
+	V_sprintf_safe(cmd, ParseCMD(pAddonID, " -c"));
 
 	if (CreateProcessA(NULL, cmd, NULL, NULL, TRUE, CREATE_NO_WINDOW, NULL, NULL, &si, &pi))
 	{
@@ -416,7 +477,7 @@ const char *CCampaignDatabase::GetOutputFromHLE( const char *pCampaignID, const 
 	return NULL;
 }
 //-----------------------------------------------------------------------------
-// Purpose:
+// Purpose: Extract the contents of a 
 //-----------------------------------------------------------------------------
 #define NUM_PATHS 8
 const char *szExtractPathList[NUM_PATHS] =
@@ -431,7 +492,7 @@ const char *szExtractPathList[NUM_PATHS] =
 	"sound"
 };
 
-bool CCampaignDatabase::ExtractCampaignVPK(const char *pCampaignID)
+bool CCampaignDatabase::ExtractVPK(const char *pAddonID)
 {
 	// Iterate through our list of files to extract.
 	char szExtractList[256];
@@ -447,7 +508,7 @@ bool CCampaignDatabase::ExtractCampaignVPK(const char *pCampaignID)
     si.cb = sizeof(si);
 
 	char cmd[1024];
-	V_sprintf_safe(cmd, ParseExtractCMD( pCampaignID, szExtractList ) );
+	V_sprintf_safe(cmd, ParseCMD( pAddonID, szExtractList ) );
 
 	// Create an instance of HLExtract with our campaign as the loaded vpk.
 	if (CreateProcessA(NULL, cmd, NULL, NULL, TRUE, CREATE_NO_WINDOW, NULL, NULL, &si, &pi) != NULL )
@@ -466,15 +527,8 @@ bool CCampaignDatabase::ExtractCampaignVPK(const char *pCampaignID)
 //-----------------------------------------------------------------------------
 EMountReturnCode CCampaignDatabase::MountCampaign(const char *pCampaignID)
 {
-	if (!HLExtractInstalled())
-		return MISSING_HLEXTRACT;
-
-	if (!ExtractCampaignVPK(pCampaignID))
+	if (!ExtractVPK(pCampaignID))
 		return FAILED_TO_EXTRACT_VPK;
 
-	// THIS DOESN"T COVER MAP REPLACEMENTS!!!
-//	if (!CampaignContainsMaps(pCampaignID))
-//		return VPK_MISSING_MAPS;
-
-		return SUCESSFULLY_MOUNTED;
+	return SUCESSFULLY_MOUNTED;
 }

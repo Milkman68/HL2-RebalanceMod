@@ -1,43 +1,30 @@
 #include "cbase.h"
 using namespace vgui;
-#include <vgui/IVGui.h>
 #include <vgui_controls/PropertyDialog.h>
 #include <vgui_controls/PropertySheet.h>
-#include <vgui_controls/ScrollableEditablePanel.h>
-#include "ienginevgui.h"
-#include <filesystem.h>
-#include <vgui/ISurface.h>
-#include <vgui_controls/PanelListPanel.h>
-#include <vgui_controls/Button.h>
-#include "hl2r_campaign_panel.h"
-#include "hl2_gamerules.h"
-#include "gamerules.h"
 #include <vgui_controls/SectionedListPanel.h>
-#include <vgui_controls/ComboBox.h>
-#include <vgui_controls/Checkbutton.h>
-#include "vgui/ISystem.h"
-#include "vgui/Iinput.h"
 #include <vgui_controls/QueryBox.h>
-#include <vgui_controls/MessageBox.h>
-#include <vgui_controls/HTML.h>
-#include <vgui_controls/ImagePanel.h>
-#include <vgui_controls/Divider.h>
-#include <vgui_controls/Label.h>
+#include "vgui_controls/AnimationController.h"
+#include <vgui/ISurface.h>
+#include "ienginevgui.h"
+#include "hl2r_campaign_panel.h"
 #include "hl2r_campaign_database.h"
 
 // TODO:
 // Mount function only works like 1/20th of the time.
 // Could add a nice loading bar for scanning maybe?
-// black out and turn invisible edit mini-panel if no campaign is selected.
-// add "starting map" to campaign struct.
 
 // add new tab for managing exclusively mounted campaigns.
 
 // Actually might want to just let the player choose the starting map when "begin campaign" is pressed 
 // instead of adding it to the manager. Hmmmmm...
 
-// optimize scanning by not reading default_campaigns.txt every loop iteration.
+// Every single campaign gets recreated when scanned even if already in the script.
 
+// optimize scanning by not reading default_campaigns.txt every loop iteration.
+// 
+// Discolor unmountable campaigns a little.
+// 
 //------------------------------------------------------------------------------
 // Purpose : Code for hooking into the base GameUI panel. Credit goes to: 
 // https://github.com/HL2RP/HL2RP
@@ -107,10 +94,10 @@ CCampaignListPanel::CCampaignListPanel(vgui::Panel* parent ) : EditablePanel(par
 void CCampaignListPanel::ItemSelected(int itemID)
 {
 	// Buttons:
-	bool bHasItemSelected = m_ListPanel->IsItemIDValid(itemID);
-	bool bCanItemBeMounted = m_ListPanel->GetItemSection(itemID) == 1;
+//	bool bHasItemSelected = m_ListPanel->IsItemIDValid(itemID);
+//	bool bCanItemBeMounted = m_ListPanel->GetItemSection(itemID) == 1;
 
-	m_MountButton->SetEnabled(bHasItemSelected && bCanItemBeMounted);
+//	m_MountButton->SetEnabled(bHasItemSelected && bCanItemBeMounted);
 
 	if (itemID != -1)
 	{
@@ -118,6 +105,7 @@ void CCampaignListPanel::ItemSelected(int itemID)
 		CampaignData_t *pSelectedCampaign = GetCampaignDatabase()->GetCampaignDataFromID(SelectedItemID);
 		
 		m_SelectedCampaignPanel->SetSelected(pSelectedCampaign);
+		m_MountButton->SetEnabled( Q_stricmp( pSelectedCampaign->name, "undefined" ) && pSelectedCampaign->game != -1 );
 	}
 	else	
 	{
@@ -129,7 +117,11 @@ void CCampaignListPanel::ItemSelected(int itemID)
 //------------------------------------------------------------------------------
 void CCampaignListPanel::RefreshList(void)
 {
-	int iSelected = m_ListPanel->GetSelectedItem();
+	bool bHasItemSelected = m_ListPanel->GetSelectedItem() != -1;
+	char SelectedItemID[CAMPAIGN_ID_LENGTH];
+
+	if ( bHasItemSelected )
+		V_strcpy(SelectedItemID, m_ListPanel->GetSelectedItemData()->GetString("id"));
 
 	m_ListPanel->RemoveAll();
 	m_ListPanel->RemoveAllSections();
@@ -137,7 +129,17 @@ void CCampaignListPanel::RefreshList(void)
 	CreateListColunms();
 	CreateList();
 
-	m_ListPanel->SetSelectedItem(iSelected);
+	if ( !bHasItemSelected )
+		return;
+
+	for (int i = 0; i < m_ListPanel->GetItemCount(); i++ )
+	{
+		if ( !Q_stricmp( m_ListPanel->GetItemData(i)->GetString("id"), SelectedItemID ) )
+		{
+			m_ListPanel->SetSelectedItem(i);
+			m_ListPanel->ScrollToItem(i);
+		}
+	}
 }
 //------------------------------------------------------------------------------
 // Purpose:
@@ -148,14 +150,9 @@ void CCampaignListPanel::RefreshList(void)
 void CCampaignListPanel::CreateListColunms(void)
 {
 	m_ListPanel->AddSection(0, "column0");
-	m_ListPanel->AddColumnToSection(0, "namelabel", "#hl2r_list_mounted", SectionedListPanel::COLUMN_BRIGHT, NAME_WIDTH);
-	m_ListPanel->AddColumnToSection(0, "size", "Size:", SectionedListPanel::COLUMN_BRIGHT, SIZE_WIDTH);
-	m_ListPanel->AddColumnToSection(0, "date", "Date:", SectionedListPanel::COLUMN_BRIGHT, DATE_WIDTH);
-
-	m_ListPanel->AddSection(1, "column1");
-	m_ListPanel->AddColumnToSection(1, "namelabel", "#hl2r_list_unmounted", SectionedListPanel::COLUMN_BRIGHT, NAME_WIDTH);
-	m_ListPanel->AddColumnToSection(1, "size", "", SectionedListPanel::COLUMN_BRIGHT, SIZE_WIDTH);
-	m_ListPanel->AddColumnToSection(1, "date", "", SectionedListPanel::COLUMN_BRIGHT, DATE_WIDTH);
+	m_ListPanel->AddColumnToSection(0, "namelabel", "Label:", SectionedListPanel::COLUMN_BRIGHT, NAME_WIDTH);	// FIX: UNLOCALIZED STRING!!!
+	m_ListPanel->AddColumnToSection(0, "size", "Filesize:", SectionedListPanel::COLUMN_BRIGHT, SIZE_WIDTH);		// FIX: UNLOCALIZED STRING!!!
+	m_ListPanel->AddColumnToSection(0, "date", "Date:", SectionedListPanel::COLUMN_BRIGHT, DATE_WIDTH);			// FIX: UNLOCALIZED STRING!!!
 }
 //------------------------------------------------------------------------------
 // Purpose:
@@ -174,12 +171,20 @@ void CCampaignListPanel::CreateList(void)
 		const char *pCampaignName = pCampaign->GetString("Name");
 		pCampaignName = !Q_stricmp(pCampaignName, "undefined" ) ? "#hl2r_list_undefined_label" : pCampaignName;
 
+		char pFilesize[CAMPAIGN_FILESIZE_LENGTH];
+		V_sprintf_safe(pFilesize, "%s MB", pCampaign->GetString("filesize") );
+
 		pCampaign->SetString("namelabel", pCampaignName);
-		pCampaign->SetString("size", "0 MB");
+		pCampaign->SetString("size", pFilesize );
 		pCampaign->SetString("date", "0/00/0000");
 
-		int column = pCampaign->GetBool("mounted") ? 0 : 1;
-		m_ListPanel->AddItem(column, pCampaign);
+		int itemID = m_ListPanel->AddItem(0, pCampaign);
+
+		if ( !Q_stricmp( pCampaign->GetString("Name"), "undefined" ) || pCampaign->GetInt("Game") == -1 )
+			m_ListPanel->SetItemFgColor(itemID, Color( 160, 160, 160, 255 )); // FIX: MAGIC COLOR!!!
+
+		if ( pCampaign->GetBool("mounted") )
+			m_ListPanel->SetItemFgColor(itemID, COLOR_GREEN);
 	}
 }
 //------------------------------------------------------------------------------
@@ -271,8 +276,11 @@ switch (GetCampaignDatabase()->MountCampaign(szCampaignID))
 //------------------------------------------------------------------------------
 void CCampaignListPanel::HandleCampaignScan( void )
 {
-	GetCampaignDatabase()->DoCampaignScan();
-	GetCampaignDatabase()->WriteListToScript();
+	CCampaignDatabase *database = GetCampaignDatabase();
+
+	database->DoCampaignScan();
+	database->SortCampaignList(database->GetSortType(), database->GetSortDir());
+	database->WriteListToScript();
 
 	RefreshList();
 }
@@ -282,12 +290,12 @@ void CCampaignListPanel::HandleCampaignScan( void )
 //------------------------------------------------------------------------------
 // Edit panel
 //------------------------------------------------------------------------------
-CSelectedCampaignPanel::CSelectedCampaignPanel(Panel *parent, const char *name) : PropertySheet(parent, name)
+CSelectedCampaignPanel::CSelectedCampaignPanel(CCampaignListPanel *parent, const char *name) : PropertySheet(parent, name)
 {
 	m_BrowserPanel = new CCampaignBrowserPanel(this, "browserpanel");
 	AddPage(m_BrowserPanel, "View Workshop");
 
-	m_EditPanel = new CCampaignEditPanel(this, "editpanel");
+	m_EditPanel = new CCampaignEditPanel(parent, "editpanel");
 	AddPage(m_EditPanel, "Properties");
 }
 //------------------------------------------------------------------------------
@@ -295,9 +303,15 @@ CSelectedCampaignPanel::CSelectedCampaignPanel(Panel *parent, const char *name) 
 //------------------------------------------------------------------------------
 void CSelectedCampaignPanel::SetSelected( CampaignData_t *campaign )
 {
-	m_BrowserPanel->Open(campaign);
-}
+	if ( GetActivePage()->GetName() == m_EditPanel->GetName() )
+	{
+		GetActivePage()->SetAlpha(0);
+		GetAnimationController()->RunAnimationCommand(GetActivePage(), "Alpha", 255.0f, 0.15, 0.15, AnimationController::INTERPOLATOR_LINEAR);
+	}
 
+	m_BrowserPanel->SetSelected(campaign);
+	m_EditPanel->SetCampaign(campaign);
+}
 
 
 /*

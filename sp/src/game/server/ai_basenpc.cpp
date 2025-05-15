@@ -12691,14 +12691,21 @@ bool CAI_BaseNPC::IsCoverPosition( const Vector &vecThreat, const Vector &vecPos
 
 //-----------------------------------------------------------------------------
 
-float CAI_BaseNPC::GetCoverPositionScore( const Vector &vecThreat, const Vector &vecCover, float flIdealDist, bool bEnemyReachable )
+float CAI_BaseNPC::GetCoverPositionScore( const Vector &vecThreat, const Vector &vecCover, float flPathDist, float flIdealDist, bool bEnemyReachable )
 {
 	// Try to base the cover location on the desired distance
 	float flNodeScore = 0;
 
 	// Setup our distance metrics.
 	float flNodeDist = ( vecThreat - vecCover ).Length();
+
 	float flNearDist = ( GetAbsOrigin() - vecCover ).Length();
+	if ( flPathDist != NULL )
+	{
+		flNearDist += flPathDist;
+		flNearDist *= 0.5;
+	}
+
 	float flEnemyDist = ( GetAbsOrigin() - vecThreat ).Length();
 	
 	// Score it based on how close it is to the desired distance from the threat.

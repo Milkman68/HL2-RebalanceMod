@@ -24,14 +24,6 @@ class CCampaignEditPanel;
 //------------------------------------------------------------------------------
 // Sub panel
 //------------------------------------------------------------------------------
-/*
-class CCampaignSectionedListPanel : public SectionedListPanel
-{
-	DECLARE_CLASS_SIMPLE( CCampaignSectionedListPanel, SectionedListPanel );
-
-	CCampaignSectionedListPanel(CCampaignListPanel *parent, const char *name);
-};
-*/
 class CCampaignListPanel : public EditablePanel
 {
 	DECLARE_CLASS_SIMPLE(CCampaignListPanel, EditablePanel);
@@ -62,6 +54,9 @@ private:
 	Button	*m_CampaignScanButton;
 };
 
+
+
+
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
@@ -79,248 +74,118 @@ private:
 
 	float m_flPageTransitionEffectTime;
 };
+
+
+
+
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-#define BROWSER_MAX_URL 256
-
 class CCampaignBrowserPanel : public EditablePanel
 {
 	DECLARE_CLASS_SIMPLE( CCampaignBrowserPanel, EditablePanel );
 
 public:
-	CCampaignBrowserPanel(Panel *parent, const char *name) : EditablePanel(parent, name) 
-	{
-		m_CampaignWindowBackground = new ImagePanel( this, "CampaignWindowBackground" );
-		m_CampaignWindowDivider = new Divider( this, "CampaignWindowDivider" );
+	CCampaignBrowserPanel(Panel *parent, const char *name);
 
-		m_CampaignWindow = new HTML(this, "CampaignWindow");
-		m_CampaignWindow->DisableBrowserClicks(true);
-		m_CampaignWindow->SetContextMenuEnabled(false);
+	void SetSelected( CampaignData_t *campaign ) ;
 
-		LoadControlSettings("resource/ui/hl2r_browserwindow.res");
-	}
-
-	virtual void ApplySchemeSettings(IScheme* pScheme)
-	{
-		m_CampaignWindowBackground->SetFillColor(GetSchemeColor("AchievementsLightGrey", pScheme));
-		BaseClass::ApplySchemeSettings(pScheme);
-	}
-
-	void SetSelected( CampaignData_t *campaign ) 
-	{
-		if ( campaign != NULL )
-		{
-			// Get the ID of the selected campaign and parse it into a url that can be opened.
-			char szURL[BROWSER_MAX_URL];
-			Q_snprintf(szURL, sizeof(szURL), "https://steamcommunity.com/sharedfiles/filedetails?id=%s", campaign->id );
-
-			DevMsg("URL is: %s\n", szURL );
-
-			m_CampaignWindow->OpenURL(szURL, "" );
-		}
-
-		m_CampaignWindow->SetAlpha(0);
-	}
-
-	MESSAGE_FUNC( OnFinishRequest, "OnFinishRequest" )
-	{
-		GetAnimationController()->RunAnimationCommand(m_CampaignWindow, "Alpha", 255.0f, 0.15, 0.15, AnimationController::INTERPOLATOR_LINEAR);
-	}
+	virtual void ApplySchemeSettings(IScheme* pScheme);
+	MESSAGE_FUNC( OnFinishRequest, "OnFinishRequest" );
 
 private:
 	HTML		*m_CampaignWindow;
 	ImagePanel	*m_CampaignWindowBackground;
 	Divider		*m_CampaignWindowDivider;
 };
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+CCampaignBrowserPanel::CCampaignBrowserPanel(Panel *parent, const char *name) : EditablePanel(parent, name) 
+{
+	m_CampaignWindowBackground = new ImagePanel(this, "CampaignWindowBackground");
+	m_CampaignWindowDivider = new Divider(this, "CampaignWindowDivider");
+
+	m_CampaignWindow = new HTML(this, "CampaignWindow");
+	m_CampaignWindow->DisableBrowserClicks(true);
+	m_CampaignWindow->SetContextMenuEnabled(false);
+
+	LoadControlSettings("resource/ui/hl2r_browserwindow.res");
+}
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+#define BROWSER_MAX_URL 256
+void CCampaignBrowserPanel::SetSelected(CampaignData_t* campaign)
+{
+	if (campaign != NULL)
+	{
+		// Get the ID of the selected campaign and parse it into a url that can be opened.
+		char szURL[BROWSER_MAX_URL];
+		Q_snprintf(szURL, sizeof(szURL), "https://steamcommunity.com/sharedfiles/filedetails?id=%s", campaign->id);
+
+		DevMsg("URL is: %s\n", szURL);
+
+		m_CampaignWindow->OpenURL(szURL, "");
+	}
+
+	m_CampaignWindow->SetAlpha(0);
+}
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CCampaignBrowserPanel::ApplySchemeSettings(IScheme* pScheme)
+{
+	m_CampaignWindowBackground->SetFillColor(GetSchemeColor("AchievementsLightGrey", pScheme));
+	BaseClass::ApplySchemeSettings(pScheme);
+}
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CCampaignBrowserPanel::OnFinishRequest(void)
+{
+	GetAnimationController()->RunAnimationCommand(m_CampaignWindow, "Alpha", 255.0f, 0.15, 0.15, AnimationController::INTERPOLATOR_LINEAR);
+}
+
+
+
 
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
+enum EPageType
+{
+	NO_CAMPAIGN_SELECTED,
+	UNMOUNTED_CAMPAIGN,
+	MOUNTED_CAMPAIGN
+};
 
 class CCampaignEditPanel : public EditablePanel
 {
 	DECLARE_CLASS_SIMPLE( CCampaignEditPanel, EditablePanel );
 
 public:
-	CCampaignEditPanel(CCampaignListPanel *parent, const char *name) : EditablePanel(parent, name) 
-	{
-		m_Parent = parent;
+	CCampaignEditPanel(CCampaignListPanel *parent, const char *name);
 
-		m_EditBoxBackground = new ImagePanel( this, "EditBoxBackground" );
-		m_EditBoxDivider = new Divider( this, "EditBoxDivider" );
+	void SetCampaign( CampaignData_t *campaign );
+	MESSAGE_FUNC_INT( ItemSelected, "ItemSelected", itemID );
 
-		m_MapListPanel = new SectionedListPanel(this, "listpanel_maplist");
-
-		m_MapListPanel->AddSection(0, "column0");
-		m_MapListPanel->AddColumnToSection(0, "map", "#hl2r_maplist_maplabel", SectionedListPanel::COLUMN_BRIGHT, 384);
-		m_MapListPanelLabel= new Label(this, "MapListPanelLabel", "");
-
-		m_CampaignIDLabel = new Label(this, "CampaignIDLabel", "");
-		m_CampaignInfoLabel = new Label(this, "CampaignInfoLabel", "");
-
-		m_ApplyButton = new Button(this, "ApplyButton", "" );
-		m_ApplyButton->SetCommand("applychanges");
-
-		m_pNameEntry = new TextEntry(this, "NameEntry");
-		m_pNameEntryLabel = new Label(this, "NameEntryLabel", "");
-
-		m_pGameSelectBox = new ComboBox(this, "GameSelectBox", 3, false);
-		m_pGameSelectBox->AddItem("Half-Life 2", NULL);
-		m_pGameSelectBox->AddItem("Episode 1", NULL);
-		m_pGameSelectBox->AddItem("Episode 2", NULL);
-		m_pGameSelectBoxLabel = new Label(this, "GameSelectBoxLabel", "");
-
-		LoadControlSettings("resource/ui/hl2r_editpanel.res");
-	}
-
-	void SetCampaign( CampaignData_t *campaign )
-	{
-		m_Campaign = campaign;
-
-		ResetPage();
-
-		if ( GetCampaign() )
-		{
-			FillMapList();
-			SetEditboxEnabled(true);
-
-			if (Q_stricmp(GetCampaign()->name, "undefined"))
-				m_pNameEntry->SetText(GetCampaign()->name);
-
-			if (GetCampaign()->game != -1)
-				m_pGameSelectBox->ActivateItem(GetCampaign()->game);
-
-			m_pNameEntry->GetText(m_pPrevName, 512);
-			m_iPrevGame = m_pGameSelectBox->GetActiveItem();
-
-		}
-		else
-		{
-			SetEditboxEnabled(false);
-		}
-	}
-
-	void OnCommand(const char* pcCommand)
-	{
-		if ( !stricmp(pcCommand, "applychanges") )
-		{
-			char entrytext[CAMPAIGN_NAME_LENGTH];
-			m_pNameEntry->GetText(entrytext, CAMPAIGN_NAME_LENGTH);
-
-			CCampaignDatabase *database = GetCampaignDatabase();
-			for ( int i = 0; i < database->GetCampaignCount(); i++ )
-			{
-				if ( !Q_stricmp(database->GetCampaignData(i)->id, GetCampaign()->id ) )
-					continue;
-
-				if ( !Q_stricmp(database->GetCampaignData(i)->name, entrytext ) )
-				{
-					MessageBox *box = new MessageBox("#hl2r_warning_title", "#hl2r_editerror_1", this);
-					box->DoModal();
-
-					return;
-				}
-			}
-
-			V_strcpy( GetCampaign()->name, !stricmp(entrytext, "")  ? "undefined" : entrytext );
-			GetCampaign()->game = m_pGameSelectBox->GetActiveItem();
-
-			database->SortCampaignList(database->GetSortType(), database->GetSortDir());
-			database->WriteListToScript();
-
-			ResetPage();
-			m_Parent->RefreshList();
-		}
-		BaseClass::OnCommand(pcCommand);
-	}
-
-	void ApplySchemeSettings(IScheme *pScheme)
-	{
-		BaseClass::ApplySchemeSettings(pScheme);
-
-		m_TextDisabledColor = GetSchemeColor("Label.TextDullColor", pScheme);
-		m_TextEnabledColor = GetSchemeColor("Label.TextBrightColor", pScheme);
-
-		m_EditBoxBackground->SetFillColor(GetSchemeColor("AchievementsLightGrey", pScheme));
-	}
+	void OnCommand(const char* pcCommand);
+	void ApplySchemeSettings(IScheme *pScheme);
 
 	MESSAGE_FUNC( OnTextChanged, "TextChanged" ) { CheckApplyButton(); }
 	MESSAGE_FUNC( OnMenuItemSelected, "MenuItemSelected" ){	CheckApplyButton();	}
 
 private:
-	CampaignData_t *GetCampaign( void )
-	{
-		return m_Campaign;
-	}
+	CampaignData_t *GetCampaign( void ) { return m_Campaign; }
 
-	void ResetPage()
-	{
-		m_MapListPanel->RemoveAll();
+	void SetPageType( EPageType type);
 
-		V_strcpy( m_pPrevName, "");
-		m_iPrevGame = -1;
+	void CreateMapList(void);
+	void RefreshMapList(void);
 
-		m_pNameEntry->SetText("");
-
-		m_pGameSelectBox->SetText("");
-		m_pGameSelectBox->SetActiveItemInvalid();
-	}
-
-	void FillMapList()
-	{
-		for (int i = 0; i < GetCampaign()->maplist.Count(); i++ )
-		{
-			KeyValues *pMap = new KeyValues("map");
-			if ( !pMap )
-				continue;
-
-			pMap->SetString("map", GetCampaign()->maplist[i]);
-			m_MapListPanel->AddItem(0, pMap );
-		}
-
-	}
-
-	void SetEditboxEnabled( bool bEnable )
-	{
-		if ( bEnable )
-		{
-			char szId[CAMPAIGN_ID_LENGTH + 2];
-			V_sprintf_safe( szId, "(%s)", GetCampaign()->id);
-			m_CampaignIDLabel->SetText(szId);
-
-			m_CampaignInfoLabel->SetFgColor(m_TextEnabledColor);
-
-			m_MapListPanelLabel->SetFgColor(m_TextEnabledColor);
-		}
-		else
-		{
-			m_CampaignIDLabel->SetText("");
-			m_CampaignInfoLabel->SetFgColor(m_TextDisabledColor);
-
-			m_MapListPanelLabel->SetFgColor(m_TextDisabledColor);
-		}
-
-
-		m_EditBoxBackground->SetVisible(!bEnable);
-
-		m_pNameEntry->SetVisible(bEnable);
-		m_pNameEntryLabel->SetVisible(bEnable);
-
-		m_pGameSelectBox->SetVisible(bEnable);
-		m_pGameSelectBoxLabel->SetVisible(bEnable);
-	}
-
-	void CheckApplyButton( void )
-	{
-		m_ApplyButton->SetEnabled(true);
-
-		char nameEntry[CAMPAIGN_NAME_LENGTH];
-		m_pNameEntry->GetText(nameEntry, CAMPAIGN_NAME_LENGTH);
-
-		if ( !Q_stricmp(nameEntry, m_pPrevName) && m_pGameSelectBox->GetActiveItem() == m_iPrevGame )
-			m_ApplyButton->SetEnabled(false);
-	}
+	void ResetPage(void);
+	void CheckApplyButton( void );
 
 private:
 	CCampaignListPanel	*m_Parent;
@@ -332,57 +197,322 @@ private:
 	Label				*m_pNameEntryLabel;
 	Label				*m_pGameSelectBoxLabel;
 	
-	Label				*m_MapListPanelLabel;
-
 	TextEntry			*m_pNameEntry;
 	ComboBox			*m_pGameSelectBox;
 
 	Button				*m_ApplyButton;
 
+	Button				*m_StartingMapButton;
+	Button				*m_BackgroundMapButton;
+
 	ImagePanel			*m_EditBoxBackground;
 	Divider				*m_EditBoxDivider;
 
 	SectionedListPanel	*m_MapListPanel;
+	Label				*m_MapListPanelTitle;
+	Label				*m_MapListPanelTitleMapname;
 
 	Color	m_TextDisabledColor;
 	Color	m_TextEnabledColor;
 
 	char		m_pPrevName[CAMPAIGN_NAME_LENGTH];
 	int			m_iPrevGame;
+
+	int			m_iPrevStartMap;
+	char		m_iPrevBgMap;
 };
 //-----------------------------------------------------------------------------
-// Purpose: A dialog for editing a single campaign item's parameters.
+// Purpose: 
 //-----------------------------------------------------------------------------
-/*
-class CCampaignEditPanel : public PropertyDialog
+CCampaignEditPanel::CCampaignEditPanel(CCampaignListPanel *parent, const char *name) : EditablePanel(parent, name) 
 {
-	DECLARE_CLASS_SIMPLE( CCampaignEditPanel, Frame );
-public:
-	CCampaignEditPanel(CCampaignListPanel *parent, CampaignData_t *pCampaign);
-	void InitControls(void);
+	m_Parent = parent;
 
-	void ResetControls(void);
-	void InvalidateControls( void );
-	void ReinstateControls( void );
+	m_EditBoxBackground = new ImagePanel(this, "EditBoxBackground");
+	m_EditBoxDivider = new Divider(this, "EditBoxDivider");
 
-	virtual void Activate();
-	virtual void OnCommand( const char *command );
-	virtual void OnKeyCodeTyped(KeyCode code);
-	MESSAGE_FUNC_PTR(OnCheckButtonChecked, "CheckButtonChecked", panel);
+	m_MapListPanel = new SectionedListPanel(this, "listpanel_maplist");
+	m_MapListPanel->AddSection(0, "column0");
+	m_MapListPanel->AddColumnToSection(0, "map", "#hl2r_maps_label", SectionedListPanel::COLUMN_BRIGHT, 384);
 
-private:
-	CampaignData_t *m_pCampaign;
-	CCampaignListPanel *m_pParent;
+	m_MapListPanelTitle = new Label(this, "MapListPanelTitle", "");
+	m_MapListPanelTitleMapname = new Label(this, "MapListPanelTitleMapname", "");
 
-	TextEntry		*m_pNameEntry;
-	ComboBox		*m_pGameSelectBox;
-	Button			*m_pResetButton;
-	CheckButton		*m_MarkInvalidButton;
+	m_CampaignIDLabel = new Label(this, "CampaignIDLabel", "");
+	m_CampaignInfoLabel = new Label(this, "CampaignInfoLabel", "");
 
-	KeyValues	*m_pPrevSettings;
-	bool		m_bControlsInvalidated;
-};
-*/
+	m_ApplyButton = new Button(this, "ApplyButton", "");
+	m_ApplyButton->SetCommand("applychanges");
+
+	m_StartingMapButton = new Button(this, "StartingMapButton", "");
+	m_StartingMapButton->SetCommand("setstartmap");
+
+	m_BackgroundMapButton = new Button(this, "BackgroundMapButton", "");
+	m_BackgroundMapButton->SetCommand("setbgmap");
+
+	m_pNameEntry = new TextEntry(this, "NameEntry");
+	m_pNameEntryLabel = new Label(this, "NameEntryLabel", "");
+
+	m_pGameSelectBox = new ComboBox(this, "GameSelectBox", 3, false);
+	m_pGameSelectBox->AddItem("Half-Life 2", NULL);
+	m_pGameSelectBox->AddItem("Episode 1", NULL);
+	m_pGameSelectBox->AddItem("Episode 2", NULL);
+	m_pGameSelectBoxLabel = new Label(this, "GameSelectBoxLabel", "");
+
+	LoadControlSettings("resource/ui/hl2r_editpanel.res");
+}
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CCampaignEditPanel::SetCampaign(CampaignData_t* campaign)
+{
+	m_Campaign = campaign;
+
+	ResetPage();
+
+	if (GetCampaign())
+	{
+		CreateMapList();
+		if (GetCampaign()->mounted)
+		{
+			SetPageType(MOUNTED_CAMPAIGN);
+		}
+		else
+		{
+			SetPageType(UNMOUNTED_CAMPAIGN);
+		}
+
+		if (Q_stricmp(GetCampaign()->name, "undefined"))
+			m_pNameEntry->SetText(GetCampaign()->name);
+
+		if (GetCampaign()->game != -1)
+			m_pGameSelectBox->ActivateItem(GetCampaign()->game);
+
+		if (GetCampaign()->startingmap != -1)
+			m_iPrevStartMap = GetCampaign()->startingmap;
+
+		m_pNameEntry->GetText(m_pPrevName, 512);
+		m_iPrevGame = m_pGameSelectBox->GetActiveItem();
+	}
+	else
+	{
+		SetPageType(NO_CAMPAIGN_SELECTED);
+	}
+}
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CCampaignEditPanel::OnCommand(const char* pcCommand)
+{
+	if ( !stricmp(pcCommand, "applychanges") )
+	{
+		char entrytext[CAMPAIGN_NAME_LENGTH];
+		m_pNameEntry->GetText(entrytext, CAMPAIGN_NAME_LENGTH);
+
+		CCampaignDatabase *database = GetCampaignDatabase();
+		for ( int i = 0; i < database->GetCampaignCount(); i++ )
+		{
+			if ( !Q_stricmp(database->GetCampaignData(i)->id, GetCampaign()->id ) )
+				continue;
+
+			if ( !Q_stricmp(database->GetCampaignData(i)->name, entrytext ) )
+			{
+				MessageBox *box = new MessageBox("#hl2r_warning_title", "#hl2r_editpanel_error_1", this);
+				box->DoModal();
+
+				return;
+			}
+		}
+
+		V_strcpy( GetCampaign()->name, !stricmp(entrytext, "")  ? "undefined" : entrytext );
+		GetCampaign()->game = m_pGameSelectBox->GetActiveItem();
+
+		database->SortCampaignList(database->GetSortType(), database->GetSortDir());
+		database->WriteListToScript();
+
+		ResetPage();
+		m_Parent->RefreshList();
+	}
+	if ( !stricmp(pcCommand, "setstartmap") )
+	{
+		int selecteditemID = m_MapListPanel->GetSelectedItem();
+
+		m_iPrevStartMap = selecteditemID;
+		GetCampaign()->startingmap = selecteditemID;
+
+		GetCampaignDatabase()->WriteListToScript();
+		RefreshMapList();
+	}
+	BaseClass::OnCommand(pcCommand);
+}
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CCampaignEditPanel::ItemSelected(int itemID)
+{
+	if (itemID != -1)
+	{
+		m_StartingMapButton->SetEnabled(itemID != m_iPrevStartMap);
+		m_BackgroundMapButton->SetEnabled(itemID != m_iPrevBgMap);
+	}
+	else
+	{
+		m_StartingMapButton->SetEnabled(false);
+		m_BackgroundMapButton->SetEnabled(false);
+
+		return;
+	}
+}
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CCampaignEditPanel::ApplySchemeSettings(IScheme* pScheme)
+{
+	BaseClass::ApplySchemeSettings(pScheme);
+
+	m_TextDisabledColor = GetSchemeColor("Label.TextDullColor", pScheme);
+	m_TextEnabledColor = GetSchemeColor("Label.TextBrightColor", pScheme);
+
+	m_EditBoxBackground->SetFillColor(GetSchemeColor("AchievementsLightGrey", pScheme));
+}
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CCampaignEditPanel::ResetPage( void )
+{
+	m_MapListPanel->RemoveAll();
+
+	V_strcpy(m_pPrevName, "");
+	m_iPrevGame = -1;
+
+	m_iPrevStartMap = -1;
+	m_iPrevBgMap = -1;
+
+	m_pNameEntry->SetText("");
+
+	m_pGameSelectBox->SetText("");
+	m_pGameSelectBox->SetActiveItemInvalid();
+
+	m_StartingMapButton->SetEnabled(false);
+	m_BackgroundMapButton->SetEnabled(false);
+}
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CCampaignEditPanel::RefreshMapList( void )
+{
+	m_MapListPanel->RemoveAll();
+	CreateMapList();
+}
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CCampaignEditPanel::CreateMapList( void )
+{
+	m_MapListPanelTitle->SetText("#hl2r_editpanel_maplist_title_1");
+	m_MapListPanelTitleMapname->SetText("");
+
+	for (int i = 0; i < GetCampaign()->maplist.Count(); i++ )
+	{
+		KeyValues *pMap = new KeyValues("map");
+		if ( !pMap )
+			continue;
+
+		char szMapLabel[CAMPAIGN_NAME_LENGTH];
+		if ( GetCampaign()->startingmap == i )
+		{
+			char szStartingMapString[64];
+			wchar_t *pLocalizedStartingMapLabel = g_pVGuiLocalize->Find("hl2r_startmap_label");
+
+			g_pVGuiLocalize->ConvertUnicodeToANSI( pLocalizedStartingMapLabel, szStartingMapString, sizeof(szStartingMapString) );
+			V_sprintf_safe( szMapLabel, "%s%s", GetCampaign()->maplist[i], szStartingMapString);
+
+			m_MapListPanelTitle->SetText("#hl2r_editpanel_maplist_title_2");
+			m_MapListPanelTitle->SetFgColor(m_TextEnabledColor);
+
+			m_MapListPanelTitleMapname->SetText(GetCampaign()->maplist[i]);
+		}
+		else
+		{
+			V_sprintf_safe( szMapLabel, "%s", GetCampaign()->maplist[i]);
+		}
+
+		pMap->SetString("map", szMapLabel);
+		int itemID = m_MapListPanel->AddItem(0, pMap );
+
+		if ( GetCampaign()->startingmap == i )
+			m_MapListPanel->SetItemFgColor(itemID, COLOR_BLUE);
+	}
+
+}
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CCampaignEditPanel::SetPageType( EPageType type)
+{
+	bool bEditControlsEnabled = false;
+	bool bEditControlsVisible = false;
+
+	if ( type == NO_CAMPAIGN_SELECTED )
+	{
+		m_CampaignInfoLabel->SetFgColor(m_TextDisabledColor);
+		m_MapListPanelTitle->SetFgColor(m_TextDisabledColor);
+
+		m_EditBoxBackground->SetVisible(true);
+		m_CampaignIDLabel->SetText("");
+
+		m_MapListPanelTitle->SetText("#hl2r_editpanel_maplist_title_1");
+		m_MapListPanelTitleMapname->SetText("");
+	}
+	else
+	{
+		bEditControlsVisible = true;
+		bEditControlsEnabled = type != MOUNTED_CAMPAIGN;
+
+		m_CampaignInfoLabel->SetFgColor(m_TextEnabledColor);
+		m_MapListPanelTitle->SetFgColor(m_TextEnabledColor);
+
+		m_EditBoxBackground->SetVisible(false);
+
+		char szId[CAMPAIGN_ID_LENGTH + 2];
+		V_sprintf_safe( szId, "(%s)", GetCampaign()->id);
+		m_CampaignIDLabel->SetText(szId);
+	}
+
+	if ( bEditControlsVisible )
+	{
+		Color TextColor = bEditControlsEnabled ? m_TextEnabledColor : m_TextDisabledColor;
+
+		m_pNameEntryLabel->SetFgColor(TextColor);
+		m_pGameSelectBoxLabel->SetFgColor(TextColor);
+
+		m_pNameEntry->SetEnabled(bEditControlsEnabled);
+		m_pGameSelectBox->SetEnabled(bEditControlsEnabled);
+	}
+
+	m_pNameEntry->SetVisible(bEditControlsVisible);
+	m_pNameEntryLabel->SetVisible(bEditControlsVisible);
+
+	m_pGameSelectBox->SetVisible(bEditControlsVisible);
+	m_pGameSelectBoxLabel->SetVisible(bEditControlsVisible);
+}
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CCampaignEditPanel::CheckApplyButton( void )
+{
+	m_ApplyButton->SetEnabled(true);
+
+	char nameEntry[CAMPAIGN_NAME_LENGTH];
+	m_pNameEntry->GetText(nameEntry, CAMPAIGN_NAME_LENGTH);
+
+	if ( !Q_stricmp(nameEntry, m_pPrevName) && m_pGameSelectBox->GetActiveItem() == m_iPrevGame )
+		m_ApplyButton->SetEnabled(false);
+}
+
+
+
+
 //------------------------------------------------------------------------------
 // Parent panel
 //------------------------------------------------------------------------------

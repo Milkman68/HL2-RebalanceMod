@@ -32,12 +32,13 @@ CCampaignDatabase::CCampaignDatabase()
 	g_pCampaignDatabase = this;
 
 	pCampaignScript = new KeyValues( "campaignscript" );
-	pCampaignScript->LoadFromFile( filesystem, "scripts/campaigns.txt", "MOD" );
-
-	// Initilize our internal list:
-	WriteScriptToList();
-	SortCampaignList(BY_NAME, ASCENDING_ORDER);
-	WriteListToScript();
+	if ( pCampaignScript->LoadFromFile( filesystem, "scripts/campaigns.txt", "MOD" ) )
+	{
+		// Initilize our internal list:
+		WriteScriptToList();
+		SortCampaignList(BY_NAME, ASCENDING_ORDER);
+		WriteListToScript();
+	}
 
 }
 
@@ -92,6 +93,7 @@ void CCampaignDatabase::DoCampaignScan( void )
 		pNewCampaign->mounted = false;
 		pNewCampaign->installed = true;
 		pNewCampaign->maplist = list;
+		pNewCampaign->startingmap = -1;
 		pNewCampaign->filesize = GetVPKSize(dirName);
 	}
 
@@ -180,7 +182,7 @@ bool CCampaignDatabase::ScanForMapsInVPK( const char *pAddonID, CUtlVector<const
 		if ( !IsMapReplacement(pszToken) )
 			bHasCustomMaps = true;
 
-		char mapname[MAX_MAP_NAME];
+		char mapname[CAMPAIGN_MAX_MAP_NAME];
 		V_sprintf_safe(mapname, pszToken);
 
 		// Remove the .bsp part and output it to our passed list.
@@ -253,13 +255,14 @@ void CCampaignDatabase::WriteScriptToList( void )
 
 		for ( char index[CAMPAIGN_INDEX_LENGTH] = "0"; pMaplist->FindKey(index); V_sprintf_safe(index, "%d", i) )
 		{
-			char *map = new char[MAX_MAP_NAME];
-			V_memcpy( map, pMaplist->GetString(index), MAX_MAP_NAME );
+			char *map = new char[CAMPAIGN_MAX_MAP_NAME];
+			V_memcpy( map, pMaplist->GetString(index), CAMPAIGN_MAX_MAP_NAME );
 			pCampaignData->maplist.AddToTail(map);
 
 			i++;
 		}
 
+		pCampaignData->startingmap = pCampaign->GetInt("startingmap", -1 );
 		pCampaignData->filesize =	pCampaign->GetInt("filesize");
 	}
 }
@@ -322,6 +325,20 @@ int CCampaignDatabase::GetCampaignIndex( CampaignData_t *campaign )
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
+CampaignData_t *CCampaignDatabase::GetMountedCampaign( void )
+{
+	for (int i = 0; i < GetCampaignDatabase()->GetCampaignCount(); i++ )
+	{
+		CampaignData_t *pCampaign = GetCampaignDatabase()->GetCampaignData(i);
+		if ( pCampaign->mounted )
+			return pCampaign;
+	}
+
+	return NULL;
+}
+//-----------------------------------------------------------------------------
+// Purpose:
+//-----------------------------------------------------------------------------
 KeyValues* CCampaignDatabase::GetKeyValuesFromCampaign( CampaignData_t *campaign )
 {
 	int campaignIndex = GetCampaignIndex(campaign);
@@ -334,12 +351,10 @@ KeyValues* CCampaignDatabase::GetKeyValuesFromCampaign( CampaignData_t *campaign
 		return NULL;
 
 	KeyValues *pMaplist = new KeyValues("maplist");
-
 	if ( !pMaplist )
 		return NULL;
 
 	CampaignData_t *pCampaign = GetCampaignDatabase()->GetCampaignData(campaignIndex);
-	
 	for (int i = 0; i < pCampaign->maplist.Count(); i++ )
 	{
 		char mapindex[CAMPAIGN_MAP_INDEX_LENGTH];
@@ -353,6 +368,7 @@ KeyValues* CCampaignDatabase::GetKeyValuesFromCampaign( CampaignData_t *campaign
 	pData->SetBool("mounted",	pCampaign->mounted);
 	pData->SetBool("installed",	pCampaign->installed);
 	pData->SetInt("filesize",	pCampaign->filesize);
+	pData->SetInt("startingmap",pCampaign->startingmap);
 	pData->AddSubKey(pMaplist);
 
 	return pData;
@@ -582,7 +598,7 @@ const char *CCampaignDatabase::GetOutputFromHLE( const char *pAddonID, const cha
 //-----------------------------------------------------------------------------
 // Purpose: Extract the contents of a 
 //-----------------------------------------------------------------------------
-#define NUM_VPK_PATHS 8
+#define NUM_VPK_PATHS 9
 const char *szVpkFilePaths[NUM_VPK_PATHS] =
 {
 	"cfg",
@@ -592,6 +608,7 @@ const char *szVpkFilePaths[NUM_VPK_PATHS] =
 	"particles",
 	"resource",
 	"scripts",
+	"scenes",
 	"sound"
 };
 
@@ -630,24 +647,28 @@ bool CCampaignDatabase::ExtractVPK(const char *pAddonID)
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-bool CCampaignDatabase::MountExtractedFiles( const char *pCampaignID, const char *pDirectory )
+bool CCampaignDatabase::MountExtractedFiles( const char *pCampaignID )
 {
 	bool bMountedFile = false;
 
 	for (int i = 0; i < NUM_VPK_PATHS; i++)
 	{
 		char szFilePath[MAX_PATH];
-		V_sprintf_safe( szFilePath, "%s\\workshop\\content\\220\\%s/%s\\*.*", GetSteamAppsDir(), pCampaignID, szVpkFilePaths[i]);
+		V_sprintf_safe( szFilePath, "%s\\workshop\\content\\220\\%s/%s", GetSteamAppsDir(), pCampaignID, szVpkFilePaths[i]);
+
+		char szSearchPath[MAX_PATH];
+		V_sprintf_safe( szSearchPath, "%s\\*.*", szFilePath);
 
 		FileFindHandle_t fh;
-		if ( g_pFullFileSystem->FindFirst( szFilePath, &fh ) )
+		if ( g_pFullFileSystem->FindFirst( szSearchPath, &fh ) )
 		{
 			char szNewFilePath[MAX_PATH];
-			V_sprintf_safe( szNewFilePath, "%s\\%s/%s", engine->GetGameDirectory(), pDirectory, szVpkFilePaths[i]);
+			V_sprintf_safe( szNewFilePath, "%s\\mounted\\%s/%s", engine->GetGameDirectory(), pCampaignID, szVpkFilePaths[i]);
 
 			if ( g_pFullFileSystem->RenameFile(szFilePath, szNewFilePath) )
 				bMountedFile = true; 
 		}
+		g_pFullFileSystem->FindClose( fh );
 	}
 
 	return bMountedFile;
@@ -655,13 +676,213 @@ bool CCampaignDatabase::MountExtractedFiles( const char *pCampaignID, const char
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
+const char *szGameinfoPaths[3] =
+{
+	"gameinfo\\hl2",
+	"gameinfo\\ep1",
+	"gameinfo\\ep2",
+};
+
+bool CCampaignDatabase::ReplaceGameinfoFile( const char *pCampaignID )
+{
+	CampaignData_t *pCampaign = GetCampaignDataFromID(pCampaignID);
+	CampaignData_t *pPrevMounted = GetMountedCampaign();
+
+	if ( pPrevMounted && pPrevMounted->game == pCampaign->game )
+		return true;
+
+	Assert(pCampaign->game != -1 );
+
+	char szGameinfoPath[MAX_PATH];
+	V_sprintf_safe(szGameinfoPath, "%s\\gameinfo.txt", engine->GetGameDirectory());
+
+	int gameindex = pPrevMounted ? pPrevMounted->game : 0;
+
+	char szGameinfoStoragePath[MAX_PATH];
+	V_sprintf_safe(szGameinfoStoragePath, "%s\\%s\\gameinfo.txt", engine->GetGameDirectory(), szGameinfoPaths[gameindex]);
+
+	if (!g_pFullFileSystem->RenameFile(szGameinfoPath, szGameinfoStoragePath))
+		return false;
+
+	char szNewGameinfoStoragePath[MAX_PATH];
+	V_sprintf_safe(szNewGameinfoStoragePath, "%s\\%s\\gameinfo.txt", engine->GetGameDirectory(), szGameinfoPaths[pCampaign->game] );
+
+	char szNewGameinfoPath[MAX_PATH];
+	V_sprintf_safe(szNewGameinfoPath, "%s\\gameinfo.txt", engine->GetGameDirectory() );
+
+	if (!g_pFullFileSystem->RenameFile(szNewGameinfoStoragePath, szNewGameinfoPath))
+		return false;
+
+	return true;
+}
+//-----------------------------------------------------------------------------
+// Purpose:
+//-----------------------------------------------------------------------------
+bool CCampaignDatabase::StoreSaveFiles( const char *pCampaignID )
+{
+	char szSaveFolderPath[MAX_PATH];
+	V_sprintf_safe( szSaveFolderPath, "%s\\save", engine->GetGameDirectory() );
+
+	char szSearchPath[MAX_PATH];
+	V_sprintf_safe( szSearchPath, "%s\\*.*", szSaveFolderPath);
+
+	FileFindHandle_t fh;
+	for ( const char *dirName = g_pFullFileSystem->FindFirst( szSearchPath, &fh ); dirName; dirName = g_pFullFileSystem->FindNext( fh ))
+	{
+		if ( !Q_stricmp( dirName, "root" ) || !Q_stricmp( dirName, ".." ) || !Q_stricmp( dirName, "." ) )
+			continue;
+
+		char szFilePath[MAX_PATH];
+		V_sprintf_safe( szFilePath, "%s\\%s", szSaveFolderPath, dirName );
+
+		if ( g_pFullFileSystem->IsDirectory(szFilePath) )
+			continue;
+
+		char szSaveStoragePath[MAX_PATH];
+		V_sprintf_safe( szSaveStoragePath, "%s\\%s\\%s", szSaveFolderPath, pCampaignID, dirName );
+
+		if (!g_pFullFileSystem->RenameFile(szFilePath, szSaveStoragePath))
+			return false;
+	}
+
+	g_pFullFileSystem->FindClose( fh );
+	return true;
+}
+//-----------------------------------------------------------------------------
+// Purpose:
+//-----------------------------------------------------------------------------
+bool CCampaignDatabase::RetrieveSaveFiles( const char *pCampaignID )
+{
+	char szCampaignSavePath[MAX_PATH];
+	V_sprintf_safe( szCampaignSavePath, "%s\\save\\%s", engine->GetGameDirectory(), pCampaignID );
+
+	char szSearchPath[MAX_PATH];
+	V_sprintf_safe( szSearchPath, "%s\\*.*", szCampaignSavePath);
+
+	FileFindHandle_t fh;
+	for ( const char *dirName = g_pFullFileSystem->FindFirst( szSearchPath, &fh ); dirName; dirName = g_pFullFileSystem->FindNext( fh ))
+	{
+		if ( !Q_stricmp( dirName, "root" ) || !Q_stricmp( dirName, ".." ) || !Q_stricmp( dirName, "." ) )
+			continue;
+
+		char szFilePath[MAX_PATH];
+		V_sprintf_safe( szFilePath, "%s\\%s", szCampaignSavePath, dirName );
+
+		char szSaveFolderPath[MAX_PATH];
+		V_sprintf_safe( szSaveFolderPath, "%s\\save\\%s", engine->GetGameDirectory(), dirName );
+
+		if (!g_pFullFileSystem->RenameFile(szFilePath, szSaveFolderPath))
+			return false;
+	}
+
+	g_pFullFileSystem->FindClose( fh );
+
+	return true;
+}
+//-----------------------------------------------------------------------------
+// Purpose: This sounds bad I know, but it's just being used exclusively for 
+// cleaning up previously mounted campaign folders. The reason this is here is because this kind of function 
+// doesn't exist in the filesystem class, so I had to make one myself.
+//-----------------------------------------------------------------------------
+void CCampaignDatabase::RemoveFilesInDirectory( const char *pDir )
+{
+	char szSearchPath[MAX_PATH];
+	V_sprintf_safe( szSearchPath, "%s\\*.*", pDir);
+
+	FileFindHandle_t fh;
+	for ( const char *dirName = g_pFullFileSystem->FindFirst( szSearchPath, &fh ); dirName; dirName = g_pFullFileSystem->FindNext( fh ))
+	{
+		if ( !Q_stricmp( dirName, "root" ) || !Q_stricmp( dirName, ".." ) || !Q_stricmp( dirName, "." ) )
+			continue;
+
+		char szFilePath[MAX_PATH];
+		V_sprintf_safe( szFilePath, "%s\\%s", pDir, dirName );
+
+		if ( g_pFullFileSystem->IsDirectory(szFilePath) )
+		{
+			RemoveFilesInDirectory(szFilePath);
+			RemoveDirectory(szFilePath);
+		}
+		else
+		{
+			g_pFullFileSystem->RemoveFile(szFilePath);
+		}
+	}
+
+	g_pFullFileSystem->FindClose( fh );
+	RemoveDirectory(pDir);
+}
+//-----------------------------------------------------------------------------
+// Purpose:
+//-----------------------------------------------------------------------------
+void CCampaignDatabase::ClearCampaignFolder( void )
+{
+	char szMountedFolderPath[MAX_PATH];
+	V_sprintf_safe( szMountedFolderPath, "%s\\mounted", engine->GetGameDirectory());
+
+	char szSearchPath[MAX_PATH];
+	V_sprintf_safe( szSearchPath, "%s\\*.*", szMountedFolderPath);
+
+	FileFindHandle_t fh;
+	for ( const char *dirName = g_pFullFileSystem->FindFirst( szSearchPath, &fh ); dirName; dirName = g_pFullFileSystem->FindNext( fh ))
+	{
+		if ( !Q_stricmp( dirName, "root" ) || !Q_stricmp( dirName, ".." ) || !Q_stricmp( dirName, "." ) )
+			continue;
+
+		char szDirPath[MAX_PATH];
+		V_sprintf_safe( szDirPath, "%s\\mounted\\%s", engine->GetGameDirectory(), dirName );
+
+		RemoveFilesInDirectory(szDirPath);
+	}
+
+	g_pFullFileSystem->FindClose( fh );
+}
+//-----------------------------------------------------------------------------
+// Purpose:
+//-----------------------------------------------------------------------------
+void CCampaignDatabase::SetCampaignAsMounted( const char *pCampaignID )
+{
+	CampaignData_t *pPrevMounted = GetMountedCampaign();
+	CampaignData_t *pCampaign = GetCampaignDataFromID(pCampaignID);
+
+	if ( pPrevMounted )
+	{
+		pPrevMounted->mounted = false;
+		StoreSaveFiles(pPrevMounted->id);
+	}
+
+	RetrieveSaveFiles(pCampaignID);
+	FixupMountedCampaign(pCampaignID);
+
+	pCampaign->mounted = true;
+	WriteListToScript();
+}
+//-----------------------------------------------------------------------------
+// Purpose:
+//-----------------------------------------------------------------------------
+void CCampaignDatabase::FixupMountedCampaign( const char *pCampaignID )
+{
+	char szCampaignResourcePath[MAX_PATH];
+	V_sprintf_safe( szCampaignResourcePath, "%s\\mounted\\%s\\resource", engine->GetGameDirectory(), pCampaignID );
+
+	RemoveFilesInDirectory(szCampaignResourcePath);
+}
+//-----------------------------------------------------------------------------
+// Purpose:
+//-----------------------------------------------------------------------------
 EMountReturnCode CCampaignDatabase::MountCampaign(const char *pCampaignID)
 {
+	ClearCampaignFolder();
+
 	if (!ExtractVPK(pCampaignID))
 		return FAILED_TO_EXTRACT_VPK;
 
-	if (!MountExtractedFiles(pCampaignID, "mounted_content"))
+	if (!MountExtractedFiles(pCampaignID))
 		return FAILED_TO_EXTRACT_VPK;
 
+	if (!ReplaceGameinfoFile(pCampaignID))
+		return FAILED_TO_EXTRACT_VPK;
+
+	SetCampaignAsMounted(pCampaignID);
 	return SUCESSFULLY_MOUNTED;
 }

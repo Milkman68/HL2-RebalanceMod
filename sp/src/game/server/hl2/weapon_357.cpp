@@ -244,7 +244,7 @@ void CWeapon357::PrimaryAttack( void )
 	pPlayer->SetMuzzleFlashTime( gpGlobals->curtime + 0.5 );
 
 	//Disorient the player
-	QAngle viewPunch = QAngle( -8 * ( sk_deagle_style_357.GetBool() ? 0.5 : 1.0 ), random->RandomFloat( -2, 2 ), 0 );
+	QAngle viewPunch = QAngle( -4, random->RandomFloat( -2, 2 ), 0 );
 	
 	if ( sk_alternate_recoil.GetBool() )
 	{

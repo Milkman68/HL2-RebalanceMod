@@ -1642,7 +1642,7 @@ public:
 	virtual bool		IsValidShootPosition ( const Vector &vecCoverLocation, CAI_Node *pNode, CAI_Hint const *pHint );
 	virtual bool		TestShootPosition(const Vector &vecShootPos, const Vector &targetPos )	{ return WeaponLOSCondition( vecShootPos, targetPos, false ); }
 	virtual bool		IsCoverPosition( const Vector &vecThreat, const Vector &vecPosition );
-	virtual float		GetCoverPositionScore( const Vector &vecThreat, const Vector &vecCover, float flIdealDist = 500.0f, bool bEnemyReachable = true );
+	virtual float		GetCoverPositionScore( const Vector &vecThreat, const Vector &vecCover, float flPathDist, float flIdealDist = 500.0f, bool bEnemyReachable = true );
 	virtual float		GetLOSPositionScore( const Vector &vecThreat, const Vector &vecPos, float flIdealDist = 500.0f, bool bFirstNode = false );
 	virtual float		GetPathDistanceToPoint( const Vector& vecStart, const Vector& vecPosition ) ;
 	virtual float		CoverRadius( void ) { return 1024; } // Default cover radius

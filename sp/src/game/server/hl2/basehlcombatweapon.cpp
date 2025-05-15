@@ -169,13 +169,13 @@ void CHLMachineGun::DoMachineGunKick( CBasePlayer *pPlayer, float maxVerticleKic
 	float kickPerc = duration / slideLimitTime;
 
 	// Dampen our viewpunch less over time.
-	pPlayer->ViewPunchScale( SimpleSplineRemapVal( kickPerc, 0.0f, 1.0f, 0.75f, 0.25f ) );
+	pPlayer->ViewPunchScale( SimpleSplineRemapVal( kickPerc, 0.0f, 1.0f, 0.75f, 0.50f ) );
 
 	//Apply this to the view angles as well
 	vecScratch.x = -( KICK_MIN_X + ( maxVerticleKickAngle * kickPerc ) );
 	vecScratch.y = -( KICK_MIN_Y + ( maxVerticleKickAngle * kickPerc ) ) / 3;
 	vecScratch.y = random->RandomFloat( -vecScratch.y, vecScratch.y );
-	vecScratch.z = KICK_MIN_Z + ( maxVerticleKickAngle * kickPerc ) / 8;
+	vecScratch.z =/* KICK_MIN_Z + ( maxVerticleKickAngle * kickPerc ) / 8*/ 0;
 
 	//Wibble left and right
 	if ( random->RandomInt( -1, 1 ) >= 0 )

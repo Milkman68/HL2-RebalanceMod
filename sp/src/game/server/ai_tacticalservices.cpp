@@ -17,6 +17,7 @@
 #include "ai_networkmanager.h"
 #include "ai_hint.h"
 #include "ai_routedist.h"
+#include "ndebugoverlay.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -379,6 +380,9 @@ int CAI_TacticalServices::FindCoverNode(const Vector &vNearPos, const Vector &vT
 	bool bWantCrouch = false;
 	
 	float flScore = 0;
+
+	int iNumCoverPositions = 0;
+	float flPathDist = 0;
 	
 	static int nSearchRandomizer = 0;		// tries to ensure the links are searched in a different order each time;
 	
@@ -413,11 +417,17 @@ int CAI_TacticalServices::FindCoverNode(const Vector &vNearPos, const Vector &vT
 					if ( iIdealNode == NULL )
 						iIdealNode = nodeIndex;
 					
-					// If there's no desired dist, use the first node given to us (This is default behavior)
 					if ( flDesiredDist > 0.0f )
 					{
-						float flNewScore = GetOuter()->GetCoverPositionScore( vThreatPos, nodeOrigin, flDesiredDist, bThreatReachable );
-							
+						// Only do a path distance calculation every 3 nodes we check.
+						if ( iNumCoverPositions == 0 || iNumCoverPositions % 3 == 0)
+						{
+							flPathDist = GetOuter()->GetPathDistanceToPoint( GetAbsOrigin(), vThreatPos );
+						}
+
+						iNumCoverPositions++;
+
+						float flNewScore = GetOuter()->GetCoverPositionScore( vThreatPos, nodeOrigin, flPathDist, flDesiredDist, bThreatReachable );
 						if ( flNewScore > flScore )
 						{
 							bWantCrouch = GetOuter()->ShouldForceCrouchCover();
@@ -428,6 +438,7 @@ int CAI_TacticalServices::FindCoverNode(const Vector &vNearPos, const Vector &vT
 					}
 					else
 					{
+						// If there's no desired dist, use the first node given to us (This is default behavior)
 						bWantCrouch = GetOuter()->ShouldForceCrouchCover();
 						break;
 					}

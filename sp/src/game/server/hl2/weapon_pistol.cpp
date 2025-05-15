@@ -24,8 +24,13 @@
 #define	PISTOL_FASTEST_REFIRE_TIME		0.1f
 #define	PISTOL_FASTEST_DRY_REFIRE_TIME	0.22f
 
-#define	PISTOL_ACCURACY_SHOT_PENALTY_TIME		1.0f	// Applied amount of time each shot adds to the time we must recover from
-#define	PISTOL_ACCURACY_MAXIMUM_PENALTY_TIME	10.0f	// Maximum penalty to deal out
+#define	PISTOL_ACCURACY_SHOT_PENALTY_PRIMARY	0.3f
+#define	PISTOL_ACCURACY_SHOT_PENALTY_SECONDARY	0.5f
+
+#define	PISTOL_ACCURACY_DECAY_TIME_PRIMARY		0.15f
+#define	PISTOL_ACCURACY_DECAY_TIME_SECONDARY	0.1f
+
+#define	PISTOL_ACCURACY_MAXIMUM_PENALTY_TIME	10.0f
 
 //ConVar	pistol_use_new_accuracy( "pistol_use_new_accuracy", "1" );
 ConVar sk_pistol_can_secondary_attack("sk_pistol_can_secondary_attack", "1" );
@@ -33,7 +38,6 @@ ConVar sk_pistol_can_secondary_attack("sk_pistol_can_secondary_attack", "1" );
 //-----------------------------------------------------------------------------
 // CWeaponPistol
 //-----------------------------------------------------------------------------
-
 class CWeaponPistol : public CBaseHLCombatWeapon
 {
 	DECLARE_DATADESC();
@@ -51,21 +55,15 @@ public:
 	void	ItemBusyFrame( void );
 	void	PrimaryAttack( void );
 	void	SecondaryAttack( void );
-	void	BurstThink( void );
-	void    SecondaryPostFrame( void );
+	bool	Reload();
 	void	AddViewKick( void );
 	void	DryFire( void );
 	void	Operator_HandleAnimEvent( animevent_t *pEvent, CBaseCombatCharacter *pOperator );
-	void    Debugger( void );
-
-	
 
 	void	UpdatePenaltyTime( void );
 
 	int		CapabilitiesGet( void ) { return bits_CAP_WEAPON_RANGE_ATTACK1; }
 	Activity	GetPrimaryAttackActivity( void );
-
-	virtual bool Reload( void );
 
 	virtual const Vector& GetBulletSpread( void )
 	{		
@@ -94,7 +92,7 @@ public:
 		{
 			return 0.4;
 		}
-		return 0.22f; 
+		return 0.2f; 
 	}
 
 	DECLARE_ACTTABLE();
@@ -102,9 +100,12 @@ public:
 private:
 	float	m_flSoonestPrimaryAttack;
 	float	m_flLastAttackTime;
+
 	float	m_flAccuracyPenalty;
-	int		m_nNumShotsFired;
-	int		m_iBurstSize;
+	float	m_flAccuracyPenaltyDecayTime;
+
+//	int		m_nNumShotsFired;
+	int		m_nFireMode;
 };
 
 
@@ -118,8 +119,10 @@ BEGIN_DATADESC( CWeaponPistol )
 
 	DEFINE_FIELD( m_flSoonestPrimaryAttack, FIELD_TIME ),
 	DEFINE_FIELD( m_flLastAttackTime,		FIELD_TIME ),
-	DEFINE_FIELD( m_flAccuracyPenalty,		FIELD_FLOAT ), //NOTENOTE: This is NOT tracking game time
-	DEFINE_FIELD( m_nNumShotsFired,			FIELD_INTEGER ),
+	DEFINE_FIELD( m_flAccuracyPenalty,		FIELD_FLOAT ),
+	DEFINE_FIELD( m_flAccuracyPenaltyDecayTime,		FIELD_FLOAT ),
+//	DEFINE_FIELD( m_nNumShotsFired,			FIELD_INTEGER ),
+	DEFINE_FIELD( m_nFireMode,			FIELD_INTEGER ),
 
 END_DATADESC()
 
@@ -219,7 +222,9 @@ void CWeaponPistol::DryFire( void )
 	SendWeaponAnim( ACT_VM_DRYFIRE );
 	
 	m_flSoonestPrimaryAttack	= gpGlobals->curtime + PISTOL_FASTEST_DRY_REFIRE_TIME;
+
 	m_flNextPrimaryAttack		= gpGlobals->curtime + SequenceDuration();
+	m_flNextSecondaryAttack		= gpGlobals->curtime + SequenceDuration();
 }
 
 //-----------------------------------------------------------------------------
@@ -228,34 +233,28 @@ void CWeaponPistol::DryFire( void )
 void CWeaponPistol::PrimaryAttack( void )
 {
 	CBasePlayer *pOwner = ToBasePlayer( GetOwner() );
+
+	if ( pOwner == NULL )
+	    return;
 	
 	if (( pOwner->m_nButtons & IN_ATTACK ) && ( pOwner->m_nButtons & IN_ATTACK2 ))
 		return;
-
-	if ( ( gpGlobals->curtime - m_flLastAttackTime ) > 0.25f )
-	{
-		m_nNumShotsFired = 0;
-	}
-	else
-	{
-		m_nNumShotsFired++;
-	}
 
 	m_flLastAttackTime = gpGlobals->curtime;
 	m_flSoonestPrimaryAttack = gpGlobals->curtime + PISTOL_FASTEST_REFIRE_TIME;
 	CSoundEnt::InsertSound( SOUND_COMBAT, GetAbsOrigin(), SOUNDENT_VOLUME_PISTOL, 0.1, GetOwner() );
 
+	m_nFireMode = FIREMODE_SEMI;
+
 	BaseClass::PrimaryAttack();
+	m_flNextSecondaryAttack = gpGlobals->curtime + GetFireRate();
 
 	// Add an accuracy penalty which can move past our maximum penalty time if we're really spastic
-	m_flAccuracyPenalty += PISTOL_ACCURACY_SHOT_PENALTY_TIME;
+	m_flAccuracyPenalty += (PISTOL_ACCURACY_SHOT_PENALTY_PRIMARY * 0.75);
+	m_flAccuracyPenaltyDecayTime = gpGlobals->curtime + PISTOL_ACCURACY_DECAY_TIME_PRIMARY;
 
 	m_iPrimaryAttacks++;
 	gamestats->Event_WeaponFired( pOwner, true, GetClassname() );
-	
-	// This is for the secondary attack.
-	//if ( !m_bInReload && GetIdealActivity() != ACT_VM_DRYFIRE )
-	//WeaponSound( SINGLE );
 }
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -266,88 +265,69 @@ void CWeaponPistol::SecondaryAttack( void )
 		return;
 	
 	CBasePlayer *pOwner = ToBasePlayer( GetOwner() );
-	
 	if ( pOwner == NULL )
 	    return;
 	
 	if (( pOwner->m_nButtons & IN_ATTACK ) && ( pOwner->m_nButtons & IN_ATTACK2 ))
 		return;
 
-    m_iBurstSize = 2;
-	
-	BurstThink();
-	SetThink( &CWeaponPistol::BurstThink );
-	m_flNextSecondaryAttack = gpGlobals->curtime + 0.35;
-	m_flNextPrimaryAttack = m_flNextPrimaryAttack + 0.35;
+	m_flNextSecondaryAttack = gpGlobals->curtime + 0.1;
+	m_flNextPrimaryAttack = gpGlobals->curtime + 0.1;
 
-	// Pick up the rest of the burst through the think function.
-	SetNextThink( gpGlobals->curtime + 0.05 );
-}
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
-void CWeaponPistol::BurstThink( void )
-{
-	// If my clip is empty (and I use clips) start reload
+	CSoundEnt::InsertSound( SOUND_COMBAT, GetAbsOrigin(), SOUNDENT_VOLUME_PISTOL, 0.1, GetOwner() );
+
+	m_nFireMode = FIREMODE_FULLAUTO;
+
 	if ( !m_iClip1 ) 
-	{
-		m_iBurstSize = 0;
 		return;
-	}
 
-	// Only the player fires this way so we can cast
-	CBasePlayer *pPlayer = ToBasePlayer( GetOwner() );
-
-	if (!pPlayer)
-	{
-		return;
-	}
-
-	pPlayer->DoMuzzleFlash();
+	pOwner->DoMuzzleFlash();
 
 	SendWeaponAnim( GetPrimaryAttackActivity() );
 
 	// player "shoot" animation
-	pPlayer->SetAnimation( PLAYER_ATTACK1 );
+	pOwner->SetAnimation( PLAYER_ATTACK1 );
 
 	FireBulletsInfo_t info;
-	info.m_vecSrc	 = pPlayer->Weapon_ShootPosition( );
-	info.m_vecDirShooting = pPlayer->GetAutoaimVector( AUTOAIM_SCALE_DEFAULT );
-	
-	// MUST call sound before removing a round from the clip of a CMachineGun
-	WeaponSound(SINGLE_NPC);
-	
-	info.m_iShots = 1;
-	m_iClip1 -= 1;
+	info.m_vecSrc	 = pOwner->Weapon_ShootPosition( );
+	info.m_vecDirShooting = pOwner->GetAutoaimVector( AUTOAIM_SCALE_DEFAULT ); 
+	info.m_iShots	= 1;
 	info.m_flDistance = MAX_TRACE_LENGTH;
 	info.m_iAmmoType = m_iPrimaryAmmoType;
 	info.m_iTracerFreq = 1;
-	info.m_vecSpread = pPlayer->GetAttackSpread( this );
-	
-	// Fire the bullets
-	pPlayer->FireBullets( info );
+	info.m_vecSpread = pOwner->GetAttackSpread( this );
 
-	if (!m_iClip1 && pPlayer->GetAmmoCount(m_iPrimaryAmmoType) <= 0)
+	WeaponSound(SINGLE, 0);
+	m_flNextPrimaryAttack = m_flNextPrimaryAttack + GetFireRate();
+
+	m_iClip1 -= 1;
+
+	// Fire the bullets
+	pOwner->FireBullets( info );
+
+	if (!m_iClip1 && pOwner->GetAmmoCount(m_iPrimaryAmmoType) <= 0)
 	{
 		// HEV suit - indicate out of ammo condition
-		pPlayer->SetSuitUpdate("!HEV_AMO0", FALSE, 0); 
+		pOwner->SetSuitUpdate("!HEV_AMO0", FALSE, 0); 
 	}
-	
-	// Add an accuracy penalty which can move past our maximum penalty time if we're really spastic
-	m_flAccuracyPenalty += PISTOL_ACCURACY_SHOT_PENALTY_TIME / 2;
 
 	//Add our view kick in
 	AddViewKick();
-	
-	m_iBurstSize--;
-	if( m_iBurstSize == 0 )
-	{
-		// The burst is over!
-		SetThink(NULL);
-		return;
-	}
 
-	SetNextThink( gpGlobals->curtime + 0.05 );
+	// Add an accuracy penalty which can move past our maximum penalty time if we're really spastic
+	m_flAccuracyPenalty += (PISTOL_ACCURACY_SHOT_PENALTY_PRIMARY * 0.75);
+	m_flAccuracyPenaltyDecayTime = gpGlobals->curtime + PISTOL_ACCURACY_DECAY_TIME_PRIMARY;
+
+	m_iPrimaryAttacks++;
+	gamestats->Event_WeaponFired( pOwner, true, GetClassname() );
+}
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+bool CWeaponPistol::Reload()
+{
+	m_flAccuracyPenalty = 0.0f;
+	return BaseClass::Reload();
 }
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -366,13 +346,10 @@ void CWeaponPistol::UpdatePenaltyTime( void )
 		return;
 	
 	// Check our penalty time decay
-	if ( m_flSoonestPrimaryAttack < gpGlobals->curtime )
+	if ( m_flAccuracyPenaltyDecayTime < gpGlobals->curtime )
 	{
-		m_flAccuracyPenalty -= gpGlobals->frametime * m_flAccuracyPenalty * 2;
+		m_flAccuracyPenalty -= (gpGlobals->frametime * 20);
 		m_flAccuracyPenalty = clamp( m_flAccuracyPenalty, 0.0f, PISTOL_ACCURACY_MAXIMUM_PENALTY_TIME );
-		
-		m_flAccuracyPenalty = m_flAccuracyPenalty <= 0.5 ? 0 : m_flAccuracyPenalty;
-		//DevMsg("Penalty time is: %f\n", m_flAccuracyPenalty );
 	}
 }
 
@@ -400,6 +377,23 @@ void CWeaponPistol::ItemBusyFrame( void )
 //-----------------------------------------------------------------------------
 void CWeaponPistol::ItemPostFrame( void )
 {
+	CBasePlayer *pOwner = ToBasePlayer( GetOwner() );
+
+	if ( pOwner == NULL )
+	{
+		BaseClass::ItemPostFrame();
+		return;
+	}
+
+	if ( ( ( pOwner->m_nButtons & IN_ATTACK ) || ( pOwner->m_nButtons & IN_ATTACK2 ) ) 
+	&& m_flNextPrimaryAttack < gpGlobals->curtime && m_iClip1 <= 0 && !m_bInReload )
+	{
+		if (!m_bFireOnEmpty)
+			DryFire();
+
+		HandleFireOnEmpty();
+	}
+
 	BaseClass::ItemPostFrame();
 	
 	m_bMagazineStyleReloads = hl2r_realistic_reload.GetBool() ? true : false;
@@ -412,19 +406,8 @@ void CWeaponPistol::ItemPostFrame( void )
 	if ( m_bInReload )
 		return;
 	
-	CBasePlayer *pOwner = ToBasePlayer( GetOwner() );
-
-	if ( pOwner == NULL )
-		return;
-	
-	if ( ( ( pOwner->m_nButtons & IN_ATTACK ) || ( pOwner->m_nButtons & IN_ATTACK2 ) ) 
-	&& m_flNextPrimaryAttack < gpGlobals->curtime && m_iClip1 <= 0 )
-	{
-		DryFire();
-	}
-	
-		//Allow a refire as fast as the player can click
-	if ( ( ( pOwner->m_nButtons & IN_ATTACK ) == false ) && m_iClip1 > 0 /* && ( m_flSoonestPrimaryAttack < gpGlobals->curtime ) */ )
+	//Allow a refire as fast as the player can click
+	if ( ( ( pOwner->m_nButtons & IN_ATTACK ) == false ) && m_iClip1 > 0 && ( m_flSoonestPrimaryAttack < gpGlobals->curtime ) )
 	{
 		m_flNextPrimaryAttack = gpGlobals->curtime - 0.1f;
 	}
@@ -436,7 +419,7 @@ void CWeaponPistol::ItemPostFrame( void )
 //-----------------------------------------------------------------------------
 Activity CWeaponPistol::GetPrimaryAttackActivity( void )
 {
-	if ( m_nNumShotsFired < 1 )
+/*	if ( m_nNumShotsFired < 1 )
 		return ACT_VM_PRIMARYATTACK;
 
 	if ( m_nNumShotsFired < 5 )
@@ -444,25 +427,8 @@ Activity CWeaponPistol::GetPrimaryAttackActivity( void )
 
 	if ( m_nNumShotsFired < 10 )
 		return ACT_VM_RECOIL2;
-
+*/
 	return ACT_VM_RECOIL3;
-}
-
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-bool CWeaponPistol::Reload( void )
-{
-	if ( m_iBurstSize < 1 )
-	{
-		bool fRet = DefaultReload( GetMaxClip1(), GetMaxClip2(), ACT_VM_RELOAD );
-		if ( fRet )
-		{
-			WeaponSound( RELOAD );
-			m_flAccuracyPenalty = 0.0f;
-		}
-		return fRet;
-	}
-	return false;
 }
 
 //-----------------------------------------------------------------------------
@@ -475,36 +441,40 @@ void CWeaponPistol::AddViewKick( void )
 	if ( pPlayer == NULL )
 		return;
 
-	QAngle	viewPunch;
-	
-	viewPunch.x = -0.75f;
-	viewPunch.y = random->RandomFloat( -0.1f,  0.1f );
-	viewPunch.z = 0.0f;
-	
 	pPlayer->ViewPunchScale(0.75);
-	
-/*  	//Find how far into our accuracy degradation we are
-	float limit = 10;
-	float scale = 3.5;
-	
-	float duration = MIN( m_flAccuracyPenalty, limit );
-	float kickPerc = duration / (limit / scale);
-	
-	viewPunch.x *= (1.0f + kickPerc);
-	viewPunch.y *= (1.0f + kickPerc);  */
-	
-	if ( sk_alternate_recoil.GetBool() )
+
+	QAngle	viewPunch;
+	if ( m_nFireMode == FIREMODE_SEMI )
 	{
-		// do this to get a hard discontinuity, clear out anything under 10 degrees punch
-		pPlayer->ViewPunchReset(0);
-		
-		QAngle angles = pPlayer->GetLocalAngles();
-		
-		angles.x += viewPunch.x * 0.2;
-		angles.y += viewPunch.y * 0.2;
-		angles.z += viewPunch.z;
-		
-		pPlayer->SnapEyeAngles( angles );
+		viewPunch.x = -0.37f;
+		viewPunch.y = random->RandomFloat( -0.1f,  0.1f );
+		viewPunch.z = 0.0f;
+	
+  		//Find how far into our accuracy degradation we are
+		float limit = PISTOL_ACCURACY_MAXIMUM_PENALTY_TIME;
+		float scale = 7.5;
+	
+		float duration = MIN( m_flAccuracyPenalty, limit );
+		float kickPerc = duration / (limit / scale);
+	
+		viewPunch.x *= (1.0f + kickPerc);
+		viewPunch.y *= (1.0f + ( kickPerc * 0.5 ));
+	}
+	else
+	{
+		viewPunch.x = -0.75f;
+		viewPunch.y = random->RandomFloat( -0.1f,  0.1f );
+		viewPunch.z = 0.0f;
+	
+  		//Find how far into our accuracy degradation we are
+		float limit = PISTOL_ACCURACY_MAXIMUM_PENALTY_TIME;
+		float scale = 10;
+	
+		float duration = MIN( m_flAccuracyPenalty, limit );
+		float kickPerc = duration / (limit / scale);
+	
+		viewPunch.x *= (1.0f + kickPerc);
+		viewPunch.y *= (1.0f + ( kickPerc * 2 ));
 	}
 
 	//Add it to the view punch

@@ -7,6 +7,7 @@
 #include "tier0/icommandline.h"
 
 #define CAMPAIGN_NAME_LENGTH 128
+#define CAMPAIGN_MAX_MAP_NAME 128
 #define CAMPAIGN_ID_LENGTH 11
 
 #define HLE_MAX_OUTPUT_LENGTH 2048
@@ -54,8 +55,8 @@ struct CampaignData_t
 	int		game;		// What game is this campaign for?
 	bool	mounted;	// Is this the currently mounted campaign?
 	bool	installed;	// Left as 0 if this campaign is no longer installed.
-
 	CUtlVector<const char*> maplist; // A list containing the names of all maps in this campaign.
+	int		startingmap;
 	int		filesize;
 	char	date;
 
@@ -79,9 +80,12 @@ public:
 	void WriteListToScript( void );
 	void WriteScriptToList( void );
 
+
 	CampaignData_t*	GetCampaignData( int index );
 	CampaignData_t*	GetCampaignDataFromID(const char *id);
 	int				GetCampaignIndex( CampaignData_t *campaign );
+
+	CampaignData_t*	GetMountedCampaign( void );
 
 	KeyValues*		GetKeyValuesFromCampaign( CampaignData_t *campaign );
 	int				GetCampaignCount( void );
@@ -93,14 +97,10 @@ public:
 	ESortDirection	GetSortDir() { return m_SortMethod.eDir; }
 
 	// VPK accessor functions:
-	EMountReturnCode MountCampaign(const char *pFileName);
+	EMountReturnCode MountCampaign(const char *pCampaignID);
 	void			DoCampaignScan( void );
 
 private:
-	bool		PotentialCampaignVPK( const char *pAddonID);
-
-	bool		ScanForMapsInVPK( const char *pAddonID, CUtlVector<const char *> *list );
-	bool		IsMapReplacement( const char *pMap );
 
 	int			GetVPKSize( const char *pAddonID);
 	int			GetVPKDate( const char *pAddonID);
@@ -109,8 +109,30 @@ private:
 
 	const char	*ParseCMD( const char *pAddonID, const char *pAppend = NULL );
 	const char	*GetOutputFromHLE( const char *pAddonID, const char *pCommand );
+
+	// VPK Scanning:
+	bool		PotentialCampaignVPK( const char *pAddonID);
+	bool		IsMapReplacement( const char *pMap );
+
+	bool		ScanForMapsInVPK( const char *pAddonID, CUtlVector<const char *> *list );
+
+	// VPK Extracting:
 	bool		ExtractVPK( const char *pAddonID );
-	bool		MountExtractedFiles( const char *pCampaignID, const char *pDirectory );
+	bool		MountExtractedFiles( const char *pCampaignID );
+
+	// File Cleanup:
+	void		RemoveFilesInDirectory( const char *pDir );
+	void		ClearCampaignFolder( void );
+
+	// Gameinfo Storage/Retrieveal:
+	bool		ReplaceGameinfoFile( const char *pCampaignID );
+
+	// Save Files:
+	bool		StoreSaveFiles( const char *pCampaignID );
+	bool		RetrieveSaveFiles( const char *pCampaignID );
+
+	void		SetCampaignAsMounted( const char *pCampaignID );
+	void		FixupMountedCampaign( const char *pCampaignID );
 
 private:
 	KeyValues *pCampaignScript;

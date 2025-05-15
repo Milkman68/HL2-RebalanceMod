@@ -6,25 +6,21 @@ using namespace vgui;
 #include <vgui_controls/QueryBox.h>
 #include "vgui_controls/AnimationController.h"
 #include <vgui/ISurface.h>
+#include "vgui/ILocalize.h"
 #include "ienginevgui.h"
 #include "hl2r_campaign_panel.h"
 #include "hl2r_campaign_database.h"
 
 // TODO:
-// Mount function only works like 1/20th of the time.
-// Could add a nice loading bar for scanning maybe?
 
-// add new tab for managing exclusively mounted campaigns.
+// Add functionality to the "date" value.
 
-// Actually might want to just let the player choose the starting map when "begin campaign" is pressed 
-// instead of adding it to the manager. Hmmmmm...
+// Add sorting capabilities to the menu.
 
-// Every single campaign gets recreated when scanned even if already in the script.
+// Give a return time of how long it took to mount a campaign on the notification panel.
 
-// optimize scanning by not reading default_campaigns.txt every loop iteration.
-// 
-// Discolor unmountable campaigns a little.
-// 
+// Make mount fails less catostrophic by reversing whatever the previous function did if it failed.
+
 //------------------------------------------------------------------------------
 // Purpose : Code for hooking into the base GameUI panel. Credit goes to: 
 // https://github.com/HL2RP/HL2RP
@@ -93,19 +89,13 @@ CCampaignListPanel::CCampaignListPanel(vgui::Panel* parent ) : EditablePanel(par
 //------------------------------------------------------------------------------
 void CCampaignListPanel::ItemSelected(int itemID)
 {
-	// Buttons:
-//	bool bHasItemSelected = m_ListPanel->IsItemIDValid(itemID);
-//	bool bCanItemBeMounted = m_ListPanel->GetItemSection(itemID) == 1;
-
-//	m_MountButton->SetEnabled(bHasItemSelected && bCanItemBeMounted);
-
 	if (itemID != -1)
 	{
 		const char *SelectedItemID = m_ListPanel->GetSelectedItemData()->GetString("id");
 		CampaignData_t *pSelectedCampaign = GetCampaignDatabase()->GetCampaignDataFromID(SelectedItemID);
 		
 		m_SelectedCampaignPanel->SetSelected(pSelectedCampaign);
-		m_MountButton->SetEnabled( Q_stricmp( pSelectedCampaign->name, "undefined" ) && pSelectedCampaign->game != -1 );
+		m_MountButton->SetEnabled( 	Q_stricmp( pSelectedCampaign->name, "undefined" ) && pSelectedCampaign->game != -1 && !pSelectedCampaign->mounted );
 	}
 	else	
 	{
@@ -150,41 +140,65 @@ void CCampaignListPanel::RefreshList(void)
 void CCampaignListPanel::CreateListColunms(void)
 {
 	m_ListPanel->AddSection(0, "column0");
-	m_ListPanel->AddColumnToSection(0, "namelabel", "Label:", SectionedListPanel::COLUMN_BRIGHT, NAME_WIDTH);	// FIX: UNLOCALIZED STRING!!!
-	m_ListPanel->AddColumnToSection(0, "size", "Filesize:", SectionedListPanel::COLUMN_BRIGHT, SIZE_WIDTH);		// FIX: UNLOCALIZED STRING!!!
-	m_ListPanel->AddColumnToSection(0, "date", "Date:", SectionedListPanel::COLUMN_BRIGHT, DATE_WIDTH);			// FIX: UNLOCALIZED STRING!!!
+	m_ListPanel->AddColumnToSection(0, "namelabel", "#hl2r_label_label", SectionedListPanel::COLUMN_BRIGHT, NAME_WIDTH);
+	m_ListPanel->AddColumnToSection(0, "size", "#hl2r_filesize_label", SectionedListPanel::COLUMN_BRIGHT, SIZE_WIDTH);
+	m_ListPanel->AddColumnToSection(0, "date", "#hl2r_date_label", SectionedListPanel::COLUMN_BRIGHT, DATE_WIDTH);
+
+	m_ListPanel->AddSection(1, "column1");
+	m_ListPanel->AddColumnToSection(1, "namelabel", "#hl2r_label_label", SectionedListPanel::COLUMN_BRIGHT, NAME_WIDTH);
+	m_ListPanel->AddColumnToSection(1, "size", "#hl2r_filesize_label", SectionedListPanel::COLUMN_BRIGHT, SIZE_WIDTH);
+	m_ListPanel->AddColumnToSection(1, "date", "#hl2r_date_label", SectionedListPanel::COLUMN_BRIGHT, DATE_WIDTH);
 }
 //------------------------------------------------------------------------------
-// Purpose:
+// Purpose: Fill our campaign list with campaigns from the database.
 //------------------------------------------------------------------------------
 void CCampaignListPanel::CreateList(void)
 {
 	for (int i = 0; i < GetCampaignDatabase()->GetCampaignCount(); i++ )
 	{
 		CampaignData_t *pDatabaseCampaign = GetCampaignDatabase()->GetCampaignData(i);
-		KeyValues *pCampaign = GetCampaignDatabase()->GetKeyValuesFromCampaign(pDatabaseCampaign);
 
-		// Don't do anything if this shouldn't be visible.
-		if (!pCampaign->GetBool("installed"))
+		// Don't do anything if this campaign is not currently not installed.
+		if ( !pDatabaseCampaign->installed )
 			continue;
 
-		const char *pCampaignName = pCampaign->GetString("Name");
-		pCampaignName = !Q_stricmp(pCampaignName, "undefined" ) ? "#hl2r_list_undefined_label" : pCampaignName;
+		KeyValues *pCampaign = GetCampaignDatabase()->GetKeyValuesFromCampaign(pDatabaseCampaign);
 
-		char pFilesize[CAMPAIGN_FILESIZE_LENGTH];
-		V_sprintf_safe(pFilesize, "%s MB", pCampaign->GetString("filesize") );
+		char szFilesize[CAMPAIGN_FILESIZE_LENGTH];
+		V_sprintf_safe(szFilesize, "%s MB", pCampaign->GetString("filesize") );
+		pCampaign->SetString("size", szFilesize );
 
-		pCampaign->SetString("namelabel", pCampaignName);
-		pCampaign->SetString("size", pFilesize );
 		pCampaign->SetString("date", "0/00/0000");
 
-		int itemID = m_ListPanel->AddItem(0, pCampaign);
+		// Get our campaign's name. If not defined yet, use a label from our resource file to list it as such.
+		const char *pCampaignName = pCampaign->GetString("Name");
+		pCampaignName = !Q_stricmp(pCampaignName, "undefined" ) ? "#hl2r_undefined_label" : pCampaignName;
 
-		if ( !Q_stricmp( pCampaign->GetString("Name"), "undefined" ) || pCampaign->GetInt("Game") == -1 )
-			m_ListPanel->SetItemFgColor(itemID, Color( 160, 160, 160, 255 )); // FIX: MAGIC COLOR!!!
-
+		// Is this the currently mounted campaign?
 		if ( pCampaign->GetBool("mounted") )
-			m_ListPanel->SetItemFgColor(itemID, COLOR_GREEN);
+		{
+			char szMountedString[64];
+			wchar_t *pLocalizedMountedLabel = g_pVGuiLocalize->Find("hl2r_mounted_label");
+			g_pVGuiLocalize->ConvertUnicodeToANSI( pLocalizedMountedLabel, szMountedString, sizeof(szMountedString) );
+
+			char szNameMounted[CAMPAIGN_NAME_LENGTH];
+			V_sprintf_safe(szNameMounted, "%s%s", pCampaignName, szMountedString );
+
+			pCampaign->SetString("namelabel", szNameMounted);
+
+			int itemID = m_ListPanel->AddItem(0, pCampaign);
+			m_ListPanel->SetItemFgColor(itemID, COLOR_GREEN ); // FIX: MAGIC COLOR!!!
+		}
+		else
+		{
+			pCampaign->SetString("namelabel", pCampaignName);
+
+			int itemID = m_ListPanel->AddItem(1, pCampaign);
+
+			bool bMountable = ( Q_stricmp( pCampaign->GetString("Name"), "undefined" ) && pCampaign->GetInt("Game") != -1 );
+			if ( !bMountable )
+				m_ListPanel->SetItemFgColor(itemID, Color( 160, 160, 160, 255 )); // FIX: MAGIC COLOR!!!
+		}
 	}
 }
 //------------------------------------------------------------------------------
@@ -196,46 +210,49 @@ void CCampaignListPanel::OnCommand(const char* pcCommand)
 	{
 		if ( !GetCampaignDatabase()->HLExtractInstalled() )
 		{
-			MessageBox *box = new MessageBox("#hl2r_list_mounterror_title", "#hl2r_list_missing_hlextract", this);
+			MessageBox *box = new MessageBox("#hl2r_error_title", "#hl2r_missing_hlextract", this);
 			box->DoModal();
 
 			BaseClass::OnCommand(pcCommand);
 			return;
 		}
 	}
-
-/*	if (!stricmp(pcCommand, "edititem"))
-	{
-		// Create a temporary editor panel for the campaign we selected.
-		const char *SelectedItemID = m_ListPanel->GetSelectedItemData()->GetString("id");
-		CampaignData_t *pSelectedCampaign = GetCampaignDatabase()->GetCampaignDataFromID(SelectedItemID);
-
-		CCampaignEditPanel *pEditPanel = new CCampaignEditPanel(this, pSelectedCampaign);
-
-		pEditPanel->Activate();
-		pEditPanel->AddActionSignalTarget(this);
-	}
-	else */
-	
 	if (!stricmp(pcCommand, "mountitem"))
 	{
+		const char* szCampaignID = m_ListPanel->GetSelectedItemData()->GetString("id");
+		CampaignData_t *pCampaign = GetCampaignDatabase()->GetCampaignDataFromID(szCampaignID);
+
+		if ( pCampaign->startingmap == -1 )
+		{
+			MessageBox *box = new MessageBox("#hl2r_warning_title", "#hl2r_mountwarning", this);
+			box->DoModal();
+
+			BaseClass::OnCommand(pcCommand);
+			return;
+		}
+
+
 		// Create a disclaimer box confirming if this is our intended action.
-		QueryBox *box = new QueryBox("#hl2r_list_mountdisclaimer_title", "#hl2r_list_mountdisclaimer_text", this);
-		box->SetOKButtonText("#hl2r_list_mountdisclaimer_accept");
+		QueryBox *box = new QueryBox("#hl2r_mountdisclaimer_title", "#hl2r_mountdisclaimer", this);
+		box->SetOKButtonText("#hl2r_mountdisclaimer_accept");
 		box->SetOKCommand(new KeyValues("Command", "command", "mountconfirmed"));
 		box->AddActionSignalTarget(this);
 		box->DoModal();
 	}
 	else if (!stricmp(pcCommand, "mountconfirmed"))
 	{
-		const char* szCampaignID = m_ListPanel->GetItemData(m_ListPanel->GetSelectedItem())->GetString("id");
+		const char* szCampaignID = m_ListPanel->GetSelectedItemData()->GetString("id");
 		HandleCampaignMount(szCampaignID);
+	}
+	else if (!stricmp(pcCommand, "quitcommand"))
+	{
+		engine->ClientCmd("quit");
 	}
 	else if (!stricmp(pcCommand, "scancampaigns"))
 	{
 		// Create a disclaimer box confirming if this is our intended action.
-		QueryBox *box = new QueryBox("#hl2r_list_scandisclaimer_title", "#hl2r_list_scandisclaimer_text", this);
-		box->SetOKButtonText("#hl2r_list_scandisclaimer_accept");
+		QueryBox *box = new QueryBox("#hl2r_scandisclaimer_title", "#hl2r_scandisclaimer_text", this);
+		box->SetOKButtonText("#hl2r_scandisclaimer_accept");
 		box->SetOKCommand(new KeyValues("Command", "command", "scanconfirmed"));
 		box->AddActionSignalTarget(this);
 		box->DoModal();
@@ -257,19 +274,23 @@ switch (GetCampaignDatabase()->MountCampaign(szCampaignID))
 	{
 	case SUCESSFULLY_MOUNTED:
 		{
-			MessageBox *box = new MessageBox("#hl2r_list_mountsucess_title", "#hl2r_list_mountsucess_text", this);
-			box->SetOKButtonText("#hl2r_list_mountsucess_accept");
+			MessageBox *box = new MessageBox("#hl2r_mountsucess_title", "#hl2r_mountsucess_text", this);
+			box->SetOKButtonText("#hl2r_mountsucess_accept");
+			box->SetCommand("quitcommand");
+			box->AddActionSignalTarget(this);
 			box->DoModal();
 			break;
 		}
 
 	case FAILED_TO_EXTRACT_VPK:
 		{
-			MessageBox *box = new MessageBox("#hl2r_list_mounterror_title", "#hl2r_list_mounterror_text_1", this);
+			MessageBox *box = new MessageBox("#hl2r_error_title", "#hl2r_mounterror_1", this);
 			box->DoModal();
 			break;
 		}
 	}
+
+	RefreshList();
 }
 //------------------------------------------------------------------------------
 // Purpose:
@@ -284,6 +305,7 @@ void CCampaignListPanel::HandleCampaignScan( void )
 
 	RefreshList();
 }
+
 
 
 
@@ -314,196 +336,7 @@ void CSelectedCampaignPanel::SetSelected( CampaignData_t *campaign )
 }
 
 
-/*
-//------------------------------------------------------------------------------
-// Edit panel
-//------------------------------------------------------------------------------
-CCampaignEditPanel::CCampaignEditPanel(CCampaignListPanel *parent, CampaignData_t *pCampaign) : PropertyDialog(FindGameUIChildPanel("BaseGameUIPanel"), "OtherSettings")
-{
-	SetTitle("#hl2r_listeditor_title", true);
-	SetBounds(0, 0, GetAdjustedSize(EDITPANEL_WIDTH), GetAdjustedSize(EDITPANEL_HEIGHT) );
-	MoveToCenterOfScreen();
-	SetSizeable( false );
-	SetCloseButtonVisible(false);
-	SetMenuButtonResponsive(false);
-	SetDeleteSelfOnClose( true );
 
-	m_pCampaign = pCampaign;
-	m_pParent = parent;
-
-	m_bControlsInvalidated = false;
-	m_pPrevSettings = new KeyValues("PreviousSettings");
-
-	InitControls();
-}
-//------------------------------------------------------------------------------
-// Purpose:
-//------------------------------------------------------------------------------
-void CCampaignEditPanel::InitControls(void)
-{
-	// Text entry
-	m_pNameEntry = new TextEntry(this, "NameEntry");
-
-	if (Q_stricmp(m_pCampaign->name, "undefined"))
-		m_pNameEntry->SetText(m_pCampaign->name);
-
-	// Dropdown box:
-	m_pGameSelectBox = new ComboBox(this, "GameSelectBox", 3, false);
-	m_pGameSelectBox->AddItem("Half-Life 2", NULL);
-	m_pGameSelectBox->AddItem("Episode 1", NULL);
-	m_pGameSelectBox->AddItem("Episode 2", NULL);
-
-	if (m_pCampaign->game != -1)
-		m_pGameSelectBox->ActivateItem(m_pCampaign->game);
-
-	// Button:
-	m_pResetButton = new Button(this, "ResetButton", "");
-	m_pResetButton->SetCommand("reset");
-
-	// Checkbutton:
-	m_MarkInvalidButton = new CheckButton(this, "MarkInvalidButton", "");
-	m_MarkInvalidButton->SetSelected(m_pCampaign->invalid);
-
-	if ( m_MarkInvalidButton->IsSelected() )
-	{
-		m_bControlsInvalidated = true;
-		InvalidateControls();
-	}
-
-	LoadControlSettings( "resource/ui/hl2r_campaignlisteditor.res" );
-}
-//------------------------------------------------------------------------------
-// Purpose: Reset all controls back to default.
-//------------------------------------------------------------------------------
-void CCampaignEditPanel::ResetControls( void )
-{
-	m_pPrevSettings->Clear();
-	m_bControlsInvalidated = false;
-
-	m_pNameEntry->SetText("");
-
-	m_pGameSelectBox->SetText("");
-	m_pGameSelectBox->SetActiveItemInvalid();
-}
-//------------------------------------------------------------------------------
-// Purpose: Disable all controls and display editible ones as "INVALID".
-//------------------------------------------------------------------------------
-void CCampaignEditPanel::InvalidateControls()
-{
-	char entrytext[256];
-	m_pNameEntry->GetText(entrytext, 256);
-
-	// Don't remeber our previous controls if we're invalidated from the start.
-	if ( !m_bControlsInvalidated )
-	{
-		m_pPrevSettings->SetString("name", entrytext);
-		m_pPrevSettings->SetInt("game", m_pGameSelectBox->GetActiveItem());
-	}
-
-	m_pNameEntry->SetText("#hl2r_list_invalid_label");
-	m_pNameEntry->SetEnabled(false);
-
-	m_pGameSelectBox->SetText("#hl2r_list_invalid_label");
-	m_pGameSelectBox->SetActiveItemInvalid();
-	m_pGameSelectBox->SetEnabled(false);
-
-	m_pResetButton->SetEnabled(false);
-}
-//------------------------------------------------------------------------------
-// Purpose: Disable the invalidated state.
-//------------------------------------------------------------------------------
-void CCampaignEditPanel::ReinstateControls(void)
-{
-	if (!m_bControlsInvalidated)
-		return;
-
-	m_pNameEntry->SetText(m_pPrevSettings->GetString("name"));
-
-	if ( m_pPrevSettings->GetInt("game", -1) == -1 )
-	{
-		m_pGameSelectBox->SetActiveItemInvalid();
-		m_pGameSelectBox->SetText("");
-	}
-	else
-	{
-		m_pGameSelectBox->ActivateItem(m_pPrevSettings->GetInt("game"));
-	}
-
-	m_pNameEntry->SetEnabled(true);
-	m_pGameSelectBox->SetEnabled(true);
-	m_pResetButton->SetEnabled(true);
-}
-//------------------------------------------------------------------------------
-// Purpose:
-//------------------------------------------------------------------------------
-void CCampaignEditPanel::Activate()
-{
-	BaseClass::Activate();
-	input()->SetAppModalSurface(GetVPanel());
-}
-//------------------------------------------------------------------------------
-// Purpose:
-//------------------------------------------------------------------------------
-void CCampaignEditPanel::OnCommand(const char* command)
-{
-	if (!stricmp(command, "OK"))
-	{
-		char entrytext[256];
-		m_pNameEntry->GetText(entrytext, 256);
-
-		V_strcpy( m_pCampaign->name, (!stricmp(entrytext, "") || m_bControlsInvalidated) ? "undefined" : entrytext );
-		m_pCampaign->game = m_pGameSelectBox->GetActiveItem();
-		m_pCampaign->invalid = m_MarkInvalidButton->IsSelected();
-
-		GetCampaignDatabase()->WriteListToScript();
-		m_pParent->RefreshList();
-
-		Close();
-	}
-	else if (!stricmp(command, "reset"))
-	{
-		ResetControls();
-	}
-	else if (!stricmp(command, "Cancel"))
-	{
-		Close();
-	}
-	else
-	{
-		BaseClass::OnCommand(command);
-	}
-}
-//------------------------------------------------------------------------------
-// Purpose:
-//------------------------------------------------------------------------------
-void CCampaignEditPanel::OnKeyCodeTyped(KeyCode code)
-{
-	if (code == KEY_ESCAPE)
-	{
-		Close();
-	}
-	else
-	{
-		BaseClass::OnKeyCodeTyped(code);
-	}
-}
-//------------------------------------------------------------------------------
-// Purpose:
-//------------------------------------------------------------------------------
-void CCampaignEditPanel::OnCheckButtonChecked(vgui::Panel *panel)
-{ 
-	if (m_MarkInvalidButton->IsSelected())
-	{
-		InvalidateControls();
-		m_bControlsInvalidated = true;
-	}
-	else
-	{
-		ReinstateControls();
-		m_bControlsInvalidated = false;
-	}
-}
-*/
 //------------------------------------------------------------------------------
 // Parent panel
 //------------------------------------------------------------------------------
@@ -567,4 +400,22 @@ CON_COMMAND(OpenHL2RCampaignDialog, "Opens the campaign manager ui")
 	}
 
 	CampaignPanel->Activate();
+}
+
+CON_COMMAND(StartWorkshopCampaign, "Starts the currently mounted campaign")
+{
+	CampaignData_t *pMountedCampaign = GetCampaignDatabase()->GetMountedCampaign();
+	if ( !pMountedCampaign )
+	{
+		MessageBox *box = new MessageBox("#hl2r_warning_title", "#hl2r_begincampaign_error", FindGameUIChildPanel("BaseGameUIPanel"));
+		box->DoModal();
+
+		return;
+	}
+	int szMapIndex = pMountedCampaign->startingmap;
+
+	char szMapCommand[64];
+	V_sprintf_safe(szMapCommand, "map %s", GetCampaignDatabase()->GetMountedCampaign()->maplist[szMapIndex] );
+
+	engine->ClientCmd(szMapCommand);
 }

@@ -3278,10 +3278,13 @@ bool CNPC_MetroPolice::CanOccupyAttackSlot( void )
 			if( pMetroCop )
 			{
 				// Check if any squadmembers have a slot that currently isn't being used for attacking.
-				if ( pMetroCop->HasStrategySlotRange( SQUAD_SLOT_ATTACK1, SQUAD_SLOT_ATTACK2 ) && !pMetroCop->HasCondition( COND_CAN_RANGE_ATTACK1 ) )
+				if ( pMetroCop->HasStrategySlotRange( SQUAD_SLOT_ATTACK1, SQUAD_SLOT_ATTACK2 ) )
 				{
-					bOverrideSlot = true;
-					break;
+					if ( !pMetroCop->HasCondition( COND_CAN_RANGE_ATTACK1 ) || pMetroCop->IsCurSchedule( SCHED_METROPOLICE_TAKE_COVER_FROM_ENEMY ) )
+					{
+						bOverrideSlot = true;
+						break;
+					}
 				}
 				
 			}
@@ -5451,7 +5454,7 @@ WeaponProficiency_t CNPC_MetroPolice::CalcWeaponProficiency( CBaseCombatWeapon *
 
 	if( FClassnameIs( pWeapon, "weapon_smg1" ) )
 	{
-		return WEAPON_PROFICIENCY_VERY_GOOD;
+		return WEAPON_PROFICIENCY_GOOD;
 	}
 
 	return BaseClass::CalcWeaponProficiency( pWeapon );
@@ -6216,7 +6219,7 @@ DEFINE_SCHEDULE
 	"		COND_CAN_MELEE_ATTACK1"
 	"		COND_CAN_MELEE_ATTACK2"
 	"		COND_HEAR_DANGER"
-	//"		COND_HEAVY_DAMAGE"
+	"		COND_HEAVY_DAMAGE"
 );
 
 
@@ -6774,6 +6777,7 @@ DEFINE_SCHEDULE
 	"		COND_CAN_MELEE_ATTACK2"
 	"		COND_HEAR_DANGER"
 	"		COND_HEAR_MOVE_AWAY"
+	"		COND_HEAVY_DAMAGE"
 )
  DEFINE_SCHEDULE
  (

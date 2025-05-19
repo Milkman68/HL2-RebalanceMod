@@ -43,6 +43,7 @@ private:
 	void CreateList( void );
 
 	void HandleCampaignMount( const char *szCampaignID );
+	void HandleCampaignUnmount( void );
 	void HandleCampaignScan( void );
 
 private:
@@ -153,7 +154,7 @@ void CCampaignBrowserPanel::OnFinishRequest(void)
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-enum EPageType
+enum EPageState
 {
 	NO_CAMPAIGN_SELECTED,
 	UNMOUNTED_CAMPAIGN,
@@ -179,13 +180,14 @@ public:
 private:
 	CampaignData_t *GetCampaign( void ) { return m_Campaign; }
 
-	void SetPageType( EPageType type);
+	void SetPageState( EPageState type);
 
 	void CreateMapList(void);
 	void RefreshMapList(void);
 
 	void ResetPage(void);
 	void CheckApplyButton( void );
+	bool ApplyChanges( void );
 
 private:
 	CCampaignListPanel	*m_Parent;
@@ -256,7 +258,7 @@ CCampaignEditPanel::CCampaignEditPanel(CCampaignListPanel *parent, const char *n
 	m_pGameSelectBox = new ComboBox(this, "GameSelectBox", 3, false);
 	m_pGameSelectBox->AddItem("Half-Life 2", NULL);
 	m_pGameSelectBox->AddItem("Episode 1", NULL);
-	m_pGameSelectBox->AddItem("Episode 2", NULL);
+	m_pGameSelectBox->AddItem("Episode 2 [Recomended]", NULL);
 	m_pGameSelectBoxLabel = new Label(this, "GameSelectBoxLabel", "");
 
 	LoadControlSettings("resource/ui/hl2r_editpanel.res");
@@ -275,11 +277,11 @@ void CCampaignEditPanel::SetCampaign(CampaignData_t* campaign)
 		CreateMapList();
 		if (GetCampaign()->mounted)
 		{
-			SetPageType(MOUNTED_CAMPAIGN);
+			SetPageState(MOUNTED_CAMPAIGN);
 		}
 		else
 		{
-			SetPageType(UNMOUNTED_CAMPAIGN);
+			SetPageState(UNMOUNTED_CAMPAIGN);
 		}
 
 		if (Q_stricmp(GetCampaign()->name, "undefined"))
@@ -296,7 +298,7 @@ void CCampaignEditPanel::SetCampaign(CampaignData_t* campaign)
 	}
 	else
 	{
-		SetPageType(NO_CAMPAIGN_SELECTED);
+		SetPageState(NO_CAMPAIGN_SELECTED);
 	}
 }
 //-----------------------------------------------------------------------------
@@ -306,32 +308,41 @@ void CCampaignEditPanel::OnCommand(const char* pcCommand)
 {
 	if ( !stricmp(pcCommand, "applychanges") )
 	{
-		char entrytext[CAMPAIGN_NAME_LENGTH];
-		m_pNameEntry->GetText(entrytext, CAMPAIGN_NAME_LENGTH);
-
-		CCampaignDatabase *database = GetCampaignDatabase();
-		for ( int i = 0; i < database->GetCampaignCount(); i++ )
-		{
-			if ( !Q_stricmp(database->GetCampaignData(i)->id, GetCampaign()->id ) )
-				continue;
-
-			if ( !Q_stricmp(database->GetCampaignData(i)->name, entrytext ) )
-			{
-				MessageBox *box = new MessageBox("#hl2r_warning_title", "#hl2r_editpanel_error_1", this);
-				box->DoModal();
-
-				return;
-			}
-		}
-
-		V_strcpy( GetCampaign()->name, !stricmp(entrytext, "")  ? "undefined" : entrytext );
-		GetCampaign()->game = m_pGameSelectBox->GetActiveItem();
-
-		database->SortCampaignList(database->GetSortType(), database->GetSortDir());
-		database->WriteListToScript();
+		ApplyChanges();
 
 		ResetPage();
 		m_Parent->RefreshList();
+	}
+	if ( !stricmp(pcCommand, "applychangesmounted") )
+	{
+		// Create a disclaimer box confirming if this is our intended action.
+		QueryBox *box = new QueryBox("#hl2r_warning_title", "#hl2r_editpanel_applymounted_disclaimer", this);
+		box->SetOKButtonText("#hl2r_editpanel_applybutton_label");
+		box->SetOKCommand(new KeyValues("Command", "command", "applychangesmountedconfirmed"));
+		box->AddActionSignalTarget(this);
+		box->DoModal();
+	}
+	if ( !stricmp(pcCommand, "applychangesmountedconfirmed") )
+	{
+		CCampaignDatabase *database = GetCampaignDatabase();
+
+		int iCurrentGametype = database->GetMountedCampaign()->game;
+		int iNewGametype = m_pGameSelectBox->GetActiveItem();
+
+		if ( !database->TransferGameinfoFiles(iCurrentGametype, iNewGametype))
+		{
+			MessageBox *box = new MessageBox("#hl2r_error_title", "#hl2r_mounterror_3", this);
+			box->DoModal();
+		}
+		else
+		{
+			ApplyChanges();
+
+			ResetPage();
+			m_Parent->RefreshList();
+
+			engine->ClientCmd("quit");
+		}
 	}
 	if ( !stricmp(pcCommand, "setstartmap") )
 	{
@@ -448,12 +459,10 @@ void CCampaignEditPanel::CreateMapList( void )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CCampaignEditPanel::SetPageType( EPageType type)
+void CCampaignEditPanel::SetPageState( EPageState state)
 {
-	bool bEditControlsEnabled = false;
 	bool bEditControlsVisible = false;
-
-	if ( type == NO_CAMPAIGN_SELECTED )
+	if ( state == NO_CAMPAIGN_SELECTED )
 	{
 		m_CampaignInfoLabel->SetFgColor(m_TextDisabledColor);
 		m_MapListPanelTitle->SetFgColor(m_TextDisabledColor);
@@ -467,7 +476,6 @@ void CCampaignEditPanel::SetPageType( EPageType type)
 	else
 	{
 		bEditControlsVisible = true;
-		bEditControlsEnabled = type != MOUNTED_CAMPAIGN;
 
 		m_CampaignInfoLabel->SetFgColor(m_TextEnabledColor);
 		m_MapListPanelTitle->SetFgColor(m_TextEnabledColor);
@@ -477,17 +485,6 @@ void CCampaignEditPanel::SetPageType( EPageType type)
 		char szId[CAMPAIGN_ID_LENGTH + 2];
 		V_sprintf_safe( szId, "(%s)", GetCampaign()->id);
 		m_CampaignIDLabel->SetText(szId);
-	}
-
-	if ( bEditControlsVisible )
-	{
-		Color TextColor = bEditControlsEnabled ? m_TextEnabledColor : m_TextDisabledColor;
-
-		m_pNameEntryLabel->SetFgColor(TextColor);
-		m_pGameSelectBoxLabel->SetFgColor(TextColor);
-
-		m_pNameEntry->SetEnabled(bEditControlsEnabled);
-		m_pGameSelectBox->SetEnabled(bEditControlsEnabled);
 	}
 
 	m_pNameEntry->SetVisible(bEditControlsVisible);
@@ -502,15 +499,59 @@ void CCampaignEditPanel::SetPageType( EPageType type)
 void CCampaignEditPanel::CheckApplyButton( void )
 {
 	m_ApplyButton->SetEnabled(true);
+	m_ApplyButton->SetText("#hl2r_editpanel_applybutton_label");
+	m_ApplyButton->SetCommand("applychanges");
 
 	char nameEntry[CAMPAIGN_NAME_LENGTH];
 	m_pNameEntry->GetText(nameEntry, CAMPAIGN_NAME_LENGTH);
 
-	if ( !Q_stricmp(nameEntry, m_pPrevName) && m_pGameSelectBox->GetActiveItem() == m_iPrevGame )
-		m_ApplyButton->SetEnabled(false);
+	if ( m_pGameSelectBox->GetActiveItem() == m_iPrevGame )
+	{
+		if ( !Q_stricmp(nameEntry, m_pPrevName) )
+			m_ApplyButton->SetEnabled(false);
+	}
+	else
+	{
+		if ( GetCampaign()->mounted )
+		{
+			m_ApplyButton->SetText("#hl2r_editpanel_applybutton_mounted_label");
+			m_ApplyButton->SetCommand("applychangesmounted");
+		}
+	}
+
 }
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+bool CCampaignEditPanel::ApplyChanges( void )
+{
+	char entrytext[CAMPAIGN_NAME_LENGTH];
+	m_pNameEntry->GetText(entrytext, CAMPAIGN_NAME_LENGTH);
 
+	CCampaignDatabase* database = GetCampaignDatabase();
+	for (int i = 0; i < database->GetCampaignCount(); i++)
+	{
+		if (!Q_stricmp(database->GetCampaignData(i)->id, GetCampaign()->id))
+			continue;
 
+		if (!Q_stricmp(database->GetCampaignData(i)->name, entrytext))
+		{
+			MessageBox *box = new MessageBox("#hl2r_warning_title", "#hl2r_editpanel_error_1", this);
+			box->DoModal();
+
+			return false;
+		}
+	}
+
+	V_strcpy(GetCampaign()->name, !stricmp(entrytext, "") ? "undefined" : entrytext);
+	GetCampaign()->game = m_pGameSelectBox->GetActiveItem();
+
+	database->SortCampaignList(database->GetSortType(), database->GetSortDir());
+	database->WriteListToScript();
+
+	return true;
+
+}
 
 
 //------------------------------------------------------------------------------

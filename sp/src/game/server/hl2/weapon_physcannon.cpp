@@ -58,6 +58,7 @@ ConVar physcannon_mega_tracelength( "physcannon_mega_tracelength", "850" );
 ConVar physcannon_chargetime("physcannon_chargetime", "2" );
 ConVar physcannon_pullforce( "physcannon_pullforce", "4000" );
 ConVar physcannon_mega_pullforce( "physcannon_mega_pullforce", "8000" );
+ConVar physcannon_pullforce_attached( "physcannon_pullforce_attached", "8000" );
 ConVar physcannon_cone( "physcannon_cone", "0.97" );
 ConVar physcannon_ball_cone( "physcannon_ball_cone", "0.997" );
 ConVar physcannon_punt_cone( "physcannon_punt_cone", "0.997" );
@@ -561,7 +562,7 @@ CGrabController::CGrabController( void )
 	m_errorTime = 0;
 	m_error = 0;
 	// make this controller really stiff!
-	m_shadow.maxSpeed = 1000;
+	m_shadow.maxSpeed = physcannon_pullforce_attached.GetInt();
 	m_shadow.maxAngular = DEFAULT_MAX_ANGULAR;
 	m_shadow.maxDampSpeed = m_shadow.maxSpeed*2;
 	m_shadow.maxDampAngular = m_shadow.maxAngular;

@@ -30,6 +30,9 @@ public:
 
 	CNetworkVar( float, m_flSuitPower );
 	CNetworkVar( bool,	m_bZooming );
+	CNetworkVar( bool,	m_bHoldingEntity );
+	CNetworkVar( bool,	m_bOnFuncTank );
+	CNetworkVar( int,	m_iFuncTankAmmo );
 	CNetworkVar( int,	m_bitsActiveDevices );
 	CNetworkVar( int,	m_iSquadMemberCount );
 	CNetworkVar( int,	m_iSquadMedicCount );

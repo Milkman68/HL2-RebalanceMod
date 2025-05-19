@@ -123,6 +123,7 @@ extern ConVar cam_idealpitch;
 extern ConVar cam_idealyaw;
 extern ConVar thirdperson_platformer;
 extern ConVar thirdperson_screenspace;
+extern ConVar r_mirrored;
 
 //-----------------------------------------------------------------
 // Purpose: Returns true if there's an active joystick connected.
@@ -770,6 +771,14 @@ void CInput::JoyStickMove( float frametime, CUserCmd *cmd )
 	if ( joy_inverty.GetBool() )
 	{
 		m_flPreviousJoystickPitch *= -1.0f;
+	}
+
+	// CREDIT FOR THE FOLLOWING CODE GOES THE HL2 MIRRORED MOD: https://github.com/NvC-DmN-CH/Half-Life-2-Mirrored
+	if ( r_mirrored.GetBool() )
+	{
+		// Invert the yaw rotation and strafing movement of the joystick (mirroring moment)
+		m_flPreviousJoystickYaw *= -1.0f;
+		m_flPreviousJoystickSide *= -1.0f;
 	}
 
 	// drive yaw, pitch and move like a screen relative platformer game

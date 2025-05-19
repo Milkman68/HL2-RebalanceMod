@@ -26,6 +26,8 @@
 ConVar hud_locator_alpha( "hud_locator_alpha", "230" );
 ConVar hud_locator_fov("hud_locator_fov", "350" );
 
+extern ConVar r_mirrored;
+
 //-----------------------------------------------------------------------------
 // Purpose: Shows positions of objects relative to the player.
 //-----------------------------------------------------------------------------
@@ -258,13 +260,17 @@ void CHudLocator::Paint()
 
 	// Compute the relative position of objects we're tracking
 	// We'll need the player's yaw for comparison.
-	float flYawPlayerForward = pPlayer->EyeAngles().y;
+	float flYawPlayerForward = r_mirrored.GetBool() ? -pPlayer->EyeAngles().y : pPlayer->EyeAngles().y;
 
 	// Copy this value out of the member variable in case we decide to expand this
 	// feature later and want to iterate some kind of list. 
 	Vector vecLocation = pPlayer->m_HL2Local.m_vecLocatorOrigin;
 
 	Vector vecToLocation = vecLocation - pPlayer->GetAbsOrigin();
+
+	if ( r_mirrored.GetBool() )
+		vecToLocation = vecToLocation * Vector(1, -1, 1);
+
 	QAngle locationAngles;
 
 	VectorAngles( vecToLocation, locationAngles );

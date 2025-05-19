@@ -40,6 +40,7 @@
 extern ConVar in_joystick;
 extern ConVar cam_idealpitch;
 extern ConVar cam_idealyaw;
+extern ConVar r_mirrored;
 
 // For showing/hiding the scoreboard
 #include <game/client/iviewport.h>
@@ -455,10 +456,13 @@ void IN_LookupDown( const CCommand &args ) {KeyDown(&in_lookup, args[1] );}
 void IN_LookupUp( const CCommand &args ) {KeyUp(&in_lookup, args[1] );}
 void IN_LookdownDown( const CCommand &args ) {KeyDown(&in_lookdown, args[1] );}
 void IN_LookdownUp( const CCommand &args ) {KeyUp(&in_lookdown, args[1] );}
-void IN_MoveleftDown( const CCommand &args ) {KeyDown(&in_moveleft, args[1] );}
-void IN_MoveleftUp( const CCommand &args ) {KeyUp(&in_moveleft, args[1] );}
-void IN_MoverightDown( const CCommand &args ) {KeyDown(&in_moveright, args[1] );}
-void IN_MoverightUp( const CCommand &args ) {KeyUp(&in_moveright, args[1] );}
+
+// CREDIT FOR THE FOLLOWING CODE GOES THE HL2 MIRRORED MOD: https://github.com/NvC-DmN-CH/Half-Life-2-Mirrored
+void IN_MoveleftDown( const CCommand &args ) {r_mirrored.GetBool() ? KeyDown(&in_moveright, args[1] ) : KeyDown(&in_moveleft, args[1] );}
+void IN_MoveleftUp( const CCommand &args ) {r_mirrored.GetBool() ? KeyUp(&in_moveright, args[1] ) : KeyUp(&in_moveleft, args[1] );}
+void IN_MoverightDown( const CCommand &args ) {r_mirrored.GetBool() ? KeyDown(&in_moveleft, args[1] ) : KeyDown(&in_moveright, args[1] );}
+void IN_MoverightUp( const CCommand &args ) {r_mirrored.GetBool() ? KeyUp(&in_moveleft, args[1] ) : KeyUp(&in_moveright, args[1] );}
+
 void IN_WalkDown( const CCommand &args ) {KeyDown(&in_walk, args[1] );}
 void IN_WalkUp( const CCommand &args ) {KeyUp(&in_walk, args[1] );}
 void IN_SpeedDown( const CCommand &args ) {KeyDown(&in_speed, args[1] );}

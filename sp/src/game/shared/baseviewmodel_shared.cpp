@@ -33,6 +33,8 @@ extern ConVar in_forceuser;
 #define VIEWMODEL_ANIMATION_PARITY_BITS 3
 #define SCREEN_OVERLAY_MATERIAL "vgui/screens/vgui_overlay"
 
+extern ConVar r_mirrored;
+
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
@@ -471,7 +473,10 @@ void CBaseViewModel::CalcViewModelLag( Vector& origin, QAngle& angles, QAngle& o
 
 	// Calculate our drift
 	Vector	forward;
-	AngleVectors( angles, &forward, NULL, NULL );
+
+// CREDIT FOR THE FOLLOWING CODE GOES THE HL2 MIRRORED MOD: https://github.com/NvC-DmN-CH/Half-Life-2-Mirrored
+	Vector	right_;
+	AngleVectors(angles, &forward, &right_, NULL);
 
 	if ( gpGlobals->frametime != 0.0f )
 	{
@@ -493,7 +498,17 @@ void CBaseViewModel::CalcViewModelLag( Vector& origin, QAngle& angles, QAngle& o
 		VectorMA( m_vecLastFacing, flSpeed * gpGlobals->frametime, vDifference, m_vecLastFacing );
 		// Make sure it doesn't grow out of control!!!
 		VectorNormalize( m_vecLastFacing );
-		VectorMA( origin, 5.0f, vDifference * -1.0f, origin );
+
+		if ( r_mirrored.GetBool() )
+		{
+			Vector vDifferenceRef = vDifference - 2.0f * (DotProduct(vDifference, right_)) * right_;
+			VectorMA( origin, 5.0f, vDifferenceRef * -1.0f, origin );
+		}
+		else
+		{
+			VectorMA( origin, 5.0f, vDifference * -1.0f, origin );
+		}
+
 
 		Assert( m_vecLastFacing.IsValid() );
 	}

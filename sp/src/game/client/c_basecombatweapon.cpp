@@ -16,6 +16,7 @@
 #include "tier1/KeyValues.h"
 #include "toolframework/itoolframework.h"
 #include "toolframework_client.h"
+#include "c_basehlplayer.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -227,7 +228,8 @@ void C_BaseCombatWeapon::Redraw()
 //-----------------------------------------------------------------------------
 void C_BaseCombatWeapon::DrawCrosshair()
 {
-	C_BasePlayer *player = C_BasePlayer::GetLocalPlayer();
+	C_BaseHLPlayer *player = (C_BaseHLPlayer *)C_BasePlayer::GetLocalPlayer();
+
 	if ( !player )
 		return;
 
@@ -268,21 +270,18 @@ void C_BaseCombatWeapon::DrawCrosshair()
 		crosshair->SetCrosshair( gHUD.GetIcon( "plushair" ), white );
 		return;
 	}
-	
-	if ( player->m_fIsManned )
+
+	if ( player->m_HL2Local.m_bOnFuncTank )
 	{
 		crosshair->SetCrosshair( gHUD.GetIcon( "mountedgunhair" ), clr );
 		return;
 	}
-	
-	if ( player->m_fIsManned )
+
+	if ( player->IsHoldingEntity() )
 	{
-		crosshair->SetCrosshair( gHUD.GetIcon( "mountedgunhair" ), clr );
+		crosshair->SetCrosshair( gHUD.GetIcon( "pickuphair" ), clr );
 		return;
 	}
-	
-	if ( !crosshair )
-		return;
 
 	// Find out if this weapon's auto-aimed onto a target
 	bool bOnTarget = ( m_iState == WEAPON_IS_ONTARGET );

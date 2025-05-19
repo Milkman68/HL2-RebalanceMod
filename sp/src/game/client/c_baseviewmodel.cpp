@@ -40,6 +40,8 @@
 	ConVar cl_flipviewmodels( "cl_flipviewmodels", "0", FCVAR_USERINFO | FCVAR_ARCHIVE | FCVAR_NOT_CONNECTED, "Flip view models." );
 #endif
 
+extern ConVar r_mirrored;
+
 void PostToolMessage( HTOOLHANDLE hEntity, KeyValues *msg );
 
 void FormatViewModelAttachment( Vector &vOrigin, bool bInverse )
@@ -212,7 +214,9 @@ inline bool C_BaseViewModel::ShouldFlipViewModel()
 	}
 #endif
 
-	return false;
+	// CREDIT FOR THE FOLLOWING CODE GOES THE HL2 MIRRORED MOD: https://github.com/NvC-DmN-CH/Half-Life-2-Mirrored
+//	return false;
+	return r_mirrored.GetBool();
 }
 
 

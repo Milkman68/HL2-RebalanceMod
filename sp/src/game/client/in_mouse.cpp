@@ -48,6 +48,7 @@
 extern ConVar lookstrafe;
 extern ConVar cl_pitchdown;
 extern ConVar cl_pitchup;
+extern ConVar r_mirrored;
 extern const ConVar *sv_cheats;
 
 class ConVar_m_pitch : public ConVar_ServerBounded
@@ -672,6 +673,10 @@ void CInput::MouseMove( CUserCmd *cmd )
 
 		// Filter, etc. the delta values and place into mouse_x and mouse_y
 		GetMouseDelta( mx, my, &mouse_x, &mouse_y );
+
+		// CREDIT FOR THE FOLLOWING CODE GOES THE HL2 MIRRORED MOD: https://github.com/NvC-DmN-CH/Half-Life-2-Mirrored
+		if ( r_mirrored.GetBool() )
+			mouse_x *= -1;
 
 		// Apply scaling factor
 		ScaleMouse( &mouse_x, &mouse_y );

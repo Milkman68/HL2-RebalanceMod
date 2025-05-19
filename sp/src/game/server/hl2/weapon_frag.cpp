@@ -36,6 +36,7 @@ ConVar sk_plr_grenade_is_cookable("sk_plr_grenade_is_cookable", "1");
 ConVar sk_plr_grenade_cook_grace_period("sk_plr_grenade_cook_grace_period", "1.0");
 
 extern ConVar hl2r_reduced_assists;
+extern ConVar r_mirrored;
 
 //-----------------------------------------------------------------------------
 // Fragmentation grenades
@@ -436,7 +437,9 @@ void CWeaponFrag::ThrowGrenade( CBasePlayer *pPlayer )
 	Vector	vForward, vRight;
 
 	pPlayer->EyeVectors( &vForward, &vRight, NULL );
-	Vector vecSrc = vecEye + vForward * 18.0f + vRight * 8.0f;
+	vRight *= r_mirrored.GetBool() ? -8.0f : 8.0f;
+
+	Vector vecSrc = vecEye + vForward * 18.0f + vRight;
 	CheckThrowPosition( pPlayer, vecEye, vecSrc );
 //	vForward[0] += 0.1f;
 	vForward[2] += 0.1f;

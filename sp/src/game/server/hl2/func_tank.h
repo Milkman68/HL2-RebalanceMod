@@ -76,7 +76,6 @@ public:
 	bool	CreateVPhysics( void );
 	bool	KeyValue( const char *szKeyName, const char *szValue );
 	void	UpdateOnRemove();
-	virtual void	OnRestore();
 
 	void	SetYawRate( float flYawRate ) { m_yawRate = flYawRate; }
 	void	SetPitchRate( float flPitchRate ) { m_pitchRate = flPitchRate; }
@@ -92,7 +91,7 @@ public:
 	void	Think( void );
 	virtual	void FuncTankPostThink() { return; }
 
-	int		GetAmmoCount( void )						{ return m_iAmmoCount; }
+//	int		GetAmmoCount( void )						{ return m_iAmmoCount; }
 	bool 	CheckAmmo( void );
 
 	// NPC
@@ -115,6 +114,7 @@ public:
 	Vector GetTargetPosition()						{ return m_vTargetPosition; }
 	void SetTargetPosition( const Vector &vecPos )	{ m_vTargetPosition = vecPos; }
 	
+	int GetAmmoCount( void )	{ return m_nAmmoCount; }
 	bool CheckAmmoFull( void )	{ return m_nAmmoCount == 200; }
 
 	const float YawCenter() const { return m_yawCenter; }

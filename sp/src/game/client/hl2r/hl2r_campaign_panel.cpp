@@ -17,9 +17,11 @@ using namespace vgui;
 
 // Add sorting capabilities to the menu.
 
-// Give a return time of how long it took to mount a campaign on the notification panel.
+// Give a return time of how long it took to mount a campaign on the notification panel. "Finished in:"
 
 // Make mount fails less catostrophic by reversing whatever the previous function did if it failed.
+
+// Finish error handling.
 
 //------------------------------------------------------------------------------
 // Purpose : Code for hooking into the base GameUI panel. Credit goes to: 
@@ -63,6 +65,30 @@ static int GetAdjustedSize( int iValue )
 	
 	return (int)iValue;
 }
+
+
+
+
+//-----------------------------------------------------------------------------
+// Purpose:
+//-----------------------------------------------------------------------------
+class CClickableListPanelHeader : public SectionedListPanelHeader
+{
+	DECLARE_CLASS_SIMPLE( CClickableListPanelHeader, SectionedListPanelHeader );
+
+public:
+	CClickableListPanelHeader(SectionedListPanel *parent, const char *name, int sectionID) : SectionedListPanelHeader(parent, name, sectionID){}
+
+};
+
+//-----------------------------------------------------------------------------
+// Purpose:
+//-----------------------------------------------------------------------------
+
+
+
+
+
 //------------------------------------------------------------------------------
 // Sub panel
 //------------------------------------------------------------------------------
@@ -95,7 +121,11 @@ void CCampaignListPanel::ItemSelected(int itemID)
 		CampaignData_t *pSelectedCampaign = GetCampaignDatabase()->GetCampaignDataFromID(SelectedItemID);
 		
 		m_SelectedCampaignPanel->SetSelected(pSelectedCampaign);
-		m_MountButton->SetEnabled( 	Q_stricmp( pSelectedCampaign->name, "undefined" ) && pSelectedCampaign->game != -1 && !pSelectedCampaign->mounted );
+
+		m_MountButton->SetEnabled(false);
+
+		if ( Q_stricmp( pSelectedCampaign->name, "undefined" ) && pSelectedCampaign->game != -1 && !pSelectedCampaign->mounted )
+			m_MountButton->SetEnabled(true);
 	}
 	else	
 	{
@@ -139,7 +169,7 @@ void CCampaignListPanel::RefreshList(void)
 #define DATE_WIDTH	84
 void CCampaignListPanel::CreateListColunms(void)
 {
-	m_ListPanel->AddSection(0, "column0");
+	m_ListPanel->AddSection(0, new CClickableListPanelHeader(m_ListPanel, "column0", 0));
 	m_ListPanel->AddColumnToSection(0, "namelabel", "#hl2r_label_label", SectionedListPanel::COLUMN_BRIGHT, NAME_WIDTH);
 	m_ListPanel->AddColumnToSection(0, "size", "#hl2r_filesize_label", SectionedListPanel::COLUMN_BRIGHT, SIZE_WIDTH);
 	m_ListPanel->AddColumnToSection(0, "date", "#hl2r_date_label", SectionedListPanel::COLUMN_BRIGHT, DATE_WIDTH);
@@ -188,6 +218,8 @@ void CCampaignListPanel::CreateList(void)
 
 			int itemID = m_ListPanel->AddItem(0, pCampaign);
 			m_ListPanel->SetItemFgColor(itemID, COLOR_GREEN ); // FIX: MAGIC COLOR!!!
+
+			m_SelectedCampaignPanel->SetSelected(pDatabaseCampaign);
 		}
 		else
 		{
@@ -230,7 +262,6 @@ void CCampaignListPanel::OnCommand(const char* pcCommand)
 			BaseClass::OnCommand(pcCommand);
 			return;
 		}
-
 
 		// Create a disclaimer box confirming if this is our intended action.
 		QueryBox *box = new QueryBox("#hl2r_mountdisclaimer_title", "#hl2r_mountdisclaimer", this);
@@ -275,7 +306,7 @@ switch (GetCampaignDatabase()->MountCampaign(szCampaignID))
 	case SUCESSFULLY_MOUNTED:
 		{
 			MessageBox *box = new MessageBox("#hl2r_mountsucess_title", "#hl2r_mountsucess_text", this);
-			box->SetOKButtonText("#hl2r_mountsucess_accept");
+			box->SetOKButtonText("#hl2r_quit_title");
 			box->SetCommand("quitcommand");
 			box->AddActionSignalTarget(this);
 			box->DoModal();
@@ -285,6 +316,20 @@ switch (GetCampaignDatabase()->MountCampaign(szCampaignID))
 	case FAILED_TO_EXTRACT_VPK:
 		{
 			MessageBox *box = new MessageBox("#hl2r_error_title", "#hl2r_mounterror_1", this);
+			box->DoModal();
+			break;
+		}
+
+	case FAILED_TO_MOUNT_FILES:
+		{
+			MessageBox *box = new MessageBox("#hl2r_error_title", "#hl2r_mounterror_2", this);
+			box->DoModal();
+			break;
+		}
+
+	case FAILED_TO_TRANSFER_GAMEINFO:
+		{
+			MessageBox *box = new MessageBox("#hl2r_error_title", "#hl2r_mounterror_3", this);
 			box->DoModal();
 			break;
 		}

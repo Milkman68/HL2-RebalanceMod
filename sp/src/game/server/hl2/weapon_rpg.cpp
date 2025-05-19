@@ -50,6 +50,8 @@ ConVar sk_rpg_missile_speed("sk_rpg_missile_speed", "1500");
 
 const char *g_pLaserDotThink = "LaserThinkContext";
 
+extern ConVar r_mirrored;
+
 //-----------------------------------------------------------------------------
 // Laser Dot
 //-----------------------------------------------------------------------------
@@ -1626,7 +1628,8 @@ void CWeaponRPG::PrimaryAttack( void )
 
 	pOwner->EyeVectors( &vForward, &vRight, &vUp );
 
-	Vector	muzzlePoint = pOwner->Weapon_ShootPosition() + vForward * 12.0f + vRight * 6.0f + vUp * -3.0f;
+	vRight *= r_mirrored.GetBool() ? -6.0f : 6.0f;
+	Vector	muzzlePoint = pOwner->Weapon_ShootPosition() + vForward * 12.0f + vRight + vUp * -3.0f;
 
 	QAngle vecAngles;
 	VectorAngles( vForward, vecAngles );

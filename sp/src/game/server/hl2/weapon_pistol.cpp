@@ -164,7 +164,7 @@ CWeaponPistol::CWeaponPistol( void )
 	m_flAccuracyPenalty = 0.0f;
 
 	m_fMinRange1		= 0;
-	m_fMaxRange1		= 1500;
+	m_fMaxRange1		= 1000;
 	m_fMinRange2		= 0;
 	m_fMaxRange2		= 200;
 

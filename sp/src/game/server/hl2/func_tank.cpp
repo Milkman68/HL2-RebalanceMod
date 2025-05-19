@@ -1040,8 +1040,6 @@ bool CFuncTank::StartControl( CBaseCombatCharacter *pController )
 		{
 			pPlayer->m_Local.m_iHideHUD |= HIDEHUD_WEAPONSELECTION;
 		}
-		pPlayer->m_fIsManned = true;
-		pPlayer->m_iMannedGunAmmo = m_nAmmoCount;
 	}
 	else
 	{
@@ -1101,8 +1099,6 @@ void CFuncTank::StopControl()
 		{
 			pPlayer->m_Local.m_iHideHUD &= ~HIDEHUD_WEAPONSELECTION;
 		}
-		pPlayer->m_fIsManned = false;
-		pPlayer->m_iMannedGunAmmo = -1;
 	}
 
 	// Stop thinking.
@@ -1207,8 +1203,6 @@ void CFuncTank::ControllerPostFrame( void )
 	//DevMsg("Ammo drained is: %f\n", DrainAmmount );
 	
 	RemoveAmmo( DrainAmmount );
-	pPlayer->m_iMannedGunAmmo = m_nAmmoCount;
-	
 	if ( m_nAmmoCount == 0 )
 	{
 		m_bNoAmmo = true;
@@ -1592,11 +1586,6 @@ void CFuncTank::Think( void )
 	else
 	{
 		RechargeAmmo();
-	}
-	
-	if ( IsPlayerManned() )
-	{
-		pPlayer->m_iMannedGunAmmo = m_nAmmoCount;
 	}
 
 	// Look for a new controller?
@@ -2485,19 +2474,6 @@ bool CFuncTank::HasLOSTo( CBaseEntity *pEntity )
 	}
 
 	return ( tr.fraction == 1.0 || tr.m_pEnt == pEntity );
-}
-//-----------------------------------------------------------------------------
-// Purpose:
-//-----------------------------------------------------------------------------
-void CFuncTank::OnRestore()
-{
-	BaseClass::OnRestore();
-	if ( IsPlayerManned() )
-	{
-		CBasePlayer *pPlayer = static_cast<CBasePlayer*>( GetController() );
-		pPlayer->m_fIsManned = true;
-		pPlayer->m_iMannedGunAmmo = m_nAmmoCount;
-	}
 }
 //-----------------------------------------------------------------------------
 // Removes the ammo...

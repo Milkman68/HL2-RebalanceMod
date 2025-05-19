@@ -40,6 +40,8 @@ ConVar sk_autoaim_mode( "sk_autoaim_mode", "1", FCVAR_ARCHIVE | FCVAR_REPLICATED
 ConVar hl2r_prioritize_workshop_skillmanifest( "hl2r_prioritize_workshop_skillmanifest", "0" );
 ConVar hl2r_prioritize_workshop_skillcfg( "hl2r_prioritize_workshop_skillcfg", "0" );
 
+ConVar r_mirrored("r_mirrored", "0", FCVAR_ARCHIVE | FCVAR_REPLICATED, "Flips the screen");
+
 #ifndef CLIENT_DLL
 ConVar log_verbose_enable( "log_verbose_enable", "0", FCVAR_GAMEDLL, "Set to 1 to enable verbose server log on the server." );
 ConVar log_verbose_interval( "log_verbose_interval", "3.0", FCVAR_GAMEDLL, "Determines the interval (in seconds) for the verbose server log." );

@@ -69,6 +69,7 @@ bool ToolFramework_SetupEngineMicrophone( Vector &origin, QAngle &angles );
 
 
 extern ConVar default_fov;
+extern ConVar r_mirrored;
 extern bool g_bRenderingScreenshot;
 
 #if !defined( _X360 )
@@ -320,6 +321,10 @@ void CViewRender::Init( void )
 	m_flLastFOV = default_fov.GetFloat();
 #endif
 
+	// CREDIT FOR THE FOLLOWING CODE GOES THE HL2 MIRRORED MOD: https://github.com/NvC-DmN-CH/Half-Life-2-Mirrored
+	// Load the mirror materials
+	m_ScreenFlipMaterial.Init( materials->FindMaterial("engine/mirror_screen", TEXTURE_GROUP_VGUI) );
+	m_ScreenFlipMaterial->IncrementReferenceCount();
 }
 
 //-----------------------------------------------------------------------------
@@ -790,9 +795,16 @@ void CViewRender::SetUpViews()
 		&g_vecVForward, &g_vecVRight, &g_vecVUp, &g_matCamInverse );
 
 	// set up the hearing origin...
+
 	AudioState_t audioState;
 	audioState.m_Origin = view.origin;
-	audioState.m_Angles = view.angles;
+
+	// CREDIT FOR THE FOLLOWING CODE GOES THE HL2 MIRRORED MOD: https://github.com/NvC-DmN-CH/Half-Life-2-Mirrored
+	QAngle view_angles_before = QAngle(view.angles.x, view.angles.y, view.angles.z);
+
+	int yMirroredOffset = r_mirrored.GetBool() ? 180 : 0;
+	audioState.m_Angles = QAngle(view.angles.x, view.angles.y + yMirroredOffset, view.angles.z);
+
 	audioState.m_bIsUnderwater = pPlayer && pPlayer->AudioStateIsUnderwater( view.origin );
 
 	ToolFramework_SetupAudioState( audioState );
@@ -801,7 +813,7 @@ void CViewRender::SetUpViews()
     Assert ( view.origin == audioState.m_Origin );
     Assert ( view.angles == audioState.m_Angles );
 	view.origin = audioState.m_Origin;
-	view.angles = audioState.m_Angles;
+	view.angles = view_angles_before;
 
 	engine->SetAudioState( audioState );
 

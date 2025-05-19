@@ -18,6 +18,7 @@
 #include "VGuiMatSurface/IMatSystemSurface.h"
 #include "ammodef.h"
 #include "in_buttons.h"
+#include "c_basehlplayer.h"
 
 #ifdef SIXENSE
 #include "sixense/in_sixense.h"
@@ -253,12 +254,12 @@ void CHUDQuickInfo::OnThink()
 
 void CHUDQuickInfo::Paint()
 {
-	C_BasePlayer *player = C_BasePlayer::GetLocalPlayer();
+	C_BaseHLPlayer *player = (C_BaseHLPlayer *)C_BasePlayer::GetLocalPlayer();
 	if ( player == NULL )
 		return;
 
 	C_BaseCombatWeapon *pWeapon = GetActiveWeapon();
-	if ( pWeapon == NULL && ( !player->m_fIsManned || player->m_iMannedGunAmmo == -1 ) )
+	if ( pWeapon == NULL && ( !player->m_HL2Local.m_bOnFuncTank || player->m_HL2Local.m_iFuncTankAmmo == -1 ) )
 		return;
 
 	float fX, fY;
@@ -301,26 +302,26 @@ void CHUDQuickInfo::Paint()
 		}
 	}
 	
-	bool IsManned = player->m_fIsManned && player->m_iMannedGunAmmo != -1;
+	bool IsManned = player->m_HL2Local.m_bOnFuncTank && player->m_HL2Local.m_iFuncTankAmmo != -1;
 
 	// Check our ammo for a warning
 	int	ammo = pWeapon->Clip1();
 	float CurrentCarry = player->GetAmmoCount(pWeapon->m_iPrimaryAmmoType);
 	
-	if ( ammo != m_lastAmmo || CurrentCarry != m_lastCarry || ( IsManned && m_lastMannedGunAmmo != player->m_iMannedGunAmmo ) || IsManned != m_bCurrentlyManned )
+	if ( ammo != m_lastAmmo || CurrentCarry != m_lastCarry || ( IsManned && m_lastMannedGunAmmo != player->m_HL2Local.m_iFuncTankAmmo ) || IsManned != m_bCurrentlyManned )
 	{
 		UpdateEventTime();
 		m_lastAmmo	= ammo;
 		m_lastCarry	= CurrentCarry;
-		m_lastMannedGunAmmo = player->m_iMannedGunAmmo;
-		m_bCurrentlyManned = player->m_fIsManned && player->m_iMannedGunAmmo != -1;
+		m_lastMannedGunAmmo = player->m_HL2Local.m_iFuncTankAmmo;
+		m_bCurrentlyManned = player->m_HL2Local.m_bOnFuncTank && player->m_HL2Local.m_iFuncTankAmmo != -1;
 		
 		float ammoPerc;
 
 		// Find how far through the current clip we are
 		if ( IsManned )
 		{ 
-			ammoPerc = (float)player->m_iMannedGunAmmo / 200;
+			ammoPerc = (float)player->m_HL2Local.m_iFuncTankAmmo / 200;
 		}
 		else if ( pWeapon->GetMaxClip1() == 1 || !pWeapon->UsesClipsForAmmo1() )
 		{ 
@@ -399,9 +400,9 @@ void CHUDQuickInfo::Paint()
 	{
 		float ammoPerc;
 		
-		if ( IsManned && player->m_iMannedGunAmmo != -1 )
+		if ( IsManned && player->m_HL2Local.m_iFuncTankAmmo != -1 )
 		{ 
-			ammoPerc = 1.0f - ( (float) player->m_iMannedGunAmmo / 200.0f );
+			ammoPerc = 1.0f - ( (float) player->m_HL2Local.m_iFuncTankAmmo / 200.0f );
 		}
 		else if ( pWeapon->GetMaxClip1() == 1 || !pWeapon->UsesClipsForAmmo1() )
 		{

@@ -45,6 +45,7 @@
 #include "eventqueue.h"
 #include "gamestats.h"
 #include "filters.h"
+#include "func_tank.h"
 #include "tier0/icommandline.h"
 
 #ifdef HL2_EPISODIC
@@ -932,6 +933,20 @@ void CHL2_Player::PreThink(void)
             m_nButtons &= ~(IN_ATTACK|IN_ATTACK2);
         }
     }*/
+
+
+	CFuncTank *pTank = dynamic_cast<CFuncTank *>(m_hUseEntity.Get());
+	if ( pTank != NULL )
+	{
+		m_HL2Local.m_bOnFuncTank = true;
+		m_HL2Local.m_iFuncTankAmmo = pTank->GetAmmoCount();
+	}
+	else
+	{
+		m_HL2Local.m_bOnFuncTank = false;
+	}
+
+	m_HL2Local.m_bHoldingEntity = GetPlayerHeldEntity(this) != NULL;
 }
 
 void CHL2_Player::PostThink( void )

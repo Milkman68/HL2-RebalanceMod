@@ -16,6 +16,7 @@
 #include <vgui/ISurface.h>
 #include "ihudlcd.h"
 #include "ammodef.h"
+#include "c_basehlplayer.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -43,9 +44,9 @@ protected:
 	virtual void OnThink();
 
 	void UpdateAmmoDisplays();
-	void UpdatePlayerAmmo( C_BasePlayer *player );
-	void UpdateVehicleAmmo( C_BasePlayer *player, IClientVehicle *pVehicle );
-	void UpdateEmplacementAmmo( C_BasePlayer *player );
+	void UpdatePlayerAmmo( C_BaseHLPlayer *player );
+	void UpdateVehicleAmmo( C_BaseHLPlayer *player, IClientVehicle *pVehicle );
+	void UpdateEmplacementAmmo( C_BaseHLPlayer *player );
 	
 private:
 	CHandle< C_BaseCombatWeapon > m_hCurrentActiveWeapon;
@@ -109,7 +110,7 @@ void CHudAmmo::Reset()
 //-----------------------------------------------------------------------------
 // Purpose: called every frame to get ammo info from the weapon
 //-----------------------------------------------------------------------------
-void CHudAmmo::UpdatePlayerAmmo( C_BasePlayer *player )
+void CHudAmmo::UpdatePlayerAmmo( C_BaseHLPlayer *player )
 {
 	// Clear out the vehicle entity
 	m_hCurrentVehicle = NULL;
@@ -188,7 +189,7 @@ void CHudAmmo::UpdatePlayerAmmo( C_BasePlayer *player )
 	}
 }
 
-void CHudAmmo::UpdateVehicleAmmo( C_BasePlayer *player, IClientVehicle *pVehicle )
+void CHudAmmo::UpdateVehicleAmmo( C_BaseHLPlayer *player, IClientVehicle *pVehicle )
 {
 	m_hCurrentActiveWeapon = NULL;
 	CBaseEntity *pVehicleEnt = pVehicle->GetVehicleEnt();
@@ -252,7 +253,7 @@ void CHudAmmo::UpdateVehicleAmmo( C_BasePlayer *player, IClientVehicle *pVehicle
 	}
 }
 
-void CHudAmmo::UpdateEmplacementAmmo( C_BasePlayer *player )
+void CHudAmmo::UpdateEmplacementAmmo( C_BaseHLPlayer *player )
 {
 	m_hCurrentActiveWeapon = NULL;
 	m_iconPrimaryAmmo = NULL;
@@ -264,7 +265,7 @@ void CHudAmmo::UpdateEmplacementAmmo( C_BasePlayer *player )
 	//SetLabelText( gWR.GetAmmoLabelFromID( NULL ) );
 
 	// get the ammo in our clip
-	int ammo1 = player->m_iMannedGunAmmo;
+	int ammo1 = player->m_HL2Local.m_iFuncTankAmmo;
 	int ammo2 = 0;
 
 	if ( m_bIsPlayerManned )
@@ -301,14 +302,14 @@ void CHudAmmo::OnThink()
 //-----------------------------------------------------------------------------
 void CHudAmmo::UpdateAmmoDisplays()
 {
-	C_BasePlayer *player = C_BasePlayer::GetLocalPlayer();
+	C_BaseHLPlayer *player = (C_BaseHLPlayer *)C_BasePlayer::GetLocalPlayer();
 	IClientVehicle *pVehicle = player ? player->GetVehicle() : NULL;
 
 	if ( pVehicle )
 	{
 		UpdateVehicleAmmo( player, pVehicle );
 	}
-	else if ( player && player->m_fIsManned && player->m_iMannedGunAmmo != -1 )
+	else if ( player && player->m_HL2Local.m_bOnFuncTank && player->m_HL2Local.m_iFuncTankAmmo != -1 )
 	{
 		UpdateEmplacementAmmo( player );
 	}
@@ -512,14 +513,14 @@ protected:
 	void UpdateAmmoState()
 	{
 		C_BaseCombatWeapon *wpn = GetActiveWeapon();
-		C_BasePlayer *player = C_BasePlayer::GetLocalPlayer();
+		C_BaseHLPlayer *player = (C_BaseHLPlayer *)C_BasePlayer::GetLocalPlayer();
 
 		if (player && wpn && wpn->UsesSecondaryAmmo())
 		{
 			SetAmmo(player->GetAmmoCount(wpn->GetSecondaryAmmoType()));
 		}
 		
-		bool m_bPlayerManned = player && player->m_fIsManned;
+		bool m_bPlayerManned = player && player->m_HL2Local.m_bOnFuncTank;
 
 		if ( m_hCurrentActiveWeapon != wpn || m_bPlayerManned )
 		{

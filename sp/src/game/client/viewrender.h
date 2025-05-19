@@ -446,6 +446,7 @@ private:
 	void			SetScreenOverlayMaterial( IMaterial *pMaterial );
 	IMaterial		*GetScreenOverlayMaterial( );
 	void			PerformScreenOverlay( int x, int y, int w, int h );
+	void			DrawQuad(IMaterial* pMat, int width, int height);
 
 	void DrawUnderwaterOverlay( void );
 
@@ -487,6 +488,7 @@ private:
 	CMaterialReference	m_ModulateSingleColor;
 	CMaterialReference	m_ScreenOverlayMaterial;
 	CMaterialReference m_UnderWaterOverlayMaterial;
+	CMaterialReference m_ScreenFlipMaterial;
 
 	Vector			m_vecLastFacing;
 	float			m_flCheapWaterStartDistance;

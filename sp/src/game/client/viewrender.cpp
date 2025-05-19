@@ -163,6 +163,7 @@ static ConVar r_screenfademinsize( "r_screenfademinsize", "0" );
 static ConVar r_screenfademaxsize( "r_screenfademaxsize", "0" );
 static ConVar cl_drawmonitors( "cl_drawmonitors", "1" );
 static ConVar r_eyewaterepsilon( "r_eyewaterepsilon", "10.0f", FCVAR_CHEAT );
+extern ConVar r_mirrored;
 
 #ifdef TF_CLIENT_DLL
 static ConVar pyro_dof( "pyro_dof", "1", FCVAR_ARCHIVE );
@@ -1222,6 +1223,74 @@ void CViewRender::PerformScreenOverlay( int x, int y, int w, int h )
 		}
 	}
 }
+// CREDIT FOR THE FOLLOWING CODE GOES THE HL2 MIRRORED MOD: https://github.com/NvC-DmN-CH/Half-Life-2-Mirrored
+void CViewRender::DrawQuad(IMaterial* pMat, int width, int height)
+{
+	float halfPixelWidth = -0.5f / width;
+	float halfPixelHeight = -0.5f / height;
+
+	CMatRenderContextPtr pRenderContext(materials);
+
+	// MUST bind material before building a mesh
+	// this will tell the mesh builder what vertex format the shader wants
+	pRenderContext->Bind(pMat);
+
+	pRenderContext->MatrixMode(MATERIAL_PROJECTION);
+	pRenderContext->PushMatrix();
+	pRenderContext->LoadIdentity();
+
+	pRenderContext->MatrixMode(MATERIAL_VIEW);
+	pRenderContext->PushMatrix();
+	pRenderContext->LoadIdentity();
+
+	CMeshBuilder meshBuilder;
+	IMesh* pMesh = pRenderContext->GetDynamicMesh(false);
+	meshBuilder.Begin(pMesh, MATERIAL_QUADS, 1);
+
+//	meshBuilder.Position3f(halfPixelWidth - 1, halfPixelHeight + 1, 0);
+//	meshBuilder.TexCoord2f(0, 1, 0);
+//	meshBuilder.AdvanceVertex();
+//
+//	meshBuilder.Position3f(halfPixelWidth + 1, halfPixelHeight + 1, 0);
+//	meshBuilder.TexCoord2f(0, 0, 0);
+//	meshBuilder.AdvanceVertex();
+//
+//	meshBuilder.Position3f(halfPixelWidth + 1, halfPixelHeight - 1, 0);
+//	meshBuilder.TexCoord2f(0, 0, 1);
+//	meshBuilder.AdvanceVertex();
+//
+//	meshBuilder.Position3f(halfPixelWidth - 1, halfPixelHeight - 1, 0);
+//	meshBuilder.TexCoord2f(0, 1, 1);
+//	meshBuilder.AdvanceVertex();
+
+	// the vertices are not [0 to 1] but [-1.1 to 1.1] to ensure that there are no 1px gaps on any edges!!
+	// the uv's are in [0 to 1] space, so they go x0.5 less out, so instead of going 0.1 outside, its 0.05
+	meshBuilder.Position3f(-1.1f, 1.1f, 0.5f);
+	meshBuilder.TexCoord2f(0, 1.05f + halfPixelWidth, -0.05f + halfPixelHeight);
+	meshBuilder.AdvanceVertex();
+
+	meshBuilder.Position3f(1.1f, 1.1f, 0.5f);
+	meshBuilder.TexCoord2f(0, -0.05f + halfPixelWidth, -0.05f + halfPixelHeight);
+	meshBuilder.AdvanceVertex();
+
+	meshBuilder.Position3f(1.1f, -1.1f, 0.5f);
+	meshBuilder.TexCoord2f(0, -0.05f + halfPixelWidth, 1.05f + halfPixelHeight);
+	meshBuilder.AdvanceVertex();
+
+	meshBuilder.Position3f(-1.1f, -1.1f, 0.5f);
+	meshBuilder.TexCoord2f(0, 1.05f + halfPixelWidth, 1.05f + halfPixelHeight);
+	meshBuilder.AdvanceVertex();
+
+	meshBuilder.End();
+
+	pMesh->Draw();
+
+	pRenderContext->MatrixMode(MATERIAL_PROJECTION);
+	pRenderContext->PopMatrix();
+
+	pRenderContext->MatrixMode(MATERIAL_VIEW);
+	pRenderContext->PopMatrix();
+}
 
 void CViewRender::DrawUnderwaterOverlay( void )
 {
@@ -2058,6 +2127,13 @@ void CViewRender::RenderView( const CViewSetup &view, int nClearFlags, int whatT
 		IMaterial* pMaterial = blend ? m_ModulateSingleColor : m_TranslucentSingleColor;
 		render->ViewDrawFade( color, pMaterial );
 		PerformScreenOverlay( view.x, view.y, view.width, view.height );
+
+		// Mirror the screen 
+		if (r_mirrored.GetInt() != 0) 
+		{
+			UpdateScreenEffectTexture();
+			DrawQuad(m_ScreenFlipMaterial, view.width, view.height);
+		}
 
 		// Prevent sound stutter if going slow
 		engine->Sound_ExtraUpdate();	

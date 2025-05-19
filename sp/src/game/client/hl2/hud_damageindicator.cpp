@@ -27,6 +27,8 @@ using namespace vgui;
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
+extern ConVar r_mirrored;
+
 
 //-----------------------------------------------------------------------------
 // Purpose: HDU Damage indication
@@ -419,7 +421,10 @@ void CHudDamageIndicator::GetDamagePosition( const Vector &vecDelta, float *flRo
 	VectorNormalize(forward);
 	CrossProduct( up, forward, right );
 	float front = DotProduct(vecDelta, forward);
-	float side = DotProduct(vecDelta, right);
+
+	// CREDIT FOR THE FOLLOWING CODE GOES THE HL2 MIRRORED MOD: https://github.com/NvC-DmN-CH/Half-Life-2-Mirrored
+	float side = DotProduct(vecDelta, r_mirrored.GetBool() ? -right : right);
+
 	float xpos = flRadius * -side;
 	float ypos = flRadius * -front;
 

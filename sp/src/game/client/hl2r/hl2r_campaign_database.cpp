@@ -299,6 +299,9 @@ CampaignData_t *CCampaignDatabase::GetCampaignData(int index )
 //-----------------------------------------------------------------------------
 CampaignData_t *CCampaignDatabase::GetCampaignDataFromID(const char *id)
 {
+	if ( !id )
+		return NULL;
+
 	for (int i = 0; i < GetCampaignDatabase()->GetCampaignCount(); i++ )
 	{
 		CampaignData_t *pCampaign = GetCampaignDatabase()->GetCampaignData(i);
@@ -683,20 +686,15 @@ const char *szGameinfoPaths[3] =
 	"gameinfo\\ep2",
 };
 
-bool CCampaignDatabase::ReplaceGameinfoFile( const char *pCampaignID )
+bool CCampaignDatabase::TransferGameinfoFiles( int currentgameinfo, int newgameinfo )
 {
-	CampaignData_t *pCampaign = GetCampaignDataFromID(pCampaignID);
-	CampaignData_t *pPrevMounted = GetMountedCampaign();
-
-	if ( pPrevMounted && pPrevMounted->game == pCampaign->game )
-		return true;
-
-	Assert(pCampaign->game != -1 );
+	if ( currentgameinfo == -1 && newgameinfo == -1 )
+		return false;
 
 	char szGameinfoPath[MAX_PATH];
 	V_sprintf_safe(szGameinfoPath, "%s\\gameinfo.txt", engine->GetGameDirectory());
 
-	int gameindex = pPrevMounted ? pPrevMounted->game : 0;
+	int gameindex = currentgameinfo != -1 ? currentgameinfo : 0;
 
 	char szGameinfoStoragePath[MAX_PATH];
 	V_sprintf_safe(szGameinfoStoragePath, "%s\\%s\\gameinfo.txt", engine->GetGameDirectory(), szGameinfoPaths[gameindex]);
@@ -704,8 +702,10 @@ bool CCampaignDatabase::ReplaceGameinfoFile( const char *pCampaignID )
 	if (!g_pFullFileSystem->RenameFile(szGameinfoPath, szGameinfoStoragePath))
 		return false;
 
+	int newgameindex = newgameinfo != -1 ? newgameinfo : 0;
+
 	char szNewGameinfoStoragePath[MAX_PATH];
-	V_sprintf_safe(szNewGameinfoStoragePath, "%s\\%s\\gameinfo.txt", engine->GetGameDirectory(), szGameinfoPaths[pCampaign->game] );
+	V_sprintf_safe(szNewGameinfoStoragePath, "%s\\%s\\gameinfo.txt", engine->GetGameDirectory(), szGameinfoPaths[newgameindex] );
 
 	char szNewGameinfoPath[MAX_PATH];
 	V_sprintf_safe(szNewGameinfoPath, "%s\\gameinfo.txt", engine->GetGameDirectory() );
@@ -714,6 +714,22 @@ bool CCampaignDatabase::ReplaceGameinfoFile( const char *pCampaignID )
 		return false;
 
 	return true;
+}
+//-----------------------------------------------------------------------------
+// Purpose:
+//-----------------------------------------------------------------------------
+bool CCampaignDatabase::MountNewGameinfo( const char *pCampaignID )
+{
+	CampaignData_t *pPrevMounted = GetMountedCampaign();
+	CampaignData_t *pCampaign = GetCampaignDataFromID(pCampaignID);
+
+	int iCurrentGameType = pPrevMounted ? pPrevMounted->game : -1;
+	int iNewGametype = pCampaign ? pCampaign->game : -1;
+
+	if ( iCurrentGameType == iNewGametype )
+		return true;
+
+	return TransferGameinfoFiles(iCurrentGameType, iNewGametype);
 }
 //-----------------------------------------------------------------------------
 // Purpose:
@@ -858,6 +874,25 @@ void CCampaignDatabase::SetCampaignAsMounted( const char *pCampaignID )
 	WriteListToScript();
 }
 //-----------------------------------------------------------------------------
+// This is unfinished but its not really needed atm so whatever.
+//-----------------------------------------------------------------------------
+/*
+void CCampaignDatabase::UnmountMountedCampaign()
+{
+	CampaignData_t *pMounted = GetMountedCampaign();
+	if ( !pMounted )
+		return;
+
+	TransferGameinfoFile(NULL);
+
+	ClearCampaignFolder();
+	StoreSaveFiles(pMounted->id);
+
+	pMounted->mounted = false;
+	WriteListToScript();
+}
+*/
+//-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
 void CCampaignDatabase::FixupMountedCampaign( const char *pCampaignID )
@@ -878,10 +913,10 @@ EMountReturnCode CCampaignDatabase::MountCampaign(const char *pCampaignID)
 		return FAILED_TO_EXTRACT_VPK;
 
 	if (!MountExtractedFiles(pCampaignID))
-		return FAILED_TO_EXTRACT_VPK;
+		return FAILED_TO_MOUNT_FILES;
 
-	if (!ReplaceGameinfoFile(pCampaignID))
-		return FAILED_TO_EXTRACT_VPK;
+	if (!MountNewGameinfo(pCampaignID))
+		return FAILED_TO_TRANSFER_GAMEINFO;
 
 	SetCampaignAsMounted(pCampaignID);
 	return SUCESSFULLY_MOUNTED;

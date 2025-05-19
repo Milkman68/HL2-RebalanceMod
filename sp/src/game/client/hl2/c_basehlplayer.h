@@ -44,6 +44,10 @@ public:
 	LadderMove_t		*GetLadderMove() { return &m_HL2Local.m_LadderMove; }
 	virtual void		ExitLadder();
 	bool				IsSprinting() const { return m_fIsSprinting; }
+
+	bool				IsHoldingEntity() const { return m_HL2Local.m_bHoldingEntity; }
+	bool				IsOnFuncTank() const { return m_HL2Local.m_bOnFuncTank; }
+	bool				GetFuncTankAmmo() const { return m_HL2Local.m_iFuncTankAmmo; }
 	
 	// Input handling
 	virtual bool	CreateMove( float flInputSampleTime, CUserCmd *pCmd );

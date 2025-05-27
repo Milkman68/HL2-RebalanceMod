@@ -9,6 +9,7 @@
 #define CAMPAIGN_NAME_LENGTH 128
 #define CAMPAIGN_MAX_MAP_NAME 128
 #define CAMPAIGN_ID_LENGTH 11
+#define CAMPAIGN_DATE_LENGTH 64
 
 #define HLE_MAX_OUTPUT_LENGTH 2048
 #define HLE_MAX_CMD_LENGTH 1024
@@ -50,6 +51,30 @@ enum ESortDirection
 	DECENDING_ORDER
 };
 
+struct CampaignDateTable_t
+{
+	char	minute[8];
+	char	hour[8];
+	char	period[4];
+	char	day[8];
+	char	month[8];
+	char	year[8];
+
+	void CopyTable( CampaignDateTable_t *newTable )
+	{
+		if ( newTable == NULL )
+			return;
+
+		V_strcpy_safe(minute,	newTable->minute);
+		V_strcpy_safe(hour,		newTable->hour);
+		V_strcpy_safe(period,	newTable->period);
+		V_strcpy_safe(day,		newTable->day);
+		V_strcpy_safe(month,	newTable->month);
+		V_strcpy_safe(year,		newTable->year);
+	}
+};
+
+
 struct CampaignData_t
 {
 	char	id[CAMPAIGN_ID_LENGTH];		// A 10-digit string of numbers that a campaign's folder is named with. 
@@ -60,7 +85,7 @@ struct CampaignData_t
 	CUtlVector<const char*> maplist; // A list containing the names of all maps in this campaign.
 	int		startingmap;
 	int		filesize;
-	char	date;
+	CampaignDateTable_t	*datetable;
 
 };
 
@@ -106,8 +131,8 @@ public:
 
 private:
 
-	int			GetVPKSize( const char *pAddonID);
-	int			GetVPKDate( const char *pAddonID);
+	int					GetVPKSize( const char *pAddonID);
+	CampaignDateTable_t	*GetVPKDate( const char *pAddonID);
 
 	const char	*GetSteamAppsDir(void);
 

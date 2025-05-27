@@ -36,7 +36,7 @@ CCampaignDatabase::CCampaignDatabase()
 	{
 		// Initilize our internal list:
 		WriteScriptToList();
-		SortCampaignList(BY_NAME, ASCENDING_ORDER);
+		SortCampaignList(BY_NAME, DECENDING_ORDER);
 		WriteListToScript();
 	}
 
@@ -95,6 +95,7 @@ void CCampaignDatabase::DoCampaignScan( void )
 		pNewCampaign->maplist = list;
 		pNewCampaign->startingmap = -1;
 		pNewCampaign->filesize = GetVPKSize(dirName);
+		pNewCampaign->datetable = GetVPKDate(dirName);
 	}
 
 	g_pFullFileSystem->FindClose( fh );
@@ -251,15 +252,33 @@ void CCampaignDatabase::WriteScriptToList( void )
 
 		// Handle the maplist:
 		KeyValues *pMaplist = pCampaign->FindKey("maplist");
-		int i = 0;
-
-		for ( char index[CAMPAIGN_INDEX_LENGTH] = "0"; pMaplist->FindKey(index); V_sprintf_safe(index, "%d", i) )
+		if ( pMaplist != NULL )
 		{
-			char *map = new char[CAMPAIGN_MAX_MAP_NAME];
-			V_memcpy( map, pMaplist->GetString(index), CAMPAIGN_MAX_MAP_NAME );
-			pCampaignData->maplist.AddToTail(map);
+			int i = 0;
 
-			i++;
+			for ( char index[CAMPAIGN_INDEX_LENGTH] = "0"; pMaplist->FindKey(index); V_sprintf_safe(index, "%d", i) )
+			{
+				char *map = new char[CAMPAIGN_MAX_MAP_NAME];
+				V_memcpy( map, pMaplist->GetString(index), CAMPAIGN_MAX_MAP_NAME );
+				pCampaignData->maplist.AddToTail(map);
+
+				i++;
+			}
+		}
+
+		// Get the datetable:
+		KeyValues *pDateTable = pCampaign->FindKey("datetable");
+		if ( pDateTable != NULL )
+		{
+			pCampaignData->datetable = new CampaignDateTable_t;
+
+			V_strcpy_safe(pCampaignData->datetable->minute,	pDateTable->GetString("minute"));
+			V_strcpy_safe(pCampaignData->datetable->hour,	pDateTable->GetString("hour"));
+			V_strcpy_safe(pCampaignData->datetable->period,	pDateTable->GetString("period"));
+
+			V_strcpy_safe(pCampaignData->datetable->day,	pDateTable->GetString("day"));
+			V_strcpy_safe(pCampaignData->datetable->month,	pDateTable->GetString("month"));
+			V_strcpy_safe(pCampaignData->datetable->year,	pDateTable->GetString("year"));
 		}
 
 		pCampaignData->startingmap = pCampaign->GetInt("startingmap", -1 );
@@ -345,6 +364,8 @@ CampaignData_t *CCampaignDatabase::GetMountedCampaign( void )
 KeyValues* CCampaignDatabase::GetKeyValuesFromCampaign( CampaignData_t *campaign )
 {
 	int campaignIndex = GetCampaignIndex(campaign);
+	CampaignData_t *pCampaign = GetCampaignDatabase()->GetCampaignData(campaignIndex);
+
 
 	char keyname[CAMPAIGN_INDEX_LENGTH];
 	V_sprintf_safe(keyname, "%d", campaignIndex);
@@ -353,18 +374,6 @@ KeyValues* CCampaignDatabase::GetKeyValuesFromCampaign( CampaignData_t *campaign
 	if ( !pData )
 		return NULL;
 
-	KeyValues *pMaplist = new KeyValues("maplist");
-	if ( !pMaplist )
-		return NULL;
-
-	CampaignData_t *pCampaign = GetCampaignDatabase()->GetCampaignData(campaignIndex);
-	for (int i = 0; i < pCampaign->maplist.Count(); i++ )
-	{
-		char mapindex[CAMPAIGN_MAP_INDEX_LENGTH];
-		V_sprintf_safe(mapindex, "%d", i);
-		pMaplist->SetString(mapindex, pCampaign->maplist[i]);
-	}
-
 	pData->SetString("id",		pCampaign->id);
 	pData->SetString("name",	pCampaign->name);
 	pData->SetInt("game",		pCampaign->game);
@@ -372,7 +381,41 @@ KeyValues* CCampaignDatabase::GetKeyValuesFromCampaign( CampaignData_t *campaign
 	pData->SetBool("installed",	pCampaign->installed);
 	pData->SetInt("filesize",	pCampaign->filesize);
 	pData->SetInt("startingmap",pCampaign->startingmap);
-	pData->AddSubKey(pMaplist);
+
+	KeyValues *pMaplist = new KeyValues("maplist");
+	if ( pMaplist != NULL )
+	{
+		for (int i = 0; i < pCampaign->maplist.Count(); i++ )
+		{
+			char mapindex[CAMPAIGN_MAP_INDEX_LENGTH];
+			V_sprintf_safe(mapindex, "%d", i);
+			pMaplist->SetString(mapindex, pCampaign->maplist[i]);
+		}
+
+		pData->AddSubKey(pMaplist);
+	}
+	else
+	{
+		return NULL;
+	}
+
+
+	KeyValues *pDateTable = new KeyValues("datetable");
+	if ( pDateTable != NULL )
+	{
+		pDateTable->SetString("minute",		pCampaign->datetable->minute);
+		pDateTable->SetString("hour",		pCampaign->datetable->hour);
+		pDateTable->SetString("period",		pCampaign->datetable->period);
+		pDateTable->SetString("day",		pCampaign->datetable->day);
+		pDateTable->SetString("month",		pCampaign->datetable->month);
+		pDateTable->SetString("year",		pCampaign->datetable->year);
+
+		pData->AddSubKey(pDateTable);
+	}
+	else
+	{
+		return NULL;
+	}
 
 	return pData;
 }
@@ -394,21 +437,33 @@ static int __cdecl CampaignSortFunc( CampaignData_t * const *ppLeft, CampaignDat
 	int higher = GetCampaignDatabase()->GetSortDir() == ASCENDING_ORDER ? 1 : -1;
 	int lower = GetCampaignDatabase()->GetSortDir() == ASCENDING_ORDER ? -1 : 1;
 
+	if ( !pLeft->mounted && pRight->mounted )
+		return 1;
+
+	if ( !pRight->mounted && pLeft->mounted )
+		return -1;
+
+	if ( !Q_stricmp(pLeft->name, "undefined" ) && Q_stricmp(pRight->name, "undefined" ) )
+		return 1;
+
+	if ( !Q_stricmp(pRight->name, "undefined" ) && Q_stricmp(pLeft->name, "undefined" ))
+		return -1;
+
 switch (GetCampaignDatabase()->GetSortType())
 	{
 	case BY_SIZE:
 		{
-			return pLeft->filesize > pRight->filesize ? higher : lower;
+			if ( pLeft->filesize < pRight->filesize )
+				return higher;
+
+			if ( pLeft->filesize > pRight->filesize )
+				return lower;
+
+			return 0;
 		}
 
 	case BY_NAME:
 		{
-			if ( !Q_stricmp(pLeft->name, "undefined" ) )
-				return 1;
-
-			if ( !Q_stricmp(pRight->name, "undefined" ) )
-				return -1;
-
 			int iMax = 0;
 			for( int i = 0; pLeft->name[i] != '\0' && pRight->name[i] != '\0'; i++ )
 				iMax = i;
@@ -416,21 +471,69 @@ switch (GetCampaignDatabase()->GetSortType())
 			for( int i = 0; i <= iMax; i++ )
 			{
 				if ( pLeft->name[i] < pRight->name[i] )
-				{
 					return higher;
-				}
-				else if ( pLeft->name[i] > pRight->name[i] )
-				{
+
+				if ( pLeft->name[i] > pRight->name[i] )
 					return lower;
-				}
 			}
 
-			return lower;
+			return 0;
 		}
 
 	case BY_DATE:
 		{
-			
+			CampaignDateTable_t *pTableLeft = pLeft->datetable;
+			CampaignDateTable_t *pTableRight = pRight->datetable;
+
+			int iHourLeft  = V_atoi(pTableLeft->hour);
+			iHourLeft	== 12 ? 0 : iHourLeft;
+
+			int iHourRight = V_atoi(pTableRight->hour);
+			iHourRight	== 12 ? 0 : iHourRight;
+
+			// Year:
+			if ( V_atoi(pTableLeft->year) < V_atoi(pTableRight->year) )
+				return higher;
+
+			if ( V_atoi(pTableLeft->year) > V_atoi(pTableRight->year) )
+				return lower;
+
+			// Month:
+			if ( V_atoi(pTableLeft->month) < V_atoi(pTableRight->month) )
+				return higher;
+
+			if ( V_atoi(pTableLeft->month) > V_atoi(pTableRight->month) )
+				return lower;
+
+			// Day:
+			if ( V_atoi(pTableLeft->day) < V_atoi(pTableRight->day) )
+				return higher;
+
+			if ( V_atoi(pTableLeft->day) > V_atoi(pTableRight->day) )
+				return lower;
+
+			// Period:
+			if ( !Q_stricmp(pTableLeft->period, "PM" ) && !Q_stricmp(pTableRight->period, "AM" ) )
+				return higher;
+
+			if ( !Q_stricmp(pTableLeft->period, "AM" ) && !Q_stricmp(pTableRight->period, "PM" ) )
+				return lower;
+
+			// Hour:
+			if ( iHourLeft < iHourRight )
+				return higher;
+
+			if ( iHourRight < iHourLeft )
+				return lower;
+
+			// Minute:
+			if ( V_atoi(pTableLeft->minute) < V_atoi(pTableRight->minute) )
+				return higher;
+
+			if ( V_atoi(pTableLeft->minute) > V_atoi(pTableRight->minute) )
+				return lower;
+
+			return 0;
 		}
 	}
 
@@ -467,6 +570,150 @@ int CCampaignDatabase::GetVPKSize( const char *pAddonID)
 	// Convert bytes to mb:
 	total = RoundFloatToInt(total * 0.000001);
 	return total;
+}
+//-----------------------------------------------------------------------------
+// Purpose: This mountain of code converts a string given by the GetFileTime
+// function and returns it in a way more usable and structured format.
+//-----------------------------------------------------------------------------
+const char *szMonths[12] =
+{
+	"January",
+	"Febuary",
+	"March",
+	"April",
+	"May",
+	"June",
+	"July",
+	"August",
+	"September"
+	"October"
+	"November"
+	"December"
+};
+
+enum
+{
+	MONTH_TOKEN = 1,
+	DAY_TOKEN = 2,
+	TIME_TOKEN = 3,
+	YEAR_TOKEN = 4,
+};
+
+enum
+{
+	MINUTE_TOKEN = 1,
+	HOUR_TOKEN = 0
+};
+
+CampaignDateTable_t *CCampaignDatabase::GetVPKDate( const char *pAddonID)
+{
+	char szVpkPath[MAX_PATH];
+	V_sprintf_safe( szVpkPath, "%s\\workshop\\content\\220\\%s/workshop_dir.vpk", GetSteamAppsDir(), pAddonID);
+
+	char szFileTime[64];
+	long filetime = g_pFullFileSystem->GetFileTime(szVpkPath);
+
+	g_pFullFileSystem->FileTimeToString( szFileTime, sizeof( szFileTime ), filetime );
+
+	// Calender stuff:
+	char szDay[24] = "-1\0", szMonth[24] = "-1\0", szYear[24] = "-1\0";
+
+	// Clock stuff:
+	char szMinute[24] = "-1\0", szHour[24] = "-1\0", szPeriod[4] = "-1\0";
+
+	char *strtokptr_date;
+
+	int iDateTokenIndex = 0;
+	for ( char *pszDateToken = strtok_s( szFileTime, " ", &strtokptr_date ); pszDateToken != NULL; pszDateToken = strtok_s( NULL, " ", &strtokptr_date ))
+	{
+
+	switch(iDateTokenIndex)
+		{
+		case TIME_TOKEN:
+			{
+				char szTimeString[24];
+				V_sprintf_safe( szTimeString, pszDateToken);
+
+				char *strtokptr_time;
+
+				// Convert 24 hour time to 12 hour time.
+				int iTimeTokenIndex = 0;
+				for ( char *pszTimeToken = strtok_s( szTimeString, ":", &strtokptr_time ); pszTimeToken != NULL; pszTimeToken = strtok_s( NULL, ":", &strtokptr_time ))
+				{
+					if ( iTimeTokenIndex == MINUTE_TOKEN )
+					{
+						V_sprintf_safe( szMinute, "%s", pszTimeToken);
+					}
+					else if ( iTimeTokenIndex == HOUR_TOKEN )
+					{
+						int hour = V_atoi(pszTimeToken);
+
+						V_sprintf_safe( szPeriod, "AM");
+
+						if ( hour >= 12 )
+						{
+							V_sprintf_safe( szPeriod, "PM");
+
+							if ( hour > 12 )
+								hour -= 12;
+						}
+						else if (hour == 0)
+						{
+							hour = 12;
+						}
+
+						V_sprintf_safe( szHour, "%d", hour);
+					}
+
+
+					iTimeTokenIndex++;
+				}
+				break;
+			}
+
+		case DAY_TOKEN:
+			{
+				V_sprintf_safe(szDay, "%s", pszDateToken);
+				break;
+			}
+
+		case MONTH_TOKEN:
+			{
+				for (int i = 0; i < 12; i++ )
+				{
+					if ( Q_strcmp(pszDateToken, szMonths[i]) )
+						continue;
+
+					V_sprintf_safe(szMonth, "%d", i);
+					break;
+				}
+
+				break;
+			}
+
+		case YEAR_TOKEN:
+			{
+				V_sprintf_safe(szYear, "%s", pszDateToken);
+				break;
+			}
+		}
+
+		iDateTokenIndex++;
+	}
+
+	CampaignDateTable_t *out = new CampaignDateTable_t;
+
+	// HACK: We need to add an exclamation point to integer strings denote them as strings,
+	// or else character sequences like "05" will be converted into just "5" by the keyvalue system.
+	V_sprintf_safe( out->minute, "%s!", szMinute );
+	V_sprintf_safe( out->hour, "%s!", szHour );
+	V_sprintf_safe( out->period, szPeriod );
+
+	V_sprintf_safe( out->day, "%s!", szDay );
+	V_sprintf_safe( out->month, "%s!", szMonth );
+	V_sprintf_safe( out->year, "%s!", szYear );
+
+	return out;
 }
 //-----------------------------------------------------------------------------
 // Purpose:

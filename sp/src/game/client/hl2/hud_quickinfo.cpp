@@ -305,8 +305,8 @@ void CHUDQuickInfo::Paint()
 	bool IsManned = player->m_HL2Local.m_bOnFuncTank && player->m_HL2Local.m_iFuncTankAmmo != -1;
 
 	// Check our ammo for a warning
-	int	ammo = pWeapon->Clip1();
-	float CurrentCarry = player->GetAmmoCount(pWeapon->m_iPrimaryAmmoType);
+	int	ammo = pWeapon ? pWeapon->Clip1() : 0;
+	float CurrentCarry = pWeapon ? player->GetAmmoCount(pWeapon->m_iPrimaryAmmoType) : 0.0f;
 	
 	if ( ammo != m_lastAmmo || CurrentCarry != m_lastCarry || ( IsManned && m_lastMannedGunAmmo != player->m_HL2Local.m_iFuncTankAmmo ) || IsManned != m_bCurrentlyManned )
 	{

@@ -5,6 +5,7 @@ using namespace vgui;
 #include <vgui_controls/SectionedListPanel.h>
 #include <vgui_controls/QueryBox.h>
 #include "vgui_controls/AnimationController.h"
+#include "vgui_controls/ToggleButton.h"
 #include <vgui/ISurface.h>
 #include "vgui/ILocalize.h"
 #include "ienginevgui.h"
@@ -12,10 +13,6 @@ using namespace vgui;
 #include "hl2r_campaign_database.h"
 
 // TODO:
-
-// Add functionality to the "date" value.
-
-// Add sorting capabilities to the menu.
 
 // Give a return time of how long it took to mount a campaign on the notification panel. "Finished in:"
 
@@ -70,23 +67,132 @@ static int GetAdjustedSize( int iValue )
 
 
 //-----------------------------------------------------------------------------
-// Purpose:
+// Purpose: An extension of SectionedListPanelHeader that allows individual columns to be
+// selected via togglebuttons that sends the currently selected column's index to a target panel.
 //-----------------------------------------------------------------------------
-class CClickableListPanelHeader : public SectionedListPanelHeader
+class SelectableColumnHeader : public SectionedListPanelHeader
 {
-	DECLARE_CLASS_SIMPLE( CClickableListPanelHeader, SectionedListPanelHeader );
+	DECLARE_CLASS_SIMPLE( SelectableColumnHeader, SectionedListPanelHeader );
 
 public:
-	CClickableListPanelHeader(SectionedListPanel *parent, const char *name, int sectionID) : SectionedListPanelHeader(parent, name, sectionID){}
+	SelectableColumnHeader(Panel* signaltarget, SectionedListPanel *parent, const char *name, int sectionID);
 
+	virtual void PerformLayout();
+
+	virtual void ApplySchemeSettings(IScheme *pScheme);
+	void OnCommand(const char* pcCommand);
+
+	// Get the currently selected column.
+	int		GetSelectedColumn( void );
+
+	// Set what column is initially selected on startup.
+	void	SetSelectedColumn( int iColumn, bool bDepressed );
+
+private:
+	CUtlVector<ToggleButton *>	m_ColumnButtons;
+
+	int		m_iSelectedColumn;
+	bool	m_iSelectedColumnDepressed;
+
+	Color	m_SelectedColor;
+	Color	m_UnselectedColor;
 };
 
-//-----------------------------------------------------------------------------
-// Purpose:
-//-----------------------------------------------------------------------------
+
+SelectableColumnHeader::SelectableColumnHeader(Panel* signaltarget, SectionedListPanel *parent, const char *name, int sectionID) : SectionedListPanelHeader(parent, name, sectionID)
+{
+	m_iSelectedColumn = -1;
+	m_iSelectedColumnDepressed = true;
+
+	AddActionSignalTarget(signaltarget);
+}
+
+void SelectableColumnHeader::PerformLayout() 
+{
+	int colCount = m_pListPanel->GetColumnCountBySection(m_iSectionID);
+
+	int xpos = 0;
+	for (int i = 0; i < colCount; i++)
+	{
+		int columnWidth = m_pListPanel->GetColumnWidthBySection(m_iSectionID, i);
+
+		int x, y, wide, tall;
+		GetBounds(x, y, wide, tall);
+
+		// Create a button for this column:
+		char szColumnLabel[64];
+		const wchar_t *pColumnLabel = m_pListPanel->GetColumnTextBySection(m_iSectionID, i);
+		g_pVGuiLocalize->ConvertUnicodeToANSI(pColumnLabel, szColumnLabel, sizeof(szColumnLabel));
+
+		char szButtonName[32];
+		V_sprintf_safe(szButtonName, "columnbutton_%d", i);
+
+		ToggleButton *pColumnButton = new ToggleButton(this, szButtonName, szColumnLabel);
+		pColumnButton->AddActionSignalTarget(this->GetVPanel());
+		pColumnButton->SetCommand(m_pListPanel->GetColumnNameBySection(m_iSectionID, i));
+		pColumnButton->SetSize(columnWidth, tall);
+		pColumnButton->SetPos(xpos, 0);
+
+		// SetFgColor doesn't want work on these buttons.
+	//	pColumnButton->SetFgColor(m_UnselectedColor);
+
+		if ( m_iSelectedColumn == i )
+		{
+			pColumnButton->SetSelected(true);
+
+			if ( m_iSelectedColumnDepressed )
+				pColumnButton->ForceDepressed(true);
+
+		//	pColumnButton->SetFgColor(m_SelectedColor);
+		}
+
+		m_ColumnButtons.AddToTail(pColumnButton);
+		xpos += columnWidth;
+	}
+};
 
 
+void SelectableColumnHeader::ApplySchemeSettings(IScheme *pScheme)
+{
+	BaseClass::ApplySchemeSettings(pScheme);
+	SetFont(pScheme->GetFont("Default", IsProportional()));
 
+	m_SelectedColor = GetSchemeColor("Label.TextDullColor", pScheme);
+	m_UnselectedColor = GetSchemeColor("Label.TextBrightColor", pScheme);
+}
+
+void SelectableColumnHeader::OnCommand(const char* pcCommand)
+{
+	// Only allow 1 column to be selected at a time.
+	int colCount = m_pListPanel->GetColumnCountBySection(m_iSectionID);
+	for (int i = 0; i < colCount; i++ )
+	{
+		const char *pColumnName = m_pListPanel->GetColumnNameBySection(m_iSectionID, i);
+		if ( !stricmp(pcCommand, pColumnName) )
+		{
+			m_iSelectedColumn = i;
+			PostActionSignal(new KeyValues("ColumnSelected", "column", m_iSelectedColumn));
+		}
+		else
+		{
+			m_ColumnButtons[i]->SetSelected(false);
+			m_ColumnButtons[i]->ForceDepressed(false);
+		}
+	}
+
+	BaseClass::OnCommand(pcCommand);
+}
+
+int SelectableColumnHeader::GetSelectedColumn( void )
+{
+	return m_iSelectedColumn;
+}
+
+void SelectableColumnHeader::SetSelectedColumn( int iColumn, bool bDepressed )
+{
+	m_iSelectedColumn = iColumn;
+	m_iSelectedColumnDepressed = bDepressed;
+}
 
 
 //------------------------------------------------------------------------------
@@ -94,6 +200,9 @@ public:
 //------------------------------------------------------------------------------
 CCampaignListPanel::CCampaignListPanel(vgui::Panel* parent ) : EditablePanel(parent, NULL)
 {
+	m_PrevSortType = GetCampaignDatabase()->GetSortType();
+	m_PrevSortDir = GetCampaignDatabase()->GetSortDir();
+
 	m_ListPanel = new SectionedListPanel(this, "listpanel_campaignlist");
 
 	m_MountButton = new Button(this, "MountButton", "");
@@ -107,7 +216,7 @@ CCampaignListPanel::CCampaignListPanel(vgui::Panel* parent ) : EditablePanel(par
 
 	LoadControlSettings("resource/ui/hl2r_campaignlist.res");
 
-	CreateListColunms();
+	CreateListColumns();
 	CreateList();
 }
 //------------------------------------------------------------------------------
@@ -135,21 +244,73 @@ void CCampaignListPanel::ItemSelected(int itemID)
 //------------------------------------------------------------------------------
 // Purpose:
 //------------------------------------------------------------------------------
-void CCampaignListPanel::RefreshList(void)
+void CCampaignListPanel::ColumnSelected()
 {
+	int i = m_ListPanelSortHeader->GetSelectedColumn();
+	if ( i == -1 )
+		return;
+
+	ESortType type;
+	ESortDirection dir = DECENDING_ORDER;
+
+	// Get the sort type from the column we selected.
+	switch ( i )
+	{
+	case 0:
+		type = BY_NAME;
+		break;
+
+	case 1:
+		type = BY_SIZE;
+		break;
+
+	case 2:
+		type = BY_DATE;
+		break;
+
+	default:
+		type = BY_NAME;
+		break;
+	}
+
+	// If the same column is selected twice, invert the sort direction.
+	if ( type == m_PrevSortType )
+	{
+		if ( m_PrevSortDir == dir )
+		{
+			dir = ASCENDING_ORDER;
+		}
+	}
+
+	m_PrevSortType = type;
+	m_PrevSortDir = dir;
+
+	m_SelectedCampaignPanel->SetSelected(NULL);
+
+	GetCampaignDatabase()->SortCampaignList(type, dir);
+	RefreshList(false);
+}
+//------------------------------------------------------------------------------
+// Purpose:
+//------------------------------------------------------------------------------
+void CCampaignListPanel::RefreshList(bool bPreserveSelected)
+{
+	m_PrevSortType = GetCampaignDatabase()->GetSortType();
+	m_PrevSortDir = GetCampaignDatabase()->GetSortDir();
+
 	bool bHasItemSelected = m_ListPanel->GetSelectedItem() != -1;
 	char SelectedItemID[CAMPAIGN_ID_LENGTH];
 
-	if ( bHasItemSelected )
+	if ( bPreserveSelected && bHasItemSelected )
 		V_strcpy(SelectedItemID, m_ListPanel->GetSelectedItemData()->GetString("id"));
 
 	m_ListPanel->RemoveAll();
 	m_ListPanel->RemoveAllSections();
 
-	CreateListColunms();
+	CreateListColumns();
 	CreateList();
 
-	if ( !bHasItemSelected )
+	if ( !bPreserveSelected && !bHasItemSelected )
 		return;
 
 	for (int i = 0; i < m_ListPanel->GetItemCount(); i++ )
@@ -164,20 +325,36 @@ void CCampaignListPanel::RefreshList(void)
 //------------------------------------------------------------------------------
 // Purpose:
 //------------------------------------------------------------------------------
-#define NAME_WIDTH	256
-#define SIZE_WIDTH	112
-#define DATE_WIDTH	84
-void CCampaignListPanel::CreateListColunms(void)
+#define NAME_WIDTH	224
+#define SIZE_WIDTH	72
+#define DATE_WIDTH	148
+void CCampaignListPanel::CreateListColumns(void)
 {
-	m_ListPanel->AddSection(0, new CClickableListPanelHeader(m_ListPanel, "column0", 0));
-	m_ListPanel->AddColumnToSection(0, "namelabel", "#hl2r_label_label", SectionedListPanel::COLUMN_BRIGHT, NAME_WIDTH);
-	m_ListPanel->AddColumnToSection(0, "size", "#hl2r_filesize_label", SectionedListPanel::COLUMN_BRIGHT, SIZE_WIDTH);
-	m_ListPanel->AddColumnToSection(0, "date", "#hl2r_date_label", SectionedListPanel::COLUMN_BRIGHT, DATE_WIDTH);
+	m_ListPanelSortHeader = new SelectableColumnHeader(this, m_ListPanel, "header", 0);
+	m_ListPanel->AddSection(0, m_ListPanelSortHeader);
 
-	m_ListPanel->AddSection(1, "column1");
-	m_ListPanel->AddColumnToSection(1, "namelabel", "#hl2r_label_label", SectionedListPanel::COLUMN_BRIGHT, NAME_WIDTH);
-	m_ListPanel->AddColumnToSection(1, "size", "#hl2r_filesize_label", SectionedListPanel::COLUMN_BRIGHT, SIZE_WIDTH);
-	m_ListPanel->AddColumnToSection(1, "date", "#hl2r_date_label", SectionedListPanel::COLUMN_BRIGHT, DATE_WIDTH);
+	m_ListPanel->AddColumnToSection(0, "label", "#hl2r_label_label",	SectionedListPanel::COLUMN_BRIGHT, NAME_WIDTH);
+	m_ListPanel->AddColumnToSection(0, "size",	"#hl2r_filesize_label", SectionedListPanel::COLUMN_BRIGHT, SIZE_WIDTH);
+	m_ListPanel->AddColumnToSection(0, "date",	"#hl2r_date_label",		SectionedListPanel::COLUMN_BRIGHT, DATE_WIDTH);
+
+	int sorttype = GetCampaignDatabase()->GetSortType();
+	m_ListPanelSortHeader->SetSelectedColumn(sorttype, GetCampaignDatabase()->GetSortDir() == DECENDING_ORDER);
+}
+//------------------------------------------------------------------------------
+// Purpose:
+//------------------------------------------------------------------------------
+static const char *FixupDateChar( const char *pIn )
+{
+	char output[8];
+	V_strcpy_safe(output, pIn);
+
+	char substr[8];
+	V_StrSubst(output, "!", "", substr, 8 );
+
+	char *pOut = new char[8];
+	V_memcpy( pOut, substr, 8 );
+
+	return pOut;
 }
 //------------------------------------------------------------------------------
 // Purpose: Fill our campaign list with campaigns from the database.
@@ -194,11 +371,23 @@ void CCampaignListPanel::CreateList(void)
 
 		KeyValues *pCampaign = GetCampaignDatabase()->GetKeyValuesFromCampaign(pDatabaseCampaign);
 
-		char szFilesize[CAMPAIGN_FILESIZE_LENGTH];
+		// Set our filesize label.
+		char szFilesize[CAMPAIGN_FILESIZE_LENGTH + 2];
 		V_sprintf_safe(szFilesize, "%s MB", pCampaign->GetString("filesize") );
 		pCampaign->SetString("size", szFilesize );
 
-		pCampaign->SetString("date", "0/00/0000");
+		// Set our date label. (This is really ugly I know)
+		char szDate[64];
+		KeyValues *pDateTable = pCampaign->FindKey("datetable");
+
+		V_sprintf_safe(szDate, "%s/%s/%s : %s:%s %s", 
+		FixupDateChar(pDateTable->GetString("month")),
+		FixupDateChar(pDateTable->GetString("day")),
+		FixupDateChar(pDateTable->GetString("year")),
+		FixupDateChar(pDateTable->GetString("hour")),
+		FixupDateChar(pDateTable->GetString("minute")),
+		FixupDateChar(pDateTable->GetString("period")));
+		pCampaign->SetString("date", szDate );
 
 		// Get our campaign's name. If not defined yet, use a label from our resource file to list it as such.
 		const char *pCampaignName = pCampaign->GetString("Name");
@@ -207,26 +396,28 @@ void CCampaignListPanel::CreateList(void)
 		// Is this the currently mounted campaign?
 		if ( pCampaign->GetBool("mounted") )
 		{
+			// Get our "[Mounted]" suffix.
 			char szMountedString[64];
 			wchar_t *pLocalizedMountedLabel = g_pVGuiLocalize->Find("hl2r_mounted_label");
 			g_pVGuiLocalize->ConvertUnicodeToANSI( pLocalizedMountedLabel, szMountedString, sizeof(szMountedString) );
 
+			// Add it to the end of our campaign's name.
 			char szNameMounted[CAMPAIGN_NAME_LENGTH];
 			V_sprintf_safe(szNameMounted, "%s%s", pCampaignName, szMountedString );
 
-			pCampaign->SetString("namelabel", szNameMounted);
+			pCampaign->SetString("label", szNameMounted);
 
 			int itemID = m_ListPanel->AddItem(0, pCampaign);
-			m_ListPanel->SetItemFgColor(itemID, COLOR_GREEN ); // FIX: MAGIC COLOR!!!
 
-			m_SelectedCampaignPanel->SetSelected(pDatabaseCampaign);
+			// Make it have a distinct color!
+			m_ListPanel->SetItemFgColor(itemID, COLOR_GREEN ); // FIX: MAGIC COLOR!!!
 		}
 		else
 		{
-			pCampaign->SetString("namelabel", pCampaignName);
+			pCampaign->SetString("label", pCampaignName);
+			int itemID = m_ListPanel->AddItem(0, pCampaign);
 
-			int itemID = m_ListPanel->AddItem(1, pCampaign);
-
+			// Make this campaign greyed-out if it can't currently be mounted.
 			bool bMountable = ( Q_stricmp( pCampaign->GetString("Name"), "undefined" ) && pCampaign->GetInt("Game") != -1 );
 			if ( !bMountable )
 				m_ListPanel->SetItemFgColor(itemID, Color( 160, 160, 160, 255 )); // FIX: MAGIC COLOR!!!
@@ -249,6 +440,8 @@ void CCampaignListPanel::OnCommand(const char* pcCommand)
 			return;
 		}
 	}
+
+
 	if (!stricmp(pcCommand, "mountitem"))
 	{
 		const char* szCampaignID = m_ListPanel->GetSelectedItemData()->GetString("id");
@@ -270,16 +463,18 @@ void CCampaignListPanel::OnCommand(const char* pcCommand)
 		box->AddActionSignalTarget(this);
 		box->DoModal();
 	}
-	else if (!stricmp(pcCommand, "mountconfirmed"))
+	if (!stricmp(pcCommand, "mountconfirmed"))
 	{
 		const char* szCampaignID = m_ListPanel->GetSelectedItemData()->GetString("id");
 		HandleCampaignMount(szCampaignID);
 	}
-	else if (!stricmp(pcCommand, "quitcommand"))
+	if (!stricmp(pcCommand, "quitcommand"))
 	{
 		engine->ClientCmd("quit");
 	}
-	else if (!stricmp(pcCommand, "scancampaigns"))
+
+
+	if (!stricmp(pcCommand, "scancampaigns"))
 	{
 		// Create a disclaimer box confirming if this is our intended action.
 		QueryBox *box = new QueryBox("#hl2r_scandisclaimer_title", "#hl2r_scandisclaimer_text", this);
@@ -288,7 +483,7 @@ void CCampaignListPanel::OnCommand(const char* pcCommand)
 		box->AddActionSignalTarget(this);
 		box->DoModal();
 	}
-	else if (!stricmp(pcCommand, "scanconfirmed"))
+	if (!stricmp(pcCommand, "scanconfirmed"))
 	{
 		HandleCampaignScan();
 	}

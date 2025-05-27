@@ -21,6 +21,8 @@ class CSelectedCampaignPanel;
 class CCampaignBrowserPanel;
 class CCampaignEditPanel;
 
+class SelectableColumnHeader;
+
 //------------------------------------------------------------------------------
 // Sub panel
 //------------------------------------------------------------------------------
@@ -33,26 +35,31 @@ public:
 	~CCampaignListPanel() {}
 
 	MESSAGE_FUNC_INT( ItemSelected, "ItemSelected", itemID );
-	MESSAGE_FUNC_PTR( OnCheckButtonChecked, "CheckButtonChecked",) {RefreshList();}
+	MESSAGE_FUNC( ColumnSelected, "ColumnSelected");
 
 	virtual void OnCommand(const char* pcCommand); 
-	void RefreshList( void );
+	void RefreshList( bool bPreserveSelected = true );
 
 private:
-	void CreateListColunms( void );
+	void CreateListColumns( void );
 	void CreateList( void );
 
 	void HandleCampaignMount( const char *szCampaignID );
-	void HandleCampaignUnmount( void );
 	void HandleCampaignScan( void );
 
 private:
 	SectionedListPanel		*m_ListPanel;
+	SelectableColumnHeader	*m_ListPanelSortHeader;
+
 	CSelectedCampaignPanel	*m_SelectedCampaignPanel;
 
 	// Buttons:
 	Button	*m_MountButton;
 	Button	*m_CampaignScanButton;
+
+
+	ESortType m_PrevSortType;
+	ESortDirection m_PrevSortDir;
 };
 
 
@@ -124,8 +131,6 @@ void CCampaignBrowserPanel::SetSelected(CampaignData_t* campaign)
 		// Get the ID of the selected campaign and parse it into a url that can be opened.
 		char szURL[BROWSER_MAX_URL];
 		Q_snprintf(szURL, sizeof(szURL), "https://steamcommunity.com/sharedfiles/filedetails?id=%s", campaign->id);
-
-		DevMsg("URL is: %s\n", szURL);
 
 		m_CampaignWindow->OpenURL(szURL, "");
 	}

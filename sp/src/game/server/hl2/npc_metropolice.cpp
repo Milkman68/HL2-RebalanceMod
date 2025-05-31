@@ -3491,7 +3491,7 @@ int CNPC_MetroPolice::SelectCombatSchedule()
 	// Announce a new enemy
 	if ( HasCondition( COND_NEW_ENEMY ) )
 	{
-		//CapabilitiesAdd( bits_CAP_MOVE_JUMP );
+		CapabilitiesAdd( bits_CAP_MOVE_JUMP );
 		AnnounceEnemyType( GetEnemy() );
 	}
 

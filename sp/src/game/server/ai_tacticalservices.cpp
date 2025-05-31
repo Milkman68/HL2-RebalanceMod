@@ -573,7 +573,11 @@ int CAI_TacticalServices::FindLosNode( const Vector &vThreatPos, const Vector &v
 	static int nSearchRandomizer = 0;		// tries to ensure the links are searched in a different order each time;
 	
 	int iIdealNode = NULL;
+
 	float flScore = 0;
+
+	int iNumPositions = 0;
+	float flPathDist = 0;
 
 	while ( list.Count() )
 	{
@@ -671,13 +675,21 @@ int CAI_TacticalServices::FindLosNode( const Vector &vThreatPos, const Vector &v
 							// Setup our cover node
 							if ( iIdealNode == NULL )
 								iIdealNode = nodeIndex;
+
+							// Only do a path distance calculation every 3 nodes we check.
+							if ( iNumPositions == 0 || iNumPositions % 3 == 0)
+							{
+								flPathDist = GetOuter()->GetPathDistanceToPoint( GetAbsOrigin(), vThreatPos );
+							}
+
+							iNumPositions++;
 							
 							// If there's no desired dist, use the first node given to us (This is default behavior)
 							if ( flDesiredDist > 0.0f )
 							{
 							//	NDebugOverlay::Box( nodeOrigin, Vector(5, 5, 5), -Vector(5, 5, 5), 255,0,0, true, 10 );
 								
-								float flNewScore = GetOuter()->GetLOSPositionScore( vThreatPos, nodeOrigin, flDesiredDist, iMyNode == iIdealNode );
+								float flNewScore = GetOuter()->GetLOSPositionScore( vThreatPos, nodeOrigin, flPathDist, flDesiredDist, iMyNode == iIdealNode );
 									
 								if ( flNewScore > flScore )
 								{

@@ -128,6 +128,7 @@ public:
 	void			DoCampaignScan( void );
 
 	bool			TransferGameinfoFiles( int currentgameinfo, int newgameinfo );
+	void			FlushMountedCampaignGraphs( void );
 
 private:
 

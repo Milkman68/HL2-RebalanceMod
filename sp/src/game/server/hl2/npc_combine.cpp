@@ -1772,6 +1772,8 @@ int CNPC_Combine::SelectCombatSchedule()
 	// -----------
 	if ( HasCondition( COND_NEW_ENEMY ) )
 	{
+		CapabilitiesAdd( bits_CAP_MOVE_JUMP );
+
 		CBaseEntity *pEnemy = GetEnemy();
 		bool bFirstContact = false;
 		float flTimeSinceFirstSeen = gpGlobals->curtime - GetEnemies()->FirstTimeSeen( pEnemy );
@@ -3902,13 +3904,18 @@ bool CNPC_Combine::IsValidEnemy( CBaseEntity *pEnemy )
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-float CNPC_Combine::GetLOSPositionScore( const Vector &vecThreat, const Vector &vecPos, float flIdealDist, bool bFirstNode )
+float CNPC_Combine::GetLOSPositionScore( const Vector &vecThreat, const Vector &vecPos, float flPathDist, float flIdealDist, bool bFirstNode )
 {
 	float flNodeScore = 0;
 
 	// Setup our distance metrics.
 	float flNodeDist = ( vecThreat - vecPos ).Length();
 	float flNearDist = ( GetAbsOrigin() - vecPos ).Length();
+	if ( flPathDist != NULL )
+	{
+		flNearDist += flPathDist;
+		flNearDist *= 0.5;
+	}
 	
 	// Score it based on how close it is to the desired distance from the threat. (Elites don't care about this.)
 	if ( !IsElite() )
@@ -3916,6 +3923,9 @@ float CNPC_Combine::GetLOSPositionScore( const Vector &vecThreat, const Vector &
 
 	// Bias out nodes that are farther away from us than the enemy.
 	flNodeScore += 1.0 - ( flNearDist / flNodeDist );
+
+	// Give greater score to nodes that have highground over our enemy.
+	flNodeScore += (vecPos.z - vecThreat.z) * 0.005;
 		
 	SetForceCrouchCover( true );
 		
@@ -3946,6 +3956,39 @@ float CNPC_Combine::GetLOSPositionScore( const Vector &vecThreat, const Vector &
 	}
 	
 	return flNodeScore;
+}
+//-----------------------------------------------------------------------------
+// Purpose:
+//-----------------------------------------------------------------------------
+bool CNPC_Combine::IsJumpLegal(const Vector &startPos, const Vector &apex, const Vector &endPos) const
+{
+	if ( m_NPCState == NPC_STATE_SCRIPT )
+	{
+		float MAX_JUMP_RISE		= 80.0f;
+		float MAX_JUMP_DISTANCE	= 250.0f;
+		float MAX_JUMP_DROP		= 192.0f;
+
+		if ( !BaseClass::IsJumpLegal( startPos, apex, endPos, MAX_JUMP_RISE, MAX_JUMP_DROP, MAX_JUMP_DISTANCE ) )
+			return false;
+	}
+	else
+	{
+		float MAX_JUMP_RISE		= 60.0f;
+		float MAX_JUMP_DISTANCE	= 160.0f;
+		float MAX_JUMP_DROP		= 192.0f;
+
+		if ( !BaseClass::IsJumpLegal( startPos, apex, endPos, MAX_JUMP_RISE, MAX_JUMP_DROP, MAX_JUMP_DISTANCE ) )
+			return false;
+
+		trace_t tr;
+
+		// Don't allow jumps to locations we can't see:
+		AI_TraceLine( startPos + COMBINE_EYE_STANDING_POSITION, endPos, MASK_SOLID, this, COLLISION_GROUP_NONE, &tr );
+		if( tr.fraction != 1.0 )
+			return false;
+	}
+
+	return true;
 }
 //-----------------------------------------------------------------------------
 //

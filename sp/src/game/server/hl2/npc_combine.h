@@ -157,7 +157,8 @@ public:
 	void			OnStartSchedule( int scheduleType );
 
 	virtual bool	ShouldPickADeathPose( void );
-	
+	virtual bool	IsJumpLegal(const Vector &startPos, const Vector &apex, const Vector &endPos) const;
+
 protected:
 	void			SetKickDamage( int nDamage ) { m_nKickDamage = nDamage; }
 	CAI_Sentence< CNPC_Combine > *GetSentences() { return &m_Sentences; }
@@ -265,7 +266,7 @@ private:
 	void DelaySquadAdvances( float flTime );
 	
 	bool IsValidEnemy( CBaseEntity *pEnemy );
-	float GetLOSPositionScore( const Vector &vecThreat, const Vector &vecPos, float flIdealDist, bool bFirstNode = false );
+	float GetLOSPositionScore( const Vector &vecThreat, const Vector &vecPos, float flIdealDist, float flPathDist, bool bFirstNode = false );
 
 	// Chase the enemy, updating the target position as the player moves
 	void StartTaskChaseEnemyContinuously( const Task_t *pTask );

@@ -64,6 +64,8 @@ extern ConVar hl2r_realistic_reload;
 extern ConVar hl2r_hudhints;
 ConVar sk_alternate_recoil( "sk_alternate_recoil", "0" );
 
+extern ConVar r_mirrored;
+
 CBaseCombatWeapon::CBaseCombatWeapon()
 {
 	// Constructor must call this
@@ -818,7 +820,8 @@ void CBaseCombatWeapon::MakeTracer( const Vector &vecTracerSrc, const trace_t &t
 
 // CREDIT FOR THE FOLLOWING CODE GOES THE HL2 MIRRORED MOD: https://github.com/NvC-DmN-CH/Half-Life-2-Mirrored
 	// shift the player tracers so that they appear to get emitted from the gun
-	if (pOwner->IsPlayer()) {
+	if (pOwner->IsPlayer() && r_mirrored.GetBool() ) 
+	{
 		Vector ovForward, ovRight, ovUp;
 		pOwner->GetVectors(&ovForward, &ovRight, &ovUp);
 		vNewSrc -= ovRight * 11; // fairly odd grandparents
@@ -828,6 +831,10 @@ void CBaseCombatWeapon::MakeTracer( const Vector &vecTracerSrc, const trace_t &t
 		// at least i can redeem some performance by commenting out the g_pGameRules->IsMultiplayer
 		// i mean... hl2 isnt multiplayer so it should be alright?
 		// im doing this^ because when you flip the viewmodel, the place from where the tracers get emitted don't flip
+
+
+		// Yeah, its even worse now that a convar is constantly being checked aswell.
+		// I'm sorry ):
 	}
 
 	int iEntIndex = pOwner->entindex();

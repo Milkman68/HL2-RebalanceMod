@@ -150,16 +150,16 @@ int CWeaponStunStick::WeaponMeleeAttack1Condition( float flDot, float flDist )
 			return COND_CAN_MELEE_ATTACK1;
 		}
 	}
-/*
-	if( metropolice_move_and_melee.GetBool() )
+
+	float flTargetDist = 75.0f;
+/*	if( metropolice_move_and_melee.GetBool() )
 	{
 		if( pNPC->IsMoving() )
 		{
 			flTargetDist *= 1.5f;
 		}
-	}
-*/
-	float flTargetDist = 48.0f;
+	}*/
+
 	if ((flDist > flTargetDist) && (flExtrapolatedDist > flTargetDist))
 	{
 		return COND_TOO_FAR_TO_ATTACK;
@@ -208,10 +208,10 @@ void CWeaponStunStick::Operator_HandleAnimEvent( animevent_t *pEvent, CBaseComba
 			}
 
 			Vector vecEnd;
-			VectorMA( pOperator->Weapon_ShootPosition(), 32, vecDirection, vecEnd );
+			VectorMA( pOperator->Weapon_ShootPosition(), 75, vecDirection, vecEnd );
 			// Stretch the swing box down to catch low level physics objects
 			CBaseEntity *pHurt = pOperator->CheckTraceHullAttack( pOperator->Weapon_ShootPosition(), vecEnd, 
-				Vector(-16,-16,-40), Vector(16,16,16), GetDamageForActivity( GetActivity() ), DMG_CLUB, 0.5f, false );
+				Vector(-16,-16,-70), Vector(16,16,16), GetDamageForActivity( GetActivity() ), DMG_CLUB, 0.5f, false );
 			
 			// did I hit someone?
 			if ( pHurt )

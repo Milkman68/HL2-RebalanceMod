@@ -316,7 +316,8 @@ private:
 	
 	Activity GetCoverActivity( CAI_Hint *pHint );
 	Activity GetReloadActivity( CAI_Hint *pHint );
-	
+
+	bool IsJumpLegal(const Vector &startPos, const Vector &apex, const Vector &endPos) const;
 private:
 	enum
 	{

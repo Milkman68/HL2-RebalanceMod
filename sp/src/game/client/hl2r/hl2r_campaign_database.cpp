@@ -464,16 +464,24 @@ switch (GetCampaignDatabase()->GetSortType())
 
 	case BY_NAME:
 		{
+			char szLeftName[CAMPAIGN_NAME_LENGTH];
+			V_strcpy(szLeftName, pLeft->name);
+			strlwr(szLeftName);
+
+			char szRightName[CAMPAIGN_NAME_LENGTH];
+			V_strcpy(szRightName, pRight->name);
+			strlwr(szRightName);
+
 			int iMax = 0;
-			for( int i = 0; pLeft->name[i] != '\0' && pRight->name[i] != '\0'; i++ )
+			for( int i = 0; szLeftName[i] != '\0' && szRightName[i] != '\0'; i++ )
 				iMax = i;
 
 			for( int i = 0; i <= iMax; i++ )
 			{
-				if ( pLeft->name[i] < pRight->name[i] )
+				if ( szLeftName[i] < szRightName[i] )
 					return higher;
 
-				if ( pLeft->name[i] > pRight->name[i] )
+				if ( szLeftName[i] > szRightName[i] )
 					return lower;
 			}
 
@@ -1144,10 +1152,25 @@ void CCampaignDatabase::UnmountMountedCampaign()
 //-----------------------------------------------------------------------------
 void CCampaignDatabase::FixupMountedCampaign( const char *pCampaignID )
 {
-	char szCampaignResourcePath[MAX_PATH];
-	V_sprintf_safe( szCampaignResourcePath, "%s\\mounted\\%s\\resource", engine->GetGameDirectory(), pCampaignID );
+	KeyValues *pBlacklistScript = new KeyValues("blacklist");
+	if ( !pBlacklistScript->LoadFromFile( filesystem, "scripts/file_blacklist.txt", "MOD" ) )
+		return;
 
-	RemoveFilesInDirectory(szCampaignResourcePath);
+	for ( KeyValues *pFile = pBlacklistScript->GetFirstSubKey(); pFile; pFile = pFile->GetNextKey() )
+	{
+		char szFilePath[MAX_PATH];
+		V_sprintf_safe( szFilePath, "%s\\mounted\\%s\\%s", engine->GetGameDirectory(), pCampaignID, pFile->GetString() );
+
+		if ( g_pFullFileSystem->IsDirectory(szFilePath) )
+		{
+			RemoveFilesInDirectory(szFilePath);
+		}
+		else
+		{
+			if ( g_pFullFileSystem->FileExists(szFilePath) )
+				g_pFullFileSystem->RemoveFile(szFilePath);
+		}
+	}
 }
 //-----------------------------------------------------------------------------
 // Purpose:
@@ -1167,4 +1190,26 @@ EMountReturnCode CCampaignDatabase::MountCampaign(const char *pCampaignID)
 
 	SetCampaignAsMounted(pCampaignID);
 	return SUCESSFULLY_MOUNTED;
+}
+//-----------------------------------------------------------------------------
+// Purpose:
+//-----------------------------------------------------------------------------
+void CCampaignDatabase::FlushMountedCampaignGraphs( void )
+{
+	// Remove the graphs folder.
+	char szCampaignNodeGraphPath[MAX_PATH];
+	V_sprintf_safe( szCampaignNodeGraphPath, "%s\\mounted\\%s\\maps\\graphs", engine->GetGameDirectory(), GetMountedCampaign()->id );
+
+	RemoveFilesInDirectory(szCampaignNodeGraphPath);
+}
+//-----------------------------------------------------------------------------
+// Purpose:
+//-----------------------------------------------------------------------------
+CON_COMMAND(campaign_flush_nodegraph, "Clears all .ain  files from our mounted campaign's maps folder.")
+{
+	CCampaignDatabase *database = GetCampaignDatabase();
+	if ( !database )
+		return;
+
+	database->FlushMountedCampaignGraphs();
 }

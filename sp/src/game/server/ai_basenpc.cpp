@@ -12737,19 +12737,27 @@ float CAI_BaseNPC::GetCoverPositionScore( const Vector &vecThreat, const Vector 
 
 //-----------------------------------------------------------------------------
 
-float CAI_BaseNPC::GetLOSPositionScore( const Vector &vecThreat, const Vector &vecPos, float flIdealDist, bool bFirstNode )
+float CAI_BaseNPC::GetLOSPositionScore( const Vector &vecThreat, const Vector &vecPos, float flPathDist, float flIdealDist, bool bFirstNode )
 {
 	float flNodeScore = 0;
 
 	// Setup our distance metrics.
 	float flNodeDist = ( vecThreat - vecPos ).Length();
 	float flNearDist = ( GetAbsOrigin() - vecPos ).Length();
+	if ( flPathDist != NULL )
+	{
+		flNearDist += flPathDist;
+		flNearDist *= 0.5;
+	}
 	
 	// Score it based on how close it is to the desired distance from the threat.
 	flNodeScore += ( flIdealDist - fabsf(flNodeDist - flIdealDist) ) / flIdealDist;
 
 	// Bias out nodes that are farther away from us than the enemy.
 	flNodeScore += 1.0 - ( flNearDist / flNodeDist );
+
+	// Give greater score to nodes that have highground over our enemy.
+	flNodeScore += (vecPos.z - vecThreat.z) * 0.005;
 		
 	SetForceCrouchCover( true );
 		

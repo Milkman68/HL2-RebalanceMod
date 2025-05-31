@@ -92,7 +92,7 @@ public:
 		{
 			return 0.4;
 		}
-		return 0.2f; 
+		return 0.17f; 
 	}
 
 	DECLARE_ACTTABLE();
@@ -462,7 +462,7 @@ void CWeaponPistol::AddViewKick( void )
 	}
 	else
 	{
-		viewPunch.x = -0.75f;
+		viewPunch.x = -0.6f;
 		viewPunch.y = random->RandomFloat( -0.1f,  0.1f );
 		viewPunch.z = 0.0f;
 	

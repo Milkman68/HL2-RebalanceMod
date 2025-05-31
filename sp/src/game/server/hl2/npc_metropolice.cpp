@@ -53,7 +53,7 @@
 #define RECENT_DAMAGE_INTERVAL		0.5f
 #define RECENT_DAMAGE_THRESHOLD		5.0f
 
-#define CHASE_ENEMY_TIME			8.0f
+#define CHASE_ENEMY_TIME			2.0f
 #define CHASE_ENEMY_COOLDOWN		4.0f
 
 #define VEHICLE_PREDICT_ACCELERATION		333.0f
@@ -3504,7 +3504,7 @@ int CNPC_MetroPolice::SelectCombatSchedule()
 		return SCHED_METROPOLICE_DRAW_PISTOL;
 	}
 	
-	if ( HasCondition( COND_LOW_PRIMARY_AMMO ) || HasCondition( COND_NO_PRIMARY_AMMO ) )
+	if ( !HasBaton() && HasCondition( COND_LOW_PRIMARY_AMMO ) || HasCondition( COND_NO_PRIMARY_AMMO ) )
 	{
 		AnnounceOutOfAmmo( );
 		return SCHED_METROPOLICE_HIDE_AND_RELOAD;
@@ -4258,21 +4258,6 @@ int CNPC_MetroPolice::SelectSchedule( void )
 			m_Sentences.Speak( "METROPOLICE_IDLE_HARASS_PLAYER", SENTENCE_PRIORITY_INVALID, SENTENCE_CRITERIA_ALWAYS );
 		}
 	}
-	
- 	// Stunstick switching.
-/* 	if ( GetEnemy() && GetActiveWeapon() )
-	{
-		if ( ShouldSwitchToBaton() )
-		{
-			// This condition interrupts any schedule this metrocop was doing.
-			SetCondition( COND_METROPOLICE_SWITCHED_WEAPON );
-			
-			EquipBaton();
-			
-			m_flBatonChaseTime = gpGlobals->curtime + CHASE_ENEMY_TIME;
-			return SCHED_COMBAT_FACE;
-		}
-	} */
 
 	int nSched = SelectFlinchSchedule();
 	if ( nSched != SCHED_NONE )
@@ -4342,6 +4327,21 @@ int CNPC_MetroPolice::SelectSchedule( void )
 			{
 				GetMotor()->SetIdealYawToTarget( pSound->GetSoundReactOrigin() );
 			}
+		}
+	}
+
+	// Stunstick switching.
+ 	if ( GetEnemy() && GetActiveWeapon() )
+	{
+		if ( ShouldSwitchToBaton() )
+		{
+			// This condition interrupts any schedule this metrocop was doing.
+			SetCondition( COND_METROPOLICE_SWITCHED_WEAPON );
+			
+			EquipBaton();
+			
+			m_flBatonChaseTime = gpGlobals->curtime + CHASE_ENEMY_TIME;
+			return SCHED_COMBAT_FACE;
 		}
 	}
 
@@ -5616,11 +5616,15 @@ bool CNPC_MetroPolice::ShouldSwitchToBaton( void )
 		return false;
 	
 	float m_flDistToEnemy = ( GetEnemy()->GetAbsOrigin() - GetAbsOrigin() ).Length();
-	if ( m_flDistToEnemy > 350 )
+	if ( m_flDistToEnemy > 75 )
+		return false;
+
+	float m_flHeightDiff = fabsf(GetEnemy()->GetAbsOrigin().z - GetAbsOrigin().z);
+	if ( m_flHeightDiff > 48 )
 		return false;
 	
 	CBaseCombatCharacter *pBCC = GetEnemyCombatCharacterPointer();
-	if ( pBCC && pBCC->FInViewCone( this ) && m_flDistToEnemy > 200 )
+	if ( pBCC && !pBCC->FInViewCone( this ) )
 	{
 		return false;
 	}
@@ -6002,6 +6006,39 @@ Activity CNPC_MetroPolice::GetReloadActivity( CAI_Hint *pHint )
 	}
 
 	return BaseClass::GetReloadActivity( pHint );
+}
+//-----------------------------------------------------------------------------
+// Purpose:
+//-----------------------------------------------------------------------------
+bool CNPC_MetroPolice::IsJumpLegal(const Vector &startPos, const Vector &apex, const Vector &endPos) const
+{
+	if ( m_NPCState == NPC_STATE_SCRIPT )
+	{
+		float MAX_JUMP_RISE		= 80.0f;
+		float MAX_JUMP_DISTANCE	= 250.0f;
+		float MAX_JUMP_DROP		= 192.0f;
+
+		if ( !BaseClass::IsJumpLegal( startPos, apex, endPos, MAX_JUMP_RISE, MAX_JUMP_DROP, MAX_JUMP_DISTANCE ) )
+			return false;
+	}
+	else
+	{
+		float MAX_JUMP_RISE		= 60.0f;
+		float MAX_JUMP_DISTANCE	= 160.0f;
+		float MAX_JUMP_DROP		= 192.0f;
+
+		if ( !BaseClass::IsJumpLegal( startPos, apex, endPos, MAX_JUMP_RISE, MAX_JUMP_DROP, MAX_JUMP_DISTANCE ) )
+			return false;
+
+		trace_t tr;
+
+		// Don't allow jumps to locations we can't see:
+		AI_TraceLine( startPos + Vector(0, 0, 60), endPos, MASK_SOLID, this, COLLISION_GROUP_NONE, &tr );
+		if( tr.fraction != 1.0 )
+			return false;
+	}
+
+	return true;
 }
 //-----------------------------------------------------------------------------
 //

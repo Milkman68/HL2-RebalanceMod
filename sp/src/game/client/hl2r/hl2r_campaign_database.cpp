@@ -585,18 +585,18 @@ int CCampaignDatabase::GetVPKSize( const char *pAddonID)
 //-----------------------------------------------------------------------------
 const char *szMonths[12] =
 {
-	"January",
-	"Febuary",
-	"March",
-	"April",
+	"Jan",
+	"Feb",
+	"Mar",
+	"Apr",
 	"May",
-	"June",
-	"July",
-	"August",
-	"September"
-	"October"
-	"November"
-	"December"
+	"Jun",
+	"Jul",
+	"Aug",
+	"Sep"
+	"Oct"
+	"Nov"
+	"Dec"
 };
 
 enum

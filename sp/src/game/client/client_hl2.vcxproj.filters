@@ -1877,6 +1877,9 @@
     <ClInclude Include="hl2r\hl2r_campaign_panel.h">
       <Filter>Source Files\HL2R</Filter>
     </ClInclude>
+    <ClInclude Include="hl2r\hl2r_gamelogo.h">
+      <Filter>Source Files\HL2R</Filter>
+    </ClInclude>
     <ClInclude Include="hl2r\hl2r_options.h">
       <Filter>Source Files\HL2R</Filter>
     </ClInclude>
@@ -3178,6 +3181,12 @@
     <ClCompile Include="hl2r\hl2r_campaign_panel.cpp">
       <Filter>Source Files\HL2R</Filter>
     </ClCompile>
+    <ClCompile Include="hl2r\hl2r_gamelogo.cpp">
+      <Filter>Source Files\HL2R</Filter>
+    </ClCompile>
+    <ClCompile Include="hl2r\hl2r_options.cpp">
+      <Filter>Source Files\HL2R</Filter>
+    </ClCompile>
     <ClCompile Include="stdafx.cpp">
       <Filter>Source Files\Precompiled Header</Filter>
     </ClCompile>
@@ -3387,9 +3396,6 @@
     </ClCompile>
     <ClCompile Include="toolframework_client.cpp">
       <Filter>Tool Framework</Filter>
-    </ClCompile>
-    <ClCompile Include="hl2r\hl2r_options.cpp">
-      <Filter>Source Files\Sixense</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

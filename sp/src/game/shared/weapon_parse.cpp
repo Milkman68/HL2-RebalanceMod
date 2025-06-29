@@ -296,20 +296,18 @@ bool ReadWeaponDataFromFileForSlot( IFileSystem* filesystem, const char *szWeapo
 	// Check for any override scripts.
 	if ( pKV2 )
 	{
-		for ( KeyValues *sub = pKV2->GetFirstSubKey(); sub != NULL; sub = sub->GetNextKey() )
+		for ( KeyValues *pKV2Sub = pKV2->GetFirstSubKey(); pKV2Sub != NULL; pKV2Sub = pKV2Sub->GetNextKey() )
 		{
-			if ( sub->GetString() == NULL )
-					continue;
+			if ( pKV2Sub->GetString() == NULL )
+				continue;
 				
-			if ( pKV->FindKey( sub->GetName() ) )
+			if ( pKV->FindKey( pKV2Sub->GetName() ) )
 			{
-		//		DevMsg("Overriden variable is: %s\n",  sub->GetName() );
-				pKV->SetString( sub->GetName(), pKV2->GetString( sub->GetName() ) );
+				pKV->SetString( pKV2Sub->GetName(), pKV2->GetString( pKV2Sub->GetName() ) );
 			}
 			else
 			{
-		//		DevMsg("Additional variable is: %s\n",  sub->GetName() );
-				pKV->AddSubKey(sub);
+				pKV->AddSubKey(pKV2Sub->MakeCopy());
 			}
 		}
 	}

@@ -37,6 +37,7 @@
 #include "hud_vote.h"
 #include "ienginevgui.h"
 #include "sourcevr/isourcevirtualreality.h"
+#include "hl2r\hl2r_gamelogo.h"
 #if defined( _X360 )
 #include "xbox/xbox_console.h"
 #endif
@@ -83,6 +84,8 @@ ConVar cl_show_num_particle_systems( "cl_show_num_particle_systems", "0", FCVAR_
 
 extern ConVar v_viewmodel_fov;
 extern ConVar voice_modenable;
+
+extern ConVar r_mirrored;
 
 extern bool IsInCommentaryMode( void );
 
@@ -309,9 +312,31 @@ void	ClientModeShared::ComputeVguiResConditions( KeyValues *pkvConditions )
 		pkvConditions->FindKey( "if_vr", true );
 	}
 }
+//-----------------------------------------------------------------------------
+// Purpose:
+//-----------------------------------------------------------------------------
+const char *GetGameLogoFileDir( void )
+{
+	static char pFileDir[MAX_PATH];
 
+	KeyValues *pGameinfoFile = new KeyValues( "gameinfo.txt" );
+	pGameinfoFile->LoadFromFile( filesystem, "gameinfo.txt", "MOD" );
 
+	const char *pGameInfoFileDir = pGameinfoFile->GetString("fixedgamelogo");
 
+	if ( pGameInfoFileDir != NULL )
+	{
+		V_strcpy_safe(pFileDir, pGameInfoFileDir );
+	}
+	else
+	{
+		pGameinfoFile->deleteThis();
+		return NULL;
+	}
+
+	pGameinfoFile->deleteThis();
+	return pFileDir;
+}
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
@@ -366,6 +391,10 @@ void ClientModeShared::Init()
 
 	HOOK_MESSAGE( VGUIMenu );
 	HOOK_MESSAGE( Rumble );
+
+	m_pFixedGameLogo = NULL;
+	m_pFixedGameLogoDir = GetGameLogoFileDir();
+	m_bMirroredState = r_mirrored.GetBool();
 }
 
 
@@ -612,6 +641,32 @@ void ClientModeShared::Update()
 		}
 
 		engine->Con_NPrintf( 0, "# Active particle systems: %i", nCount );
+	}
+
+	UpdateGameLogo();
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void ClientModeShared::UpdateGameLogo()
+{
+	if ( m_pFixedGameLogoDir == NULL )
+		return;
+
+	if ( !engine->IsInGame() )
+		return;
+
+	if (m_pFixedGameLogo == NULL)
+	{
+		m_pFixedGameLogo = new CFixedGameLogo(m_pFixedGameLogoDir, m_bMirroredState);
+	}
+	else if (m_pFixedGameLogo->ScreenSizeChanged() || r_mirrored.GetBool() != m_bMirroredState)
+	{
+		m_pFixedGameLogo->MarkForDeletion();
+		m_pFixedGameLogo = NULL;
+
+		m_bMirroredState = r_mirrored.GetBool();
 	}
 }
 

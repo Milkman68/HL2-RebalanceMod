@@ -1682,6 +1682,7 @@ void CNPC_BaseZombie::Spawn( void )
 	m_flNextMoanSound = gpGlobals->curtime + 9999;
 
 	SetZombieModel();
+	m_nSkin = random->RandomInt( 1, GetModelPtr()->numskinfamilies() );
 
 	NPCInit();
 

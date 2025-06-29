@@ -21,6 +21,7 @@ class CBaseHudWeaponSelection;
 class CViewSetup;
 class C_BaseEntity;
 class C_BasePlayer;
+class CFixedGameLogo;
 
 namespace vgui
 {
@@ -144,6 +145,8 @@ private:
 
 	void			ClearReplayMessageList();
 
+	void			UpdateGameLogo();
+
 #if defined( REPLAY_ENABLED )
 	float					m_flReplayStartRecordTime;
 	float					m_flReplayStopRecordTime;
@@ -156,6 +159,12 @@ private:
 	vgui::HCursor			m_CursorNone;
 	CBaseHudWeaponSelection *m_pWeaponSelection;
 	int						m_nRootSize[2];
+
+	// GameLogo:
+	CFixedGameLogo *m_pFixedGameLogo;
+
+	const char *m_pFixedGameLogoDir;
+	bool m_bMirroredState;
 };
 
 #endif // CLIENTMODE_NORMAL_H

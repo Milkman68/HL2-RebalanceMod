@@ -48,6 +48,8 @@ ConVar r_AirboatPitchCurveLinear( "r_AirboatPitchCurveLinear", "60.0", FCVAR_CHE
 																						// Spline in between.
 
 ConVar airboat_joy_response_move( "airboat_joy_response_move", "1" );					// Quadratic steering response
+
+extern ConVar r_mirrored;
 																						
 
 #define AIRBOAT_DELTA_LENGTH_MAX	12.0f			// 1 foot
@@ -270,8 +272,17 @@ void C_PropAirboat::DrawHudElements( )
 		VectorMA( vehicleEyeOrigin, 100.0f, vecForward, vehicleEyeOrigin );
 
 		ScreenTransform( vehicleEyeOrigin, screen );
-		x += 0.5 * screen[0] * screenWidth + 0.5;
+		if ( r_mirrored.GetBool() )
+		{
+			x -= 0.5 * screen[0] * screenWidth + 0.5;
+		}
+		else
+		{
+			x += 0.5 * screen[0] * screenWidth + 0.5;
+		}
 		y -= 0.5 * screen[1] * screenHeight + 0.5;
+
+		DevMsg("x is: %f", x );
 
 	//	x -= pIcon->Width() / 2; 
 	//	y -= pIcon->Height() / 2; 

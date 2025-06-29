@@ -271,7 +271,7 @@ void CWeaponPistol::SecondaryAttack( void )
 	if (( pOwner->m_nButtons & IN_ATTACK ) && ( pOwner->m_nButtons & IN_ATTACK2 ))
 		return;
 
-	m_flNextSecondaryAttack = gpGlobals->curtime + 0.1;
+	m_flNextSecondaryAttack = gpGlobals->curtime + 0.085;
 	m_flNextPrimaryAttack = gpGlobals->curtime + 0.1;
 
 	CSoundEnt::InsertSound( SOUND_COMBAT, GetAbsOrigin(), SOUNDENT_VOLUME_PISTOL, 0.1, GetOwner() );

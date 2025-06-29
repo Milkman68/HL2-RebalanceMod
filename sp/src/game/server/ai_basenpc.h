@@ -3138,5 +3138,4 @@ private:
 };
 
 extern CPostFrameNavigationHook *PostFrameNavigationSystem( void );
-
 #endif // AI_BASENPC_H

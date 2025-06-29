@@ -22,8 +22,6 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-#define ZOMBIE_SKIN_COUNT 6
-
 // ACT_FLINCH_PHYSICS
 
 
@@ -296,8 +294,6 @@ void CZombie::Spawn( void )
 	//GetNavigator()->SetRememberStaleNodes( false );
 
 	BaseClass::Spawn();
-	
-	m_nSkin = random->RandomInt( 1, ZOMBIE_SKIN_COUNT );
 
 	m_flNextMoanSound = gpGlobals->curtime + random->RandomFloat( 1.0, 4.0 );
 }

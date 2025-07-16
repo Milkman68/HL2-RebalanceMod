@@ -31,8 +31,6 @@ extern ConVar sk_npc_num_shotgun_pellets;
 #define VECTOR_CONE_SHOTGUN	Vector( 0.08716, 0.04362, 0.00  )// 10 degrees by 5 degrees
 #define VECTOR_CONE_DOUBLESHOTGUN Vector( 0.17365, 0.04362, 0.00 ) // 20 degrees by 5 degrees
 
-extern ConVar sk_alternate_recoil;
-
 class CWeaponShotgun : public CBaseHLCombatWeapon
 {
 	DECLARE_DATADESC();
@@ -72,7 +70,8 @@ public:
 		// }
 		// else
 		// {
-			cone = VECTOR_CONE_5DEGREES;	
+		//	cone = VECTOR_CONE_5DEGREES;	
+			cone = VECTOR_CONE_6DEGREES;	// TEST THIS
 //		}
 
 		return cone;
@@ -497,16 +496,6 @@ void CWeaponShotgun::PrimaryAttack( void )
 	pPlayer->FireBullets( sk_plr_num_shotgun_pellets.GetInt(), vecSrc, vecAiming, GetBulletSpread(), MAX_TRACE_LENGTH, m_iPrimaryAmmoType, 2 );
 	
 	QAngle viewPunch = QAngle( -5, random->RandomFloat( -0.6, 0.6 ), 0 );
-	
-	if ( sk_alternate_recoil.GetBool() )
-	{
-		QAngle angles = pPlayer->GetLocalAngles();
-		
-		angles += viewPunch * 0.8;
-		
-		pPlayer->SnapEyeAngles( angles );
-	}
-
 	pPlayer->ViewPunch( viewPunch );
 
 	CSoundEnt::InsertSound( SOUND_COMBAT, GetAbsOrigin(), SOUNDENT_VOLUME_SHOTGUN, 0.2, GetOwner() );
@@ -584,13 +573,6 @@ void CWeaponShotgun::BurstThink( void )
 
 	//Disorient the player
 	QAngle viewPunch = QAngle( -4, random->RandomFloat( -2, 2 ), 0 );
-	
-	if ( sk_alternate_recoil.GetBool() )
-	{
-		QAngle angles = pPlayer->GetLocalAngles();
-		pPlayer->SnapEyeAngles( angles );
-	}
-
 	pPlayer->ViewPunch( viewPunch );
 
 	pPlayer->SetMuzzleFlashTime( gpGlobals->curtime + 1.0 );

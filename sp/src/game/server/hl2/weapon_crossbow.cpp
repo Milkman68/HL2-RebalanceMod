@@ -43,8 +43,6 @@ extern ConVar sk_plr_dmg_crossbow_charged;
 
 extern ConVar sk_npc_dmg_crossbow;
 
-extern ConVar sk_alternate_recoil;
-
 //ConVar sk_npc_head_crossbow("sk_npc_head_crossbow", "3" );
 
 ConVar sk_crossbow_air_velocity("sk_crossbow_air_velocity", "2500" );
@@ -803,16 +801,6 @@ void CWeaponCrossbow::FireBolt( void )
 	m_iClip1--;
 	
 	QAngle viewPunch = QAngle( -2, 0, 0 );
-	
-	if ( sk_alternate_recoil.GetBool() )
-	{
-		QAngle angles = pOwner->GetLocalAngles();
-		
-		angles += viewPunch * 0.7;
-		
-		pOwner->SnapEyeAngles( angles );
-	}
-
 	pOwner->ViewPunch( viewPunch );
 
 	WeaponSound( SINGLE );
@@ -845,7 +833,7 @@ bool CWeaponCrossbow::Deploy( void )
 		return DefaultDeploy( (char*)GetViewModel(), (char*)GetWorldModel(), ACT_CROSSBOW_DRAW_UNLOADED, (char*)GetAnimPrefix() );
 	}
 	
-	SetSkin( BOLT_SKIN_GLOW );
+	SetSkin( BOLT_SKIN_NORMAL );
 	SetChargerState( CHARGER_STATE_OFF, false );
 
 	return BaseClass::Deploy();

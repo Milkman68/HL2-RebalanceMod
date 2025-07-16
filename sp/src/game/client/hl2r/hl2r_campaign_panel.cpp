@@ -78,6 +78,7 @@ public:
 	SelectableColumnHeader(Panel* signaltarget, SectionedListPanel *parent, const char *name, int sectionID);
 
 	virtual void PerformLayout();
+	virtual void OnChildAdded(VPANEL child);
 
 	virtual void ApplySchemeSettings(IScheme *pScheme);
 	void OnCommand(const char* pcCommand);
@@ -105,6 +106,12 @@ SelectableColumnHeader::SelectableColumnHeader(Panel* signaltarget, SectionedLis
 	m_iSelectedColumnDepressed = true;
 
 	AddActionSignalTarget(signaltarget);
+}
+
+// Just overriding this from the baseclass cause it throws errors: (professional programming practices)
+void SelectableColumnHeader::OnChildAdded(VPANEL child)
+{
+//	Assert( !_flags.IsFlagSet( IN_PERFORM_LAYOUT ) );
 }
 
 void SelectableColumnHeader::PerformLayout() 
@@ -194,7 +201,6 @@ void SelectableColumnHeader::SetSelectedColumn( int iColumn, bool bDepressed )
 	m_iSelectedColumnDepressed = bDepressed;
 }
 
-
 //------------------------------------------------------------------------------
 // Sub panel
 //------------------------------------------------------------------------------
@@ -226,20 +232,25 @@ void CCampaignListPanel::ItemSelected(int itemID)
 {
 	if (itemID != -1)
 	{
-		const char *SelectedItemID = m_ListPanel->GetSelectedItemData()->GetString("id");
-		CampaignData_t *pSelectedCampaign = GetCampaignDatabase()->GetCampaignDataFromID(SelectedItemID);
+		const char *pCampaignID = m_ListPanel->GetSelectedItemData()->GetString("id");
+		CampaignData_t *pSelectedCampaign = GetCampaignDatabase()->GetCampaignDataFromID(pCampaignID);
 		
 		m_SelectedCampaignPanel->SetSelected(pSelectedCampaign);
-
-		m_MountButton->SetEnabled(false);
-
-		if ( Q_stricmp( pSelectedCampaign->name, "undefined" ) && pSelectedCampaign->game != -1 && !pSelectedCampaign->mounted )
-			m_MountButton->SetEnabled(true);
+		m_MountButton->SetEnabled(true);
 	}
 	else	
 	{
 		m_SelectedCampaignPanel->SetSelected(NULL);
+		m_MountButton->SetEnabled(false);
 	}
+}
+//------------------------------------------------------------------------------
+// Purpose:
+//------------------------------------------------------------------------------
+void CCampaignListPanel::ItemDoubleLeftClick(int itemID)
+{
+	const char *pCampaignID = m_ListPanel->GetSelectedItemData()->GetString("id");
+	CreateMountDisclaimer(pCampaignID);
 }
 //------------------------------------------------------------------------------
 // Purpose:
@@ -305,9 +316,9 @@ void CCampaignListPanel::RefreshList(bool bPreserveSelected)
 		V_strcpy(SelectedItemID, m_ListPanel->GetSelectedItemData()->GetString("id"));
 
 	m_ListPanel->RemoveAll();
-	m_ListPanel->RemoveAllSections();
+	//m_ListPanel->RemoveAllSections();
 
-	CreateListColumns();
+	//CreateListColumns();
 	CreateList();
 
 	if ( !bPreserveSelected && !bHasItemSelected )
@@ -441,27 +452,10 @@ void CCampaignListPanel::OnCommand(const char* pcCommand)
 		}
 	}
 
-
 	if (!stricmp(pcCommand, "mountitem"))
 	{
 		const char* szCampaignID = m_ListPanel->GetSelectedItemData()->GetString("id");
-		CampaignData_t *pCampaign = GetCampaignDatabase()->GetCampaignDataFromID(szCampaignID);
-
-		if ( pCampaign->startingmap == -1 )
-		{
-			MessageBox *box = new MessageBox("#hl2r_warning_title", "#hl2r_mountwarning", this);
-			box->DoModal();
-
-			BaseClass::OnCommand(pcCommand);
-			return;
-		}
-
-		// Create a disclaimer box confirming if this is our intended action.
-		QueryBox *box = new QueryBox("#hl2r_mountdisclaimer_title", "#hl2r_mountdisclaimer", this);
-		box->SetOKButtonText("#hl2r_mountdisclaimer_accept");
-		box->SetOKCommand(new KeyValues("Command", "command", "mountconfirmed"));
-		box->AddActionSignalTarget(this);
-		box->DoModal();
+		CreateMountDisclaimer(szCampaignID);
 	}
 	if (!stricmp(pcCommand, "mountconfirmed"))
 	{
@@ -489,6 +483,36 @@ void CCampaignListPanel::OnCommand(const char* pcCommand)
 	}
 
 	BaseClass::OnCommand(pcCommand);
+}
+//------------------------------------------------------------------------------
+// Purpose:
+//------------------------------------------------------------------------------
+void CCampaignListPanel::CreateMountDisclaimer( const char *szCampaignID )
+{
+	CampaignData_t *pCampaign = GetCampaignDatabase()->GetCampaignDataFromID(szCampaignID);
+
+	if ( !Q_stricmp( pCampaign->name, "undefined" ) || pCampaign->game == -1)
+	{
+		MessageBox *box = new MessageBox("#hl2r_warning_title", "#hl2r_mountwarning_1", this);
+		box->DoModal();
+
+		return;
+	}
+
+	if ( pCampaign->startingmap == -1 )
+	{
+		MessageBox *box = new MessageBox("#hl2r_warning_title", "#hl2r_mountwarning_2", this);
+		box->DoModal();
+
+		return;
+	}
+
+	// Create a disclaimer box confirming if this is our intended action.
+	QueryBox *box = new QueryBox("#hl2r_mountdisclaimer_title", "#hl2r_mountdisclaimer", this);
+	box->SetOKButtonText("#hl2r_mountdisclaimer_accept");
+	box->SetOKCommand(new KeyValues("Command", "command", "mountconfirmed"));
+	box->AddActionSignalTarget(this);
+	box->DoModal();
 }
 //------------------------------------------------------------------------------
 // Purpose:

@@ -663,7 +663,7 @@ public:
 				m_pListPanel->PostActionSignal(new KeyValues("ItemDoubleLeftClick", "itemID", m_iID));
 
 				// post up an enter key being hit
-				m_pListPanel->OnKeyCodeTyped(KEY_ENTER);
+			//	m_pListPanel->OnKeyCodeTyped(KEY_ENTER);
 			}
 			else
 			{

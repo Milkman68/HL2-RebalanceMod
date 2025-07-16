@@ -100,7 +100,7 @@ class CCampaignDatabase
 public:
 	CCampaignDatabase();
 
-	bool IsCampaignLoaderMod();
+//	bool IsCampaignLoaderMod();
 	bool HLExtractInstalled( void );
 
 	// List accessor functions:
@@ -164,6 +164,7 @@ private:
 
 	// Gameinfo Storage/Retrieveal:
 //	bool		TransferGameinfoFiles( int currentgameinfo, int newgameinfo );
+	int			GetGameinfoGameType( void );
 	bool		MountNewGameinfo( const char *pCampaignID );
 
 	// Save Files:

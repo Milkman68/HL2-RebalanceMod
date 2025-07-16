@@ -94,7 +94,7 @@ ConVar	hl2r_projected_muzzleflash( "hl2r_projected_muzzleflash", "0", FCVAR_REPL
 
 // Defined here now so it can be accessed by the options menu.
 ConVar	hud_quickinfo( "hud_quickinfo", "1", FCVAR_REPLICATED | FCVAR_ARCHIVE );
-ConVar	old_armor( "player_old_armor", "1", FCVAR_REPLICATED | FCVAR_ARCHIVE );
+ConVar	player_old_armor( "player_old_armor", "1", FCVAR_REPLICATED | FCVAR_ARCHIVE );
 
 ConVar launched_hl2r( "launched_hl2r", "0", FCVAR_REPLICATED | FCVAR_ARCHIVE );
 ConVar launched_hl2r_1( "launched_hl2r_1", "0", FCVAR_REPLICATED | FCVAR_ARCHIVE );

@@ -42,7 +42,6 @@ ConVar sk_plr_weapon_ar2_alt_fire_speed( "sk_plr_weapon_ar2_alt_fire_speed", "10
 ConVar sk_npc_weapon_ar2_alt_fire_speed( "sk_npc_weapon_ar2_alt_fire_speed", "1000" );
 
 
-extern ConVar hl2r_realistic_reload;
 //=========================================================
 //=========================================================
 
@@ -145,7 +144,7 @@ float CWeaponAR2::GetFireRate( void )
 	{
 		return 0.14;
 	} */
-	return sk_weapon_ar2_burst_fire.GetBool() ? 0.06 : 0.14;
+	return sk_weapon_ar2_burst_fire.GetBool() ? 0.05 : 0.14;
 }
 int	CWeaponAR2::GetBurstSize( void )
 {
@@ -156,8 +155,6 @@ int	CWeaponAR2::GetBurstSize( void )
 //-----------------------------------------------------------------------------
 void CWeaponAR2::ItemPostFrame( void )
 {
-	m_bMagazineStyleReloads = hl2r_realistic_reload.GetBool() ? true : false;
-	
 	m_iFireMode = sk_weapon_ar2_burst_fire.GetBool() ? FIREMODE_3RNDBURST : FIREMODE_FULLAUTO;
 	
 	// See if we need to fire off our secondary round

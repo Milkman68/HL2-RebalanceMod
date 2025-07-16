@@ -24,8 +24,6 @@
 #include "tier0/memdbgon.h"
 
 ConVar sk_deagle_style_357("sk_deagle_style_357", "0" );
-extern ConVar 	hl2r_realistic_reload;
-extern ConVar sk_alternate_recoil;
 
 //-----------------------------------------------------------------------------
 // CWeapon357
@@ -244,28 +242,17 @@ void CWeapon357::PrimaryAttack( void )
 	pPlayer->SetMuzzleFlashTime( gpGlobals->curtime + 0.5 );
 
 	//Disorient the player
-	QAngle viewPunch = QAngle( -4, random->RandomFloat( -2, 2 ), 0 );
+	QAngle viewPunch = QAngle( -8, random->RandomFloat( -2, 2 ), 0 );
 	
-	if ( sk_alternate_recoil.GetBool() )
-	{
-		QAngle angles = pPlayer->GetLocalAngles();
-		
-		angles += viewPunch * 0.5;
-		
-		pPlayer->SnapEyeAngles( angles );
-	}
-	else
-	{
-		//Disorient the player
-		QAngle angles = pPlayer->GetLocalAngles();
 
-		angles.x += random->RandomInt( -0.5, -0.5 );
-		angles.y += random->RandomInt( -0.5, -0.5 );
-		angles.z = 0;
+	//Disorient the player
+	QAngle angles = pPlayer->GetLocalAngles();
 
-		pPlayer->SnapEyeAngles( angles );
-	}
+	angles.x += random->RandomInt( -0.5, -0.5 );
+	angles.y += random->RandomInt( -0.5, -0.5 );
+	angles.z = 0;
 
+	pPlayer->SnapEyeAngles( angles );
 	pPlayer->ViewPunch( viewPunch );
 
 	CSoundEnt::InsertSound( SOUND_COMBAT, GetAbsOrigin(), 600, 0.2, GetOwner() );
@@ -278,8 +265,6 @@ void CWeapon357::PrimaryAttack( void )
 }
 void CWeapon357::ItemPostFrame( void )
 { 
-	m_bMagazineStyleReloads = hl2r_realistic_reload.GetBool() ? true : false; 
-	
 	CBasePlayer *pOwner = ToBasePlayer( GetOwner() );
 	
 	bool m_bCanFire = m_flSoonestPrimaryAttack < gpGlobals->curtime;

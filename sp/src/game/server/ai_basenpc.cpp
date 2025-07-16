@@ -12709,7 +12709,7 @@ float CAI_BaseNPC::GetCoverPositionScore( const Vector &vecThreat, const Vector 
 	float flEnemyDist = ( GetAbsOrigin() - vecThreat ).Length();
 	
 	// Score it based on how close it is to the desired distance from the threat.
-	flNodeScore += ( flIdealDist - fabsf(flNodeDist - flIdealDist) ) / flIdealDist;
+	flNodeScore += ( flIdealDist - fabsf(flEnemyDist - flIdealDist) ) / flIdealDist;
 
 	// Bias out nodes that are farther away from us than the enemy.
 	flNodeScore += 1.0 - ( flNearDist / flNodeDist );
@@ -12728,8 +12728,10 @@ float CAI_BaseNPC::GetCoverPositionScore( const Vector &vecThreat, const Vector 
 
 		AI_TraceLOS( GetAbsOrigin() + EyeOffset(ACT_IDLE), vecCover + EyeOffset(ACT_IDLE), this, &tr, &filter );
 
-		if( tr.fraction == 1.0 )
-			flNodeScore -= ( flIdealDist - fabsf(flEnemyDist - flIdealDist) ) / flIdealDist;
+		// Value these nodes higher the more we're more out of position and less the
+		// more we're at a comfortable range.
+		if( tr.fraction != 1.0 )
+			flNodeScore += ( flIdealDist - fabsf(flEnemyDist - flIdealDist) ) / flIdealDist;
 	}
 	
 	return flNodeScore;

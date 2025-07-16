@@ -101,7 +101,7 @@ static ConVar sv_maxusrcmdprocessticks( "sv_maxusrcmdprocessticks", "24", FCVAR_
 #include "tier0/memdbgon.h"
 
 //static ConVar old_armor( "player_old_armor", "0" );
-extern ConVar old_armor;
+extern ConVar player_old_armor;
 
 static ConVar physicsshadowupdate_render( "physicsshadowupdate_render", "0" );
 bool IsInCommentaryMode( void );
@@ -1102,7 +1102,7 @@ int CBasePlayer::OnTakeDamage( const CTakeDamageInfo &inputInfo )
 	if ( !info.GetDamage() )
 		return 0;
 
-	if( !old_armor.GetBool() )
+	if( player_old_armor.GetBool() )
 	{
 		flBonus = OLD_ARMOR_BONUS;
 		flRatio = OLD_ARMOR_RATIO;
@@ -1166,7 +1166,7 @@ int CBasePlayer::OnTakeDamage( const CTakeDamageInfo &inputInfo )
 
 		flArmor = (info.GetDamage() - flNew) * flBonus;
 
-		if( old_armor.GetBool() )
+		if( player_old_armor.GetBool() )
 		{
 			if( flArmor < 1.0 )
 			{

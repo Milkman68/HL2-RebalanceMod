@@ -60,10 +60,8 @@ ConVar tf_weapon_criticals_bucket_bottom( "tf_weapon_criticals_bucket_bottom", "
 ConVar tf_weapon_criticals_bucket_default( "tf_weapon_criticals_bucket_default", "300.0", FCVAR_REPLICATED | FCVAR_CHEAT );
 #endif // TF
 
-extern ConVar hl2r_realistic_reload;
 extern ConVar hl2r_hudhints;
-ConVar sk_alternate_recoil( "sk_alternate_recoil", "0" );
-
+extern ConVar hl2r_realistic_reload;
 extern ConVar r_mirrored;
 
 CBaseCombatWeapon::CBaseCombatWeapon()
@@ -78,7 +76,6 @@ CBaseCombatWeapon::CBaseCombatWeapon()
 	m_fMaxRange2		= 1024;
 
 	m_bReloadsSingly	= false;
-	m_bMagazineStyleReloads = false;
 
 	// Defaults to zero
 	m_nViewModelIndex	= 0;
@@ -2234,8 +2231,8 @@ void CBaseCombatWeapon::FinishReload( void )
 				int primary = min( GetMaxClip1() - m_iClip1, pOwner->GetAmmoCount( m_iPrimaryAmmoType ) );	
 				if ( pOwner->GetAmmoCount( m_iPrimaryAmmoType ) >= GetMaxClip1() )
 				{
-					m_iClip1 = m_bMagazineStyleReloads ? GetMaxClip1() : m_iClip1 + primary;
-					pOwner->RemoveAmmo( m_bMagazineStyleReloads ? GetMaxClip1() : primary, m_iPrimaryAmmoType );
+					m_iClip1 = !m_bReloadsSingly ? GetMaxClip1() : m_iClip1 + primary;
+					pOwner->RemoveAmmo( !m_bReloadsSingly ? GetMaxClip1() : primary, m_iPrimaryAmmoType );
 				}
 				else
 				{
@@ -2683,7 +2680,6 @@ BEGIN_PREDICTION_DATA( CBaseCombatWeapon )
 	DEFINE_FIELD( m_Activity, FIELD_INTEGER ),
 	DEFINE_FIELD( m_fFireDuration, FIELD_FLOAT ),
 	DEFINE_FIELD( m_iszName, FIELD_INTEGER ),		
-	DEFINE_FIELD( m_bMagazineStyleReloads, FIELD_BOOLEAN ),
 	DEFINE_FIELD( m_bFiresUnderwater, FIELD_BOOLEAN ),
 	DEFINE_FIELD( m_bAltFiresUnderwater, FIELD_BOOLEAN ),
 	DEFINE_FIELD( m_fMinRange1, FIELD_FLOAT ),		

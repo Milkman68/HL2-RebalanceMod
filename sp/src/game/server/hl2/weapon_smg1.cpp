@@ -22,7 +22,6 @@
 #include "tier0/memdbgon.h"
 
 extern ConVar   sk_plr_dmg_smg1_grenade;	
-extern ConVar 	hl2r_realistic_reload;
 
 ConVar sk_smg1_grenade_speed( "sk_smg1_grenade_speed", "1000.0" );
 
@@ -35,8 +34,6 @@ public:
 	CWeaponSMG1();
 
 	DECLARE_SERVERCLASS();
-	
-	void	ItemPostFrame( void ) { BaseClass::ItemPostFrame(); m_bMagazineStyleReloads = hl2r_realistic_reload.GetBool() ? true : false; };
 	
 	void	Precache( void );
 	void	AddViewKick( void );

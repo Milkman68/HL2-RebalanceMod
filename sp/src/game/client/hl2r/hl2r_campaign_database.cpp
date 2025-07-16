@@ -36,7 +36,7 @@ CCampaignDatabase::CCampaignDatabase()
 	{
 		// Initilize our internal list:
 		WriteScriptToList();
-		SortCampaignList(BY_NAME, DECENDING_ORDER);
+		SortCampaignList(BY_DATE, DECENDING_ORDER);
 		WriteListToScript();
 	}
 
@@ -45,7 +45,7 @@ CCampaignDatabase::CCampaignDatabase()
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-bool CCampaignDatabase::IsCampaignLoaderMod()
+/*bool CCampaignDatabase::IsCampaignLoaderMod()
 {
 	KeyValues *pGameinfoFile = new KeyValues( "gameinfo.txt" );
 
@@ -63,7 +63,7 @@ bool CCampaignDatabase::IsCampaignLoaderMod()
 
 	pGameinfoFile->deleteThis();
 	return false;
-}
+}*/
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
@@ -501,45 +501,45 @@ switch (GetCampaignDatabase()->GetSortType())
 
 			// Year:
 			if ( V_atoi(pTableLeft->year) < V_atoi(pTableRight->year) )
-				return higher;
+				return lower;
 
 			if ( V_atoi(pTableLeft->year) > V_atoi(pTableRight->year) )
-				return lower;
+				return higher;
 
 			// Month:
 			if ( V_atoi(pTableLeft->month) < V_atoi(pTableRight->month) )
-				return higher;
+				return lower;
 
 			if ( V_atoi(pTableLeft->month) > V_atoi(pTableRight->month) )
-				return lower;
+				return higher;
 
 			// Day:
 			if ( V_atoi(pTableLeft->day) < V_atoi(pTableRight->day) )
-				return higher;
+				return lower;
 
 			if ( V_atoi(pTableLeft->day) > V_atoi(pTableRight->day) )
-				return lower;
+				return higher;
 
 			// Period:
 			if ( !Q_stricmp(pTableLeft->period, "PM" ) && !Q_stricmp(pTableRight->period, "AM" ) )
-				return higher;
+				return lower;
 
 			if ( !Q_stricmp(pTableLeft->period, "AM" ) && !Q_stricmp(pTableRight->period, "PM" ) )
-				return lower;
+				return higher;
 
 			// Hour:
 			if ( iHourLeft < iHourRight )
-				return higher;
+				return lower;
 
 			if ( iHourRight < iHourLeft )
-				return lower;
+				return higher;
 
 			// Minute:
 			if ( V_atoi(pTableLeft->minute) < V_atoi(pTableRight->minute) )
-				return higher;
+				return lower;
 
 			if ( V_atoi(pTableLeft->minute) > V_atoi(pTableRight->minute) )
-				return lower;
+				return higher;
 
 			return 0;
 		}
@@ -973,12 +973,33 @@ bool CCampaignDatabase::TransferGameinfoFiles( int currentgameinfo, int newgamei
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
+int CCampaignDatabase::GetGameinfoGameType( void )
+{
+	KeyValues *pGameinfoFile = new KeyValues( "gameinfo.txt" );
+
+	pGameinfoFile->LoadFromFile( filesystem, "gameinfo.txt", "MOD" );
+	for ( KeyValues *pKey = pGameinfoFile->GetFirstSubKey(); pKey; pKey = pKey->GetNextKey() )
+	{
+		if (!Q_stricmp(pKey->GetName(),"gametype"))
+		{
+			pGameinfoFile->deleteThis();
+			return pKey->GetInt();
+		}
+	}
+
+	pGameinfoFile->deleteThis();
+	return -1;
+}
+//-----------------------------------------------------------------------------
+// Purpose:
+//-----------------------------------------------------------------------------
 bool CCampaignDatabase::MountNewGameinfo( const char *pCampaignID )
 {
-	CampaignData_t *pPrevMounted = GetMountedCampaign();
+//	CampaignData_t *pPrevMounted = GetMountedCampaign();
 	CampaignData_t *pCampaign = GetCampaignDataFromID(pCampaignID);
 
-	int iCurrentGameType = pPrevMounted ? pPrevMounted->game : -1;
+//	int iCurrentGameType = pPrevMounted ? pPrevMounted->game : -1;
+	int iCurrentGameType = GetGameinfoGameType();
 	int iNewGametype = pCampaign ? pCampaign->game : -1;
 
 	if ( iCurrentGameType == iNewGametype )

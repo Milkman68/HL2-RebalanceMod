@@ -133,6 +133,7 @@ enum PathfindingVariant_T
 #define bits_MEMORY_PAIN_LIGHT_SOUND		bits_MEMORY_CUSTOM1
 #define bits_MEMORY_PAIN_HEAVY_SOUND		bits_MEMORY_CUSTOM2
 #define bits_MEMORY_PLAYER_HURT				bits_MEMORY_CUSTOM3
+#define bits_MEMORY_RETREAT_TO_COVER		bits_MEMORY_CUSTOM4
 
 LINK_ENTITY_TO_CLASS( npc_combine, CNPC_Combine );
 
@@ -618,7 +619,7 @@ float CNPC_Combine::MaxYawSpeed( void )
 	{
 	case ACT_TURN_LEFT:
 	case ACT_TURN_RIGHT:
-		return 45;
+		return 120;
 		break;
 	case ACT_RUN:
 	case ACT_RUN_HURT:
@@ -1301,7 +1302,7 @@ void CNPC_Combine::RunTask( const Task_t *pTask )
 			{
 				if ( IsActivityFinished() )
 				{
-					if ( HasCondition( COND_ENEMY_OCCLUDED )/*  && !CanSuppressEnemy() */ )
+					if ( HasCondition( COND_ENEMY_OCCLUDED )  && !CanSuppressEnemy() )
 					{
 						TaskComplete();
 					}
@@ -1808,13 +1809,17 @@ int CNPC_Combine::SelectCombatSchedule()
 	// ----------------------
 	// HEAVY DAMAGE
 	// ----------------------
-	CWeaponRPG *pRPG = dynamic_cast<CWeaponRPG*>(GetActiveWeapon());
-	if ( !pRPG && m_nRecentDamage > RECENT_DAMAGE_THRESHOLD )
+	if ( m_nRecentDamage > RECENT_DAMAGE_THRESHOLD )
 	{
+		m_nRecentDamage = 0;
+		m_flRecentDamageTime = 0;
+
 		if ( GetEnemy() != NULL && !HasCondition( COND_COMBINE_ON_FIRE ) )
 		{
 			//!!!KELLY - this grunt was hit and is going to run to cover.
-			m_Sentences.Speak( "COMBINE_COVER" );
+		//	m_Sentences.Speak( "COMBINE_COVER" );
+
+			Remember( bits_MEMORY_RETREAT_TO_COVER );
 			return SCHED_TAKE_COVER_FROM_ENEMY;
 		}
 		else
@@ -1866,10 +1871,10 @@ int CNPC_Combine::SelectCombatSchedule()
 				// Start with trying to see if a grenade can be thrown!
 				return SCHED_RANGE_ATTACK2;
 			}
-			/* else if ( CanSuppressEnemy() && OccupyStrategySlot( SQUAD_SLOT_OVERWATCH ) )
+			else if ( CanSuppressEnemy() && OccupyStrategySlot( SQUAD_SLOT_OVERWATCH ) )
 			{
 				return SCHED_RANGE_ATTACK1;
-			} */
+			}
   			else if ( m_flDelayAttacksTime < gpGlobals->curtime && CanOccupyAttackSlot() )
 			{
 				// Try to charge in and break the enemy's cover!
@@ -2145,6 +2150,7 @@ int CNPC_Combine::SelectFailSchedule( int failedSchedule, int failedTask, AI_Tas
 	
 	if( failedSchedule == SCHED_COMBINE_TAKE_COVER1 || failedSchedule == SCHED_COMBINE_HIDE_AND_RELOAD )
 	{
+		Forget( bits_MEMORY_RETREAT_TO_COVER );
 		if ( GetEnemy() )
 		{
 			if( failedSchedule == SCHED_COMBINE_HIDE_AND_RELOAD  )
@@ -2268,8 +2274,7 @@ int CNPC_Combine::SelectScheduleAttack()
 		// Throw a grenade if not allowed to engage with weapon.
 		if ( HasCondition( COND_COMBINE_CAN_GRENADE_ENEMY ) )
 		{
-			bool bTakenDamage = m_nRecentDamage > RECENT_DAMAGE_THRESHOLD;
-			if ( !bTakenDamage && OccupyStrategySlot( SQUAD_SLOT_GRENADE1 ) )
+			if ( OccupyStrategySlot( SQUAD_SLOT_GRENADE1 ) )
 			{
 				return SCHED_RANGE_ATTACK2;
 			}
@@ -2306,13 +2311,8 @@ int CNPC_Combine::TranslateSchedule( int scheduleType )
 	{
 	case SCHED_TAKE_COVER_FROM_ENEMY:
 		{
-			bool bTakenDamage = m_nRecentDamage > RECENT_DAMAGE_THRESHOLD;
-			
-			m_nRecentDamage = 0;
-			m_flRecentDamageTime = 0;
-			
 			// Have to explicitly check innate range attack condition as may have weapon with range attack 2
-			if ( !bTakenDamage && HasCondition(COND_CAN_RANGE_ATTACK2) && OccupyStrategySlot( SQUAD_SLOT_GRENADE1 ) )
+			if ( HasCondition(COND_CAN_RANGE_ATTACK2) && OccupyStrategySlot( SQUAD_SLOT_GRENADE1 ) )
 			{
 				if ( m_pSquad )
 					m_Sentences.Speak( "COMBINE_THROW_GRENADE" );
@@ -2815,6 +2815,14 @@ void CNPC_Combine::SpeakSentence( int sentenceType )
 			m_Sentences.Speak( "COMBINE_FLANK" );
 		}
 		break;
+
+	case 2:
+		if ( HasMemory( bits_MEMORY_RETREAT_TO_COVER ) )
+		{
+			m_Sentences.Speak( "COMBINE_COVER", SENTENCE_PRIORITY_INVALID, SENTENCE_CRITERIA_ALWAYS );
+			Forget( bits_MEMORY_RETREAT_TO_COVER );
+		}
+		break;
 	}
 }
 
@@ -2836,12 +2844,15 @@ void CNPC_Combine::PainSound( const CTakeDamageInfo &info )
 			Remember( bits_MEMORY_PAIN_LIGHT_SOUND );
 			pSentenceName = "COMBINE_TAUNT";
 		}
-		else if ( !HasMemory(bits_MEMORY_PAIN_HEAVY_SOUND) && healthRatio < 0.25 )
+		// Only yell our cover line if we actually comit to it. (As it's possible
+		// for a soldier to hold their ground.)
+
+/*		else if ( !HasMemory(bits_MEMORY_PAIN_HEAVY_SOUND) && healthRatio < 0.25 )
 		{
 			Remember( bits_MEMORY_PAIN_HEAVY_SOUND );
 			pSentenceName = "COMBINE_COVER";
 		}
-
+		*/
 		m_Sentences.Speak( pSentenceName, SENTENCE_PRIORITY_INVALID, SENTENCE_CRITERIA_ALWAYS );
 		m_flNextPainSoundTime = gpGlobals->curtime + 1;
 	}
@@ -3283,6 +3294,8 @@ bool CNPC_Combine::CanAltFireEnemy( bool bUseFreeKnowledge )
 //-----------------------------------------------------------------------------
 bool CNPC_Combine::CanSuppressEnemy( void )
 {
+	return false;
+
 	if ( !GetEnemy() )
 		return false;
 	
@@ -3535,6 +3548,9 @@ WeaponProficiency_t CNPC_Combine::CalcWeaponProficiency( CBaseCombatWeapon *pWea
 {
 	if( FClassnameIs( pWeapon, "weapon_ar2" ) )
 	{
+		if ( IsElite() )
+			return WEAPON_PROFICIENCY_GOOD;
+
 		return WEAPON_PROFICIENCY_AVERAGE;
 	}
 	else if( FClassnameIs( pWeapon, "weapon_shotgun" ) || FClassnameIs( pWeapon, "weapon_357" ) )
@@ -3548,6 +3564,9 @@ WeaponProficiency_t CNPC_Combine::CalcWeaponProficiency( CBaseCombatWeapon *pWea
 	}
 	else if( FClassnameIs( pWeapon, "weapon_smg1" ) )
 	{
+		if ( IsElite() )
+			return WEAPON_PROFICIENCY_VERY_GOOD;
+
 		return WEAPON_PROFICIENCY_GOOD;
 	}
 	if( FClassnameIs( pWeapon, "weapon_pistol" ) )
@@ -4434,6 +4453,7 @@ DEFINE_SCHEDULE
  "		TASK_SET_FAIL_SCHEDULE		SCHEDULE:SCHED_COMBINE_TAKECOVER_FAILED"
  "		TASK_STOP_MOVING				0"
  "		TASK_FIND_COVER_FROM_ENEMY_IN_WEAPON_RANGE	0"
+ "		TASK_SPEAK_SENTENCE			2"
  "		TASK_RUN_PATH				0"
  "		TASK_WAIT_FOR_MOVEMENT		0"
  "		TASK_REMEMBER				MEMORY:INCOVER"
@@ -4478,11 +4498,6 @@ DEFINE_SCHEDULE
  ""
  "	Interrupts"
  "		COND_NEW_ENEMY"
- "		COND_ENEMY_DEAD"
- "		COND_CAN_RANGE_ATTACK1"
- "		COND_CAN_RANGE_ATTACK2"
- "		COND_COMBINE_CAN_GRENADE_ENEMY"
- "		COND_COMBINE_CAN_ALTFIRE_ENEMY"
  "		COND_CAN_MELEE_ATTACK1"
  "		COND_CAN_MELEE_ATTACK2"
  "		COND_HEAR_DANGER"

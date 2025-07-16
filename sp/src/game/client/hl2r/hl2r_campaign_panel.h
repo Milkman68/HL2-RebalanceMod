@@ -35,14 +35,20 @@ public:
 	~CCampaignListPanel() {}
 
 	MESSAGE_FUNC_INT( ItemSelected, "ItemSelected", itemID );
+	MESSAGE_FUNC_INT( ItemDoubleLeftClick, "ItemDoubleLeftClick", itemID );
+
 	MESSAGE_FUNC( ColumnSelected, "ColumnSelected");
 
 	virtual void OnCommand(const char* pcCommand); 
 	void RefreshList( bool bPreserveSelected = true );
 
+	virtual void OnMouseDoublePressed(MouseCode code) {};
+
 private:
 	void CreateListColumns( void );
 	void CreateList( void );
+
+	void CreateMountDisclaimer( const char *szCampaignID );
 
 	void HandleCampaignMount( const char *szCampaignID );
 	void HandleCampaignScan( void );
@@ -100,8 +106,11 @@ public:
 
 	virtual void ApplySchemeSettings(IScheme* pScheme);
 	MESSAGE_FUNC( OnFinishRequest, "OnFinishRequest" );
+//	MESSAGE_FUNC_CHARPTR( OnURLChanged, "OnURLChanged", url );
 
 private:
+	CampaignData_t	*m_pCampaign;
+
 	HTML		*m_CampaignWindow;
 	ImagePanel	*m_CampaignWindowBackground;
 	Divider		*m_CampaignWindowDivider;
@@ -126,11 +135,13 @@ CCampaignBrowserPanel::CCampaignBrowserPanel(Panel *parent, const char *name) : 
 #define BROWSER_MAX_URL 256
 void CCampaignBrowserPanel::SetSelected(CampaignData_t* campaign)
 {
-	if (campaign != NULL)
+	m_pCampaign = campaign;
+
+	if (m_pCampaign != NULL)
 	{
 		// Get the ID of the selected campaign and parse it into a url that can be opened.
 		char szURL[BROWSER_MAX_URL];
-		Q_snprintf(szURL, sizeof(szURL), "https://steamcommunity.com/sharedfiles/filedetails?id=%s", campaign->id);
+		Q_snprintf(szURL, sizeof(szURL), "https://steamcommunity.com/sharedfiles/filedetails?id=%s", m_pCampaign->id);
 
 		m_CampaignWindow->OpenURL(szURL, "");
 	}
@@ -152,8 +163,18 @@ void CCampaignBrowserPanel::OnFinishRequest(void)
 {
 	GetAnimationController()->RunAnimationCommand(m_CampaignWindow, "Alpha", 255.0f, 0.15, 0.15, AnimationController::INTERPOLATOR_LINEAR);
 }
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+/*void CCampaignBrowserPanel::OnURLChanged(const char *url)
+{
+	if ( !m_pCampaign )
+		return;
 
-
+	if ( !Q_stristr(url, m_pCampaign->id) )
+		SetSelected(m_pCampaign);
+}
+*/
 
 
 //-----------------------------------------------------------------------------
@@ -175,6 +196,8 @@ public:
 
 	void SetCampaign( CampaignData_t *campaign );
 	MESSAGE_FUNC_INT( ItemSelected, "ItemSelected", itemID );
+	MESSAGE_FUNC_INT( ItemDoubleLeftClick, "ItemDoubleLeftClick", itemID ){ SetStartingMap(itemID); }
+
 
 	void OnCommand(const char* pcCommand);
 	void ApplySchemeSettings(IScheme *pScheme);
@@ -189,6 +212,8 @@ private:
 
 	void CreateMapList(void);
 	void RefreshMapList(void);
+
+	void SetStartingMap(int selecteditemID);
 
 	void ResetPage(void);
 	void CheckApplyButton( void );
@@ -360,6 +385,17 @@ void CCampaignEditPanel::OnCommand(const char* pcCommand)
 		RefreshMapList();
 	}
 	BaseClass::OnCommand(pcCommand);
+}
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CCampaignEditPanel::SetStartingMap(int selecteditemID)
+{
+	m_iPrevStartMap = selecteditemID;
+	GetCampaign()->startingmap = selecteditemID;
+
+	GetCampaignDatabase()->WriteListToScript();
+	RefreshMapList();
 }
 //-----------------------------------------------------------------------------
 // Purpose: 

@@ -924,6 +924,8 @@ void Button::OnCursorExited()
 //-----------------------------------------------------------------------------
 void Button::OnMousePressed(MouseCode code)
 {
+	SetArmed( true );
+
 	if (!IsEnabled())
 		return;
 	
@@ -946,7 +948,7 @@ void Button::OnMousePressed(MouseCode code)
 		surface()->PlaySound(g_ButtonSoundNames.String(m_sDepressedSoundName));
 	}
 
-	if (IsUseCaptureMouseEnabled() /*&& _activationType == ACTIVATE_ONPRESSEDANDRELEASED*/) // Idk why but removing this condition fixes the inset effect not appearing when clicking buttons.
+	if (IsUseCaptureMouseEnabled() && _activationType == ACTIVATE_ONPRESSEDANDRELEASED)
 	{
 		{
 			if ( IsKeyBoardInputEnabled() )
@@ -975,6 +977,8 @@ void Button::OnMouseDoublePressed(MouseCode code)
 //-----------------------------------------------------------------------------
 void Button::OnMouseReleased(MouseCode code)
 {
+	SetArmed( false );
+
 	// ensure mouse capture gets released
 	if (IsUseCaptureMouseEnabled())
 	{

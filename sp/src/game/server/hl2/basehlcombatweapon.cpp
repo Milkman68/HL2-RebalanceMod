@@ -28,8 +28,6 @@ BEGIN_DATADESC( CHLMachineGun )
 
 END_DATADESC()
 
-extern ConVar sk_alternate_recoil;
-
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
@@ -187,15 +185,6 @@ void CHLMachineGun::DoMachineGunKick( CBasePlayer *pPlayer, float maxVerticleKic
 
 	//Clip this to our desired min/max
 	UTIL_ClipPunchAngleOffset( vecScratch, pPlayer->m_Local.m_vecPunchAngle, QAngle( 24.0f, 3.0f, 1.0f ) );
-	
-	if ( sk_alternate_recoil.GetBool() )
-	{
-		QAngle angles = pPlayer->GetLocalAngles();
-		
-		angles += vecScratch * kickPerc;
-		
-		pPlayer->SnapEyeAngles( angles );
-	}
 
 	//Add it to the view punch
 	// NOTE: 0.5 is just tuned to match the old effect before the punch became simulated

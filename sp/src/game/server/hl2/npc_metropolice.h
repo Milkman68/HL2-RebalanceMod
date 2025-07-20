@@ -169,6 +169,7 @@ private:
 	void InputEnableManhackToss( inputdata_t &inputdata );
 	void InputSetPoliceGoal( inputdata_t &inputdata );
 	void InputActivateBaton( inputdata_t &inputdata );
+	void InputHitByBugbait( inputdata_t &inputdata );
 
 	void NotifyDeadFriend ( CBaseEntity* pFriend );
 
@@ -233,9 +234,6 @@ private:
 
 	// Visualize line of death
 	void VisualizeLineOfDeath( );
-	
-	// We were hit by bugbait
-	void InputHitByBugbait( inputdata_t &inputdata );
 
 	// Modify the stitch length
 	float ComputeDistanceStitchModifier( float flDistanceToTarget ) const;
@@ -394,8 +392,7 @@ private:
 		SCHED_METROPOLICE_WAIT_IN_COVER,
 		SCHED_METROPOLICE_TAKE_COVER_FROM_ENEMY,
 		SCHED_METROPOLICE_HIDE_AND_RELOAD,
-		SCHED_ENTER_OVERWATCH,
-		SCHED_OVERWATCH,
+		SCHED_BUGBAIT_DISTRACTION,
 		SCHED_METROPOLICE_TAKECOVER_FAILED,
 		SCHED_METROPOLICE_COMBAT_FAIL,
 	};

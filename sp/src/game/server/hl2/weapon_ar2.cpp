@@ -144,7 +144,7 @@ float CWeaponAR2::GetFireRate( void )
 	{
 		return 0.14;
 	} */
-	return sk_weapon_ar2_burst_fire.GetBool() ? 0.05 : 0.14;
+	return sk_weapon_ar2_burst_fire.GetBool() ? 0.055 : 0.14;
 }
 int	CWeaponAR2::GetBurstSize( void )
 {

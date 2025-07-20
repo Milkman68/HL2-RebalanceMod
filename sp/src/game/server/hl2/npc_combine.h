@@ -266,7 +266,6 @@ private:
 	void DelaySquadAdvances( float flTime );
 	
 	bool IsValidEnemy( CBaseEntity *pEnemy );
-	float GetLOSPositionScore( const Vector &vecThreat, const Vector &vecPos, float flIdealDist, float flPathDist, bool bFirstNode = false );
 
 	// Chase the enemy, updating the target position as the player moves
 	void StartTaskChaseEnemyContinuously( const Task_t *pTask );

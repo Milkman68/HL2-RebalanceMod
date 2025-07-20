@@ -225,21 +225,23 @@ bool CGrenadeBugBait::ActivateBugbaitTargets( CBaseEntity *pOwner, Vector vecOri
 			// If close enough, make combine soldiers freak out when hit
 			if ( UTIL_DistApprox( pList[i]->WorldSpaceCenter(), vecOrigin ) < bugbait_grenade_radius.GetFloat() )
 			{
-				// Must be a soldier
-				if ( FClassnameIs( pList[i], "npc_combine_s") || ( pList[i], "npc_metropolice") )
+				// Npc's that have interactions with bugbait:
+				if ( FClassnameIs( pList[i], "npc_combine_s") || 
+					FClassnameIs( pList[i], "npc_metropolice" ) ||
+					FClassnameIs( pList[i], "npc_zombie" ) )
 				{
-					CAI_BaseNPC *pCombine = pList[i]->MyNPCPointer();
+					CAI_BaseNPC *pNpc = pList[i]->MyNPCPointer();
 
-					if ( pCombine != NULL )
+					if ( pNpc != NULL )
 					{
 						trace_t tr;
-						UTIL_TraceLine( vecOrigin, pCombine->EyePosition(), MASK_ALL, pOwner, COLLISION_GROUP_NONE, &tr);
+						UTIL_TraceLine( vecOrigin, pNpc->EyePosition(), MASK_ALL, pOwner, COLLISION_GROUP_NONE, &tr);
 
-						if ( tr.fraction == 1.0 || tr.m_pEnt == pCombine )
+						if ( tr.fraction == 1.0 || tr.m_pEnt == pNpc )
 						{
 							// Randomize the start time a little so multiple combine hit by 
 							// the same bugbait don't all dance in synch.
-							g_EventQueue.AddEvent( pCombine, "HitByBugbait", RandomFloat(0, 0.5), pOwner, pOwner );
+							g_EventQueue.AddEvent( pNpc, "HitByBugbait", RandomFloat(0, 0.15), pOwner, pOwner );
 						}
 					}
 				}

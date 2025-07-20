@@ -21,6 +21,11 @@
 // Bug Bait Weapon
 //
 
+#define BUGBAIT_RECHARGE_RATE 5.0f
+
+extern ConVar r_mirrored;
+extern ConVar sk_max_bugbait;
+
 class CWeaponBugBait : public CBaseHLCombatWeapon
 {
 	DECLARE_CLASS( CWeaponBugBait, CBaseHLCombatWeapon );
@@ -44,14 +49,18 @@ public:
 	bool	Holster( CBaseCombatWeapon *pSwitchingTo );
 
 	void	ItemPostFrame( void );
+	void	ItemPreFrame( void );
+	void	ItemHolsterFrame( void );
 	void	Precache( void );
 	void	PrimaryAttack( void );
 	void	SecondaryAttack( void );
 	void	ThrowGrenade( CBasePlayer *pPlayer );
 	
-	bool	HasAnyAmmo( void ) { return true; }
+//	bool	HasAnyAmmo( void ) { return true; }
 	
 	bool	Reload( void );
+	void	DrainAmmo( CBasePlayer *pOwner );
+	void	CheckRegenerateAmmo( CBasePlayer *pOwner );
 
 	void	SetSporeEmitterState( bool state = true );
 
@@ -65,6 +74,9 @@ protected:
 	bool		m_bRedraw;
 	bool		m_bEmitSpores;
 	EHANDLE		m_hSporeTrail;
+
+private:
+	float		m_flNextAmmoTime;
 };
 
 IMPLEMENT_SERVERCLASS_ST(CWeaponBugBait, DT_WeaponBugBait)
@@ -81,6 +93,7 @@ BEGIN_DATADESC( CWeaponBugBait )
 	DEFINE_FIELD( m_bRedraw,			FIELD_BOOLEAN ),
 	DEFINE_FIELD( m_bEmitSpores,		FIELD_BOOLEAN ),
 	DEFINE_FIELD( m_bDrawBackFinished,	FIELD_BOOLEAN ),
+	DEFINE_FIELD( m_flNextAmmoTime,		FIELD_TIME ),
 
 	DEFINE_FUNCTION( BugbaitStickyTouch ),
 
@@ -94,6 +107,7 @@ CWeaponBugBait::CWeaponBugBait( void )
 	m_bDrawBackFinished	= false;
 	m_bRedraw			= false;
 	m_hSporeTrail		= NULL;
+	m_flNextAmmoTime	= gpGlobals->curtime + BUGBAIT_RECHARGE_RATE;
 }
 
 //-----------------------------------------------------------------------------
@@ -272,10 +286,10 @@ void CWeaponBugBait::ThrowGrenade( CBasePlayer *pPlayer )
 	vThrowPos = pPlayer->EyePosition();
 
 	vThrowPos += vForward * 18.0f;
-	vThrowPos += vRight * 12.0f;
+	vThrowPos += vRight * (r_mirrored.GetBool() ? -12.0f : 12.0f);
 
 	pPlayer->GetVelocity( &vThrowVel, NULL );
-	vThrowVel += vForward * 1000;
+	vThrowVel += vForward * 1500;
 
 	CGrenadeBugBait *pGrenade = BugBaitGrenade_Create( vThrowPos, vec3_angle, vThrowVel, QAngle(600,random->RandomInt(-1200,1200),0), pPlayer );
 
@@ -324,7 +338,7 @@ void CWeaponBugBait::Operator_HandleAnimEvent( animevent_t *pEvent, CBaseCombatC
 //-----------------------------------------------------------------------------
 bool CWeaponBugBait::Reload( void )
 {
-	if ( ( m_bRedraw ) && ( m_flNextPrimaryAttack <= gpGlobals->curtime ) )
+	if ( m_flNextPrimaryAttack <= gpGlobals->curtime )
 	{
 		//Redraw the weapon
 		SendWeaponAnim( ACT_VM_DRAW );
@@ -333,6 +347,7 @@ bool CWeaponBugBait::Reload( void )
 		m_flNextPrimaryAttack = gpGlobals->curtime + SequenceDuration();
 
 		//Mark this as done
+		SetWeaponVisible(true);
 		m_bRedraw = false;
 	}
 
@@ -349,6 +364,8 @@ void CWeaponBugBait::ItemPostFrame( void )
 	if ( pOwner == NULL )
 		return;
 
+	CheckRegenerateAmmo(pOwner);
+
 	// See if we're cocked and ready to throw
 	if ( m_bDrawBackFinished )
 	{
@@ -356,7 +373,9 @@ void CWeaponBugBait::ItemPostFrame( void )
 		{
 			SendWeaponAnim( ACT_VM_THROW );
 			m_flNextPrimaryAttack  = gpGlobals->curtime + SequenceDuration();
+
 			m_bDrawBackFinished = false;
+			DrainAmmo(pOwner);
 		}
 	}
 	else
@@ -372,17 +391,57 @@ void CWeaponBugBait::ItemPostFrame( void )
 		}
 	}
 
-	if ( m_bRedraw )
+	if ( m_bRedraw && GetActivity() != ACT_VM_THROW )
 	{
-		if ( IsViewModelSequenceFinished() )
-		{
+		SetWeaponVisible(false);
+
+		if( HasAnyAmmo() )
 			Reload();
-		}
 	}
 
 	WeaponIdle();
 }
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CWeaponBugBait::ItemHolsterFrame( void )
+{
+	BaseClass::ItemHolsterFrame();
 
+	CBasePlayer *pOwner = ToBasePlayer( GetOwner() );
+	if ( pOwner )
+		CheckRegenerateAmmo(pOwner);
+}
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CWeaponBugBait::ItemPreFrame( void )
+{
+	BaseClass::ItemPreFrame();
+
+	CBasePlayer *pOwner = ToBasePlayer( GetOwner() );
+	if ( pOwner )
+		CheckRegenerateAmmo(pOwner);
+}
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CWeaponBugBait::DrainAmmo( CBasePlayer *pOwner )
+{
+	pOwner->RemoveAmmo( 1, m_iPrimaryAmmoType );
+	//m_flNextAmmoTime	= gpGlobals->curtime + BUGBAIT_RECHARGE_RATE;
+}
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CWeaponBugBait::CheckRegenerateAmmo( CBasePlayer *pOwner )
+{
+	if ( m_flNextAmmoTime < gpGlobals->curtime && pOwner->GetAmmoCount(m_iPrimaryAmmoType) != sk_max_bugbait.GetInt() )
+	{
+		pOwner->GiveAmmo(1, m_iPrimaryAmmoType, true );
+		m_flNextAmmoTime = gpGlobals->curtime + BUGBAIT_RECHARGE_RATE;
+	}
+}
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------

@@ -12697,22 +12697,22 @@ float CAI_BaseNPC::GetCoverPositionScore( const Vector &vecThreat, const Vector 
 	float flNodeScore = 0;
 
 	// Setup our distance metrics.
-	float flNodeDist = ( vecThreat - vecCover ).Length();
+//	float flNodeToThreat = ( vecThreat - vecCover ).Length();
 
-	float flNearDist = ( GetAbsOrigin() - vecCover ).Length();
+	float flNodeToThis = ( GetAbsOrigin() - vecCover ).Length();
 	if ( flPathDist != NULL )
 	{
-		flNearDist += flPathDist;
-		flNearDist *= 0.5;
+		flNodeToThis += flPathDist;
+		flNodeToThis *= 0.5;
 	}
 
-	float flEnemyDist = ( GetAbsOrigin() - vecThreat ).Length();
+	float flEnemyToThis = ( GetAbsOrigin() - vecThreat ).Length();
 	
 	// Score it based on how close it is to the desired distance from the threat.
-	flNodeScore += ( flIdealDist - fabsf(flEnemyDist - flIdealDist) ) / flIdealDist;
+	flNodeScore += ( flIdealDist - fabsf(flEnemyToThis - flIdealDist) ) / flIdealDist;
 
-	// Bias out nodes that are farther away from us than the enemy.
-	flNodeScore += 1.0 - ( flNearDist / flNodeDist );
+	// Bias nodes that are closer to us than the enemy.
+//	flNodeScore += (1.0 - ( flNodeToThis / flNodeToThreat ));
 	
 	// Give bonus score if this node can double as a firing posistion.
 	if ( ShouldForceCrouchCover() )
@@ -12731,7 +12731,7 @@ float CAI_BaseNPC::GetCoverPositionScore( const Vector &vecThreat, const Vector 
 		// Value these nodes higher the more we're more out of position and less the
 		// more we're at a comfortable range.
 		if( tr.fraction != 1.0 )
-			flNodeScore += ( flIdealDist - fabsf(flEnemyDist - flIdealDist) ) / flIdealDist;
+			flNodeScore += ( flIdealDist - fabsf(flEnemyToThis - flIdealDist) ) / flIdealDist;
 	}
 	
 	return flNodeScore;
@@ -12756,10 +12756,10 @@ float CAI_BaseNPC::GetLOSPositionScore( const Vector &vecThreat, const Vector &v
 	flNodeScore += ( flIdealDist - fabsf(flNodeDist - flIdealDist) ) / flIdealDist;
 
 	// Bias out nodes that are farther away from us than the enemy.
-	flNodeScore += 1.0 - ( flNearDist / flNodeDist );
+//	flNodeScore += 1.0 - ( flNearDist / flNodeDist );
 
 	// Give greater score to nodes that have highground over our enemy.
-	flNodeScore += (vecPos.z - vecThreat.z) * 0.005;
+//	flNodeScore += (vecPos.z - vecThreat.z) * 0.005;
 		
 	SetForceCrouchCover( true );
 		

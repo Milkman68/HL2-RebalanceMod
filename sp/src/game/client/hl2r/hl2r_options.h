@@ -47,7 +47,6 @@ CheckButton_t challenges_CheckButtons[] =
 {
 	{ "ExplosiveCrabsButton", "hl2r_explosive_crabs", false, 7 }, // The 0th index contains this array's size.
 	{ "ShorterSprintButton", "hl2r_shorter_sprint", false },
-	{ "WorseArmorButton", "player_old_armor", false },
 	{ "EnemyPromotionButton", "hl2r_enemy_promotion", false },
 	{ "RandomWeaponsButton", "hl2r_random_weapons", false },
 	{ "ReducedAssistsButton", "hl2r_reduced_assists", false },

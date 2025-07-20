@@ -245,7 +245,7 @@ BEGIN_DATADESC( CNPC_MetroPolice )
 	DEFINE_INPUTFUNC( FIELD_VOID, "EnableManhackToss", InputEnableManhackToss ),
 	DEFINE_INPUTFUNC( FIELD_STRING, "SetPoliceGoal", InputSetPoliceGoal ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "ActivateBaton", InputActivateBaton ),
-	//DEFINE_INPUTFUNC( FIELD_VOID,	"HitByBugbait",		InputHitByBugbait ),
+	DEFINE_INPUTFUNC( FIELD_VOID,	"HitByBugbait",		InputHitByBugbait ),
 	
 	DEFINE_USEFUNC( PrecriminalUse ),
 
@@ -4213,10 +4213,10 @@ void CNPC_MetroPolice::AdministerJustice( void )
 //-----------------------------------------------------------------------------
 // We were hit by bugbait
 //-----------------------------------------------------------------------------
-/*void CNPC_MetroPolice::InputHitByBugbait( inputdata_t &inputdata )
+void CNPC_MetroPolice::InputHitByBugbait( inputdata_t &inputdata )
 {
 	SetCondition( COND_METROPOLICE_HIT_BY_BUGBAIT );
-}*/
+}
 //-----------------------------------------------------------------------------
 // Schedule selection 
 //-----------------------------------------------------------------------------
@@ -4238,6 +4238,19 @@ int CNPC_MetroPolice::SelectSchedule( void )
 		{
 			return SCHED_METROPOLICE_BURNING_RUN;
 		}
+	}
+
+	// If we're hit by bugbait, thrash around
+	if (HasCondition(COND_METROPOLICE_HIT_BY_BUGBAIT))
+	{
+		// Don't do this if we're mounting a func_tank
+		if (m_FuncTankBehavior.IsMounted() == true)
+		{
+			m_FuncTankBehavior.Dismount();
+		}
+
+		ClearCondition(COND_METROPOLICE_HIT_BY_BUGBAIT);
+		return SCHED_BUGBAIT_DISTRACTION;
 	}
 
 	// React to being struck by a physics object
@@ -5339,6 +5352,15 @@ bool CNPC_MetroPolice::CanDeployManhack( void )
 void CNPC_MetroPolice::BuildScheduleTestBits( void )
 {
 	BaseClass::BuildScheduleTestBits();
+
+	if ( !IsCurSchedule( SCHED_BUGBAIT_DISTRACTION ) )
+	{
+		SetCustomInterruptCondition( COND_METROPOLICE_HIT_BY_BUGBAIT );
+	}
+	else
+	{
+		ClearCondition( COND_METROPOLICE_HIT_BY_BUGBAIT );
+	}
 	
 	SetCustomInterruptCondition( COND_METROPOLICE_SWITCHED_WEAPON );
 	
@@ -5365,8 +5387,6 @@ void CNPC_MetroPolice::BuildScheduleTestBits( void )
 	{
 		SetCustomInterruptCondition( COND_METROPOLICE_PLAYER_TOO_CLOSE );
 	}
-
-	//SetCustomInterruptCondition( COND_METROPOLICE_HIT_BY_BUGBAIT );
 
 	if ( !IsCurSchedule( SCHED_METROPOLICE_BURNING_RUN ) && !IsCurSchedule( SCHED_METROPOLICE_BURNING_STAND ) )
 	{
@@ -6896,49 +6916,20 @@ DEFINE_SCHEDULE
 	"		TASK_PLAY_SEQUENCE		ACTIVITY:ACT_FLINCH_PHYSICS"
 )
 //=========================================================
-// 	SCHED_ENTER_OVERWATCH
-//
-// Parks a cop in place looking at the player's
-// last known position, ready to attack if the player pops out
+// 	SCHED_BUGBAIT_DISTRACTION
 //=========================================================
- DEFINE_SCHEDULE	
+ DEFINE_SCHEDULE
  (
- SCHED_ENTER_OVERWATCH,
+ SCHED_BUGBAIT_DISTRACTION,
 
  "	Tasks"
- "		TASK_STOP_MOVING			0"
- "		TASK_SET_ACTIVITY			ACTIVITY:ACT_IDLE"
- "		TASK_FACE_ENEMY				0"
- "		TASK_SET_SCHEDULE			SCHEDULE:SCHED_COMBINE_OVERWATCH"
+ "		TASK_STOP_MOVING		0"
+ "		TASK_RESET_ACTIVITY		0"
+ "		TASK_SET_ACTIVITY		ACTIVITY:ACT_IDLE_ON_FIRE"
+ "		TASK_WAIT				1.5"
  ""
  "	Interrupts"
- "		COND_HEAR_DANGER"
- "		COND_NEW_ENEMY"
- )
-
-//=========================================================
-// 	SCHED_OVERWATCH
-//
-// Parks a cop in place looking at the player's
-// last known position, ready to attack if the player pops out
-//=========================================================
- DEFINE_SCHEDULE	
- (
- SCHED_OVERWATCH,
-
- "	Tasks"
- "		TASK_WAIT_FACE_ENEMY		10"
- ""
- "	Interrupts"
- "		COND_CAN_RANGE_ATTACK1"
- "		COND_ENEMY_DEAD"
- "		COND_LIGHT_DAMAGE"
  "		COND_HEAVY_DAMAGE"
- "		COND_NO_PRIMARY_AMMO"
- "		COND_HEAR_DANGER"
- "		COND_HEAR_MOVE_AWAY"
- "		COND_NEW_ENEMY"
- "		COND_TOO_FAR_TO_ATTACK"
  )
 
 AI_END_CUSTOM_NPC()

@@ -1990,12 +1990,6 @@ int CNPC_Combine::SelectSchedule( void )
 			}
 
 			ClearCondition( COND_COMBINE_HIT_BY_BUGBAIT );
-			
-			if ( g_pGameRules->IsSkillLevel(SKILL_HARD) )
-			{
-				return SCHED_FLINCH_PHYSICS;
-			}
-			
 			return SCHED_COMBINE_BUGBAIT_DISTRACTION;
 		}
 
@@ -3923,62 +3917,6 @@ bool CNPC_Combine::IsValidEnemy( CBaseEntity *pEnemy )
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-float CNPC_Combine::GetLOSPositionScore( const Vector &vecThreat, const Vector &vecPos, float flPathDist, float flIdealDist, bool bFirstNode )
-{
-	float flNodeScore = 0;
-
-	// Setup our distance metrics.
-	float flNodeDist = ( vecThreat - vecPos ).Length();
-	float flNearDist = ( GetAbsOrigin() - vecPos ).Length();
-	if ( flPathDist != NULL )
-	{
-		flNearDist += flPathDist;
-		flNearDist *= 0.5;
-	}
-	
-	// Score it based on how close it is to the desired distance from the threat. (Elites don't care about this.)
-	if ( !IsElite() )
-		flNodeScore += ( flIdealDist - fabsf(flNodeDist - flIdealDist) ) / flIdealDist;
-
-	// Bias out nodes that are farther away from us than the enemy.
-	flNodeScore += 1.0 - ( flNearDist / flNodeDist );
-
-	// Give greater score to nodes that have highground over our enemy.
-	flNodeScore += (vecPos.z - vecThreat.z) * 0.005;
-		
-	SetForceCrouchCover( true );
-		
-	// Temporarily get our crouch cover activity offset.
-	Activity nCoverActivity = GetCoverActivity( NULL );
-	Vector vEyeOffset = EyeOffset(nCoverActivity);
-	
-	SetForceCrouchCover( false );
-	
-	// By default, we ignore the viewer (me) when determining cover positions
-	CTraceFilterLOS filter( NULL, COLLISION_GROUP_NONE, this );
-	
-	trace_t tr;
-	AI_TraceLOS( vecPos + vEyeOffset, vecThreat, this, &tr, &filter );
-		
-	if ( tr.fraction != 1.0 )
-	{
-		// If this node can double as a cover posistion and it's the one we're on, give a huge score bonus.
-		if ( bFirstNode )
-		{
-			flNodeScore += 1.5;
-		}
-		else
-		{
-			// Otherwise just give a smaller bonus.
-			flNodeScore += 0.5;
-		}
-	}
-	
-	return flNodeScore;
-}
-//-----------------------------------------------------------------------------
-// Purpose:
-//-----------------------------------------------------------------------------
 bool CNPC_Combine::IsJumpLegal(const Vector &startPos, const Vector &apex, const Vector &endPos) const
 {
 	if ( m_NPCState == NPC_STATE_SCRIPT )
@@ -4724,10 +4662,11 @@ DEFINE_SCHEDULE
  "	Tasks"
  "		TASK_STOP_MOVING		0"
  "		TASK_RESET_ACTIVITY		0"
- "		TASK_PLAY_SEQUENCE		ACTIVITY:ACT_COMBINE_BUGBAIT"
+ "		TASK_SET_ACTIVITY		ACTIVITY:ACT_COMBINE_BUGBAIT"
+ "		TASK_WAIT				1.5"
  ""
- "	Interrupts"
- ""
+  "	Interrupts"
+  "		COND_HEAVY_DAMAGE"
  )
 
  //=========================================================

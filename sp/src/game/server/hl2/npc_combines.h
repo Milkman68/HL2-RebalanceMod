@@ -42,7 +42,7 @@ public:
 	bool		IsLightDamage( const CTakeDamageInfo &info );
 	bool		IsHeavyDamage( const CTakeDamageInfo &info );
 
-	virtual	bool		AllowedToIgnite( void ) { return true; }
+	virtual	bool		AllowedToIgnite( void ) { return GetArmorCharge() <= 0; }
 
 private:
 	bool		ShouldHitPlayer( const Vector &targetDir, float targetDist );

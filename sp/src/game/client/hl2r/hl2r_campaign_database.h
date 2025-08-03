@@ -36,6 +36,8 @@ enum EMountReturnCode
 	FAILED_TO_EXTRACT_VPK,
 	FAILED_TO_MOUNT_FILES,
 	FAILED_TO_TRANSFER_GAMEINFO,
+	FAILED_TO_STORE_SAVE_FILES,
+	FAILED_TO_RETRIEVE_SAVE_FILES,
 };
 
 enum ESortType
@@ -49,6 +51,13 @@ enum ESortDirection
 {
 	ASCENDING_ORDER = 0,
 	DECENDING_ORDER
+};
+
+enum ESaveFileOverrideType
+{
+	OVERRIDE_NONE = 0,
+	OVERRIDE_CURRENT,
+	OVERRIDE_STORED,
 };
 
 struct CampaignDateTable_t
@@ -124,11 +133,14 @@ public:
 	ESortDirection	GetSortDir() { return m_SortMethod.eDir; }
 
 	// Campaign accessor functions:
-	EMountReturnCode MountCampaign(const char *pCampaignID);
-	void			DoCampaignScan( void );
+	EMountReturnCode	MountCampaign(const char *pCampaignID);
+	void				DoCampaignScan( void );
 
-	bool			TransferGameinfoFiles( int currentgameinfo, int newgameinfo );
-	void			FlushMountedCampaignGraphs( void );
+	void					SetSaveFileOverrideType( ESaveFileOverrideType type ) { m_SaveOverrideType = type; }
+	ESaveFileOverrideType	GetSaveFileOverrideType( void ) { return m_SaveOverrideType; }
+
+	bool	TransferGameinfoFiles( int currentgameinfo, int newgameinfo );
+	void	FlushMountedCampaignGraphs( void );
 
 private:
 
@@ -170,15 +182,17 @@ private:
 	// Save Files:
 	bool		StoreSaveFiles( const char *pCampaignID );
 	bool		RetrieveSaveFiles( const char *pCampaignID );
+	bool		HandleSaveFileConflict( const char *pFile1, const char *pFile2 );
 
 	void		SetCampaignAsMounted( const char *pCampaignID );
-	void		FixupMountedCampaign( const char *pCampaignID );
+	void		FixupMountedCampaignFiles( const char *pCampaignID );
 
 private:
 	KeyValues *pCampaignScript;
 	CUtlVector<CampaignData_t *>	m_Campaigns;
 
 	CampaignSort_t m_SortMethod;
+	ESaveFileOverrideType m_SaveOverrideType;
 };
 
 CCampaignDatabase *GetCampaignDatabase();

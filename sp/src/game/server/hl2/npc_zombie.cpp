@@ -151,6 +151,9 @@ public:
 	void FootscuffSound( bool fRightFoot );
 
 	const char *GetMoanSound( int nSound );
+
+	// Input handlers.
+	void InputHitByBugbait( inputdata_t &inputdata );
 	
 public:
 	DEFINE_CUSTOM_AI;
@@ -227,6 +230,8 @@ BEGIN_DATADESC( CZombie )
 	DEFINE_EMBEDDED( m_DurationDoorBash ),
 	DEFINE_EMBEDDED( m_NextTimeToStartDoorBash ),
 	DEFINE_FIELD( m_vPositionCharged, FIELD_POSITION_VECTOR ),
+
+	DEFINE_INPUTFUNC( FIELD_VOID,	"HitByBugbait",		InputHitByBugbait ),
 
 END_DATADESC()
 
@@ -938,6 +943,18 @@ HeadcrabRelease_t CZombie::ShouldReleaseHeadcrab( const CTakeDamageInfo &info, f
 }
 
 	
+//=============================================================================
+void CZombie::InputHitByBugbait( inputdata_t &inputdata )
+{ 
+	SetCondition(COND_GOT_PUNTED);
+/*	BaseClass::MoanSound( envZombieMoanIgnited, ARRAYSIZE( envZombieMoanIgnited ) );
+
+	if ( m_pMoanSound )
+	{
+		ENVELOPE_CONTROLLER.SoundChangePitch( m_pMoanSound, 120, 1.0 );
+		ENVELOPE_CONTROLLER.SoundChangeVolume( m_pMoanSound, 1, 1.0 );
+	}*/
+}
 //=============================================================================
 
 AI_BEGIN_CUSTOM_NPC( npc_zombie, CZombie )

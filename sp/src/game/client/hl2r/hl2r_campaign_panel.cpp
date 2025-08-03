@@ -459,6 +459,8 @@ void CCampaignListPanel::OnCommand(const char* pcCommand)
 	}
 	if (!stricmp(pcCommand, "mountconfirmed"))
 	{
+		engine->ClientCmd("disconnect");
+
 		const char* szCampaignID = m_ListPanel->GetSelectedItemData()->GetString("id");
 		HandleCampaignMount(szCampaignID);
 	}
@@ -524,11 +526,13 @@ switch (GetCampaignDatabase()->MountCampaign(szCampaignID))
 	{
 	case SUCESSFULLY_MOUNTED:
 		{
-			MessageBox *box = new MessageBox("#hl2r_mountsucess_title", "#hl2r_mountsucess_text", this);
+	/*		MessageBox *box = new MessageBox("#hl2r_mountsucess_title", "#hl2r_mountsucess_text", this);
 			box->SetOKButtonText("#hl2r_quit_title");
 			box->SetCommand("quitcommand");
 			box->AddActionSignalTarget(this);
-			box->DoModal();
+			box->DoModal();*/
+			
+			engine->ClientCmd("_restart");
 			break;
 		}
 
@@ -549,6 +553,20 @@ switch (GetCampaignDatabase()->MountCampaign(szCampaignID))
 	case FAILED_TO_TRANSFER_GAMEINFO:
 		{
 			MessageBox *box = new MessageBox("#hl2r_error_title", "#hl2r_mounterror_3", this);
+			box->DoModal();
+			break;
+		}
+
+	case FAILED_TO_RETRIEVE_SAVE_FILES:
+		{
+			MessageBox *box = new QueryBox("#hl2r_error_title", "#hl2r_mounterror_4_a", this);
+			box->DoModal();
+			break;
+		}
+
+	case FAILED_TO_STORE_SAVE_FILES:
+		{
+			MessageBox *box = new QueryBox("#hl2r_error_title", "#hl2r_mounterror_4_b", this);
 			box->DoModal();
 			break;
 		}

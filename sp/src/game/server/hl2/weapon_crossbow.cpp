@@ -314,14 +314,6 @@ void CCrossbowBolt::BoltTouch( CBaseEntity *pOther )
 
 		if( GetOwnerEntity() && GetOwnerEntity()->IsPlayer() && pOther->IsNPC() )
 		{
-			// Multiply damage by our charge percentage.
-			CTakeDamageInfo	dmgInfo( this, GetOwnerEntity(), m_flDamage, DMG_BULLET | DMG_NEVERGIB );
-			
-			dmgInfo.AdjustPlayerDamageInflictedForSkillLevel();
-			CalculateMeleeDamageForce( &dmgInfo, vecNormalizedVel, tr.endpos, 0.7f );
-			dmgInfo.SetDamagePosition( tr.endpos );
-			pOther->DispatchTraceAttack( dmgInfo, vecNormalizedVel, &tr );
-			
 			// Only ignite at full charge.
 			if( m_flDamage == sk_plr_dmg_crossbow_charged.GetFloat() )
 			{
@@ -329,8 +321,20 @@ void CCrossbowBolt::BoltTouch( CBaseEntity *pOther )
 				pAnim = dynamic_cast<CBaseAnimating*>(pOther);
 					
 				if ( pAnim )
-					pAnim->Ignite( 30.0f );
+				{
+					CNPC_Combine *pCombine = dynamic_cast<CNPC_Combine*>(pOther);
+					if ( !pCombine || pCombine->GetArmorCharge() <= 0 )
+						pAnim->Ignite( 30.0f );
+				}
 			}
+
+			// Multiply damage by our charge percentage.
+			CTakeDamageInfo	dmgInfo( this, GetOwnerEntity(), m_flDamage, DMG_BULLET | DMG_NEVERGIB );
+			
+			dmgInfo.AdjustPlayerDamageInflictedForSkillLevel();
+			CalculateMeleeDamageForce( &dmgInfo, vecNormalizedVel, tr.endpos, 0.7f );
+			dmgInfo.SetDamagePosition( tr.endpos );
+			pOther->DispatchTraceAttack( dmgInfo, vecNormalizedVel, &tr );
 
 			CBasePlayer *pPlayer = ToBasePlayer( GetOwnerEntity() );
 			if ( pPlayer )

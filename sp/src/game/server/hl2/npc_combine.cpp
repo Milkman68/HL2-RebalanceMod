@@ -31,6 +31,11 @@
 #include "npc_headcrab.h"
 #include "ai_routedist.h"
 #include "weapon_rpg.h"
+#include "particle_parse.h"
+#include "te_particlesystem.h"
+#include "IEffects.h"
+#include "prop_combine_ball.h"
+#include "smoke_trail.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -169,6 +174,8 @@ DEFINE_KEYFIELD( m_iNumGrenades, FIELD_INTEGER, "NumGrenades" ),
 DEFINE_EMBEDDED( m_Sentences ),
 
 DEFINE_FIELD( m_flArmor, FIELD_FLOAT ),
+DEFINE_FIELD( m_bUsesArmor, FIELD_BOOLEAN ),
+DEFINE_FIELD( m_flNextArmorSparkTime, FIELD_TIME ),
 
 //							m_AssaultBehavior (auto saved by AI)
 //							m_StandoffBehavior (auto saved by AI)
@@ -206,6 +213,7 @@ END_DATADESC()
 CNPC_Combine::CNPC_Combine()
 {
 	m_vecTossVelocity = vec3_origin;
+	m_bUsesArmor = false;
 }
 
 
@@ -306,6 +314,15 @@ void CNPC_Combine::Precache()
 	PrecacheScriptSound( "NPC_Combine.WeaponBash" );
 	PrecacheScriptSound( "Weapon_CombineGuard.Special1" );
 
+	PrecacheScriptSound( "NPC_Combine.ShieldImpact" );
+	PrecacheScriptSound( "NPC_Combine.ShieldBreak" );
+	PrecacheScriptSound( "NPC_Combine.ShieldCharge" );
+
+	PrecacheParticleSystem( "hunter_shield_impact" );
+	PrecacheParticleSystem( "warp_shield_impact" );
+
+	PrecacheScriptSound( "DoSpark" );
+
 	BaseClass::Precache();
 }
 
@@ -399,8 +416,6 @@ void CNPC_Combine::Spawn( void )
 		pRPG->m_fMaxRange1 = 800;
 		pRPG->m_iClip1 = pRPG->GetMaxClip1();
 	}
-	
-//	SetArmorCharge( 100 );
 }
 
 //-----------------------------------------------------------------------------
@@ -576,6 +591,17 @@ void CNPC_Combine::PrescheduleThink()
 	{
 		m_nRecentDamage = 0;
 		m_flRecentDamageTime = 0;
+	}
+
+	if ( UsesArmor() && ArmorBroken() )
+	{
+		if (m_flNextArmorSparkTime < gpGlobals->curtime)
+		{
+			g_pEffects->Sparks(EyePosition() + Vector(0, 0, -20), 1, 2);
+			EmitSound("DoSpark");
+
+			m_flNextArmorSparkTime = gpGlobals->curtime + random->RandomFloat(1.0f, 3.0f);
+		}
 	}
 }
 
@@ -1580,15 +1606,14 @@ Activity CNPC_Combine::NPC_TranslateActivity( Activity eNewActivity )
 	CWeaponRPG *pRPG = dynamic_cast<CWeaponRPG*>(GetActiveWeapon());
 	if ( pRPG )
 	{
-	//	SetPlaybackRate( 1.0 );
+		SetPlaybackRate( 1.0 );
 		
 		switch ( eNewActivity )
 		{
-			
-	//	case ACT_RELOAD_ANNABELLE:
-	//	case ACT_RELOAD_ANNABELLE_LOW:
-	//		SetPlaybackRate( 1.25 );
-	//		break;
+		case ACT_RELOAD_ANNABELLE:
+		case ACT_RELOAD_ANNABELLE_LOW:
+			SetPlaybackRate( 1.25 );
+			break;
 			
 		// HACK: We don't have rpg specific movment anims. 
 		// Use ar2 ones instead!
@@ -1990,6 +2015,10 @@ int CNPC_Combine::SelectSchedule( void )
 			}
 
 			ClearCondition( COND_COMBINE_HIT_BY_BUGBAIT );
+
+			if ( IsElite() )
+				return SCHED_FLINCH_PHYSICS;
+
 			return SCHED_COMBINE_BUGBAIT_DISTRACTION;
 		}
 
@@ -3807,42 +3836,118 @@ bool CNPC_Combine::CanOccupyAttackSlot( void )
 void CNPC_Combine::TraceAttack( const CTakeDamageInfo &inputInfo, const Vector &vecDir, trace_t *ptr, CDmgAccumulator *pAccumulator )
 {
 	CTakeDamageInfo info = inputInfo;
-	
-	if ( info.GetAttacker() == GetEnemy() )
+
+	SetBloodColor( BLOOD_COLOR_RED );
+	if ( UsesArmor() && GetArmorCharge() > 0 )
 	{
+		SetBloodColor( DONT_BLEED );
+
+		TakeDamageArmor( inputInfo, GetHitgroupDamageMultiplier(ptr->hitgroup, info) );
+		g_pEffects->Ricochet(info.GetDamagePosition(), -vecDir);
+		return;
+	}
+
+	CBaseCombatCharacter *npcEnemy = info.GetAttacker()->MyCombatCharacterPointer();
+	if ( npcEnemy )
+	{
+		if ( !GetActiveWeapon() )
+			return BaseClass::TraceAttack( info, vecDir, ptr, pAccumulator ); 
+
+		float flEnemyDist = ( npcEnemy->GetAbsOrigin() - GetAbsOrigin() ).Length();
+		float flWeaponMaxRange = GetActiveWeapon()->m_fMaxRange1;
+
+		if ( flEnemyDist > flWeaponMaxRange && info.GetDamage() < RECENT_DAMAGE_THRESHOLD )
+			return BaseClass::TraceAttack( info, vecDir, ptr, pAccumulator ); 
+
 		// Keep track of recent damage by my attacker. If it seems like we're
 		// being killed, consider running off and hiding.
 		m_nRecentDamage += info.GetDamage();
 		m_flRecentDamageTime = gpGlobals->curtime + RECENT_DAMAGE_INTERVAL;
 	}
-	
-	//Take extra damage from vehicles.
-	CBaseCombatCharacter *npcEnemy = info.GetAttacker()->MyCombatCharacterPointer();
-	if ( !npcEnemy )
-	{
-		if ( info.GetAttacker()->GetServerVehicle() )
-		{
-			float flDamage = info.GetDamage() * 1.5;
-			info.SetDamage( flDamage );
-		}
-	}
-	
-	SetBloodColor( BLOOD_COLOR_RED );
-	
-	if ( HasArmor() )
-	{
-		SetBloodColor( BLOOD_COLOR_MECH );
-		
-		float fPrevArmor = GetArmorCharge();
-		
-		float flDamageMult = GetHitgroupDamageMultiplier(ptr->hitgroup, info);
-		float flDamage = info.GetDamage() * flDamageMult;
-		
-		SetArmorCharge( MAX( 0.0f, GetArmorCharge() - flDamage ) );
-		info.SetDamage( MAX( 0.0f, flDamage - fPrevArmor ) );
-	}
 
 	return BaseClass::TraceAttack( info, vecDir, ptr, pAccumulator ); 
+}
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+int CNPC_Combine::OnTakeDamage_Alive( const CTakeDamageInfo &inputInfo )
+{
+	CTakeDamageInfo info = inputInfo;
+
+	SetBloodColor( BLOOD_COLOR_RED );
+	if ( UsesArmor() && GetArmorCharge() > 0 )
+	{
+		if ( inputInfo.GetDamageType() == DMG_CRUSH || UTIL_IsCombineBall( info.GetInflictor() ) )
+		{
+			SetBloodColor(DONT_BLEED);
+
+			TakeDamageArmor(inputInfo, 1.0f);
+			return 0;
+		}
+	}
+
+	//Take extra damage from physics and explosions.
+	if ( inputInfo.GetDamageType() == DMG_CRUSH || inputInfo.GetDamageType() == DMG_BLAST )
+	{
+		float flDamage = info.GetDamage() * 1.5;
+		info.SetDamage( flDamage );
+	}
+
+	return BaseClass::OnTakeDamage_Alive( info ); 
+}
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CNPC_Combine::TakeDamageArmor( const CTakeDamageInfo &inputInfo, float flMult )
+{
+	CTakeDamageInfo info = inputInfo;
+		
+	float fPrevArmor = GetArmorCharge();
+	float flDamage = info.GetDamage() * flMult;
+
+	SetArmorCharge(MAX(0.0f, GetArmorCharge() - flDamage));
+	info.SetDamage(0);
+
+	const Vector origin = info.GetDamagePosition();
+
+	if (GetArmorCharge() <= 0 && fPrevArmor > 0)
+	{
+		g_pEffects->Sparks(origin, 5, 2 );
+		EmitSound("NPC_Combine.ShieldBreak");
+
+		SetCondition(COND_GOT_PUNTED);
+		m_flNextArmorSparkTime = gpGlobals->curtime + random->RandomFloat(1.0f, 3.0f );
+
+		SmokeTrail *pSmoke = SmokeTrail::CreateSmokeTrail();
+		if ( pSmoke )
+		{
+			pSmoke->m_SpawnRate			= 32;
+			pSmoke->m_ParticleLifetime	= 1.0;
+			pSmoke->m_StartSize			= 24;
+			pSmoke->m_EndSize				= 32;
+			pSmoke->m_SpawnRadius			= 20;
+			pSmoke->m_MinSpeed			= 16;
+			pSmoke->m_MaxSpeed			= 32;
+			pSmoke->m_Opacity 			= 0.2;
+		
+			pSmoke->m_StartColor.Init( 0.25f, 0.25f, 0.25f );
+			pSmoke->m_EndColor.Init( 0, 0, 0 );
+			pSmoke->SetLifetime( 500.0f );
+			pSmoke->FollowEntity( this, "beam_damage" );
+		}
+	}
+	else
+	{
+		for (int i = 0; i < flDamage; i += 20)
+		{
+			DispatchParticleEffect("hunter_shield_impact", origin, GetAbsAngles());
+			DispatchParticleEffect("warp_shield_impact", origin, GetAbsAngles());
+		}
+
+		EmitSound("NPC_Combine.ShieldImpact");
+	}
+
+//	return BaseClass::TraceAttack( info, vecDir, ptr, pAccumulator );
 }
 //-----------------------------------------------------------------------------
 // Purpose: Return the actual position the NPC wants to fire at when it's trying
@@ -3946,6 +4051,46 @@ bool CNPC_Combine::IsJumpLegal(const Vector &startPos, const Vector &apex, const
 	}
 
 	return true;
+}
+//-----------------------------------------------------------------------------
+// Purpose:
+//-----------------------------------------------------------------------------
+bool CNPC_Combine::MovementCost( int moveType, const Vector &vecStart, const Vector &vecEnd, float *pCost )
+{
+	bool bResult = BaseClass::MovementCost( moveType, vecStart, vecEnd, pCost );
+	if ( moveType == bits_CAP_MOVE_GROUND && GetEnemy() )
+	{
+		if ( GetActiveWeapon() && ( 
+			IsCurSchedule(SCHED_COMBINE_TAKE_COVER1) || 
+			IsCurSchedule(SCHED_COMBINE_ESTABLISH_LINE_OF_FIRE) )
+			)
+		{
+			trace_t	tr;
+			CTraceFilterLOS filter( NULL, COLLISION_GROUP_NONE, this );
+			AI_TraceLOS( vecEnd, GetEnemy()->EyePosition(), this, &tr, &filter );
+
+			if ( tr.fraction == 1.0 )
+			{
+				// The ideal range we should strive to be at.
+				float flDesiredDist = (GetActiveWeapon()->m_fMinRange1 + GetActiveWeapon()->m_fMaxRange1) / 2;
+			 
+				// Dist from path link to enemy.
+				float flEnemyDist = ( vecEnd - GetEnemy()->GetAbsOrigin() ).Length();
+
+				if ( flEnemyDist < flDesiredDist / 4 )
+				{
+					*pCost *= 20.0;
+					bResult = true;
+				}
+			}
+			else
+			{
+				*pCost *= 0.1;
+				bResult = true;
+			}
+		}
+	}
+	return bResult;
 }
 //-----------------------------------------------------------------------------
 //

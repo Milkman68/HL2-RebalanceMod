@@ -371,7 +371,8 @@ void CCampaignEditPanel::OnCommand(const char* pcCommand)
 			ResetPage();
 			m_Parent->RefreshList();
 
-			engine->ClientCmd("quit");
+		//	engine->ClientCmd("quit");
+			engine->ClientCmd("_restart");
 		}
 	}
 	if ( !stricmp(pcCommand, "setstartmap") )

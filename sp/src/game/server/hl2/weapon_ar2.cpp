@@ -115,12 +115,8 @@ IMPLEMENT_ACTTABLE(CWeaponAR2);
 
 CWeaponAR2::CWeaponAR2( )
 {
-	
-	m_fMinRange1	= 65;
-	m_fMaxRange1	= 2048;
-
-	m_fMinRange2	= 256;
-	m_fMaxRange2	= 1024;
+	m_fMinRange1	= 0;
+	m_fMaxRange1	= 1500;
 
 	m_nShotsFired	= 0;
 	m_nVentPose		= -1;

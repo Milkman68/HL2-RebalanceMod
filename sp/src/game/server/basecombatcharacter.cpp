@@ -2142,7 +2142,9 @@ void CBaseCombatCharacter::Weapon_Equip( CBaseCombatWeapon *pWeapon )
 	}
 	
 	// Gotta do this *after* Equip because it may whack maxRange
-	if ( IsPlayer() == false )
+
+	// Moved this logic to ai_basenpc.cpp
+/*	if ( IsPlayer() == false )
 	{
 		// If SF_NPC_LONG_RANGE spawn flags is set let weapon work from any distance
 		if ( HasSpawnFlags(SF_NPC_LONG_RANGE) )
@@ -2150,7 +2152,7 @@ void CBaseCombatCharacter::Weapon_Equip( CBaseCombatWeapon *pWeapon )
 			m_hActiveWeapon->m_fMaxRange1 = 999999999;
 			m_hActiveWeapon->m_fMaxRange2 = 999999999;
 		}
-	}
+	}*/
 
 	WeaponProficiency_t proficiency;
 	proficiency = CalcWeaponProficiency( pWeapon );

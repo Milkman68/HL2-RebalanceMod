@@ -1012,6 +1012,8 @@ bool CCampaignDatabase::MountNewGameinfo( const char *pCampaignID )
 //-----------------------------------------------------------------------------
 bool CCampaignDatabase::StoreSaveFiles( const char *pCampaignID )
 {
+	bool bRet = true;
+
 	char szSaveFolderPath[MAX_PATH];
 	V_sprintf_safe( szSaveFolderPath, "%s\\save", engine->GetGameDirectory() );
 
@@ -1033,18 +1035,21 @@ bool CCampaignDatabase::StoreSaveFiles( const char *pCampaignID )
 		char szSaveStoragePath[MAX_PATH];
 		V_sprintf_safe( szSaveStoragePath, "%s\\%s\\%s", szSaveFolderPath, pCampaignID, dirName );
 
-		if (!g_pFullFileSystem->RenameFile(szFilePath, szSaveStoragePath))
-			return false;
+		if (g_pFullFileSystem->FileExists(szSaveStoragePath))
+			bRet = HandleSaveFileConflict(szSaveStoragePath, szFilePath);
+
+		g_pFullFileSystem->RenameFile(szFilePath, szSaveStoragePath);
 	}
 
 	g_pFullFileSystem->FindClose( fh );
-	return true;
+	return bRet;
 }
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
 bool CCampaignDatabase::RetrieveSaveFiles( const char *pCampaignID )
 {
+	bool bRet = true;
 	char szCampaignSavePath[MAX_PATH];
 	V_sprintf_safe( szCampaignSavePath, "%s\\save\\%s", engine->GetGameDirectory(), pCampaignID );
 
@@ -1063,12 +1068,34 @@ bool CCampaignDatabase::RetrieveSaveFiles( const char *pCampaignID )
 		char szSaveFolderPath[MAX_PATH];
 		V_sprintf_safe( szSaveFolderPath, "%s\\save\\%s", engine->GetGameDirectory(), dirName );
 
-		if (!g_pFullFileSystem->RenameFile(szFilePath, szSaveFolderPath))
-			return false;
+		if (g_pFullFileSystem->FileExists(szSaveFolderPath))
+			bRet = HandleSaveFileConflict(szSaveFolderPath, szFilePath);
+
+		Assert( g_pFullFileSystem->RenameFile(szFilePath, szSaveFolderPath) );
 	}
 
 	g_pFullFileSystem->FindClose( fh );
+	return bRet;
+}
 
+//-----------------------------------------------------------------------------
+// Purpose:
+//-----------------------------------------------------------------------------
+bool CCampaignDatabase::HandleSaveFileConflict( const char *pStoredFile, const char *pCurrentFile )
+{
+	switch (GetSaveFileOverrideType())
+	{
+	case OVERRIDE_NONE:
+		return false;
+
+	case OVERRIDE_STORED:
+		g_pFullFileSystem->RemoveFile(pStoredFile);
+
+	case OVERRIDE_CURRENT:
+		g_pFullFileSystem->RemoveFile(pCurrentFile);
+	}
+
+	SetSaveFileOverrideType(OVERRIDE_NONE);
 	return true;
 }
 //-----------------------------------------------------------------------------
@@ -1134,17 +1161,13 @@ void CCampaignDatabase::ClearCampaignFolder( void )
 //-----------------------------------------------------------------------------
 void CCampaignDatabase::SetCampaignAsMounted( const char *pCampaignID )
 {
+	FixupMountedCampaignFiles(pCampaignID);
+
 	CampaignData_t *pPrevMounted = GetMountedCampaign();
 	CampaignData_t *pCampaign = GetCampaignDataFromID(pCampaignID);
 
 	if ( pPrevMounted )
-	{
 		pPrevMounted->mounted = false;
-		StoreSaveFiles(pPrevMounted->id);
-	}
-
-	RetrieveSaveFiles(pCampaignID);
-	FixupMountedCampaign(pCampaignID);
 
 	pCampaign->mounted = true;
 	WriteListToScript();
@@ -1171,7 +1194,7 @@ void CCampaignDatabase::UnmountMountedCampaign()
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-void CCampaignDatabase::FixupMountedCampaign( const char *pCampaignID )
+void CCampaignDatabase::FixupMountedCampaignFiles( const char *pCampaignID )
 {
 	KeyValues *pBlacklistScript = new KeyValues("blacklist");
 	if ( !pBlacklistScript->LoadFromFile( filesystem, "scripts/file_blacklist.txt", "MOD" ) )
@@ -1198,6 +1221,12 @@ void CCampaignDatabase::FixupMountedCampaign( const char *pCampaignID )
 //-----------------------------------------------------------------------------
 EMountReturnCode CCampaignDatabase::MountCampaign(const char *pCampaignID)
 {
+	if ( GetMountedCampaign() && !StoreSaveFiles(GetMountedCampaign()->id) )
+		return FAILED_TO_STORE_SAVE_FILES;
+
+	if ( !RetrieveSaveFiles(pCampaignID) )
+		return FAILED_TO_RETRIEVE_SAVE_FILES;
+
 	ClearCampaignFolder();
 
 	if (!ExtractVPK(pCampaignID))

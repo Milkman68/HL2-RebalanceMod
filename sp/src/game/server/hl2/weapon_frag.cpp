@@ -380,7 +380,7 @@ void CWeaponFrag::ItemPostFrame( void )
 				if( !(pOwner->m_nButtons & IN_ATTACK2) )
 				{
 					//See if we're ducking
-					if ( pOwner->m_nButtons & IN_DUCK )
+					if ( pOwner->m_nButtons & IN_DUCK && pOwner->EyeAngles().x > -10.0f )
 					{
 						//Send the weapon animation
 						SendWeaponAnim( ACT_VM_SECONDARYATTACK );

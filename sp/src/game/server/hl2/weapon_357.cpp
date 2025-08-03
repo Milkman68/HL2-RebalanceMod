@@ -117,8 +117,6 @@ CWeapon357::CWeapon357( void )
 
 	m_fMinRange1		= 0;
 	m_fMaxRange1		= 1500;
-	m_fMinRange2		= 0;
-	m_fMaxRange2		= 200;
 }
 //-----------------------------------------------------------------------------
 // Purpose:

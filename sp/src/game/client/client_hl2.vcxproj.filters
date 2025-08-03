@@ -1877,6 +1877,9 @@
     <ClInclude Include="hl2r\hl2r_campaign_panel.h">
       <Filter>Source Files\HL2R</Filter>
     </ClInclude>
+    <ClInclude Include="hl2r\hl2r_game_manager.h">
+      <Filter>Source Files\HL2R</Filter>
+    </ClInclude>
     <ClInclude Include="hl2r\hl2r_gamelogo.h">
       <Filter>Source Files\HL2R</Filter>
     </ClInclude>
@@ -3179,6 +3182,9 @@
       <Filter>Source Files\HL2R</Filter>
     </ClCompile>
     <ClCompile Include="hl2r\hl2r_campaign_panel.cpp">
+      <Filter>Source Files\HL2R</Filter>
+    </ClCompile>
+    <ClCompile Include="hl2r\hl2r_game_manager.cpp">
       <Filter>Source Files\HL2R</Filter>
     </ClCompile>
     <ClCompile Include="hl2r\hl2r_gamelogo.cpp">

@@ -70,8 +70,7 @@ public:
 		// }
 		// else
 		// {
-		//	cone = VECTOR_CONE_5DEGREES;	
-			cone = VECTOR_CONE_6DEGREES;	// TEST THIS
+			cone = VECTOR_CONE_5DEGREES;	
 //		}
 
 		return cone;
@@ -795,8 +794,6 @@ CWeaponShotgun::CWeaponShotgun( void )
 
 	m_fMinRange1		= 0;
 	m_fMaxRange1		= 650;
-	m_fMinRange2		= 0;
-	m_fMaxRange2		= 650;
 }
 
 //-----------------------------------------------------------------------------

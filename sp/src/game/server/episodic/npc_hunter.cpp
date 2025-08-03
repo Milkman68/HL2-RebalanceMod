@@ -1797,7 +1797,7 @@ void CNPC_Hunter::Spawn()
 		m_BeginFollowDelay.Set( .1 ); // Allow time for strider to spawn
 	}
 	
-	m_bEnableUnplantedShooting = true;
+//	m_bEnableUnplantedShooting = true;
 
 	//if ( !m_pGunFiringSound )
 	//{

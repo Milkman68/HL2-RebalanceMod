@@ -316,6 +316,8 @@ private:
 	Activity GetReloadActivity( CAI_Hint *pHint );
 
 	bool IsJumpLegal(const Vector &startPos, const Vector &apex, const Vector &endPos) const;
+	bool MovementCost( int moveType, const Vector &vecStart, const Vector &vecEnd, float *pCost );
+
 private:
 	enum
 	{

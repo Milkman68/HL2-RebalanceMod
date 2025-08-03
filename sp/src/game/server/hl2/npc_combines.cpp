@@ -29,9 +29,11 @@
 #include "tier0/memdbgon.h"
 
 ConVar	sk_combine_s_health( "sk_combine_s_health","0");
+ConVar sk_combine_shield( "sk_combine_shield", "0");
 ConVar	sk_combine_s_kick( "sk_combine_s_kick","0");
 
 ConVar sk_combine_guard_health( "sk_combine_guard_health", "0");
+ConVar sk_combine_guard_shield( "sk_combine_guard_shield", "0");
 ConVar sk_combine_guard_kick( "sk_combine_guard_kick", "0");
  
 // Whether or not the combine guard should spawn health on death
@@ -83,18 +85,30 @@ void CNPC_CombineS::Spawn( void )
 	
 	HandleSpawnEquipment();
 
-	if( IsElite() || FStrEq(STRING(m_spawnEquipment), "weapon_rpg") )
+	if( IsElite() )
 	{
 		// Stronger, tougher.
 		SetHealth( sk_combine_guard_health.GetFloat() );
 		SetMaxHealth( sk_combine_guard_health.GetFloat() );
 		SetKickDamage( sk_combine_guard_kick.GetFloat() );
+
+		if ( sk_combine_guard_shield.GetInt() > 0 )
+		{
+			SetArmorCharge(sk_combine_guard_shield.GetInt());
+			SetUsesArmor(true);
+		}
 	}
 	else
 	{
 		SetHealth( sk_combine_s_health.GetFloat() );
 		SetMaxHealth( sk_combine_s_health.GetFloat() );
 		SetKickDamage( sk_combine_s_kick.GetFloat() );
+
+		if ( sk_combine_shield.GetInt() > 0 )
+		{
+			SetArmorCharge(sk_combine_shield.GetInt());
+			SetUsesArmor(true);
+		}
 	}
 
 	CapabilitiesAdd( bits_CAP_ANIMATEDFACE );
@@ -385,8 +399,12 @@ void CNPC_CombineS::Event_Killed( const CTakeDamageInfo &info )
 
 		float flCurrentHealth = pPlayer->GetHealth();
 
+		char szMapName[MAX_MAP_NAME];
+		Q_strncpy(szMapName, STRING(gpGlobals->mapname), sizeof(szMapName) );
+		bool m_bInCityDefenceSection = ( !Q_stricmp( szMapName, "d3_c17_07" ) );
+
 		// Attempt to drop health
-		if ( pHL2GameRules->NPC_ShouldDropHealth( pPlayer ) )
+		if ( pHL2GameRules->NPC_ShouldDropHealth( pPlayer ) || m_bInCityDefenceSection )
 		{
 			if ( random->RandomInt( 0, 100 ) < 25 )
 			{
@@ -436,7 +454,7 @@ bool CNPC_CombineS::IsHeavyDamage( const CTakeDamageInfo &info )
 {
 	if ( m_nRecentDamage > RECENT_DAMAGE_THRESHOLD && m_flRecentDamageTime != FLT_MAX )
 	{
-		if ( random->RandomInt(0,1) == 1 )
+	/*	if ( random->RandomInt(0,1) == 1 )
 		{
 			// This doesn't feel clean, as most responses go in the ai file, but its convinient so its going here.
 			GetSentences()->Speak( "COMBINE_TAUNT", SENTENCE_PRIORITY_HIGH, SENTENCE_CRITERIA_NORMAL ); 
@@ -445,10 +463,10 @@ bool CNPC_CombineS::IsHeavyDamage( const CTakeDamageInfo &info )
 			m_flRecentDamageTime = 0;
 		}
 		else
-		{
+		{*/
 			m_flRecentDamageTime = FLT_MAX;
 			return true;
-		}
+	//	}
 	}
 	
 	return false;

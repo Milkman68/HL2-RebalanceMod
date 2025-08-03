@@ -330,6 +330,9 @@ char const *WeaponsResource::GetAmmoLabelFromID( int iAmmoId )
 	
 	if ( iAmmoId == GetAmmoDef()->Index("slam") )
 		label = "#Valve_Hud_AMMO_slam";
+
+	if ( iAmmoId == GetAmmoDef()->Index("bugbait") )
+		label = "#Valve_Hud_AMMO_bugbait";
 	
 	return label;
 }

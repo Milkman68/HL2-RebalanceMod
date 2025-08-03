@@ -27,6 +27,7 @@
 #include "physics_collisionevent.h"
 #include "gamestats.h"
 #include "beam_shared.h"
+#include "npc_combine.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -1209,6 +1210,13 @@ void CPropCombineBall::OnHitEntity( CBaseEntity *pHitEntity, float flSpeed, int 
 	// Detonate on the strider + the bone followers in the strider
 	if ( FClassnameIs( pHitEntity, "npc_strider" ) || FClassnameIs( pHitEntity, "npc_antlionguard" ) ||
 		(pHitEntity->GetOwnerEntity() && FClassnameIs( pHitEntity->GetOwnerEntity(), "npc_strider" )) )
+	{
+		DoExplosion();
+		return;
+	}
+
+	CNPC_Combine *pCombine = dynamic_cast<CNPC_Combine *>(pHitEntity);
+	if ( pCombine && pCombine->GetArmorCharge() > 0 )
 	{
 		DoExplosion();
 		return;

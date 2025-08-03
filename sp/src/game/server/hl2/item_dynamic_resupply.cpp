@@ -13,10 +13,7 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-ConVar sk_dynamic_resupply_modifier1( "sk_dynamic_resupply_modifier1","0.0" );
-ConVar sk_dynamic_resupply_modifier2( "sk_dynamic_resupply_modifier2","0.0" );
-ConVar sk_dynamic_resupply_modifier3( "sk_dynamic_resupply_modifier3","0.0" );
-
+ConVar sk_dynamic_resupply_modifier( "sk_dynamic_resupply_modifier","0.0" );
 ConVar sk_dynamic_resupply_randomness( "sk_dynamic_resupply_randomness","0.3" );
 
 extern ConVar sk_battery;
@@ -575,18 +572,7 @@ void CItem_DynamicResupply::ComputeAmmoRatios( CItem_DynamicResupply* pMaster, C
 //-----------------------------------------------------------------------------
 float CItem_DynamicResupply::ComputeResupplyModifier( void )//bookmark
 {
-	if ( g_pGameRules->IsSkillLevel( SKILL_HARD ) )
-	{
-		return sk_dynamic_resupply_modifier3.GetFloat();
-	}
-	else if ( g_pGameRules->IsSkillLevel( SKILL_EASY ) )
-	{
-		return sk_dynamic_resupply_modifier1.GetFloat();
-	}
-	else
-	{
-		return sk_dynamic_resupply_modifier2.GetFloat();
-	}
+	return sk_dynamic_resupply_modifier.GetFloat();
 }
 //-----------------------------------------------------------------------------
 // Purpose: 

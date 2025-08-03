@@ -533,11 +533,13 @@ void CBaseHeadcrab::JumpAttack( bool bRandomJump, const Vector &vecPos, bool bTh
 		// How fast does the headcrab need to travel to reach the position given gravity?
 		float flActualHeight = vecPos.z - GetAbsOrigin().z;
 		float height = flActualHeight;
-		if ( height < 16 )
+		
+		// Headcrabs evac'ing zombies need to be able to jump slightly downward.
+	/*	if ( height < 16 )
 		{
 			height = 16;
 		}
-		else
+		else*/
 		{
 			float flMaxHeight = bThrown ? 400 : 120;
 			if ( height > flMaxHeight )
@@ -561,8 +563,10 @@ void CBaseHeadcrab::JumpAttack( bool bRandomJump, const Vector &vecPos, bool bTh
 		height += additionalHeight;
 
 		// NOTE: This equation here is from vf^2 = vi^2 + 2*a*d
-		float speed = sqrt( 2 * gravity * height );
+		float speed = sqrt( 2 * gravity * fabsf(height) );
 		float time = speed / gravity;
+
+		DevMsg("speed is: [%f]\n time is: [%f]\n", speed, time );
 
 		// add in the time it takes to fall the additional height
 		// So the impact takes place on the downward slope at the original height

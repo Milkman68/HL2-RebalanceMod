@@ -6061,6 +6061,46 @@ bool CNPC_MetroPolice::IsJumpLegal(const Vector &startPos, const Vector &apex, c
 	return true;
 }
 //-----------------------------------------------------------------------------
+// Purpose:
+//-----------------------------------------------------------------------------
+bool CNPC_MetroPolice::MovementCost( int moveType, const Vector &vecStart, const Vector &vecEnd, float *pCost )
+{
+	bool bResult = BaseClass::MovementCost( moveType, vecStart, vecEnd, pCost );
+	if ( moveType == bits_CAP_MOVE_GROUND && GetEnemy() )
+	{
+		if ( GetActiveWeapon() && ( 
+			IsCurSchedule(SCHED_METROPOLICE_TAKE_COVER_FROM_ENEMY) || 
+			IsCurSchedule(SCHED_METROPOLICE_ESTABLISH_LINE_OF_FIRE) )
+			)
+		{
+			trace_t	tr;
+			CTraceFilterLOS filter( NULL, COLLISION_GROUP_NONE, this );
+			AI_TraceLOS( vecEnd, GetEnemy()->EyePosition(), this, &tr, &filter );
+
+			if ( tr.fraction == 1.0 )
+			{
+				// The ideal range we should strive to be at.
+				float flDesiredDist = (GetActiveWeapon()->m_fMinRange1 + GetActiveWeapon()->m_fMaxRange1) / 2;
+			 
+				// Dist from path link to enemy.
+				float flEnemyDist = ( vecEnd - GetEnemy()->GetAbsOrigin() ).Length();
+
+				if ( flEnemyDist < flDesiredDist / 4 )
+				{
+					*pCost *= 20.0;
+					bResult = true;
+				}
+			}
+			else
+			{
+				*pCost *= 0.1;
+				bResult = true;
+			}
+		}
+	}
+	return bResult;
+}
+//-----------------------------------------------------------------------------
 //
 // Schedules
 //

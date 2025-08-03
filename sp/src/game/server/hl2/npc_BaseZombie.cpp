@@ -2517,7 +2517,7 @@ void CNPC_BaseZombie::ReleaseHeadcrab( const Vector &vecOrigin, const Vector &ve
 				if ( flLength > max )
 					flLength = SimpleSplineRemapVal( clamp( flLength, max, 512 ), max, 512, max, 50 );
 				
-				Vector vecEnemyPos = EyePosition() + ( vecDir * MAX( flLength, max ) + Vector( 0, 0, -24 ) );
+				Vector vecEnemyPos = EyePosition() + ( vecDir * MAX( flLength, max ) );
 				pCrab->JumpAttack( false, vecEnemyPos, true );
 			}
 		}

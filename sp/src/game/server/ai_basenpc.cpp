@@ -4292,7 +4292,11 @@ void CAI_BaseNPC::GatherAttackConditions( CBaseEntity *pTarget, float flDist )
 	{
 		AI_PROFILE_SCOPE( CAI_BaseNPC_GatherAttackConditions_WeaponRangeAttack1Condition );
 
-		condition = GetActiveWeapon()->WeaponRangeAttack1Condition(flDot, flDist);
+		float flRangeDist = flDist;
+		if ( HasSpawnFlags(SF_NPC_LONG_RANGE) )
+			flRangeDist = 128; // Approx an average value most weapons work at.
+
+		condition = GetActiveWeapon()->WeaponRangeAttack1Condition(flDot, flRangeDist);
 
 		if ( condition == COND_NOT_FACING_ATTACK && FInAimCone( targetPos ) )
 			DevMsg( "Warning: COND_NOT_FACING_ATTACK set but FInAimCone is true\n" );
@@ -12697,22 +12701,20 @@ float CAI_BaseNPC::GetCoverPositionScore( const Vector &vecThreat, const Vector 
 	float flNodeScore = 0;
 
 	// Setup our distance metrics.
-//	float flNodeToThreat = ( vecThreat - vecCover ).Length();
-
-	float flNodeToThis = ( GetAbsOrigin() - vecCover ).Length();
+	float flCoverToThreat = ( vecThreat - vecCover ).Length();
+	
+	float flCoverToThis = ( GetAbsOrigin() - vecCover ).Length();
 	if ( flPathDist != NULL )
 	{
-		flNodeToThis += flPathDist;
-		flNodeToThis *= 0.5;
+		flCoverToThis += flPathDist;
+		flCoverToThis *= 0.5;
 	}
-
-	float flEnemyToThis = ( GetAbsOrigin() - vecThreat ).Length();
+	
+	// Bias nodes that are closer to us than the enemy.
+	flNodeScore += (1.0 - ( flCoverToThis / flCoverToThreat ));
 	
 	// Score it based on how close it is to the desired distance from the threat.
-	flNodeScore += ( flIdealDist - fabsf(flEnemyToThis - flIdealDist) ) / flIdealDist;
-
-	// Bias nodes that are closer to us than the enemy.
-//	flNodeScore += (1.0 - ( flNodeToThis / flNodeToThreat ));
+	flNodeScore += ( flIdealDist - fabsf(flCoverToThreat - flIdealDist) ) / flIdealDist;
 	
 	// Give bonus score if this node can double as a firing posistion.
 	if ( ShouldForceCrouchCover() )
@@ -12731,7 +12733,10 @@ float CAI_BaseNPC::GetCoverPositionScore( const Vector &vecThreat, const Vector 
 		// Value these nodes higher the more we're more out of position and less the
 		// more we're at a comfortable range.
 		if( tr.fraction != 1.0 )
+		{
+			float flEnemyToThis = ( GetAbsOrigin() - vecThreat ).Length();
 			flNodeScore += ( flIdealDist - fabsf(flEnemyToThis - flIdealDist) ) / flIdealDist;
+		}
 	}
 	
 	return flNodeScore;
@@ -12744,22 +12749,22 @@ float CAI_BaseNPC::GetLOSPositionScore( const Vector &vecThreat, const Vector &v
 	float flNodeScore = 0;
 
 	// Setup our distance metrics.
-	float flNodeDist = ( vecThreat - vecPos ).Length();
-	float flNearDist = ( GetAbsOrigin() - vecPos ).Length();
+	float flCoverToThreat = ( vecThreat - vecPos ).Length();
+	float flCoverToThis = ( GetAbsOrigin() - vecPos ).Length();
 	if ( flPathDist != NULL )
 	{
-		flNearDist += flPathDist;
-		flNearDist *= 0.5;
+		flCoverToThis += flPathDist;
+		flCoverToThis *= 0.5;
 	}
 	
 	// Score it based on how close it is to the desired distance from the threat.
-	flNodeScore += ( flIdealDist - fabsf(flNodeDist - flIdealDist) ) / flIdealDist;
+	flNodeScore += ( flIdealDist - fabsf(flCoverToThreat - flIdealDist) ) / flIdealDist;
 
 	// Bias out nodes that are farther away from us than the enemy.
-//	flNodeScore += 1.0 - ( flNearDist / flNodeDist );
+	flNodeScore += 1.0 - ( flCoverToThreat / flCoverToThis );
 
 	// Give greater score to nodes that have highground over our enemy.
-//	flNodeScore += (vecPos.z - vecThreat.z) * 0.005;
+	flNodeScore += (vecPos.z - vecThreat.z) * 0.001;
 		
 	SetForceCrouchCover( true );
 		

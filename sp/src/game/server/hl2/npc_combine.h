@@ -84,6 +84,14 @@ public:
 	Class_T			Classify( void );
 	bool			IsElite() { return m_fIsElite; }
 	bool			IsPrisonGuard() { return m_fIsGuard; }
+
+	void			SetUsesArmor( bool bState ) { m_bUsesArmor = bState; }
+	bool			UsesArmor( void ) { return m_bUsesArmor; }
+
+	float			GetArmorCharge( void ) { return m_flArmor; }
+	void			SetArmorCharge( float flcharge ) { m_flArmor = flcharge; }
+	bool			ArmorBroken( void ) { return m_flArmor <= 0; }
+
 	void			DelayAltFireAttack( float flDelay );
 	void			DelaySquadAltFireAttack( float flDelay );
 	float			MaxYawSpeed( void );
@@ -158,6 +166,7 @@ public:
 
 	virtual bool	ShouldPickADeathPose( void );
 	virtual bool	IsJumpLegal(const Vector &startPos, const Vector &apex, const Vector &endPos) const;
+	bool			MovementCost( int moveType, const Vector &vecStart, const Vector &vecEnd, float *pCost );
 
 protected:
 	void			SetKickDamage( int nDamage ) { m_nKickDamage = nDamage; }
@@ -256,6 +265,8 @@ private:
 	int SelectCombatSchedule();
 	
 	void TraceAttack( const CTakeDamageInfo &info, const Vector &vecDir, trace_t *ptr, CDmgAccumulator *pAccumulator );
+	int OnTakeDamage_Alive( const CTakeDamageInfo &inputInfo );
+	void TakeDamageArmor( const CTakeDamageInfo &info, float flMult );
 
 	// Should we charge the player?
 	bool ShouldChargePlayer();
@@ -270,10 +281,6 @@ private:
 	// Chase the enemy, updating the target position as the player moves
 	void StartTaskChaseEnemyContinuously( const Task_t *pTask );
 	void RunTaskChaseEnemyContinuously( const Task_t *pTask );
-	
-	bool HasArmor( void ) { return m_flArmor > 0; }
-	float GetArmorCharge( void ) { return m_flArmor; }
-	void SetArmorCharge( float flcharge ) { m_flArmor = flcharge; }
 
 	class CCombineStandoffBehavior : public CAI_ComponentWithOuter<CNPC_Combine, CAI_StandoffBehavior>
 	{
@@ -317,6 +324,8 @@ private:
 	float			m_flDelayAttacksTime;
 	
 	float			m_flArmor;
+	bool			m_bUsesArmor;
+	float			m_flNextArmorSparkTime;
 
 	CAI_Sentence< CNPC_Combine > m_Sentences;
 

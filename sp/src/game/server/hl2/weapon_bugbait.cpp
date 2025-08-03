@@ -26,6 +26,8 @@
 extern ConVar r_mirrored;
 extern ConVar sk_max_bugbait;
 
+ConVar sk_plr_bugbait_throw_speed("sk_plr_bugbait_throw_speed", 0);
+
 class CWeaponBugBait : public CBaseHLCombatWeapon
 {
 	DECLARE_CLASS( CWeaponBugBait, CBaseHLCombatWeapon );
@@ -289,7 +291,7 @@ void CWeaponBugBait::ThrowGrenade( CBasePlayer *pPlayer )
 	vThrowPos += vRight * (r_mirrored.GetBool() ? -12.0f : 12.0f);
 
 	pPlayer->GetVelocity( &vThrowVel, NULL );
-	vThrowVel += vForward * 1500;
+	vThrowVel += vForward * sk_plr_bugbait_throw_speed.GetInt();
 
 	CGrenadeBugBait *pGrenade = BugBaitGrenade_Create( vThrowPos, vec3_angle, vThrowVel, QAngle(600,random->RandomInt(-1200,1200),0), pPlayer );
 
@@ -428,8 +430,10 @@ void CWeaponBugBait::ItemPreFrame( void )
 //-----------------------------------------------------------------------------
 void CWeaponBugBait::DrainAmmo( CBasePlayer *pOwner )
 {
+	if ( pOwner->GetAmmoCount(m_iPrimaryAmmoType) == sk_max_bugbait.GetInt() )
+		m_flNextAmmoTime	= gpGlobals->curtime + BUGBAIT_RECHARGE_RATE;
+
 	pOwner->RemoveAmmo( 1, m_iPrimaryAmmoType );
-	//m_flNextAmmoTime	= gpGlobals->curtime + BUGBAIT_RECHARGE_RATE;
 }
 //-----------------------------------------------------------------------------
 // Purpose: 

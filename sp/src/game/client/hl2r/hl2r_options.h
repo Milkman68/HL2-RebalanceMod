@@ -5,24 +5,8 @@
 #endif
 
 #include "hl2r_baseoptions.h"
+#include <vgui_controls/Divider.h>
 
-//------------------------------------------------------------------------------
-// Challenge panel
-//------------------------------------------------------------------------------
-class CSubChallengePanel : public CSubPanel
-{
-	DECLARE_CLASS_SIMPLE(CSubChallengePanel, CSubPanel);
-	
-public:
-	CSubChallengePanel( vgui::Panel* parent ) : CSubPanel(parent) {}
-	~CSubChallengePanel() {}
-	
-	virtual void SubPanelInit( void );
-	virtual void OnCommand(const char* pcCommand);
-	
-private:
-	Button* toggleAllButton;
-};
 //------------------------------------------------------------------------------
 // Parent panel
 //------------------------------------------------------------------------------
@@ -40,52 +24,82 @@ public:
 	virtual void OnClose();
 	virtual void OnScreenSizeChanged(int iOldWide, int iOldTall);
 };
+
 //------------------------------------------------------------------------------
-// Challenge panel elements
+// Game panel
 //------------------------------------------------------------------------------
-CheckButton_t challenges_CheckButtons[] =
+
+ControlElement_t game_Elements[] =
 {
-	{ "ExplosiveCrabsButton", "hl2r_explosive_crabs", false, 7 }, // The 0th index contains this array's size.
-	{ "ShorterSprintButton", "hl2r_shorter_sprint", false },
-	{ "EnemyPromotionButton", "hl2r_enemy_promotion", false },
-	{ "RandomWeaponsButton", "hl2r_random_weapons", false },
-	{ "ReducedAssistsButton", "hl2r_reduced_assists", false },
-	{ "SmallerReservesButton", "hl2r_smaller_reserves", false },
-};
-//------------------------------------------------------------------------------
-// Game panel elements
-//------------------------------------------------------------------------------
-BoxButton_t game_BoxButtons[] =
-{
-	// The 0th index contains this array's size.
-	{ "EpisodicLightBox", { "#hl2r_on", "#hl2r_off" }, "hl2r_episodic_flashlight", true, 2 }, // The 0th index contains this array's size.
-	{ "ZoomToggleBox", { "#hl2r_on", "#hl2r_off" }, "hl2r_togglezoom", true },
+	{ 8 },
+//					[Name]						[Convar]						[Invert]
+	{ TYPE_CHECKBOX, "MirrorModeButton",		"r_mirrored",					"false" },
+	{ TYPE_CHECKBOX, "Ep2FlashlightButton",		"hl2r_episodic_flashlight",		"false" },
+
+	{ TYPE_CHECKBOX, "AutoaimCrosshairButton",	"hud_draw_active_reticle",		"false" },
+	{ TYPE_CHECKBOX, "EnableAutoaimButton",		"sk_allow_autoaim",				"false" },
+	{ TYPE_CHECKBOX, "EnableAutoReloadButton",	"sk_allow_auto_reload",			"false" },
+
+//						[Name]						[Convar]						[Numticks] [Numindicators]	[Minval]	[Maxval]
+	{ TYPE_TICKSLIDER, "AutoaimScaleSlider",		"autoaim_viewcorrection_scale",		"5",		"5",		"1",		"5",  },
+	{ TYPE_TICKSLIDER, "AutoaimSpeedSlider",		"autoaim_viewcorrection_speed",		"5",		"5",		"500",		"3000" },
+	{ TYPE_TICKSLIDER, "AutoreloadTimeSlider",		"sk_auto_reload_time",				"20",		"20",		"3",		"60" },
 };
 
-TickSlider_t game_TickSliders[] =
-{
-	{ "viewRollSlider", 0, 10, 10, 1, "hl2r_rollangle", 2 }, // The 0th index contains this array's size.
-	{ "WeaponFOVSlider", 54, 90, 12, 3, "viewmodel_fov" },
-};
-//------------------------------------------------------------------------------
-// Visual panel elements
-//------------------------------------------------------------------------------
-BoxButton_t visuals_BoxButtons[] =
-{
-	{ "QuickinfoBox", { "#hl2r_on", "#hl2r_off" }, "hud_quickinfo", true, 5 }, // The 0th index contains this array's size.
-	{ "MinCrosshairBox", { "#hl2r_on", "#hl2r_off" }, "hl2r_old_crosshair",  false }, // Renamed to "New Crosshairs" in the options.
-	{ "HudHintBox", { "#hl2r_on", "#hl2r_off" }, "hl2r_hudhints", true },
-	{ "LightDetailBox", { "#hl2r_default", "#hl2r_less", "#hl2r_none" }, "hl2r_dynamic_light_level", false },
-	{ "ProjectedMuzzleflashBox", { "#hl2r_on", "#hl2r_off" }, "hl2r_projected_muzzleflash", true },
-};
-//------------------------------------------------------------------------------
-// Parent panel pages
-//------------------------------------------------------------------------------
-OptionsTab_t hl2r_OptionsTabs[] =
-{
-	{ "GamePage",  NULL, NULL, game_BoxButtons, game_TickSliders, 0.0f, 3 }, // The 0th index contains this array's size.
-	{ "VisualsPage", NULL, NULL, visuals_BoxButtons, NULL, 0.0f },
-	{ "ChallengePage", challenges_CheckButtons, NULL, NULL, NULL, 15.0f },
-};
 
+class CSubGamePanel : public CSubPanel
+{
+	DECLARE_CLASS_SIMPLE(CSubGamePanel, CSubPanel);
+	
+public:
+	CSubGamePanel( vgui::Panel* parent ) : CSubPanel(parent) {}
+	~CSubGamePanel() {}
+	
+	virtual void SubPanelInit( void )
+	{
+		BaseClass::SubPanelInit();
+
+		m_pAutoaimBoxDivider = new Divider(this, "AutoaimElementsDivider");
+
+		m_AutoaimElements.AddToTail(game_Elements[6].elementPanel);
+		m_AutoaimElements.AddToTail(game_Elements[7].elementPanel);
+		m_AutoaimElements.AddToTail(game_Elements[3].elementPanel);
+	}
+
+	virtual void OnControlModified(Panel *panel)
+	{
+		BaseClass::OnControlModified(panel);
+
+		Button *pEnableAutoaimButton = dynamic_cast<Button *>(game_Elements[4].elementPanel);
+		Button *pEnableAutoReloadButton = dynamic_cast<Button *>(game_Elements[5].elementPanel);
+
+		bool bEnableAutoaim = pEnableAutoaimButton->IsSelected();
+		bool bEnableAutoReload = pEnableAutoReloadButton->IsSelected();
+
+		for (int i = 0; i < m_AutoaimElements.Size(); i++ )
+			m_AutoaimElements[i]->SetEnabled(bEnableAutoaim);
+
+		Panel *pAutoReloadSlider = game_Elements[8].elementPanel;
+		pAutoReloadSlider->SetEnabled(bEnableAutoReload);
+	}
+
+
+private:
+
+	Divider	*m_pAutoaimBoxDivider;
+	CUtlVector<Panel *> m_AutoaimElements;
+};
+//------------------------------------------------------------------------------
+// Options panel
+//------------------------------------------------------------------------------
+OptionsPage_t hl2r_OptionsPages[] =
+{
+	{ "4" },
+
+//	[Name]					[Resource path]							[Element List]		[Additional Height]
+	{ "Game",				"resource/ui/hl2r_optionssubgame.res",  game_Elements,			0.0f },
+	{ "Player",				"",										NULL,					0.0f },
+	{ "Hud",				"",										NULL, 					0.0f },
+	{ "Cut and Fun Stuff",	"",										NULL,					0.0f },
+};
 #endif

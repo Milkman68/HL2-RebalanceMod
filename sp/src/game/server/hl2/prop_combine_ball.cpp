@@ -43,8 +43,6 @@
 
 #define	MAX_COMBINEBALL_RADIUS	12
 
-#define COMBINEBALL_HARM_RADIUS 64
-
 ConVar	sk_npc_dmg_combineball( "sk_npc_dmg_combineball","15", FCVAR_REPLICATED);
 ConVar	sk_combineball_guidefactor( "sk_combineball_guidefactor","0.5", FCVAR_REPLICATED);
 ConVar	sk_combine_ball_search_radius( "sk_combine_ball_search_radius", "512", FCVAR_REPLICATED);
@@ -334,7 +332,7 @@ bool CPropCombineBall::CreateVPhysics()
 {
 	SetSolid( SOLID_BBOX );
 
-	float flSize = sk_combineball_radius_kill.GetBool() ? 1 : m_flRadius;
+	float flSize = sk_combineball_radius_kill.GetInt() > 0 ? 1 : m_flRadius;
 
 	SetCollisionBounds( Vector(-flSize, -flSize, -flSize), Vector(flSize, flSize, flSize) );
 	objectparams_t params = g_PhysDefaultObjectParams;
@@ -1293,20 +1291,20 @@ void CPropCombineBall::OnHitEntity( CBaseEntity *pHitEntity, float flSpeed, int 
 	}
 
 	Vector vecFinalVelocity;
-//	if ( IsInField() || sk_combineball_radius_kill.GetBool() )
+//	if ( IsInField() )
 //	{
 		// Don't deflect when in a spawner field
 		vecFinalVelocity = pEvent->preVelocity[index];
 		PhysCallbackSetVelocity( pEvent->pObjects[index], vecFinalVelocity );
-//	}
-//	else
-//	{
+/*	}
+	else
+	{
 		//	Don't slow down when hitting other entities.
-//		vecFinalVelocity = pEvent->postVelocity[index];
-//		VectorNormalize( vecFinalVelocity );
-//		vecFinalVelocity *= GetSpeed();
-//	}
-//	PhysCallbackSetVelocity( pEvent->pObjects[index], vecFinalVelocity ); 
+		vecFinalVelocity = pEvent->postVelocity[index];
+		VectorNormalize( vecFinalVelocity );
+		vecFinalVelocity *= GetSpeed();
+	}*/
+	PhysCallbackSetVelocity( pEvent->pObjects[index], vecFinalVelocity ); 
 }
 
 
@@ -1697,44 +1695,26 @@ void CPropCombineBall::AnimThink( void )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CPropCombineBall::StartSearching( void )
-{
-	SetContextThink( &CPropCombineBall::SearchThink, gpGlobals->curtime + random->RandomFloat( 0.0f, 0.1f), s_pSearchThinkContext );
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
-void CPropCombineBall::StopSearching( void )
-{
-	SetContextThink( NULL, gpGlobals->curtime, s_pSearchThinkContext );
-}
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
 void CPropCombineBall::SearchThink( void )
 {
-	if ( !sk_combineball_radius_kill.GetBool() )
-		return;
-	
-	if( !IsInField() && !IsBeingCaptured() )
+	if( !IsInField() && !IsBeingCaptured() && sk_combineball_radius_kill.GetInt() > 0 )
 	{
-		float flNearestNPCDist = FindNearestNPC();
-
-		if ( m_hNearestNPC.Get() )
+		CAI_BaseNPC *pNpc = FindNearestNPC();
+		if ( pNpc )
 		{
-			if( flNearestNPCDist <= COMBINEBALL_HARM_RADIUS )
+			Vector vecNpcCenter = pNpc->EyePosition() + Vector( 0, 0, -20 );
+			float flDist = (GetAbsOrigin() - vecNpcCenter).Length();
+
+			if ( flDist <= sk_combineball_radius_kill.GetInt() )
 			{
-				CTakeDamageInfo info( this, GetOwnerEntity(), GetAbsVelocity(), GetAbsOrigin(), sk_npc_dmg_combineball.GetFloat(), DMG_DISSOLVE );
-				m_hNearestNPC->TakeDamage( info );
-				
-				ShockTarget( m_hNearestNPC );
-				EmitSound( "NPC_CombineBall.KillImpact" );
-				
-				if ( m_hNearestNPC->GetHealth() <= 0 )
-				{
-					DissolveEntity( m_hNearestNPC );
-				}
+				Vector vecDir = ( vecNpcCenter - GetAbsOrigin() );
+				VectorNormalize( vecDir );
+
+				CTakeDamageInfo info(this, GetOwnerEntity(), vecDir * 50000, GetAbsOrigin() + (vecDir * flDist), 999, DMG_CRUSH);
+				DissolveEntity(pNpc);
+
+				pNpc->TakeDamage(info);
+				EmitSound("NPC_CombineBall.KillImpact");
 			}
 		}
 	}
@@ -1744,12 +1724,12 @@ void CPropCombineBall::SearchThink( void )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-float CPropCombineBall::FindNearestNPC( void )
+CAI_BaseNPC *CPropCombineBall::FindNearestNPC( void )
 {
-	float flNearest = (COMBINEBALL_HARM_RADIUS * COMBINEBALL_HARM_RADIUS) + 1.0;
+	float flNearest = FLT_MAX;
 
 	// Assume this search won't find anyone.
-	SetNearestNPC( NULL );
+	CAI_BaseNPC *pNpc = NULL;
 
 	CAI_BaseNPC **ppAIs = g_AI_Manager.AccessAIs();
 	int nAIs = g_AI_Manager.NumAIs();
@@ -1787,60 +1767,13 @@ float CPropCombineBall::FindNearestNPC( void )
 				if( FVisible( pNPC, MASK_SOLID_BRUSHONLY ) )
 				{
 					flNearest = flDist;
-					SetNearestNPC( pNPC );
+					pNpc = pNPC;
 				}
 			}
 		}
 	}
 
-	return sqrt( flNearest );
-}
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : *pOther - 
-//-----------------------------------------------------------------------------
-void CPropCombineBall::ShockTarget( CBaseEntity *pOther )
-{
-	CBeam *pBeam;
-	pBeam = CBeam::BeamCreate( "sprites/lgtning_noz.vmt", 8 );
-	
-	int startAttach = -1;
-
-	CBaseAnimating *pAnimating = dynamic_cast<CBaseAnimating *>(pOther);
-
-	if ( pBeam != NULL )
-	{
-		pBeam->EntsInit( pOther, this );
-
-		if ( pAnimating && pAnimating->GetModel() )
-		{
-			startAttach = pAnimating->LookupAttachment("beam_damage" );
-			pBeam->SetStartAttachment( startAttach );
-		}
-		
-		pBeam->SetWidth( 2 );
-		pBeam->SetEndWidth( random->RandomInt( 1, 2 ) );
-		pBeam->SetNoise( 32 );
-		pBeam->LiveForTime( 0.2f );
-		
-		pBeam->SetEndAttachment( 1 );
-		pBeam->SetBrightness( 255 );
-		pBeam->SetColor( 255, 255, 255 );
-		pBeam->RelinkBeam();
-	}
-	
-	Vector shockPos = pOther->WorldSpaceCenter();
-
-	if ( startAttach > 0 && pAnimating )
-	{
-		pAnimating->GetAttachment( startAttach, shockPos );
-	}
-
-	Vector shockDir = ( GetAbsOrigin() - shockPos );
-	VectorNormalize( shockDir );
-
-	CPVSFilter filter( shockPos );
-	te->GaussExplosion( filter, 0.0f, shockPos, shockDir, 0 );
+	return pNpc;
 }
 //-----------------------------------------------------------------------------
 //

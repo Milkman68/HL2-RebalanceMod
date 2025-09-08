@@ -54,6 +54,7 @@ class CSprite;
 class CNPC_FloorTurret : public CNPCBaseInteractive<CAI_BaseNPC>, public CDefaultPlayerPickupVPhysics
 {
 	DECLARE_CLASS( CNPC_FloorTurret, CNPCBaseInteractive<CAI_BaseNPC> );
+	DECLARE_SERVERCLASS();
 public:
 
 	CNPC_FloorTurret( void );
@@ -199,6 +200,9 @@ protected:
 	void	DryFire( void );
 	void	UpdateMuzzleMatrix();
 
+	void	SetLaserColor(float r, float g, float b);
+	void	SetLaserBrightness(float brightness, float transitiontime = -1);
+
 protected:
 	matrix3x4_t m_muzzleToWorld;
 	int		m_muzzleToWorldTick;
@@ -227,11 +231,11 @@ protected:
 
 	QAngle	m_vecGoalAngles;
 
-	int						m_iEyeAttachment;
+//	int						m_iEyeAttachment;
 	int						m_iMuzzleAttachment;
 	eyeState_t				m_iEyeState;
 	CHandle<CSprite>		m_hEyeGlow;
-	CHandle<CBeam>			m_hLaser;
+//	CHandle<CBeam>			m_hLaser;
 	CHandle<CTurretTipController>	m_pMotionController;
 
 	CHandle<CParticleSystem>	m_hFizzleEffect;
@@ -251,6 +255,13 @@ protected:
 
 	bool	m_bHackedByAlyx;
 	HSOUNDSCRIPTHANDLE			m_ShotSounds;
+
+public:
+	CNetworkVar( int,	m_iEyeAttachment);
+	CNetworkVar( float, m_iLaserDotSprite);
+
+	CNetworkArray( float, m_flLaserColor, 3 ); // [0 = R] [1 = G] [2 = B]
+	CNetworkArray( float, m_flLaserBrightness, 3 ); // [0 = Brightness] [1 = Transition time] 2 = Transition start time]
 
 	DECLARE_DATADESC();
 	DEFINE_CUSTOM_AI;

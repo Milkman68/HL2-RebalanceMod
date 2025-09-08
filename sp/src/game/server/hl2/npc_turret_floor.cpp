@@ -50,6 +50,7 @@ float CNPC_FloorTurret::fMaxTipControllerVelocity = 300.0f * 300.0f;
 float CNPC_FloorTurret::fMaxTipControllerAngularVelocity = 90.0f * 90.0f;
 
 #define	LASER_BEAM_SPRITE			"effects/laser1.vmt"
+#define	LASER_DOT_SPRITE			"sprites/glow1.vmt"
 
 #define	FLOOR_TURRET_MODEL			"models/combine_turrets/floor_turret.mdl"
 #define	FLOOR_TURRET_MODEL_CITIZEN	"models/combine_turrets/citizen_turret.mdl"
@@ -100,12 +101,15 @@ BEGIN_DATADESC( CNPC_FloorTurret )
 
 	DEFINE_FIELD( m_vecGoalAngles,FIELD_VECTOR ),
 	DEFINE_FIELD( m_iEyeAttachment,	FIELD_INTEGER ),
+	DEFINE_FIELD( m_iLaserDotSprite, FIELD_INTEGER ),
+	DEFINE_ARRAY( m_flLaserColor, FIELD_FLOAT, 3 ),
+	DEFINE_ARRAY( m_flLaserBrightness, FIELD_FLOAT, 3 ),
 	DEFINE_FIELD( m_iMuzzleAttachment,	FIELD_INTEGER ),
 	DEFINE_FIELD( m_iEyeState,		FIELD_INTEGER ),
 	DEFINE_FIELD( m_hEyeGlow,		FIELD_EHANDLE ),
 	DEFINE_FIELD( m_pMotionController,FIELD_EHANDLE),
 	DEFINE_FIELD( m_vecEnemyLKP,	FIELD_VECTOR ),
-	DEFINE_FIELD( m_hLaser,			FIELD_EHANDLE ),
+//	DEFINE_FIELD( m_hLaser,			FIELD_EHANDLE ),
 	DEFINE_FIELD( m_bSelfDestructing,	FIELD_BOOLEAN ),
 
 	DEFINE_FIELD( m_hPhysicsAttacker, FIELD_EHANDLE ),
@@ -149,6 +153,13 @@ BEGIN_DATADESC( CNPC_FloorTurret )
 
 END_DATADESC()
 
+IMPLEMENT_SERVERCLASS_ST( CNPC_FloorTurret, DT_FloorTurret )
+	SendPropInt(SENDINFO(m_iEyeAttachment), 1, SPROP_UNSIGNED ),
+	SendPropInt(SENDINFO(m_iLaserDotSprite)),
+	SendPropArray(SendPropFloat( SENDINFO_ARRAY(m_flLaserColor), 32, SPROP_NOSCALE), m_flLaserColor),
+	SendPropArray(SendPropFloat( SENDINFO_ARRAY(m_flLaserBrightness), 32, SPROP_NOSCALE), m_flLaserBrightness),
+END_SEND_TABLE()
+
 LINK_ENTITY_TO_CLASS( npc_turret_floor, CNPC_FloorTurret );
 
 //-----------------------------------------------------------------------------
@@ -157,7 +168,7 @@ LINK_ENTITY_TO_CLASS( npc_turret_floor, CNPC_FloorTurret );
 CNPC_FloorTurret::CNPC_FloorTurret( void ) : 
 	m_bActive( false ),
 	m_hEyeGlow( NULL ),
-	m_hLaser( NULL ),
+//	m_hLaser( NULL ),
 	m_iAmmoType( -1 ),
 	m_bAutoStart( false ),
 	m_flPingTime( 0.0f ),
@@ -176,6 +187,7 @@ CNPC_FloorTurret::CNPC_FloorTurret( void ) :
 	m_vecGoalAngles.Init();
 
 	m_vecEnemyLKP = vec3_invalid;
+	SetLaserColor(0,0,0);
 }
 
 //-----------------------------------------------------------------------------
@@ -206,11 +218,11 @@ void CNPC_FloorTurret::UpdateOnRemove( void )
 		m_pMotionController = NULL;
 	}
 
-	if ( m_hLaser != NULL )
+/*	if ( m_hLaser != NULL )
 	{
 		UTIL_Remove( m_hLaser );
 		m_hLaser = NULL;
-	}
+	}*/
 
 	if ( m_hEyeGlow != NULL )
 	{
@@ -235,9 +247,11 @@ void CNPC_FloorTurret::Precache( void )
 
 	if ( IsCitizenTurret() )
 	{
-		PrecacheModel( LASER_BEAM_SPRITE );
 		PrecacheScriptSound( "NPC_FloorTurret.AlarmPing");
 	}
+
+	PrecacheModel( LASER_BEAM_SPRITE );
+	m_iLaserDotSprite = PrecacheModel( LASER_DOT_SPRITE );
 
 	// Activities
 	ADD_CUSTOM_ACTIVITY( CNPC_FloorTurret, ACT_FLOOR_TURRET_OPEN );
@@ -1506,8 +1520,8 @@ bool CNPC_FloorTurret::PreThink( turretState_e state )
 			else
 			{
 				// Take away the laser
-				UTIL_Remove( m_hLaser );
-				m_hLaser = NULL;
+			//	UTIL_Remove( m_hLaser );
+			//	m_hLaser = NULL;
 
 				// Become inactive
 				SetThink( &CNPC_FloorTurret::InactiveThink );
@@ -1560,7 +1574,7 @@ void CNPC_FloorTurret::SetEyeState( eyeState_t state )
 	}
 
 	// Add the laser if it doesn't already exist
-	if ( IsCitizenTurret() && HasSpawnFlags( SF_FLOOR_TURRET_OUT_OF_AMMO ) == false && m_hLaser == NULL )
+/*	if ( IsCitizenTurret() && HasSpawnFlags( SF_FLOOR_TURRET_OUT_OF_AMMO ) == false && m_hLaser == NULL )
 	{
 		m_hLaser = CBeam::BeamCreate( LASER_BEAM_SPRITE, 1.0f );
 		if ( m_hLaser == NULL )
@@ -1577,7 +1591,7 @@ void CNPC_FloorTurret::SetEyeState( eyeState_t state )
 		m_hLaser->SetEndWidth( 1.0f );
 		m_hLaser->SetBrightness( 160 );
 		m_hLaser->SetBeamFlags( SF_BEAM_SHADEIN );
-	}
+	}*/
 
 	m_iEyeState = state;
 
@@ -1589,6 +1603,11 @@ void CNPC_FloorTurret::SetEyeState( eyeState_t state )
 		m_hEyeGlow->SetColor( 255, 0, 0 );
 		m_hEyeGlow->SetBrightness( 164, 0.1f );
 		m_hEyeGlow->SetScale( 0.4f, 0.1f );
+
+		// Laser
+		SetLaserColor( 255, 0, 0 );
+		SetLaserBrightness(1.0f);
+
 		break;
 
 	case TURRET_EYE_SEEKING_TARGET: //Ping-pongs
@@ -1597,17 +1616,24 @@ void CNPC_FloorTurret::SetEyeState( eyeState_t state )
 		m_bBlinkState = !m_bBlinkState;
 		m_hEyeGlow->SetColor( 255, 128, 0 );
 
+		// Laser
+		SetLaserColor( 255, 128, 0 );
+
 		if ( m_bBlinkState )
 		{
 			//Fade up and scale up
 			m_hEyeGlow->SetScale( 0.25f, 0.1f );
 			m_hEyeGlow->SetBrightness( 164, 0.1f );
+
+			SetLaserBrightness(1.0f, FLOOR_TURRET_PING_TIME);
 		}
 		else
 		{
 			//Fade down and scale down
 			m_hEyeGlow->SetScale( 0.2f, 0.1f );
 			m_hEyeGlow->SetBrightness( 64, 0.1f );
+
+			SetLaserBrightness(0.5f, FLOOR_TURRET_PING_TIME);
 		}
 
 		break;
@@ -1616,18 +1642,33 @@ void CNPC_FloorTurret::SetEyeState( eyeState_t state )
 		m_hEyeGlow->SetColor( 0, 255, 0 );
 		m_hEyeGlow->SetScale( 0.1f, 0.5f );
 		m_hEyeGlow->SetBrightness( 64, 0.5f );
+
+		// Laser
+		SetLaserColor( 20, 150, 20 );
+		SetLaserBrightness(1.0f);
+
 		break;
 
 	case TURRET_EYE_DEAD: //Fade out slowly
 		m_hEyeGlow->SetColor( 255, 0, 0 );
 		m_hEyeGlow->SetScale( 0.1f, 3.0f );
 		m_hEyeGlow->SetBrightness( 0, 3.0f );
+
+		// Laser
+		SetLaserColor( 255, 0, 0 );
+		SetLaserBrightness(0.0f, 2.0f);
+
 		break;
 
 	case TURRET_EYE_DISABLED:
 		m_hEyeGlow->SetColor( 0, 255, 0 );
 		m_hEyeGlow->SetScale( 0.1f, 1.0f );
 		m_hEyeGlow->SetBrightness( 0, 1.0f );
+
+		// Laser
+		SetLaserColor( 80, 255, 80 );
+		SetLaserBrightness(1.0f);
+
 		break;
 	
 	case TURRET_EYE_ALARM:
@@ -1636,23 +1677,47 @@ void CNPC_FloorTurret::SetEyeState( eyeState_t state )
 			m_bBlinkState = !m_bBlinkState;
 			m_hEyeGlow->SetColor( 255, 0, 0 );
 
+			// Laser
+			SetLaserColor( 255, 0, 0);
+
 			if ( m_bBlinkState )
 			{
 				//Fade up and scale up
 				m_hEyeGlow->SetScale( 0.75f, 0.05f );
 				m_hEyeGlow->SetBrightness( 192, 0.05f );
+
+				SetLaserBrightness(1.0f, 0.05);
 			}
 			else
 			{
 				//Fade down and scale down
 				m_hEyeGlow->SetScale( 0.25f, 0.25f );
 				m_hEyeGlow->SetBrightness( 64, 0.25f );
+
+				SetLaserBrightness(0.0f, 0.25);
 			}
 		}
 		break;
 	}
 }
-
+//-----------------------------------------------------------------------------
+// Purpose:
+//-----------------------------------------------------------------------------
+void CNPC_FloorTurret::SetLaserColor(float r, float g, float b)
+{
+	m_flLaserColor.Set(0, r);
+	m_flLaserColor.Set(1, g);
+	m_flLaserColor.Set(2, b);
+}
+//-----------------------------------------------------------------------------
+// Purpose:
+//-----------------------------------------------------------------------------
+void CNPC_FloorTurret::SetLaserBrightness(float brightness, float transitiontime)
+{
+	m_flLaserBrightness.Set(0, brightness);
+	m_flLaserBrightness.Set(1, transitiontime);
+	m_flLaserBrightness.Set(2, transitiontime > 0 ? gpGlobals->curtime : -1.0f );
+}
 //-----------------------------------------------------------------------------
 // Purpose: Make a pinging noise so the player knows where we are
 //-----------------------------------------------------------------------------

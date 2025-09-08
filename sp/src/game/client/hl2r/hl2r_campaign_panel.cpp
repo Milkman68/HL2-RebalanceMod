@@ -631,7 +631,7 @@ CHL2RCampaignPanel::CHL2RCampaignPanel() : PropertyDialog(FindGameUIChildPanel("
 	SetCloseButtonVisible(false);
 	SetSizeable( false );
 		
-	SetBounds(0, 0, GetAdjustedSize(PANEL_WIDTH), GetAdjustedSize(PANEL_HEIGHT) );
+	SetBounds(0, 0, GetAdjustedSize(HL2R_PANEL_WIDTH), GetAdjustedSize(HL2R_PANEL_HEIGHT) );
 	MoveToCenterOfScreen();
 
 	SetTitle("#hl2r_campaign_menu_title", true);

@@ -25,6 +25,7 @@ public:
 
 						C_BaseHLPlayer();
 
+	virtual void		CalcView( Vector &eyeOrigin, QAngle &eyeAngles, float &zNear, float &zFar, float &fov );
 	virtual void		OnDataChanged( DataUpdateType_t updateType );
 
 	void				Weapon_DropPrimary( void );

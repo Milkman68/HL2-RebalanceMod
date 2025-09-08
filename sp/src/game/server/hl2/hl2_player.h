@@ -208,6 +208,7 @@ public:
 
 	virtual void		GetAutoaimVector( autoaim_params_t &params );
 	bool				ShouldKeepLockedAutoaimTarget( EHANDLE hLockedTarget );
+	void				UpdateAutoaimData( void );
 
 	void				SetLocatorTargetEntity( CBaseEntity *pEntity ) { m_hLocatorTargetEntity.Set( pEntity ); }
 
@@ -355,6 +356,10 @@ private:
 
 	CSimpleSimTimer		m_LowerWeaponTimer;
 	CSimpleSimTimer		m_AutoaimTimer;
+
+	
+	bool				m_bAutoaimViewCorrection;
+	bool				m_bAutoaimBulletCorrection;
 
 	EHANDLE				m_hLockedAutoAimEntity;
 

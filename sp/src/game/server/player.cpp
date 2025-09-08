@@ -82,8 +82,11 @@
 #include "weapon_physcannon.h"
 #endif
 
+
+extern ConVar autoaim_scale;
+
 ConVar autoaim_max_dist( "autoaim_max_dist", "2160" ); // 2160 = 180 feet
-ConVar autoaim_max_deflect( "autoaim_max_deflect", "0.99" );
+//ConVar autoaim_max_deflect( "autoaim_max_deflect", "0.99" );
 
 #ifdef CSTRIKE_DLL
 ConVar	spec_freeze_time( "spec_freeze_time", "5.0", FCVAR_CHEAT | FCVAR_REPLICATED, "Time spend frozen in observer freeze cam." );
@@ -6922,7 +6925,8 @@ bool CBasePlayer::ShouldAutoaim( void )
 		return false;
 
 	// autoaiming is only for easy and medium skill
-	return ( IsX360() || !g_pGameRules->IsSkillLevel(SKILL_HARD) );
+//	return ( IsX360() || !g_pGameRules->IsSkillLevel(SKILL_HARD) );
+	return true;
 }
 
 //-----------------------------------------------------------------------------
@@ -7000,17 +7004,8 @@ void CBasePlayer::GetAutoaimVector( autoaim_params_t &params )
 
 	Vector	forward;
 
-	if( IsInAVehicle() && g_pGameRules->GetAutoAimMode() == AUTOAIM_ON_CONSOLE )
-	{
-		m_vecAutoAim = angles;
-		AngleVectors( EyeAngles() + m_vecAutoAim, &forward );
-	}
-	else
-	{
-		// always use non-sticky autoaim
-		m_vecAutoAim = angles * 0.9f;
-		AngleVectors( EyeAngles() + m_Local.m_vecPunchAngle + m_vecAutoAim, &forward );
-	}
+	m_vecAutoAim = angles;
+	AngleVectors( EyeAngles() + m_vecAutoAim, &forward );
 
 	params.m_vecAutoAimDir = forward;
 }
@@ -7125,12 +7120,12 @@ QAngle CBasePlayer::AutoaimDeflection( Vector &vecSrc, autoaim_params_t &params 
 
 					// Player is already on target naturally, don't autoaim.
 					// Fill out the autoaim_params_t struct, though.
-					params.m_hAutoAimEntity.Set(pEntHit);
-					params.m_vecAutoAimDir = bestdir;
-					params.m_vecAutoAimPoint = tr.endpos;
-					params.m_bAutoAimAssisting = false;
+		//			params.m_hAutoAimEntity.Set(pEntHit);
+		//			params.m_vecAutoAimDir = bestdir;
+		//			params.m_vecAutoAimPoint = tr.endpos;
+		//			params.m_bAutoAimAssisting = false;
 					params.m_bOnTargetNatural = true;
-					return vec3_angle;
+		//			return vec3_angle;
 				}
 			}
 
@@ -7198,7 +7193,7 @@ QAngle CBasePlayer::AutoaimDeflection( Vector &vecSrc, autoaim_params_t &params 
 			if( dot < 0 )
 				continue;
 
-			if( !(pEntity->GetFlags() & FL_FLY) )
+	/*		if( !(pEntity->GetFlags() & FL_FLY) )
 			{
 				// Refuse to take wild shots at targets far from reticle.
 				if( GetActiveWeapon() != NULL && dot < GetActiveWeapon()->GetMaxAutoAimDeflection() )
@@ -7211,7 +7206,7 @@ QAngle CBasePlayer::AutoaimDeflection( Vector &vecSrc, autoaim_params_t &params 
 						continue;
 					}
 				}
-			}
+			}*/
 
 			score = GetAutoaimScore(vecSrc, v_forward, pEntity->GetAutoAimCenter(), pEntity, params.m_fScale, GetActiveWeapon() );
 

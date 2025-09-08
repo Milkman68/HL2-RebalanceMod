@@ -47,7 +47,8 @@ END_DATADESC()
 BEGIN_PREDICTION_DATA( CBaseHLCombatWeapon )
 END_PREDICTION_DATA()
 
-ConVar sk_auto_reload_time( "sk_auto_reload_time", "3", FCVAR_REPLICATED );
+ConVar sk_auto_reload_time( "sk_auto_reload_time", "3.0", FCVAR_REPLICATED );
+ConVar sk_allow_auto_reload( "sk_allow_auto_reload", "0", FCVAR_REPLICATED );
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -62,6 +63,9 @@ void CBaseHLCombatWeapon::ItemHolsterFrame( void )
 
 	// We can't be active
 	if ( GetOwner()->GetActiveWeapon() == this )
+		return;
+
+	if ( !sk_allow_auto_reload.GetBool() )
 		return;
 
 	// If it's been longer than three seconds, reload

@@ -11,8 +11,8 @@
 #include <vgui_controls/Divider.h>
 #include <vgui_controls/ComboBox.h>
 
-#define PANEL_WIDTH 896
-#define PANEL_HEIGHT 640
+#define HL2R_PANEL_WIDTH 896
+#define HL2R_PANEL_HEIGHT 640
 
 #define EDITPANEL_WIDTH 400
 #define EDITPANEL_HEIGHT 220
@@ -377,13 +377,7 @@ void CCampaignEditPanel::OnCommand(const char* pcCommand)
 	}
 	if ( !stricmp(pcCommand, "setstartmap") )
 	{
-		int selecteditemID = m_MapListPanel->GetSelectedItem();
-
-		m_iPrevStartMap = selecteditemID;
-		GetCampaign()->startingmap = selecteditemID;
-
-		GetCampaignDatabase()->WriteListToScript();
-		RefreshMapList();
+		SetStartingMap( m_MapListPanel->GetSelectedItem() );
 	}
 	BaseClass::OnCommand(pcCommand);
 }
@@ -456,6 +450,9 @@ void CCampaignEditPanel::RefreshMapList( void )
 {
 	m_MapListPanel->RemoveAll();
 	CreateMapList();
+
+	m_StartingMapButton->SetEnabled(false);
+	m_BackgroundMapButton->SetEnabled(false);
 }
 //-----------------------------------------------------------------------------
 // Purpose: 

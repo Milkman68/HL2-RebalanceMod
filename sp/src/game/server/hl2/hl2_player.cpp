@@ -62,6 +62,14 @@
 extern ConVar weapon_showproficiency;
 extern ConVar autoaim_max_dist;
 
+extern ConVar autoaim_viewcorrection;
+extern ConVar autoaim_bulletcorrection;
+
+extern ConVar autoaim_viewcorrection_scale;
+extern ConVar autoaim_bulletcorrection_scale;
+
+ConVar hl2_autoaim_manual_locking( "hl2_autoaim_manual_locking", "0" );
+
 // Do not touch with without seeing me, please! (sjb)
 // For consistency's sake, enemy gunfire is traced against a scaled down
 // version of the player's hull, not the hitboxes for the player's model
@@ -2576,60 +2584,84 @@ void CHL2_Player::NotifyScriptsOfDeath( void )
 //-----------------------------------------------------------------------------
 void CHL2_Player::GetAutoaimVector( autoaim_params_t &params )
 {
+//	float flBulletScale = autoaim_viewcorrection_scale.GetFloat();
+	float flViewScale = autoaim_viewcorrection_scale.GetFloat();
+
+	if ( m_bAutoaimBulletCorrection )
+	{
+		params.m_fScale *= /*flBulletScale > 0.0f ? flBulletScale : */0.0f;
+	}
+
+	if ( m_bAutoaimViewCorrection )
+	{
+		params.m_fScale *= flViewScale;
+	}
+
+
 	BaseClass::GetAutoaimVector( params );
 
-	if ( IsX360() )
+
+	if ( !m_bAutoaimViewCorrection )
+		return;
+
+	// Target Locking
+	bool bReturnNullParams = true;
+
+	if ( hl2_autoaim_manual_locking.GetBool() )
 	{
-		if( IsInAVehicle() )
+		if (m_hLockedAutoAimEntity && m_hLockedAutoAimEntity->IsAlive() )
 		{
-			if( m_hLockedAutoAimEntity && m_hLockedAutoAimEntity->IsAlive() && ShouldKeepLockedAutoaimTarget(m_hLockedAutoAimEntity) )
+			// Ignore autoaim and just keep aiming at this target.
+			params.m_hAutoAimEntity = m_hLockedAutoAimEntity;
+
+			Vector vecTarget = m_hLockedAutoAimEntity->BodyTarget(EyePosition(), false);
+			Vector vecDir = vecTarget - EyePosition();
+			VectorNormalize(vecDir);
+
+			params.m_vecAutoAimDir = vecDir;
+			params.m_vecAutoAimPoint = vecTarget;
+
+			if ( m_afButtonPressed & IN_ATTACK3 )
 			{
-				if( params.m_hAutoAimEntity && params.m_hAutoAimEntity != m_hLockedAutoAimEntity )
+				m_hLockedAutoAimEntity = NULL;
+			}
+			else
+			{
+				bReturnNullParams = false;
+			}
+		}
+		else
+		{
+			// Don't have a locked entity and we requested to lock onto one? 
+			// Lock on.
+			if ( m_afButtonPressed & IN_ATTACK3 )
+			{
+				if (params.m_hAutoAimEntity && params.m_hAutoAimEntity != m_hLockedAutoAimEntity)
 				{
 					// Autoaim has picked a new target. Switch.
 					m_hLockedAutoAimEntity = params.m_hAutoAimEntity;
 				}
-
-				// Ignore autoaim and just keep aiming at this target.
-				params.m_hAutoAimEntity = m_hLockedAutoAimEntity;
-				Vector vecTarget = m_hLockedAutoAimEntity->BodyTarget( EyePosition(), false );
-				Vector vecDir = vecTarget - EyePosition();
-				VectorNormalize( vecDir );
-
-				params.m_vecAutoAimDir = vecDir;
-				params.m_vecAutoAimPoint = vecTarget;
-				return;		
-			}
-			else
-			{
-				m_hLockedAutoAimEntity = NULL;
-			}
-		}
-
-		// If the player manually gets his crosshair onto a target, make that target sticky
-		if( params.m_fScale != AUTOAIM_SCALE_DIRECT_ONLY )
-		{
-			// Only affect this for 'real' queries
-			//if( params.m_hAutoAimEntity && params.m_bOnTargetNatural )
-			if( params.m_hAutoAimEntity )
-			{
-				// Turn on sticky.
-				m_HL2Local.m_bStickyAutoAim = true;
-
-				if( IsInAVehicle() )
-				{
-					m_hLockedAutoAimEntity = params.m_hAutoAimEntity;
-				}
-			}
-			else if( !params.m_hAutoAimEntity )
-			{
-				// Turn off sticky only if there's no target at all.
-				m_HL2Local.m_bStickyAutoAim = false;
-
-				m_hLockedAutoAimEntity = NULL;
 			}
 		}
 	}
+	else 
+	{
+		bReturnNullParams = false;
+	}
+
+	if ( bReturnNullParams )
+	{
+		Vector	forward;
+		AngleVectors(EyeAngles() + m_Local.m_vecPunchAngle, &forward);
+
+		params.m_vecAutoAimDir = forward;
+		params.m_hAutoAimEntity.Set(NULL);
+		params.m_vecAutoAimPoint = vec3_invalid;
+		params.m_bAutoAimAssisting = false;
+	}
+
+	m_bAutoaimViewCorrection = false;
+	m_bAutoaimBulletCorrection = true;
 }
 
 //-----------------------------------------------------------------------------
@@ -2655,6 +2687,33 @@ bool CHL2_Player::ShouldKeepLockedAutoaimTarget( EHANDLE hLockedTarget )
 		return false;
 
 	return true;
+}
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+void CHL2_Player::UpdateAutoaimData( void )
+{
+/*	if( !m_AutoaimTimer.Expired() )
+			return;
+
+	m_AutoaimTimer.Set(.1);
+
+	VPROF("hl2_x360_aiming");
+	*/
+	// Call the autoaim code to update the local player data, which allows the client to update.
+	autoaim_params_t params;
+	params.m_vecAutoAimPoint.Init();
+	params.m_vecAutoAimDir.Init();
+	params.m_fScale = AUTOAIM_SCALE_DEFAULT;
+	params.m_fMaxDist = autoaim_max_dist.GetFloat();
+
+	m_bAutoaimBulletCorrection = false;
+	m_bAutoaimViewCorrection = true;
+
+	GetAutoaimVector(params);
+	m_HL2Local.m_hAutoAimTarget.Set(params.m_hAutoAimEntity);
+	m_HL2Local.m_vecAutoAimPoint.Set(params.m_vecAutoAimPoint);
+	m_HL2Local.m_bAutoAimTarget = (params.m_bAutoAimAssisting || params.m_bOnTargetNatural);
 }
 
 //-----------------------------------------------------------------------------
@@ -3100,25 +3159,6 @@ void CHL2_Player::UpdateWeaponPosture( void )
 			if( !pWeapon->CanLower() && m_HL2Local.m_bWeaponLowered )
 				m_HL2Local.m_bWeaponLowered = false;
 		}
-
-		if( !m_AutoaimTimer.Expired() )
-			return;
-
-		m_AutoaimTimer.Set( .1 );
-
-		VPROF( "hl2_x360_aiming" );
-
-		// Call the autoaim code to update the local player data, which allows the client to update.
-		autoaim_params_t params;
-		params.m_vecAutoAimPoint.Init();
-		params.m_vecAutoAimDir.Init();
-		params.m_fScale = AUTOAIM_SCALE_DEFAULT;
-		params.m_fMaxDist = autoaim_max_dist.GetFloat();
-		GetAutoaimVector( params );
-		m_HL2Local.m_hAutoAimTarget.Set( params.m_hAutoAimEntity );
-		m_HL2Local.m_vecAutoAimPoint.Set( params.m_vecAutoAimPoint );
-		m_HL2Local.m_bAutoAimTarget = ( params.m_bAutoAimAssisting || params.m_bOnTargetNatural );
-		return;
 	}
 	else
 	{
@@ -3369,6 +3409,8 @@ void CHL2_Player::UpdateClientData( void )
 		m_HL2Local.m_flFlashBattery = -1.0f;
 	}
 //#endif // HL2_EPISODIC
+
+	UpdateAutoaimData();
 
 	BaseClass::UpdateClientData();
 }

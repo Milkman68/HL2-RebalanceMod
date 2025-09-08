@@ -150,6 +150,8 @@ $Project "Client (Episodic)"
 			$File	"hl2r\hl2r_gamelogo.h"
 			$File	"hl2r\hl2r_game_manager.cpp"
 			$File	"hl2r\hl2r_game_manager.h"
+
+			$File	"hl2\c_npc_turret_floor.cpp"
 		}
 	}
 	

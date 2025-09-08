@@ -119,10 +119,11 @@ ConVar	sk_dmg_take_scale2( "sk_dmg_take_scale2", "1.00", FCVAR_REPLICATED );
 
 ConVar	sk_allow_autoaim( "sk_allow_autoaim", "0", FCVAR_REPLICATED | FCVAR_ARCHIVE_XBOX );
 
-// Autoaim scale
-ConVar	sk_autoaim_scale1( "sk_autoaim_scale1", "0.0", FCVAR_REPLICATED );
-ConVar	sk_autoaim_scale2( "sk_autoaim_scale2", "0.0", FCVAR_REPLICATED );
-//ConVar	sk_autoaim_scale3( "sk_autoaim_scale3", "0.0", FCVAR_REPLICATED ); NOT CURRENTLY OFFERED ON SKILL 3
+// Autoaim
+ConVar	autoaim_viewcorrection_scale( "autoaim_viewcorrection_scale", "2.0", FCVAR_ARCHIVE | FCVAR_REPLICATED );
+ConVar	autoaim_viewcorrection_speed( "autoaim_viewcorrection_speed", "1125.0", FCVAR_ARCHIVE | FCVAR_REPLICATED );
+
+ConVar	autoaim_bulletcorrection_scale( "autoaim_bulletcorrection_scale", "-1.0", FCVAR_ARCHIVE | FCVAR_REPLICATED );
 
 // Quantity scale for ammo received by the player.
 ConVar	sk_ammo_qty_scale1 ( "sk_ammo_qty_scale1", "1.20", FCVAR_REPLICATED );
@@ -1753,28 +1754,14 @@ bool CHalfLife2::ShouldUseRobustRadiusDamage(CBaseEntity *pEntity)
 //---------------------------------------------------------
 bool CHalfLife2::ShouldAutoAim( CBasePlayer *pPlayer, edict_t *target )
 {
-	return sk_allow_autoaim.GetBool() != 0;
+	return sk_allow_autoaim.GetBool() != 0 && GetAutoAimScale(pPlayer) > 0.0f;
 }
 
 //---------------------------------------------------------
 //---------------------------------------------------------
 float CHalfLife2::GetAutoAimScale( CBasePlayer *pPlayer )
 {
-#ifdef _X360
 	return 1.0f;
-#else
-	switch( GetSkillLevel() )
-	{
-	case SKILL_EASY:
-		return sk_autoaim_scale1.GetFloat();
-
-	case SKILL_MEDIUM:
-		return sk_autoaim_scale2.GetFloat();
-
-	default:
-		return 0.0f;
-	}
-#endif
 }
 
 //---------------------------------------------------------

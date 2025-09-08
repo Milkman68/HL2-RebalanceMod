@@ -9,8 +9,8 @@ using namespace vgui;
 #include <vgui/ISurface.h>
 #include "hl2r_options.h"
 
-#define PANEL_WIDTH 422
-#define PANEL_HEIGHT 590
+#define HL2R_PANEL_WIDTH 512
+#define HL2R_PANEL_HEIGHT 406
 
 //------------------------------------------------------------------------------
 // Purpose : Code for hooking into the base GameUI panel. Credit goes to: 
@@ -55,39 +55,6 @@ static int GetAdjustedSize( int iValue )
 	return (int)iValue;
 }
 //------------------------------------------------------------------------------
-// Purpose: Challenge panel
-//------------------------------------------------------------------------------
-void CSubChallengePanel::SubPanelInit( void )
-{
-	toggleAllButton = new Button(this, "toggleAllButton", "");
-	toggleAllButton->SetCommand("toggleall");
-		
-	BaseClass::SubPanelInit();
-}
-
-void CSubChallengePanel::OnCommand(const char* pcCommand)
-{
-	BaseClass::OnCommand(pcCommand);
-	if (!Q_stricmp(pcCommand, "toggleall"))
-	{
-		bool bState = true;
-		
-		for ( int i = 0; i < ARRAYSIZE(challenges_CheckButtons); i++ )
-		{
-			if ( challenges_CheckButtons[i].Button->IsSelected() )
-			{
-				bState = false;
-				break;
-			}
-		}
-			
-		for ( int i = 0; i < ARRAYSIZE(challenges_CheckButtons); i++ )
-		{
-				challenges_CheckButtons[i].Button->SetSelected(bState);
-		}
-	}
-}
-//------------------------------------------------------------------------------
 // Purpose: Parent panel
 //------------------------------------------------------------------------------
 CHL2RMenu::CHL2RMenu() : PropertyDialog(FindGameUIChildPanel("BaseGameUIPanel"), "OtherSettings")
@@ -97,13 +64,13 @@ CHL2RMenu::CHL2RMenu() : PropertyDialog(FindGameUIChildPanel("BaseGameUIPanel"),
 	SetCloseButtonVisible(false);
 	SetSizeable( false );
 		
-	SetBounds(0, 0, GetAdjustedSize(PANEL_WIDTH), GetAdjustedSize(PANEL_HEIGHT) );
+	SetBounds(0, 0, GetAdjustedSize(HL2R_PANEL_WIDTH), GetAdjustedSize(HL2R_PANEL_HEIGHT) );
 	MoveToCenterOfScreen();
 
 	SetTitle("#hl2r_options_title", true);
 
-	hl2r_OptionsTabs[2].Panel = new CSubChallengePanel(this);
-	hl2r_OptionsTabs->ParseOptionsPanels( this, hl2r_OptionsTabs );
+	hl2r_OptionsPages[1].Panel = new CSubGamePanel(this);
+	hl2r_OptionsPages->ParseOptionsPanels( this, hl2r_OptionsPages );
 }
 
 void CHL2RMenu::Activate()
@@ -124,7 +91,7 @@ void CHL2RMenu::OnThink()
 bool isHL2RActive = false;
 void CHL2RMenu::OnClose()
 {
-	hl2r_OptionsTabs->KillOptionsPanels(hl2r_OptionsTabs);
+	hl2r_OptionsPages->KillOptionsPanels(hl2r_OptionsPages);
 
 	BaseClass::OnClose();
 	isHL2RActive = false;

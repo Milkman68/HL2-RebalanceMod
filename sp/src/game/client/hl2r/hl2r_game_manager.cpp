@@ -59,7 +59,7 @@ private:
 */
 CGameManager::CGameManager()
 {
-	Assert( g_pCampaignDatabase == NULL );
+	Assert( g_pCGameManager == NULL );
 	g_pCGameManager = this;
 
 	KeyValues *pGameFile = new KeyValues( "GameSwitch.txt" );

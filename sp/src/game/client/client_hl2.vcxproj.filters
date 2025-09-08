@@ -3178,6 +3178,9 @@
     <ClCompile Include="hl2\vgui_rootpanel_hl2.cpp">
       <Filter>Source Files\HL2 DLL</Filter>
     </ClCompile>
+    <ClCompile Include="hl2\c_npc_turret_floor.cpp">
+      <Filter>Source Files\HL2R</Filter>
+    </ClCompile>
     <ClCompile Include="hl2r\hl2r_campaign_database.cpp">
       <Filter>Source Files\HL2R</Filter>
     </ClCompile>

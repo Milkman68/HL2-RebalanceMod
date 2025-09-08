@@ -12,6 +12,9 @@
 #include <vgui_controls/PropertySheet.h>
 #include <vgui_controls/ScrollableEditablePanel.h>
 
+// The purpose of all these is to contain instructions to create elements.
+// Not contain the elements themselves
+
 //------------------------------------------------------------------------------
 // Check Buttons
 //------------------------------------------------------------------------------
@@ -21,33 +24,26 @@ struct CheckButton_t
 	char		Convar[128];
 	bool		bInvert;
 	
-	int			Size;
-	CheckButton	*Button;
+	CheckButton	*panel;
 	
 	// Initializes a given CheckButton array.
-	void InitCheckButtons( Panel *parent, CheckButton_t checkButtons[] )
+	void Init( Panel *parent )
 	{
-		for ( int i = 0; i < checkButtons[0].Size; i++ )
-		{
-			checkButtons[i].Button = new CheckButton(parent, checkButtons[i].Name, "");
-			
-			ConVarRef var( checkButtons[i].Convar );
-			checkButtons[i].Button->SetSelected( checkButtons[i].bInvert ? !var.GetBool() : var.GetBool() );
-		}
+		panel = new CheckButton(parent, Name, "");
+
+		ConVarRef var(Convar);
+		panel->SetSelected(bInvert ? !var.GetBool() : var.GetBool());
 	}
-	
+
 	// Updates ConVars related to a given CheckButton array.
-	void UpdateConVars( Panel *parent, CheckButton_t checkButtons[] )
+	void Update( Panel *parent )
 	{
-		for ( int i = 0; i < checkButtons[0].Size; i++ )
-		{
-			ConVarRef var( checkButtons[i].Convar );
-			var.SetValue( checkButtons[i].bInvert ? !checkButtons[i].Button->IsSelected() : checkButtons[i].Button->IsSelected() );
-		}
+		ConVarRef var(Convar);
+		var.SetValue(bInvert ? !panel->IsSelected() : panel->IsSelected());
 	}
 };
 
-//------------------------------------------------------------------------------
+/*//------------------------------------------------------------------------------
 // Radio Buttons
 //------------------------------------------------------------------------------
 #define MAX_RADIO_BUTTONS 8
@@ -83,7 +79,8 @@ struct RadioButton_t
 		}
 	}
 };
-
+*/
+#if 0
 //------------------------------------------------------------------------------
 // Box Buttons
 //------------------------------------------------------------------------------
@@ -153,69 +150,139 @@ struct BoxButton_t
 		}
 	}
 };
-
+#endif
 //------------------------------------------------------------------------------
 // Tick Sliders
 //------------------------------------------------------------------------------
 struct TickSlider_t
 {
 	char		Name[32];
-	int			min, max; // Value range for ConVars
-	int			numticks; // Number of visible ticks on the slider.
-	float		scale; // Scales the value difference between slider positions.
 	char		Convar[128];
-	
-	int			Size;
-	Slider		*TickSlider;
+
+	int			numticks;		// Number of selectable ticks on the slider.
+	int			numindicators;	// Number of visible line indicators on the slider.
+
+	float		min, max; // Value range
+
+	Slider		*panel;
 	
 	// Initializes a given TickSlider array.
-	void InitTickSliders( Panel *parent, TickSlider_t tickSliders[] )
+	void Init( Panel *parent )
 	{
-		for ( int i = 0; i < tickSliders[0].Size; i++ )
-		{
-			tickSliders[i].TickSlider = new Slider(parent, tickSliders[i].Name);
-			
-			int min = tickSliders[i].min / tickSliders[i].scale;
-			int max = tickSliders[i].max / tickSliders[i].scale;
-			tickSliders[i].TickSlider->SetRange(min, max); 
-			
-			tickSliders[i].TickSlider->SetNumTicks(tickSliders[i].numticks);
-			ConVarRef var( tickSliders[i].Convar );
-			tickSliders[i].TickSlider->SetValue(var.GetFloat() / tickSliders[i].scale);
-		}
+		panel = new Slider(parent, Name);
+
+		panel->SetRange(0, numticks - 1); 
+		panel->SetNumTicks(numindicators - 1);
+
+		ConVarRef var( Convar );
+		int iSelectedTick = (int)RemapVal(var.GetFloat(), min, max, 0, numticks);
+
+		panel->SetValue( iSelectedTick );
 	}
 	
 	// Updates ConVars related to a given TickSlider array.
-	void UpdateConVars( Panel *parent, TickSlider_t tickSliders[] )
+	void Update( Panel *parent )
 	{
-		for ( int i = 0; i < tickSliders[0].Size; i++ )
-		{
-			ConVarRef var( tickSliders[i].Convar );
-			var.SetValue( tickSliders[i].TickSlider->GetValue() * tickSliders[i].scale );
-		}
+		ConVarRef var( Convar );
+		var.SetValue( RemapVal(panel->GetValue(), 0.0f, numticks - 1, min, max) );
 	}
 };
 
-static void GetFixedName( char *name, char *key )
+enum eControlTypes
 {
-	// Get our name string.
-	char s[32];
-	V_strcpy( s, name );
-		
-	char *ident; 
-	ident = Q_strstr( s, key );
-		
-	// Don't use it if it doesn't contain our keyword.
-	if ( ident == NULL )
-		return;
-		
-	// Remove the keyword from our name and turn it lowercase.
-	Q_strncpy( ident, "", 4 );
-	Q_strlower(s);
-		
-	V_strcpy( name, s );
-}
+	TYPE_NULL = 0,
 
+	TYPE_CHECKBOX,
+	TYPE_RADIOBUTTON,
+	TYPE_BOXBUTTON,
+	TYPE_TICKSLIDER,
+};
+//------------------------------------------------------------------------------
+// Control Elements
+//------------------------------------------------------------------------------
+#define CREATE_NEW_ELEMENT(x, y) y x; V_strcpy_safe(x.Name, controlElements[i].name); V_strcpy_safe(x.Convar, controlElements[i].convar);
+#define INIT_NEW_ELEMENT(x, parent) x.Init(parent); controlElements[i].elementPanel = x.panel;
+#define ELEMENT_PARAMETER(x) controlElements[i].parameter_##x
+
+struct ControlElement_t
+{
+public:
+	int type;
+	char name[128];
+	char convar[128];
+
+	char parameter_1[128];char parameter_2[128];char parameter_3[128];char parameter_4[128];char parameter_5[128];
+	char parameter_6[128];char parameter_7[128];char parameter_8[128];char parameter_9[128];char parameter_10[128];
+
+	Panel *elementPanel;
+	
+public:
+	// Initializes a given ControlElement array.
+	void InitElements( Panel *parent, ControlElement_t controlElements[] )
+	{
+		// The number of elements is stored in the 0th index of a controlElements array.
+		int iNumElements = controlElements[0].type;
+
+		for (int i = 1; i < iNumElements + 1; i++)
+		{
+			switch( controlElements[i].type )
+			{
+			case TYPE_CHECKBOX:
+				{
+					CREATE_NEW_ELEMENT(checkbutton, CheckButton_t);
+
+					// Parameters
+					checkbutton.bInvert = GetParamBool(ELEMENT_PARAMETER(1));
+
+					INIT_NEW_ELEMENT(checkbutton, parent);
+				}
+				break;
+
+			case TYPE_TICKSLIDER:
+				{
+					CREATE_NEW_ELEMENT(tickslider, TickSlider_t);
+
+					// Parameters
+					tickslider.numticks =		GetParamInt(ELEMENT_PARAMETER(1));
+					tickslider.numindicators = GetParamInt(ELEMENT_PARAMETER(2));
+
+					tickslider.min = GetParamFloat(ELEMENT_PARAMETER(3));
+					tickslider.max = GetParamFloat(ELEMENT_PARAMETER(4));
+
+					INIT_NEW_ELEMENT(tickslider, parent);
+				}
+				break;
+			}
+		}
+	}
+	
+	// Updates ConVars related to a given ControlElement array.
+	void UpdateElements( Panel *parent, ControlElement_t controlElements[] )
+	{
+
+	}
+
+private:
+	int GetParamInt( const char *param )
+	{
+		return atoi(param);
+	}
+
+	float GetParamFloat( const char *param )
+	{
+		return atof(param);
+	}
+
+	bool GetParamBool( const char *param )
+	{
+		bool bTrue = !Q_stricmp(param, "true");
+
+		if ( !bTrue && Q_stricmp(param, "false") )
+			DevWarning("ControlElement_t GetParamBool() is neither true or false!\n");
+
+		return bTrue;
+	}
+};
 
 //------------------------------------------------------------------------------
 // Options Panel
@@ -233,50 +300,32 @@ public:
 	// Initialize all our control methods.
 	virtual void SubPanelInit( void ) 
 	{
-		if ( m_CheckButtonList != NULL )
-			m_CheckButtonList->InitCheckButtons( this, m_CheckButtonList );
+		if ( m_ControlElementList != NULL )
+			m_ControlElementList->InitElements( this, m_ControlElementList );
+	}
 
-		if (m_RadioButtonList != NULL)
-			m_RadioButtonList->InitRadioButtons(this, m_RadioButtonList);
-		
-		if ( m_BoxButtonList != NULL )
-			m_BoxButtonList->InitBoxButtons( this, m_BoxButtonList );
-		
-		if ( m_TickSliderList != NULL )
-			m_TickSliderList->InitTickSliders( this, m_TickSliderList );
+	// Enable the apply button.
+	virtual void OnControlModified( Panel *panel )
+	{ 
+		PostActionSignal(new KeyValues("ApplyButtonEnable")); 
 	}
 	
 private:
 	// Updates all our control methods.
 	MESSAGE_FUNC( OnApplyChanges, "ApplyChanges" )
 	{
-		if ( m_CheckButtonList != NULL )
-			m_CheckButtonList->UpdateConVars( this, m_CheckButtonList );
-
-		if (m_RadioButtonList != NULL)
-			m_RadioButtonList->UpdateConVars(this, m_RadioButtonList);
-		
-		if ( m_BoxButtonList != NULL )
-			m_BoxButtonList->UpdateConVars( this, m_BoxButtonList );
-		
-		if ( m_TickSliderList != NULL )
-			m_TickSliderList->UpdateConVars( this, m_TickSliderList );
+		if ( m_ControlElementList != NULL )
+			m_ControlElementList->UpdateElements( this, m_ControlElementList );
 	}
 
 	// Execute OnControlModified() when any action should enable the apply button.
-	MESSAGE_FUNC_PTR(OnCheckButtonChecked, "CheckButtonChecked", panel) { OnControlModified(); }
-	MESSAGE_FUNC_PTR(OnRadioButtonChecked, "RadioButtonChecked", panel) { OnControlModified(); }
-	MESSAGE_FUNC( OnTextChanged, "TextChanged" ) { OnControlModified(); }
-	MESSAGE_FUNC_PARAMS( OnSliderMoved, "SliderMoved", data ) { OnControlModified(); }
-	
-	// Enable the apply button.
-	MESSAGE_FUNC( OnControlModified, "ControlModified" ) { PostActionSignal(new KeyValues("ApplyButtonEnable")); }
+	MESSAGE_FUNC_PTR(OnCheckButtonChecked, "CheckButtonChecked", panel) { OnControlModified(panel); }
+	MESSAGE_FUNC_PTR(OnRadioButtonChecked, "RadioButtonChecked", panel) { OnControlModified(panel); }
+	MESSAGE_FUNC_PTR( OnTextChanged, "TextChanged", panel )				{ OnControlModified(panel); }
+	MESSAGE_FUNC_PTR( OnSliderMoved, "SliderMoved", panel )				{ OnControlModified(panel); }
 	
 public:
-	CheckButton_t *m_CheckButtonList = NULL;
-	RadioButton_t *m_RadioButtonList = NULL;
-	BoxButton_t *m_BoxButtonList = NULL;
-	TickSlider_t *m_TickSliderList = NULL;
+	ControlElement_t *m_ControlElementList = NULL;
 };
 //------------------------------------------------------------------------------
 // Scrollable Panel
@@ -297,16 +346,14 @@ private:
 	MESSAGE_FUNC( OnApplyChanges, "ApplyChanges" ) { ipanel()->SendMessage(GetChild(0)->GetVPanel(), new KeyValues("ApplyChanges"), GetVPanel()); }
 };
 //------------------------------------------------------------------------------
-// Options Tab
+// Options Page
 //------------------------------------------------------------------------------
-struct OptionsTab_t
+struct OptionsPage_t
 {
-	char			Name[32];
+	const char	*pLabel;
+	const char	*pResourcePath;
 	
-	CheckButton_t	*CheckButtons; // List of all checkButtons in this panel.
-	RadioButton_t	*RadioButtons;
-	BoxButton_t		*BoxButtons; // List of all boxButtons in this panel.
-	TickSlider_t	*TickSliders; // List of all tickSliders in this panel.
+	ControlElement_t	*ControlElements; // List of all elements in this panel.
 	
 	// if this is greater than 1, add a scrollbar to this panel and extend it's height down by this percentage.
 	float			AdditionalHeightPerc; 
@@ -314,57 +361,47 @@ struct OptionsTab_t
 	int				Size;
 	CSubPanel		*Panel;
 
-	// Parses a given OptionsTab array.
-	void ParseOptionsPanels( PropertyDialog *parent, OptionsTab_t OptionsTabs[] )
+	// Parses a given OptionsPage array.
+	void ParseOptionsPanels( PropertyDialog *parent, OptionsPage_t OptionsPages[] )
 	{
-		for ( int i = 0; i < OptionsTabs[0].Size; i++ )
+		int iNumElements = atoi(OptionsPages[0].pLabel);
+		for ( int i = 1; i < iNumElements; i++ )
 		{
-			if (!OptionsTabs[i].Panel)
-				OptionsTabs[i].Panel = new CSubPanel(parent);
+			if (!OptionsPages[i].Panel)
+				OptionsPages[i].Panel = new CSubPanel(parent);
 
 			// Pass our control methods to the new panel.
-			OptionsTabs[i].Panel->m_CheckButtonList = OptionsTabs[i].CheckButtons;
-			OptionsTabs[i].Panel->m_RadioButtonList = OptionsTabs[i].RadioButtons;
-			OptionsTabs[i].Panel->m_BoxButtonList = OptionsTabs[i].BoxButtons;
-			OptionsTabs[i].Panel->m_TickSliderList = OptionsTabs[i].TickSliders;
+			OptionsPages[i].Panel->m_ControlElementList = OptionsPages[i].ControlElements;
 			
 			// Init
-			OptionsTabs[i].Panel->SubPanelInit();
-			
-			// Get our lowercase name as a string. 
-			// This is used for loading the corrosponding .res file and label string.
-			char s[32];
-			V_strcpy( s, OptionsTabs[i].Name );
-
-			GetFixedName(s, "Page");
-			
-			OptionsTabs[i].Panel->LoadControlSettings( VarArgs( "resource/ui/hl2r_optionssub%s.res", s ) );
+			OptionsPages[i].Panel->SubPanelInit();
+			OptionsPages[i].Panel->LoadControlSettings( OptionsPages[i].pResourcePath );
 				
 			// Parent this panel to a scrollable panel if we need extra height.
-			if ( OptionsTabs[i].AdditionalHeightPerc > 1.0f )
+			if ( OptionsPages[i].AdditionalHeightPerc > 1.0f )
 			{
 				CSubScrollablePanel* m_pScrollablePanel;
-				m_pScrollablePanel = new CSubScrollablePanel( parent, OptionsTabs[i].Panel );
+				m_pScrollablePanel = new CSubScrollablePanel( parent, OptionsPages[i].Panel );
 
-				OptionsTabs[i].Panel->SetBounds(0, 0, parent->GetWide(), parent->GetTall() * ( 1.0f + ( OptionsTabs[i].AdditionalHeightPerc / 100 ) ) );
+				OptionsPages[i].Panel->SetBounds(0, 0, parent->GetWide(), parent->GetTall() * ( 1.0f + ( OptionsPages[i].AdditionalHeightPerc / 100 ) ) );
 				
 				// Add this scrollable panel to our parents page-list.
-				parent->AddPage(m_pScrollablePanel, VarArgs( "#hl2r_options_%s", s) );
+				parent->AddPage(m_pScrollablePanel, OptionsPages[i].pLabel);
 			}
 			else
 			{
 				// Add this panel to our parents page-list.
-				parent->AddPage(OptionsTabs[i].Panel, VarArgs( "#hl2r_options_%s", s) );
+				parent->AddPage(OptionsPages[i].Panel, OptionsPages[i].pLabel);
 			}
 		}
 	}
 
-	void KillOptionsPanels(OptionsTab_t OptionsTabs[])
+	void KillOptionsPanels(OptionsPage_t OptionsPages[])
 	{
-		for ( int i = 0; i < OptionsTabs[0].Size; i++ )
+		for ( int i = 0; i < OptionsPages[0].Size; i++ )
 		{
-			if (OptionsTabs[i].Panel)
-				OptionsTabs[i].Panel = NULL;
+			if (OptionsPages[i].Panel)
+				OptionsPages[i].Panel = NULL;
 		}	
 	}
 };

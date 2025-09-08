@@ -25,6 +25,8 @@ extern ConVar zoom_sensitivity_ratio;
 extern ConVar default_fov;
 extern ConVar sensitivity;
 
+extern ConVar autoaim_viewcorrection_speed;
+
 ConVar cl_npc_speedmod_intime( "cl_npc_speedmod_intime", "0.25", FCVAR_CLIENTDLL | FCVAR_ARCHIVE );
 ConVar cl_npc_speedmod_outtime( "cl_npc_speedmod_outtime", "1.5", FCVAR_CLIENTDLL | FCVAR_ARCHIVE );
 
@@ -69,7 +71,44 @@ C_BaseHLPlayer::C_BaseHLPlayer()
 	ConVarRef scissor( "r_flashlightscissor" );
 	scissor.SetValue( "0" );
 }
+//-----------------------------------------------------------------------------
+// Purpose: 
+// Input  : eyeOrigin - 
+//			eyeAngles - 
+//			zNear - 
+//			zFar - 
+//			fov - 
+//-----------------------------------------------------------------------------
+void C_BaseHLPlayer::CalcView( Vector &eyeOrigin, QAngle &eyeAngles, float &zNear, float &zFar, float &fov )
+{
+	if ( !GetVehicle() && !IsObserver() )
+	{
+		if( m_HL2Local.m_hAutoAimTarget.Get() )
+		{
+			QAngle viewangles;
+			engine->GetViewAngles(viewangles);
 
+			Vector vecAutoAimPoint = m_HL2Local.m_vecAutoAimPoint;
+			Vector vecDir = vecAutoAimPoint - EyePosition();
+			VectorNormalize(vecDir);
+
+			QAngle targetangles;
+			VectorAngles(vecDir, targetangles);
+
+			float speed = autoaim_viewcorrection_speed.GetFloat();
+
+			QAngle delta;
+		//	delta[0] = ApproachAngle(targetangles[0], viewangles[0], (AngleDistance(targetangles[0], viewangles[0]) / 360) * gpGlobals->frametime * speed);
+			delta[0] = viewangles[0];
+			delta[1] = ApproachAngle(targetangles[1], viewangles[1], (AngleDistance(targetangles[1], viewangles[1]) / 360) * gpGlobals->frametime * speed);
+			delta[2] = viewangles[2];
+
+			engine->SetViewAngles(delta);
+		}
+	}
+
+	BaseClass::CalcView(eyeOrigin, eyeAngles, zNear, zFar, fov);
+}
 //-----------------------------------------------------------------------------
 // Purpose: 
 // Input  : updateType - 

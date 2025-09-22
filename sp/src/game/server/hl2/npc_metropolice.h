@@ -163,6 +163,9 @@ private:
 
 	virtual bool		UseAttackSquadSlots()	{ return true; }
 
+	virtual	bool		UsesNewProficiencySystem( void ) { return true; }
+	virtual int			GetNewProficiencyTier( void ) { return m_iTier; };
+
 	WeaponProficiency_t CalcWeaponProficiency( CBaseCombatWeapon *pWeapon );
 
 	// Inputs
@@ -512,6 +515,8 @@ private:
 	float			m_flLastHitYaw;
 
 	static float	gm_flTimeLastSpokePeek;
+
+	int				m_iTier;
 
 public:
 	DEFINE_CUSTOM_AI;

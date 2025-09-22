@@ -44,6 +44,9 @@ public:
 
 	virtual	bool		AllowedToIgnite( void ) { return GetArmorCharge() <= 0; }
 
+	virtual	bool		UsesNewProficiencySystem( void ) { return true; }
+	virtual int			GetNewProficiencyTier( void ) { return m_iTier; };
+
 private:
 	bool		ShouldHitPlayer( const Vector &targetDir, float targetDist );
 	
@@ -51,6 +54,7 @@ private:
 	void		DoPromotion( void );
 	
 	bool		bAlreadyElite;
+	int			m_iTier;
 
 #if HL2_EPISODIC
 public:

@@ -59,8 +59,14 @@ extern Activity ACT_WALK_MARCH;
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
+#define COMBINE_SKIN_DEFAULT		0
+#define COMBINE_SKIN_SHOTGUNNER		1
+#define COMBINE_SKIN_GRENADIER		2
+
 void CNPC_CombineS::Spawn( void )
 {
+	m_iTier = 1;
+
 /* 	if( FStrEq(STRING(gpGlobals->mapname), "d3_breen_01") )
 	{
 		SetModelName( MAKE_STRING( "models/combine_super_soldier.mdl" ) );
@@ -87,6 +93,8 @@ void CNPC_CombineS::Spawn( void )
 
 	if( IsElite() )
 	{
+		m_iTier = 2;
+
 		// Stronger, tougher.
 		SetHealth( sk_combine_guard_health.GetFloat() );
 		SetMaxHealth( sk_combine_guard_health.GetFloat() );
@@ -109,6 +117,14 @@ void CNPC_CombineS::Spawn( void )
 			SetArmorCharge(sk_combine_shield.GetInt());
 			SetUsesArmor(true);
 		}
+
+		m_nSkin = COMBINE_SKIN_DEFAULT;
+
+		if ( FStrEq(STRING(m_spawnEquipment), "weapon_shotgun") || FStrEq(STRING(m_spawnEquipment), "weapon_357") )
+			m_nSkin = COMBINE_SKIN_SHOTGUNNER;
+
+		if ( FStrEq(STRING(m_spawnEquipment), "weapon_rpg") )
+			m_nSkin = COMBINE_SKIN_GRENADIER;
 	}
 
 	CapabilitiesAdd( bits_CAP_ANIMATEDFACE );
@@ -541,27 +557,50 @@ void CNPC_CombineS::HandleSpawnEquipment( void )
 			}
 		}
 	}
-	else if( IsPrisonGuard() )
+	else 
 	{
-		// Prison shotgunners use Revolvers!
-		if ( FStrEq(STRING(m_spawnEquipment), "weapon_shotgun") )
+		if( IsPrisonGuard() )
 		{
-			m_spawnEquipment = MAKE_STRING( "weapon_357" );
-		}
+			// Prison shotgunners use Revolvers!
+			if ( FStrEq(STRING(m_spawnEquipment), "weapon_shotgun") )
+			{
+				m_spawnEquipment = MAKE_STRING( "weapon_357" );
+			}
 		
-		else if ( FStrEq(STRING(m_spawnEquipment), "weapon_ar2") )
-		{
-			m_spawnEquipment = MAKE_STRING( "weapon_pistol" );
-		}	
-		else if ( FStrEq(STRING(m_spawnEquipment), "weapon_smg1") )
-		{
-			// Use these as introductory maps
-			if ( FStrEq(STRING(gpGlobals->mapname), "d2_coast_12") || FStrEq(STRING(gpGlobals->mapname), "d2_prison_01") ) 
+			else if ( FStrEq(STRING(m_spawnEquipment), "weapon_ar2") )
 			{
 				m_spawnEquipment = MAKE_STRING( "weapon_pistol" );
+			}	
+			else if ( FStrEq(STRING(m_spawnEquipment), "weapon_smg1") )
+			{
+				// Use these as introductory maps
+				if ( FStrEq(STRING(gpGlobals->mapname), "d2_coast_12") || FStrEq(STRING(gpGlobals->mapname), "d2_prison_01") ) 
+				{
+					m_spawnEquipment = MAKE_STRING( "weapon_pistol" );
+				}
+			}	
+		}
+
+		if ( FStrEq(STRING(gpGlobals->mapname), "d3_c17_07") )
+		{
+			if ( V_strstr( STRING(GetEntityName()), "front_soldier" ) )
+			{
+				if ( random->RandomInt( 0, 100 ) < 80 )
+				{
+					m_spawnEquipment = MAKE_STRING( "weapon_smg1" );
+
+					if ( random->RandomInt( 0, 100 ) < 50 )
+						m_spawnEquipment = MAKE_STRING( "weapon_ar2" );
+				}
+				else
+				{
+					m_spawnEquipment = MAKE_STRING( "weapon_shotgun" );
+					RemoveSpawnFlags(SF_NPC_LONG_RANGE);
+				}
 			}
-		}	
+		}
 	}
+
 }
 //-----------------------------------------------------------------------------
 // Purpose:

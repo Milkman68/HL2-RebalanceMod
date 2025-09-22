@@ -57,6 +57,8 @@ static int GetAdjustedSize( int iValue )
 //------------------------------------------------------------------------------
 // Purpose: Parent panel
 //------------------------------------------------------------------------------
+#define ADD_PAGE(y, x, elements, name, resource) y *x = new y(this, elements); x->InitElements(x, resource); AddPage(x, name)
+
 CHL2RMenu::CHL2RMenu() : PropertyDialog(FindGameUIChildPanel("BaseGameUIPanel"), "OtherSettings")
 {
 	SetDeleteSelfOnClose(true);
@@ -69,8 +71,10 @@ CHL2RMenu::CHL2RMenu() : PropertyDialog(FindGameUIChildPanel("BaseGameUIPanel"),
 
 	SetTitle("#hl2r_options_title", true);
 
-	hl2r_OptionsPages[1].Panel = new CSubGamePanel(this);
-	hl2r_OptionsPages->ParseOptionsPanels( this, hl2r_OptionsPages );
+	ADD_PAGE(CSubGamePanel, GamePage,		game_Elements,		"Gameplay",				"resource/ui/hl2r_options_gameplay.res");
+	ADD_PAGE(CSubPanel,		VisualPage,		visual_Elements,	"Visuals",				"resource/ui/hl2r_options_visuals.res");
+//	ADD_PAGE(CSubPanel,		FxPage,			fx_Elements,		"FX",					"resource/ui/hl2r_options_fx.res");
+	ADD_PAGE(CSubPanel,		CutContentPage, NULL,				"Cut and Fun Stuff",	"");
 }
 
 void CHL2RMenu::Activate()
@@ -91,8 +95,6 @@ void CHL2RMenu::OnThink()
 bool isHL2RActive = false;
 void CHL2RMenu::OnClose()
 {
-	hl2r_OptionsPages->KillOptionsPanels(hl2r_OptionsPages);
-
 	BaseClass::OnClose();
 	isHL2RActive = false;
 }
@@ -100,9 +102,7 @@ void CHL2RMenu::OnClose()
 void CHL2RMenu::OnScreenSizeChanged(int iOldWide, int iOldTall)
 {
 	BaseClass::OnScreenSizeChanged(iOldWide, iOldTall);
-	
-	BaseClass::OnClose();
-	isHL2RActive = false;
+	OnClose();
 }
 //------------------------------------------------------------------------------
 // Purpose: Console Command

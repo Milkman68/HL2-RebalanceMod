@@ -31,6 +31,8 @@ ConVar hud_reticle_minalpha( "hud_reticle_minalpha", "125" );
 ConVar hud_reticle_maxalpha( "hud_reticle_maxalpha", "255" );
 ConVar hud_alpha_speed("hud_reticle_alpha_speed", "700" );
 
+extern ConVar r_mirrored;
+
 enum 
 {
 	AUTOAIM_METHOD_RETICLE = 1,
@@ -81,7 +83,8 @@ CHUDAutoAim::CHUDAutoAim( const char *pElementName ) :
 {
 	vgui::Panel *pParent = g_pClientMode->GetViewport();
 	SetParent( pParent );
-	SetHiddenBits( HIDEHUD_CROSSHAIR );
+//	SetHiddenBits( HIDEHUD_CROSSHAIR );
+	SetHiddenBits( HIDEHUD_MISCSTATUS );
 
 	m_textureID_ActiveReticle = -1;
 	m_textureID_FixedReticle = -1;
@@ -162,8 +165,8 @@ bool CHUDAutoAim::ShouldDraw( void )
 #define AUTOAIM_ALPHA_UP_SPEED		1000
 #define AUTOAIM_ALPHA_DOWN_SPEED	300
 #define AUTOAIM_MAX_ALPHA			120
-#define AUTOAIM_MAX_SCALE			1.0f
-#define AUTOAIM_MIN_SCALE			0.5f
+#define AUTOAIM_MAX_SCALE			0.5f
+#define AUTOAIM_MIN_SCALE			0.25f
 #define AUTOAIM_SCALE_SPEED			10.0f		
 #define AUTOAIM_ONTARGET_CROSSHAIR_SPEED		(ScreenWidth() / 3) // Can cross the whole screen in 3 seconds.
 #define AUTOAIM_OFFTARGET_CROSSHAIR_SPEED		(ScreenWidth() / 4)
@@ -223,10 +226,29 @@ void CHUDAutoAim::OnThink()
 	{
 		// Get the autoaim crosshair onto the target.
 		Vector screen;
+		Vector vecToAutoAimPoint = pLocalPlayer->m_HL2Local.m_vecAutoAimPoint - pLocalPlayer->GetAbsOrigin();
+
+		// Mirror'ing
+		if ( r_mirrored.GetBool() )
+		{
+			// Convert our direction vector into angles
+			QAngle locationAngles;
+			VectorAngles( vecToAutoAimPoint, locationAngles );
+
+			// Invert the direction by subtracting the angle difference from our view vector and target vector twice.
+			locationAngles.y += (UTIL_AngleDiff( pLocalPlayer->EyeAngles().y, locationAngles.y) * 2);
+
+			Vector vecMirroredAutoaimDir;
+			AngleVectors(locationAngles, &vecMirroredAutoaimDir);
+
+			// Convert the angles back into a direction vector.
+			vecToAutoAimPoint = vecMirroredAutoaimDir * vecToAutoAimPoint.Length();
+		}
+
 
 	//	if( !pLocalPlayer->m_fOnTarget )
 	//	{
-			ScreenTransform(pLocalPlayer->m_HL2Local.m_vecAutoAimPoint, screen);
+			ScreenTransform(pLocalPlayer->GetAbsOrigin() + vecToAutoAimPoint, screen);
 	//	}
 
 		// Set Goal Position and speed.
@@ -310,8 +332,15 @@ void CHUDAutoAim::Paint()
 		xMod = width;
 		yMod = height;
 
-		xMod *= m_scale;
-		yMod *= m_scale;
+		// Default sizes:
+		float WidthScale  = ScreenWidth() / 2560.0;
+		float HeightScale = ScreenHeight() / 1440.0;
+					
+		// Using only one seems to preserve shape better.
+		float flAdjustedScale = m_scale * MAX(WidthScale, HeightScale);
+
+		xMod *= flAdjustedScale;
+		yMod *= flAdjustedScale;
 
 		xMod /= 2;
 		yMod /= 2;

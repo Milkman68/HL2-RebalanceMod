@@ -1071,7 +1071,7 @@ bool CCampaignDatabase::RetrieveSaveFiles( const char *pCampaignID )
 		if (g_pFullFileSystem->FileExists(szSaveFolderPath))
 			bRet = HandleSaveFileConflict(szSaveFolderPath, szFilePath);
 
-		Assert( g_pFullFileSystem->RenameFile(szFilePath, szSaveFolderPath) );
+		g_pFullFileSystem->RenameFile(szFilePath, szSaveFolderPath);
 	}
 
 	g_pFullFileSystem->FindClose( fh );

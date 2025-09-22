@@ -674,6 +674,7 @@ bool CNPC_MetroPolice::CreateComponents()
 //-----------------------------------------------------------------------------
 void CNPC_MetroPolice::Spawn( void )
 {
+	m_iTier = 0;
 	if ( CanBecomeElite() )
 	{
 		m_iManhacks = 1;
@@ -716,6 +717,8 @@ void CNPC_MetroPolice::Spawn( void )
 	
 	if ( m_bIsElite )
 	{
+		m_iTier = 1;
+
 		if (!m_bSimpleCops)
 		{
 			m_iHealth = sk_metropolice_elite_health.GetFloat();
@@ -2782,7 +2785,7 @@ float CNPC_MetroPolice::MaxYawSpeed( void )
 		return 25;
 
 	default:
-		return 45;
+		return 120;
 	}
 }
 
@@ -5462,7 +5465,7 @@ void CNPC_MetroPolice::BuildScheduleTestBits( void )
 //-----------------------------------------------------------------------------
 WeaponProficiency_t CNPC_MetroPolice::CalcWeaponProficiency( CBaseCombatWeapon *pWeapon )
 {
-	if( FClassnameIs( pWeapon, "weapon_pistol" ) )
+/*	if( FClassnameIs( pWeapon, "weapon_pistol" ) )
 	{
 		return WEAPON_PROFICIENCY_AVERAGE;
 	}
@@ -5476,7 +5479,7 @@ WeaponProficiency_t CNPC_MetroPolice::CalcWeaponProficiency( CBaseCombatWeapon *
 	{
 		return WEAPON_PROFICIENCY_GOOD;
 	}
-
+	*/
 	return BaseClass::CalcWeaponProficiency( pWeapon );
 }
 
@@ -6066,7 +6069,7 @@ bool CNPC_MetroPolice::IsJumpLegal(const Vector &startPos, const Vector &apex, c
 bool CNPC_MetroPolice::MovementCost( int moveType, const Vector &vecStart, const Vector &vecEnd, float *pCost )
 {
 	bool bResult = BaseClass::MovementCost( moveType, vecStart, vecEnd, pCost );
-	if ( moveType == bits_CAP_MOVE_GROUND && GetEnemy() )
+/*	if ( moveType == bits_CAP_MOVE_GROUND && GetEnemy() )
 	{
 		if ( GetActiveWeapon() && ( 
 			IsCurSchedule(SCHED_METROPOLICE_TAKE_COVER_FROM_ENEMY) || 
@@ -6097,7 +6100,7 @@ bool CNPC_MetroPolice::MovementCost( int moveType, const Vector &vecStart, const
 				bResult = true;
 			}
 		}
-	}
+	}*/
 	return bResult;
 }
 //-----------------------------------------------------------------------------
@@ -6969,7 +6972,7 @@ DEFINE_SCHEDULE
  "		TASK_WAIT				1.5"
  ""
  "	Interrupts"
- "		COND_HEAVY_DAMAGE"
+// "		COND_HEAVY_DAMAGE"
  )
 
 AI_END_CUSTOM_NPC()

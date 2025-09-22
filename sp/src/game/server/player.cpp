@@ -1356,8 +1356,8 @@ int CBasePlayer::OnTakeDamage( const CTakeDamageInfo &inputInfo )
 
 	if ( info.GetAttacker()->MyNPCPointer() != NULL )
 	{
-		float flDist = ( info.GetAttacker()->GetAbsOrigin() - GetAbsOrigin() ).Length();
-		flPunch = clamp( flPunch * ( 1500 / flDist ), -8.0f, -3 ); // Clamp to a min of -3 and a max of -8.
+	//	float flDist = ( info.GetAttacker()->GetAbsOrigin() - GetAbsOrigin() ).Length();
+		flPunch = -5; // Clamp to a min of -3 and a max of -8.
 	}
 
 	m_Local.m_vecPunchAngle.SetX( flPunch );
@@ -6924,6 +6924,11 @@ bool CBasePlayer::ShouldAutoaim( void )
 	if ( gpGlobals->maxClients > 1 )
 		return false;
 
+	// Turn off autoaim if we picked up something without the gravity-gun.
+	CBaseCombatWeapon *pPhyscannon = Weapon_OwnsThisType( "weapon_physcannon" );
+	if ( (!pPhyscannon && GetActiveWeapon() && PhysCannonGetHeldEntity(GetActiveWeapon())) )
+		return false;
+
 	// autoaiming is only for easy and medium skill
 //	return ( IsX360() || !g_pGameRules->IsSkillLevel(SKILL_HARD) );
 	return true;
@@ -7020,8 +7025,11 @@ float CBasePlayer::GetAutoaimScore( const Vector &eyePosition, const Vector &vie
 	float radiusSqr;
 	float targetRadius = pTarget->GetAutoAimRadius() * fScale;
 
-	if( pActiveWeapon != NULL )
-		targetRadius *= pActiveWeapon->WeaponAutoAimScale();
+	if ( !GetVehicle() )
+	{
+		if( pActiveWeapon != NULL )
+			targetRadius *= pActiveWeapon->WeaponAutoAimScale();
+	}
 
 	float targetRadiusSqr = Square( targetRadius );
 
@@ -7043,7 +7051,39 @@ float CBasePlayer::GetAutoaimScore( const Vector &eyePosition, const Vector &vie
 	// 0 means no score- doesn't qualify for autoaim.
 	return 0.0f;
 }
+//-----------------------------------------------------------------------------
+// Autoaim TraceFiler
+//-----------------------------------------------------------------------------
+class CAutoaimFilter : public CTraceFilterSkipTwoEntities
+{
+	DECLARE_CLASS( CAutoaimFilter, CTraceFilterSkipTwoEntities );
 
+public:
+	CAutoaimFilter(const IHandleEntity *passentity, const IHandleEntity *passentity2, int collisionGroup) : 
+		CTraceFilterSkipTwoEntities( passentity, passentity2, collisionGroup )
+	{
+	}
+
+	virtual bool ShouldHitEntity( IHandleEntity *pServerEntity, int contentsMask )
+	{
+		CBaseEntity *pEntity = EntityFromEntityHandle( pServerEntity );
+		{
+			CBasePlayer *pPlayer = UTIL_GetLocalPlayer();
+			if ( pPlayer && !pPlayer->IsInAVehicle() && pPlayer->GetActiveWeapon() )
+			{
+				// Ignore held objects:
+				CBaseEntity *pHeldEnt = PhysCannonGetHeldEntity(pPlayer->GetActiveWeapon());
+				if ( pHeldEnt )
+				{
+					if ( pEntity == pHeldEnt )
+						return false;
+				}
+			}
+		}
+
+		return BaseClass::ShouldHitEntity( pServerEntity, contentsMask );
+	}
+};
 //-----------------------------------------------------------------------------
 // Purpose: 
 // Input  : &vecSrc - 
@@ -7086,7 +7126,7 @@ QAngle CBasePlayer::AutoaimDeflection( Vector &vecSrc, autoaim_params_t &params 
 		pIgnore = GetVehicleEntity();
 	}
 
-	CTraceFilterSkipTwoEntities traceFilter( this, pIgnore, COLLISION_GROUP_NONE );
+	CAutoaimFilter traceFilter( this, pIgnore, COLLISION_GROUP_NONE );
 
 	UTIL_TraceLine( vecSrc, vecSrc + bestdir * MAX_COORD_FLOAT, MASK_SHOT, &traceFilter, &tr );
 
@@ -7163,14 +7203,13 @@ QAngle CBasePlayer::AutoaimDeflection( Vector &vecSrc, autoaim_params_t &params 
 			if ((GetWaterLevel() != 3 && pEntity->GetWaterLevel() == 3) || (GetWaterLevel() == 3 && pEntity->GetWaterLevel() == 0))
 				continue;
 
-			if( pEntity->MyNPCPointer() )
+			CAI_BaseNPC *pNpcEnt = pEntity->MyNPCPointer();
+			if( pNpcEnt )
 			{
 				// If this entity is an NPC, only aim if it is an enemy.
-				if ( IRelationType( pEntity ) != D_HT )
+				if ( !pNpcEnt->IsValidEnemy(this) || IRelationType( pEntity ) != D_HT )
 				{
-					if ( !pEntity->IsPlayer() && !g_pGameRules->IsDeathmatch())
-						// Msg( "friend\n");
-						continue;
+					continue;
 				}
 			}
 

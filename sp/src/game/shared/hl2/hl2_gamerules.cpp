@@ -91,6 +91,7 @@ ConVar	hl2r_old_crosshair( "hl2r_old_crosshair", "0", FCVAR_REPLICATED | FCVAR_A
 ConVar	hl2r_ammo_labels( "hl2r_ammo_labels", "0", FCVAR_REPLICATED | FCVAR_ARCHIVE);
 ConVar	hl2r_togglezoom( "hl2r_togglezoom", "1", FCVAR_REPLICATED | FCVAR_ARCHIVE);
 ConVar	hl2r_projected_muzzleflash( "hl2r_projected_muzzleflash", "0", FCVAR_REPLICATED | FCVAR_ARCHIVE);
+ConVar	hl2r_bullet_tracer_freq( "hl2r_bullet_tracer_freq", "1", FCVAR_REPLICATED | FCVAR_ARCHIVE);
 
 // Defined here now so it can be accessed by the options menu.
 ConVar	hud_quickinfo( "hud_quickinfo", "1", FCVAR_REPLICATED | FCVAR_ARCHIVE );
@@ -117,7 +118,7 @@ ConVar	sk_dmg_take_scale2( "sk_dmg_take_scale2", "1.00", FCVAR_REPLICATED );
 //	ConVar	sk_dmg_take_scale3( "sk_dmg_take_scale3", "1.50", FCVAR_REPLICATED );
 //#endif//HL2_EPISODIC
 
-ConVar	sk_allow_autoaim( "sk_allow_autoaim", "0", FCVAR_REPLICATED | FCVAR_ARCHIVE_XBOX );
+ConVar	sk_allow_autoaim( "sk_allow_autoaim", "0", FCVAR_REPLICATED | FCVAR_ARCHIVE );
 
 // Autoaim
 ConVar	autoaim_viewcorrection_scale( "autoaim_viewcorrection_scale", "2.0", FCVAR_ARCHIVE | FCVAR_REPLICATED );
@@ -227,8 +228,31 @@ ConVar sk_npc_dmg_strider_episodic			( "sk_npc_dmg_strider_episodic", "0", FCVAR
 ConVar sk_npc_dmg_strider_to_plr			( "sk_npc_dmg_strider_to_plr", "0", FCVAR_REPLICATED );
 ConVar sk_npc_dmg_strider_episodic_to_plr	( "sk_npc_dmg_strider_episodic_to_plr", "0", FCVAR_REPLICATED );
 
-//Friendly fire..
-ConVar	sk_allow_friendly_fire ( "sk_allow_friendly_fire", "0", FCVAR_REPLICATED );
+
+// NPC firing patterns:
+
+// Ar2
+ConVar	sk_enemy_proficiency_ar2( "sk_enemy_proficiency_ar2",	"0 0 0 0 average 0 0 0 0 average 0 0 0 0 average", FCVAR_REPLICATED);
+ConVar	sk_ally_proficiency_ar2( "sk_ally_proficiency_ar2",	"0 0 0 0 average 0 0 0 0 average", FCVAR_REPLICATED);
+
+// Smg
+ConVar	sk_enemy_proficiency_smg1( "sk_enemy_proficiency_smg1",	"0 0 0 0 average 0 0 0 0 average 0 0 0 0 average", FCVAR_REPLICATED);
+ConVar	sk_ally_proficiency_smg1( "sk_ally_proficiency_smg1",	"0 0 0 0 average 0 0 0 0 average", FCVAR_REPLICATED);
+
+// Pistol
+ConVar	sk_enemy_proficiency_pistol( "sk_enemy_proficiency_pistol",	"0 0 0 0 average 0 0 0 0 average 0 0 0 0 average", FCVAR_REPLICATED);
+ConVar	sk_ally_proficiency_pistol( "sk_ally_proficiency_pistol",	"0 0 0 0 average 0 0 0 0 average", FCVAR_REPLICATED);
+
+// 357
+ConVar	sk_enemy_proficiency_357( "sk_enemy_proficiency_357",	"0 0 0 0 average 0 0 0 0 average 0 0 0 0 average", FCVAR_REPLICATED);
+ConVar	sk_ally_proficiency_357( "sk_ally_proficiency_357",		"0 0 0 0 average 0 0 0 0 average", FCVAR_REPLICATED);
+
+// Shotgun
+ConVar	sk_enemy_proficiency_shotgun( "sk_enemy_proficiency_shotgun",	"0 0 0 0 average 0 0 0 0 average 0 0 0 0 average", FCVAR_REPLICATED);
+ConVar	sk_ally_proficiency_shotgun( "sk_ally_proficiency_shotgun",		"0 0 0 0 average 0 0 0 0 average", FCVAR_REPLICATED);
+
+// AlyxGun
+ConVar	sk_ally_proficiency_alyxgun( "sk_ally_proficiency_alyxgun","0 0 0 0 average", FCVAR_REPLICATED);
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -1014,16 +1038,8 @@ ConVar  alyx_darkness_force( "alyx_darkness_force", "0", FCVAR_CHEAT | FCVAR_REP
 		CBaseCombatCharacter::SetDefaultRelationship(CLASS_PLAYER,			CLASS_BARNACLE,			D_HT, 0);
 		CBaseCombatCharacter::SetDefaultRelationship(CLASS_PLAYER,			CLASS_BULLSEYE,			D_HT, 0);
 		//CBaseCombatCharacter::SetDefaultRelationship(CLASS_PLAYER,			CLASS_BULLSQUID,		D_HT, 0);
-		if ( sk_allow_friendly_fire.GetInt() >= 1)
-		{
-			CBaseCombatCharacter::SetDefaultRelationship(CLASS_PLAYER,		CLASS_CITIZEN_PASSIVE,	D_NU, 0);//bookmark	
-			CBaseCombatCharacter::SetDefaultRelationship(CLASS_PLAYER,		CLASS_CITIZEN_REBEL,	D_NU, 0);
-		}
-		else
-		{
-			CBaseCombatCharacter::SetDefaultRelationship(CLASS_PLAYER,		CLASS_CITIZEN_PASSIVE,	D_LI, 0);//bookmark	
-			CBaseCombatCharacter::SetDefaultRelationship(CLASS_PLAYER,		CLASS_CITIZEN_REBEL,	D_LI, 0);
-		}
+		CBaseCombatCharacter::SetDefaultRelationship(CLASS_PLAYER,		CLASS_CITIZEN_PASSIVE,	D_LI, 0);//bookmark	
+		CBaseCombatCharacter::SetDefaultRelationship(CLASS_PLAYER,		CLASS_CITIZEN_REBEL,	D_LI, 0);
 		CBaseCombatCharacter::SetDefaultRelationship(CLASS_PLAYER,			CLASS_COMBINE,			D_HT, 0);
 		CBaseCombatCharacter::SetDefaultRelationship(CLASS_PLAYER,			CLASS_COMBINE_GUNSHIP,	D_HT, 0);
 		CBaseCombatCharacter::SetDefaultRelationship(CLASS_PLAYER,			CLASS_COMBINE_HUNTER,	D_HT, 0);
@@ -1037,27 +1053,12 @@ ConVar  alyx_darkness_force( "alyx_darkness_force", "0", FCVAR_CHEAT | FCVAR_REP
 		CBaseCombatCharacter::SetDefaultRelationship(CLASS_PLAYER,			CLASS_MISSILE,			D_NU, 0);
 		CBaseCombatCharacter::SetDefaultRelationship(CLASS_PLAYER,			CLASS_SCANNER,			D_HT, 0);		
 		CBaseCombatCharacter::SetDefaultRelationship(CLASS_PLAYER,			CLASS_STALKER,			D_HT, 0);
-		if ( sk_allow_friendly_fire.GetInt() >= 1)
-		{
-			CBaseCombatCharacter::SetDefaultRelationship(CLASS_PLAYER,		CLASS_VORTIGAUNT,		D_NU, 0);
-		}
-		else
-		{
-			CBaseCombatCharacter::SetDefaultRelationship(CLASS_PLAYER,		CLASS_VORTIGAUNT,		D_LI, 0);		
-		}		
+		CBaseCombatCharacter::SetDefaultRelationship(CLASS_PLAYER,		CLASS_VORTIGAUNT,		D_LI, 0);		
 		CBaseCombatCharacter::SetDefaultRelationship(CLASS_PLAYER,			CLASS_ZOMBIE,			D_HT, 0);
 		CBaseCombatCharacter::SetDefaultRelationship(CLASS_PLAYER,			CLASS_PROTOSNIPER,		D_HT, 0);
 		CBaseCombatCharacter::SetDefaultRelationship(CLASS_PLAYER,			CLASS_EARTH_FAUNA,		D_NU, 0);
-		if ( sk_allow_friendly_fire.GetInt() >= 1)
-		{
-			CBaseCombatCharacter::SetDefaultRelationship(CLASS_PLAYER,		CLASS_PLAYER_ALLY,		D_NU, 0);
-			CBaseCombatCharacter::SetDefaultRelationship(CLASS_PLAYER,		CLASS_PLAYER_ALLY_VITAL,D_NU, 0);
-		}
-		else
-		{
-			CBaseCombatCharacter::SetDefaultRelationship(CLASS_PLAYER,		CLASS_PLAYER_ALLY,		D_LI, 0);
-			CBaseCombatCharacter::SetDefaultRelationship(CLASS_PLAYER,		CLASS_PLAYER_ALLY_VITAL,D_LI, 0);
-		}
+		CBaseCombatCharacter::SetDefaultRelationship(CLASS_PLAYER,		CLASS_PLAYER_ALLY,		D_LI, 0);
+		CBaseCombatCharacter::SetDefaultRelationship(CLASS_PLAYER,		CLASS_PLAYER_ALLY_VITAL,D_LI, 0);
 		CBaseCombatCharacter::SetDefaultRelationship(CLASS_PLAYER,			CLASS_HACKED_ROLLERMINE,D_LI, 0);
 
 		// ------------------------------------------------------------

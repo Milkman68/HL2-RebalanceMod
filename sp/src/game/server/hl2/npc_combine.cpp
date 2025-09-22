@@ -498,7 +498,7 @@ void CNPC_Combine::GatherConditions()
 		
 		if ( gpGlobals->curtime > m_flNextGrenadeCheck )
 		{
-			if ( CanGrenadeEnemy( true ) )
+			if ( CanGrenadeEnemy() )
 				SetCondition( COND_COMBINE_CAN_GRENADE_ENEMY );
 			else
 				ClearCondition( COND_COMBINE_CAN_GRENADE_ENEMY );
@@ -661,7 +661,7 @@ float CNPC_Combine::MaxYawSpeed( void )
 	case ACT_MELEE_ATTACK2:
 		return 35;
 	default:
-		return 35;
+		return 120;
 		break;
 	}
 }
@@ -671,7 +671,7 @@ float CNPC_Combine::MaxYawSpeed( void )
 //-----------------------------------------------------------------------------
 bool CNPC_Combine::ShouldMoveAndShoot()
 {
-	if( !IsElite() && !m_AssaultBehavior.HasAssaultCue() )
+	if( !IsElite() /*&& !m_AssaultBehavior.HasAssaultCue()*/ )
 		return false; 
 	
 	if ( !GetEnemy() )
@@ -2228,8 +2228,8 @@ int CNPC_Combine::SelectScheduleAttack()
 
 		// If we're not in the viewcone of the turret, run up and hit it. Do this a bit later to
 		// give other squadmembers a chance to throw a grenade before I run in.
-		if ( HasCondition( COND_SEE_ENEMY ) && CanOccupyAttackSlot() )
-			return SCHED_COMBINE_CHARGE_TURRET; 
+	//	if ( HasCondition( COND_SEE_ENEMY ) && CanOccupyAttackSlot() )
+	//		return SCHED_COMBINE_CHARGE_TURRET; 
 	}
 
 	// When fighting against the player who's wielding a mega-physcannon, 
@@ -3364,7 +3364,7 @@ bool CNPC_Combine::CanSuppressEnemy( void )
 }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-bool CNPC_Combine::CanGrenadeEnemy( bool bUseFreeKnowledge )
+bool CNPC_Combine::CanGrenadeEnemy( /*bool bUseFreeKnowledge*/ )
 {
 	if( IsElite() && GetActiveWeapon() && GetActiveWeapon()->CapabilitiesGet() & bits_CAP_WEAPON_RANGE_ATTACK2 )
 		return false;
@@ -3373,25 +3373,23 @@ bool CNPC_Combine::CanGrenadeEnemy( bool bUseFreeKnowledge )
 
 	Assert( pEnemy != NULL );
 
+	bool bSucess = false;
 	if( pEnemy )
 	{
 		// I'm not allowed to throw grenades during dustoff
 		if ( IsCurSchedule(SCHED_DROPSHIP_DUSTOFF) )
 			return false;
-
-		if( bUseFreeKnowledge )
-		{
-			// throw to where we think they are.
-			return CanThrowGrenade( GetEnemies()->LastKnownPosition( pEnemy ) + pEnemy->GetViewOffset() );
-		}
-		else
+		
+		// try to throw to where we think they are.
+		bSucess = CanThrowGrenade( GetEnemies()->LastKnownPosition( pEnemy ) + pEnemy->GetViewOffset() );
+		if ( !bSucess )
 		{
 			// hafta throw to where we last saw them.
-			return CanThrowGrenade( GetEnemies()->LastSeenPosition( pEnemy ) + pEnemy->GetViewOffset() );
+			bSucess = CanThrowGrenade( GetEnemies()->LastSeenPosition( pEnemy ) + pEnemy->GetViewOffset() );
 		}
 	}
 
-	return false;
+	return bSucess;
 }
 
 //-----------------------------------------------------------------------------
@@ -3569,7 +3567,7 @@ void CNPC_Combine::OnEndMoveAndShoot()
 //-----------------------------------------------------------------------------
 WeaponProficiency_t CNPC_Combine::CalcWeaponProficiency( CBaseCombatWeapon *pWeapon )
 {
-	if( FClassnameIs( pWeapon, "weapon_ar2" ) )
+/*	if( FClassnameIs( pWeapon, "weapon_ar2" ) )
 	{
 		if ( IsElite() )
 			return WEAPON_PROFICIENCY_GOOD;
@@ -3607,7 +3605,7 @@ WeaponProficiency_t CNPC_Combine::CalcWeaponProficiency( CBaseCombatWeapon *pWea
 
 		return WEAPON_PROFICIENCY_PERFECT;
 	}
-
+	*/
 	return BaseClass::CalcWeaponProficiency( pWeapon );
 }
 
@@ -4058,7 +4056,7 @@ bool CNPC_Combine::IsJumpLegal(const Vector &startPos, const Vector &apex, const
 bool CNPC_Combine::MovementCost( int moveType, const Vector &vecStart, const Vector &vecEnd, float *pCost )
 {
 	bool bResult = BaseClass::MovementCost( moveType, vecStart, vecEnd, pCost );
-	if ( moveType == bits_CAP_MOVE_GROUND && GetEnemy() )
+/*	if ( moveType == bits_CAP_MOVE_GROUND && GetEnemy() )
 	{
 		if ( GetActiveWeapon() && ( 
 			IsCurSchedule(SCHED_COMBINE_TAKE_COVER1) || 
@@ -4089,7 +4087,7 @@ bool CNPC_Combine::MovementCost( int moveType, const Vector &vecStart, const Vec
 				bResult = true;
 			}
 		}
-	}
+	}*/
 	return bResult;
 }
 //-----------------------------------------------------------------------------
@@ -4262,12 +4260,12 @@ DEFINE_SCHEDULE
  "		TASK_SPEAK_SENTENCE				1"
  "		TASK_RUN_PATH					0"
  "		TASK_WAIT_FOR_MOVEMENT			0"
- "		TASK_FACE_ENEMY					0"
+ "		TASK_WAIT_FACE_ENEMY			3"
  "	Interrupts "
  "		COND_NEW_ENEMY"
  "		COND_ENEMY_DEAD"
- //"		COND_CAN_RANGE_ATTACK1"
- //"		COND_CAN_RANGE_ATTACK2"
+// "		COND_CAN_RANGE_ATTACK1"
+ "		COND_CAN_RANGE_ATTACK2"
  "		COND_CAN_MELEE_ATTACK1"
  "		COND_CAN_MELEE_ATTACK2"
  "		COND_HEAR_DANGER"
@@ -4811,7 +4809,7 @@ DEFINE_SCHEDULE
  "		TASK_WAIT				1.5"
  ""
   "	Interrupts"
-  "		COND_HEAVY_DAMAGE"
+//  "		COND_HEAVY_DAMAGE"
  )
 
  //=========================================================

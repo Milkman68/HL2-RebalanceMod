@@ -180,6 +180,10 @@ void CreateConcussiveBlast( const Vector &origin, const Vector &surfaceNormal, C
 	if ( pBlast )
 	{
 		pBlast->Explode( magnitude, damage );
+
+		// A large radius shake for distant shots and a small radius one for ones nearby.
+		UTIL_ScreenShake( origin, 100.0, 150.0, 1.0, 1250, SHAKE_START );
+		UTIL_ScreenShake( origin, 10.0, 15.0, 0.5, 5000, SHAKE_START );
 	}
 }
 

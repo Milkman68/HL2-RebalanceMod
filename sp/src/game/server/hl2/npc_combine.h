@@ -47,7 +47,7 @@ public:
 
 	bool			CanThrowGrenade( const Vector &vecTarget );
 	bool			CheckCanThrowGrenade( const Vector &vecTarget );
-	virtual	bool	CanGrenadeEnemy( bool bUseFreeKnowledge = true );
+	virtual	bool	CanGrenadeEnemy( /*bool bUseFreeKnowledge = true */);
 	virtual bool	CanAltFireEnemy( bool bUseFreeKnowledge );
 	bool			CanSuppressEnemy( void );
 	int				GetGrenadeConditions( float flDot, float flDist );

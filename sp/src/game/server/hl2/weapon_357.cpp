@@ -48,10 +48,10 @@ public:
 	
 	virtual int		GetMinBurst(){ return 1;}
 	virtual int		GetMaxBurst(){ return 1;}
-	virtual float	GetMinRestTime(){ return 1.5; };
-	virtual float	GetMaxRestTime(){ return 2.0; };
+	virtual float	GetMinRestTime(){ return 0.75; };
+	virtual float	GetMaxRestTime(){ return 1.25; };
 	
-	virtual float 	GetFireRate(){ return 1.0; }
+	virtual float 	GetFireRate(){ return 0.75; }
 	
 	void FireNPCPrimaryAttack( CBaseCombatCharacter *pOperator, Vector &vecShootOrigin, Vector &vecShootDir );
 	void Operator_ForceNPCFire( CBaseCombatCharacter *pOperator, bool bSecondary );

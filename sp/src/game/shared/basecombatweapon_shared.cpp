@@ -63,6 +63,7 @@ ConVar tf_weapon_criticals_bucket_default( "tf_weapon_criticals_bucket_default",
 extern ConVar hl2r_hudhints;
 extern ConVar hl2r_realistic_reload;
 extern ConVar r_mirrored;
+extern ConVar hl2r_bullet_tracer_freq;
 
 CBaseCombatWeapon::CBaseCombatWeapon()
 {
@@ -2386,7 +2387,7 @@ void CBaseCombatWeapon::PrimaryAttack( void )
 
 	info.m_flDistance = MAX_TRACE_LENGTH;
 	info.m_iAmmoType = m_iPrimaryAmmoType;
-	info.m_iTracerFreq = 1;
+	info.m_iTracerFreq = hl2r_bullet_tracer_freq.GetInt();
 
 #if !defined( CLIENT_DLL )
 	// Fire the bullets

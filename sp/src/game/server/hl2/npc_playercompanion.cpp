@@ -246,6 +246,7 @@ void CNPC_PlayerCompanion::Spawn()
 	m_hFlare = NULL;
 #endif // HL2_EPISODIC
 
+	m_iTier = Classify() == CLASS_PLAYER_ALLY_VITAL ? 1 : 0;
 	BaseClass::Spawn();
 }
 
@@ -2257,12 +2258,12 @@ bool CNPC_PlayerCompanion::ShouldMoveAndShoot( void )
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
-#define PC_LARGER_BURST_RANGE	(12.0f * 10.0f) // If an enemy is this close, player companions fire larger continuous bursts.
+//#define PC_LARGER_BURST_RANGE	(12.0f * 10.0f) // If an enemy is this close, player companions fire larger continuous bursts.
 void CNPC_PlayerCompanion::OnUpdateShotRegulator()
 {
 	BaseClass::OnUpdateShotRegulator();
 
-	if( GetEnemy() && HasCondition(COND_CAN_RANGE_ATTACK1) )
+/*	if( GetEnemy() && HasCondition(COND_CAN_RANGE_ATTACK1) )
 	{
 		if( GetAbsOrigin().DistTo( GetEnemy()->GetAbsOrigin() ) <= PC_LARGER_BURST_RANGE )
 		{
@@ -2284,7 +2285,7 @@ void CNPC_PlayerCompanion::OnUpdateShotRegulator()
 				GetShotRegulator()->SetRestInterval( flMinInterval * 0.6f, flMaxInterval * 0.6f );
 			}
 		}
-	}
+	}*/
 }
 
 //------------------------------------------------------------------------------

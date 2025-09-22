@@ -69,6 +69,9 @@ public:
 	Class_T Classify( void );
 	void	Weapon_Equip( CBaseCombatWeapon *pWeapon );
 
+	virtual	bool		UsesNewProficiencySystem( void ) { return true; }
+	virtual int			GetNewProficiencyTier( void ) { return 1; };
+
 	bool CreateBehaviors( void );
 
 	void HandleAnimEvent( animevent_t *pEvent );

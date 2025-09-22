@@ -97,13 +97,11 @@ void C_BaseHLPlayer::CalcView( Vector &eyeOrigin, QAngle &eyeAngles, float &zNea
 
 			float speed = autoaim_viewcorrection_speed.GetFloat();
 
-			QAngle delta;
-		//	delta[0] = ApproachAngle(targetangles[0], viewangles[0], (AngleDistance(targetangles[0], viewangles[0]) / 360) * gpGlobals->frametime * speed);
-			delta[0] = viewangles[0];
-			delta[1] = ApproachAngle(targetangles[1], viewangles[1], (AngleDistance(targetangles[1], viewangles[1]) / 360) * gpGlobals->frametime * speed);
-			delta[2] = viewangles[2];
+			float targetYaw = targetangles[1];
+			float currentYaw = viewangles[1];
 
-			engine->SetViewAngles(delta);
+			viewangles[1] = ApproachAngle(targetYaw, currentYaw, (AngleDistance(targetYaw, currentYaw) / 360) * gpGlobals->frametime * speed);
+			engine->SetViewAngles(viewangles);
 		}
 	}
 

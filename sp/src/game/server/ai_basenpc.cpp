@@ -6968,9 +6968,20 @@ void CAI_BaseNPC::OnUpdateShotRegulator( )
 		return;
 
 	// Default values
-	m_ShotRegulator.SetBurstInterval( pWeapon->GetFireRate(), pWeapon->GetFireRate() );
-	m_ShotRegulator.SetBurstShotCountRange( pWeapon->GetMinBurst(), pWeapon->GetMaxBurst() );
-	m_ShotRegulator.SetRestInterval( pWeapon->GetMinRestTime(), pWeapon->GetMaxRestTime() );
+	if ( UsesNewProficiencySystem() )
+	{
+		CalcNewWeaponProficiency(pWeapon);
+
+		m_ShotRegulator.SetBurstInterval( pWeapon->GetFireRate(), pWeapon->GetFireRate() );
+		m_ShotRegulator.SetBurstShotCountRange( m_iWeaponBurstSizeMin, m_iWeaponBurstSizeMax );
+		m_ShotRegulator.SetRestInterval( m_flWeaponBurstRestTimeMin, m_flWeaponBurstRestTimeMax );
+	}
+	else
+	{
+		m_ShotRegulator.SetBurstInterval( pWeapon->GetFireRate(), pWeapon->GetFireRate() );
+		m_ShotRegulator.SetBurstShotCountRange( pWeapon->GetMinBurst(), pWeapon->GetMaxBurst() );
+		m_ShotRegulator.SetRestInterval( pWeapon->GetMinRestTime(), pWeapon->GetMaxRestTime() );
+	}
 
 	// Let the behavior have a whack at it.
 	if ( GetRunningBehavior() )
@@ -12703,7 +12714,7 @@ float CAI_BaseNPC::GetCoverPositionScore( const Vector &vecThreat, const Vector 
 	// Setup our distance metrics.
 	float flCoverToThreat = ( vecThreat - vecCover ).Length();
 	
-	float flCoverToThis = ( GetAbsOrigin() - vecCover ).Length();
+/*	float flCoverToThis = ( GetAbsOrigin() - vecCover ).Length();
 	if ( flPathDist != NULL )
 	{
 		flCoverToThis += flPathDist;
@@ -12711,7 +12722,7 @@ float CAI_BaseNPC::GetCoverPositionScore( const Vector &vecThreat, const Vector 
 	}
 	
 	// Bias nodes that are closer to us than the enemy.
-	flNodeScore += (1.0 - ( flCoverToThis / flCoverToThreat ));
+	flNodeScore += (1.0 - ( flCoverToThis / flCoverToThreat ));*/
 	
 	// Score it based on how close it is to the desired distance from the threat.
 	flNodeScore += ( flIdealDist - fabsf(flCoverToThreat - flIdealDist) ) / flIdealDist;
@@ -12744,7 +12755,7 @@ float CAI_BaseNPC::GetCoverPositionScore( const Vector &vecThreat, const Vector 
 
 //-----------------------------------------------------------------------------
 
-float CAI_BaseNPC::GetLOSPositionScore( const Vector &vecThreat, const Vector &vecPos, float flPathDist, float flIdealDist, bool bFirstNode )
+float CAI_BaseNPC::GetLOSPositionScore( const Vector &vecThreat, const Vector &vecPos, float flPathDist, float flIdealDist )
 {
 	float flNodeScore = 0;
 
@@ -12783,7 +12794,7 @@ float CAI_BaseNPC::GetLOSPositionScore( const Vector &vecThreat, const Vector &v
 	if ( tr.fraction != 1.0 )
 	{
 		// If this node can double as a cover posistion and it's the one we're on, give a huge score bonus.
-		if ( bFirstNode )
+		if ( flCoverToThis < 64 )
 		{
 			flNodeScore += 1.5;
 		}

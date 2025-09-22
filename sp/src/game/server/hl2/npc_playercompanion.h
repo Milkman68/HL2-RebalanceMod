@@ -124,6 +124,9 @@ public:
 	bool			QueryHearSound( CSound *pSound );
 	bool			QuerySeeEntity( CBaseEntity *pEntity, bool bOnlyHateOrFearIfNPC = false );
 	bool			ShouldIgnoreSound( CSound * );
+
+	virtual	bool	UsesNewProficiencySystem( void ) { return true; }
+	virtual int		GetNewProficiencyTier( void ) { return m_iTier; };
 	
 	int 			SelectSchedule();
 
@@ -387,6 +390,8 @@ protected:
 	float	m_fLastPlayerKill;
 	int		m_iNumConsecutiveBarrelsExploded;  // Companions keep track of the # of consecutive barrels exploded by the player and speaks a response as it increases
 	int		m_iNumConsecutivePlayerKills;  // Alyx keeps track of the # of consecutive kills by the player and speaks a response as it increases
+
+	int		m_iTier;
 
 	//-----------------------------------------------------
 

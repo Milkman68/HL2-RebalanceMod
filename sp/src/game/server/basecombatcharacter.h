@@ -349,9 +349,33 @@ public:
 	CBaseCombatWeapon*	GetWeapon( int i ) const;
 	bool				RemoveWeapon( CBaseCombatWeapon *pWeapon );
 	virtual void		RemoveAllWeapons();
+
+	// Old proficiency system (still used for players and misc npc's)
 	WeaponProficiency_t GetCurrentWeaponProficiency() { return m_CurrentWeaponProficiency; }
 	void				SetCurrentWeaponProficiency( WeaponProficiency_t iProficiency ) { m_CurrentWeaponProficiency = iProficiency; }
 	virtual WeaponProficiency_t CalcWeaponProficiency( CBaseCombatWeapon *pWeapon );
+
+	enum
+	{
+		PROFICIENCY_TIER_0 = 0,
+		PROFICIENCY_TIER_1,
+		PROFICIENCY_TIER_2
+	};
+
+	// New proficiency system
+	virtual bool		UsesNewProficiencySystem( void ) { return false; };
+	virtual int			GetNewProficiencyTier( void ) { return PROFICIENCY_TIER_1; };
+	bool				CalcNewWeaponProficiency( CBaseCombatWeapon *pWeapon );
+
+public:
+	int m_iWeaponBurstSizeMin;
+	int m_iWeaponBurstSizeMax;
+
+	float m_flWeaponBurstRestTimeMin;
+	float m_flWeaponBurstRestTimeMax;
+
+public:
+
 	virtual	Vector		GetAttackSpread( CBaseCombatWeapon *pWeapon, CBaseEntity *pTarget = NULL );
 	virtual	float		GetSpreadBias(  CBaseCombatWeapon *pWeapon, CBaseEntity *pTarget );
 	virtual void		DoMuzzleFlash();

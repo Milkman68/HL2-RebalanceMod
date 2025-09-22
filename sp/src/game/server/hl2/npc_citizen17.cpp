@@ -66,7 +66,7 @@ ConVar	g_ai_citizen_show_enemy( "g_ai_citizen_show_enemy", "0" );
 
 ConVar	npc_citizen_insignia( "npc_citizen_insignia", "0" );
 ConVar	npc_citizen_squad_marker( "npc_citizen_squad_marker", "0" );
-ConVar	npc_citizen_explosive_resist( "npc_citizen_explosive_resist", "0" );
+ConVar	npc_citizen_explosive_resist( "npc_citizen_explosive_resist", "1" );
 ConVar	npc_citizen_auto_player_squad( "npc_citizen_auto_player_squad", "1" );
 ConVar	npc_citizen_auto_player_squad_allow_use( "npc_citizen_auto_player_squad_allow_use", "0" );
 

@@ -15,147 +15,301 @@
 // The purpose of all these is to contain instructions to create elements.
 // Not contain the elements themselves
 
+enum eElementType
+{
+	TYPE_NULL = 0,
+
+	TYPE_CVAR_CHECKBOX,
+	TYPE_CVAR_RADIOBUTTON,
+	TYPE_CVAR_BOXBUTTON,
+	TYPE_CVAR_TICKSLIDER,
+
+	TYPE_CVAR_LABEL,
+};
+
+//------------------------------------------------------------------------------
+// Purpose: This class is for streamlining the process of 
+// creating/updating a vgui control into just two functions.
+//------------------------------------------------------------------------------
+class CControlElement
+{
+public:
+	virtual void Init( Panel *parent )
+	{
+
+	}
+	virtual void Update( void )
+	{
+
+	}
+	virtual Panel *GetPanel( void )
+	{
+		return NULL;
+	}
+};
+
+//------------------------------------------------------------------------------
+// Purpose: 
+//------------------------------------------------------------------------------
+#define MAX_PARAMETERS			10
+#define PARAMETER_MAX_LENGTH	128
+
+struct GenericElement_t
+{
+	int type;
+	char name[128];
+	char convar[128];
+
+	char parameters[MAX_PARAMETERS][PARAMETER_MAX_LENGTH];
+	CControlElement *element;
+};
+
 //------------------------------------------------------------------------------
 // Check Buttons
 //------------------------------------------------------------------------------
-struct CheckButton_t
+class CConvarCheckButtonElement : public CControlElement
 {
+public:
+	// Initialize
+	virtual void Init( Panel *parent )
+	{
+		checkbutton = new CheckButton(parent, Name, "");
+
+		ConVarRef var(Convar);
+		checkbutton->SetSelected(GetStateFromValue(var.GetFloat()));
+	}
+
+	// Update ConVar
+	virtual void Update()
+	{
+		ConVarRef var(Convar);
+		var.SetValue(GetValueFromState(checkbutton->IsSelected()));
+	}
+
+	virtual Panel *GetPanel( void )
+	{
+		return checkbutton;
+	}
+
+	CheckButton *GetButton( void )
+	{
+		return checkbutton;
+	}
+
+	bool GetStateFromValue( float value )
+	{
+		// Get our value list
+		char szValues[8];
+		V_strcpy_safe(szValues, Values);
+
+		char *pszToken = strtok( szValues, " " );
+		if ( pszToken == NULL )
+		{
+			DevMsg("Warning! CheckButton [%s] doesn't have a valid value list!\n", Name);
+			return false; 
+		}
+
+		// First token always contains our "unckecked" value
+		if ( atof(pszToken) == value )
+			return false;
+		
+		pszToken = strtok( NULL, " " );
+
+		if ( pszToken == NULL )
+		{
+			DevMsg("Warning! CheckButton [%s] doesn't have a second elenemt in its value list!\n", Name);
+			return false; 
+		}
+
+		// Second token always contains our "checked" value
+		if ( atof(pszToken) == value )
+			return true;
+
+		DevMsg("Warning! CheckButton %s's ConVar is set to an invalid value!\n", Name);
+		return false;
+	}
+
+	float GetValueFromState( bool state )
+	{
+		// Get our value list
+		char szValues[8];
+		V_strcpy_safe(szValues, Values);
+
+		char *pszToken = strtok( szValues, " " );
+		if ( pszToken == NULL )
+		{
+			DevMsg("Warning! CheckButton [%s] doesn't have a valid value list!\n", Name);
+			return -1; 
+		}
+
+		// First token always contains our "unckecked" value
+		if ( !state )
+			return atof(pszToken);
+		
+		pszToken = strtok( NULL, " " );
+
+		if ( pszToken == NULL )
+		{
+			DevMsg("Warning! CheckButton [%s] doesn't have a second elenemt in its value list!\n", Name);
+			return -1; 
+		}
+
+		// Second token always contains our "checked" value
+		if ( state )
+			return atof(pszToken);
+
+		return -1;
+	}
+
+public:
 	char		Name[32];
 	char		Convar[128];
-	bool		bInvert;
-	
-	CheckButton	*panel;
-	
-	// Initializes a given CheckButton array.
-	void Init( Panel *parent )
-	{
-		panel = new CheckButton(parent, Name, "");
+	char		Values[8];
 
-		ConVarRef var(Convar);
-		panel->SetSelected(bInvert ? !var.GetBool() : var.GetBool());
-	}
-
-	// Updates ConVars related to a given CheckButton array.
-	void Update( Panel *parent )
-	{
-		ConVarRef var(Convar);
-		var.SetValue(bInvert ? !panel->IsSelected() : panel->IsSelected());
-	}
+private:
+	CheckButton	*checkbutton;
 };
-
-/*//------------------------------------------------------------------------------
-// Radio Buttons
-//------------------------------------------------------------------------------
-#define MAX_RADIO_BUTTONS 8
-struct RadioButton_t
-{
-	char		*Names[MAX_RADIO_BUTTONS];
-	int			iValueList[MAX_RADIO_BUTTONS];
-	char		Convar[128];
-
-	int			Size;
-	RadioButton* Buttons[MAX_RADIO_BUTTONS];
-
-	// Initializes a given RadioButton array.
-	void InitRadioButtons(Panel* parent, RadioButton_t* radioButtons)
-	{
-		for (int i = 0; i < radioButtons->Size; i++)
-		{
-			radioButtons->Buttons[i] = new RadioButton(parent, radioButtons->Names[i], "");
-
-			ConVarRef var(radioButtons->Convar);
-			radioButtons->Buttons[i]->SetSelected(iValueList[i] == var.GetInt());
-		}
-	}
-
-	// Updates ConVars related to a given RadioButton array.
-	void UpdateConVars(Panel* parent, RadioButton_t* radioButtons)
-	{
-		ConVarRef var(radioButtons->Convar);
-		for (int i = 0; i < radioButtons->Size; i++)
-		{
-			if ( radioButtons->Buttons[i]->IsSelected() )
-				var.SetValue(iValueList[i]);
-		}
-	}
-};
-*/
-#if 0
 //------------------------------------------------------------------------------
 // Box Buttons
 //------------------------------------------------------------------------------
+#if 1
 
 #define MAX_BOX_ELEMENTS 5
-struct BoxButton_t
+
+#define ELEMENT_NAMES_LENGTH 256
+#define ELEMENT_VALUES_LENGTH 32
+
+class CConvarBoxButtonElement : public CControlElement
 {
-	char		Name[32];
-	char 		*ElementNames[MAX_BOX_ELEMENTS];
-	char		Convar[128];
-	
-	// Reverses the index value of elements.
-	// EG: [0 1 2] becomes: [2 1 0]. Good for convar control.
-	bool		bReversedIndexes;
-	
-	int			Size;
-	ComboBox	*Box;
-	
-	int GetElementIndex( BoxButton_t mBox, int iElement )
-	{
-		int element = iElement;
-			
-		// Handle reversed index's.
-		if ( mBox.bReversedIndexes )
-		{
-			int iNumElements = -1;
-			for ( int i = 0; mBox.ElementNames[i] != NULL; i++ )
-			{
-				iNumElements++;
-			}
-				
-			element = iNumElements - element;
-		}
-		
-		return element;
-	}
-	
+public:
 	// Initializes a given BoxButton array.
-	void InitBoxButtons( Panel *parent, BoxButton_t boxButtons[] )
+	virtual void Init( Panel *parent )
 	{
-		for ( int i = 0; i < boxButtons[0].Size; i++ )
+		box = new ComboBox(parent, Name, MAX_BOX_ELEMENTS, false);
+			
+		char szElementNames[ELEMENT_NAMES_LENGTH];
+		V_strcpy_safe(szElementNames, ElementNames);
+
+		// Handle elements contained in the box:
+		for ( char *pszToken = strtok( szElementNames, " " ); pszToken != NULL; pszToken = strtok( NULL, " " ))
 		{
-			boxButtons[i].Box = new ComboBox(parent, boxButtons[i].Name, MAX_BOX_ELEMENTS, false);
-			
-			// Handle elements contained in the box:
-			for ( int j = 0; boxButtons[i].ElementNames[j] != NULL; j++ )
-			{
-				boxButtons[i].Box->AddItem( boxButtons[i].ElementNames[j], NULL );
-			}
-			
-			ConVarRef var( boxButtons[i].Convar );
-			
-			int iValue = GetElementIndex( boxButtons[i], var.GetInt() );
-			boxButtons[i].Box->ActivateItem( iValue );
+			box->AddItem( pszToken, NULL );
 		}
+			
+		ConVarRef var( Convar );
+		int iIndex = GetElementFromValue( var.GetInt() );
+		box->ActivateItem( iIndex );
 	}
 	
 	// Updates ConVars related to a given BoxButton array.
-	void UpdateConVars( Panel *parent, BoxButton_t boxButtons[] )
+	virtual void Update()
 	{
-		for ( int i = 0; i < boxButtons[0].Size; i++ )
-		{
-			int iValue = GetElementIndex( boxButtons[i], boxButtons[i].Box->GetActiveItem() );
+		float flValue = GetValueFromElement( box->GetActiveItem() );
 			
-			ConVarRef var( boxButtons[i].Convar );
-			var.SetValue(iValue);
-		}
+		ConVarRef var( Convar );
+		var.SetValue(flValue);
 	}
+
+	virtual Panel *GetPanel( void )
+	{
+		return box;
+	}
+
+	ComboBox *GetBoxButton( void )
+	{
+		return box;
+	}
+
+	// return the element index associated with the inputed value
+	int GetElementFromValue( float value )
+	{
+		// Get element value list
+		char szElementValues[ELEMENT_VALUES_LENGTH];
+		V_strcpy_safe(szElementValues, ElementValues);
+
+		int iElement = 0;
+		for ( char *pszToken = strtok( szElementValues, " " ); pszToken != NULL; pszToken = strtok( NULL, " " ))
+		{
+			if ( atof(pszToken) == value )
+				return iElement;
+
+			iElement++;
+		}
+
+		DevMsg("Warning! Value [%f] doesn't have an associated element!\n", value);
+		return -1;
+	}
+
+	// return the value associated with the inputed element index
+	float GetValueFromElement( int element )
+	{
+		// Get element value list
+		char szElementValues[ELEMENT_VALUES_LENGTH];
+		V_strcpy_safe(szElementValues, ElementValues);
+
+		int iElement = 0;
+		for ( char *pszToken = strtok( szElementValues, " " ); pszToken != NULL; pszToken = strtok( NULL, " " ))
+		{
+			if ( iElement == element )
+				return atof(pszToken);
+
+			iElement++;
+		}
+
+		DevMsg("Warning! Element [%i] doesn't have an associated value!\n", element);
+		return -1.0f;
+	}
+
+public:
+	char		Name[32];
+	char		Convar[128];
+	
+	char 		ElementNames[ELEMENT_NAMES_LENGTH];
+	char 		ElementValues[ELEMENT_VALUES_LENGTH];
+
+private:
+	ComboBox	*box;
 };
 #endif
+
 //------------------------------------------------------------------------------
 // Tick Sliders
 //------------------------------------------------------------------------------
-struct TickSlider_t
+class CConvarTickSliderElement : public CControlElement
 {
+public:
+	// Initialize
+	virtual void Init( Panel *parent )
+	{
+		slider = new Slider(parent, Name);
+
+		slider->SetRange(0, numticks - 1); 
+		slider->SetNumTicks(numindicators - 1);
+
+		ConVarRef var( Convar );
+		int iSelectedTick = (int)RemapVal(var.GetFloat(), min, max, 0, numticks);
+
+		slider->SetValue( iSelectedTick );
+	}
+	
+	// Update ConVar
+	virtual void Update()
+	{
+		ConVarRef var( Convar );
+		var.SetValue( RemapVal(slider->GetValue(), 0.0f, numticks - 1, min, max) );
+	}
+
+	virtual Panel *GetPanel( void )
+	{
+		return slider;
+	}
+
+	virtual Slider *GetTickSlider( void )
+	{
+		return slider;
+	}
+
+public:
 	char		Name[32];
 	char		Convar[128];
 
@@ -164,246 +318,162 @@ struct TickSlider_t
 
 	float		min, max; // Value range
 
-	Slider		*panel;
-	
-	// Initializes a given TickSlider array.
-	void Init( Panel *parent )
-	{
-		panel = new Slider(parent, Name);
-
-		panel->SetRange(0, numticks - 1); 
-		panel->SetNumTicks(numindicators - 1);
-
-		ConVarRef var( Convar );
-		int iSelectedTick = (int)RemapVal(var.GetFloat(), min, max, 0, numticks);
-
-		panel->SetValue( iSelectedTick );
-	}
-	
-	// Updates ConVars related to a given TickSlider array.
-	void Update( Panel *parent )
-	{
-		ConVarRef var( Convar );
-		var.SetValue( RemapVal(panel->GetValue(), 0.0f, numticks - 1, min, max) );
-	}
-};
-
-enum eControlTypes
-{
-	TYPE_NULL = 0,
-
-	TYPE_CHECKBOX,
-	TYPE_RADIOBUTTON,
-	TYPE_BOXBUTTON,
-	TYPE_TICKSLIDER,
-};
-//------------------------------------------------------------------------------
-// Control Elements
-//------------------------------------------------------------------------------
-#define CREATE_NEW_ELEMENT(x, y) y x; V_strcpy_safe(x.Name, controlElements[i].name); V_strcpy_safe(x.Convar, controlElements[i].convar);
-#define INIT_NEW_ELEMENT(x, parent) x.Init(parent); controlElements[i].elementPanel = x.panel;
-#define ELEMENT_PARAMETER(x) controlElements[i].parameter_##x
-
-struct ControlElement_t
-{
-public:
-	int type;
-	char name[128];
-	char convar[128];
-
-	char parameter_1[128];char parameter_2[128];char parameter_3[128];char parameter_4[128];char parameter_5[128];
-	char parameter_6[128];char parameter_7[128];char parameter_8[128];char parameter_9[128];char parameter_10[128];
-
-	Panel *elementPanel;
-	
-public:
-	// Initializes a given ControlElement array.
-	void InitElements( Panel *parent, ControlElement_t controlElements[] )
-	{
-		// The number of elements is stored in the 0th index of a controlElements array.
-		int iNumElements = controlElements[0].type;
-
-		for (int i = 1; i < iNumElements + 1; i++)
-		{
-			switch( controlElements[i].type )
-			{
-			case TYPE_CHECKBOX:
-				{
-					CREATE_NEW_ELEMENT(checkbutton, CheckButton_t);
-
-					// Parameters
-					checkbutton.bInvert = GetParamBool(ELEMENT_PARAMETER(1));
-
-					INIT_NEW_ELEMENT(checkbutton, parent);
-				}
-				break;
-
-			case TYPE_TICKSLIDER:
-				{
-					CREATE_NEW_ELEMENT(tickslider, TickSlider_t);
-
-					// Parameters
-					tickslider.numticks =		GetParamInt(ELEMENT_PARAMETER(1));
-					tickslider.numindicators = GetParamInt(ELEMENT_PARAMETER(2));
-
-					tickslider.min = GetParamFloat(ELEMENT_PARAMETER(3));
-					tickslider.max = GetParamFloat(ELEMENT_PARAMETER(4));
-
-					INIT_NEW_ELEMENT(tickslider, parent);
-				}
-				break;
-			}
-		}
-	}
-	
-	// Updates ConVars related to a given ControlElement array.
-	void UpdateElements( Panel *parent, ControlElement_t controlElements[] )
-	{
-
-	}
-
 private:
-	int GetParamInt( const char *param )
-	{
-		return atoi(param);
-	}
-
-	float GetParamFloat( const char *param )
-	{
-		return atof(param);
-	}
-
-	bool GetParamBool( const char *param )
-	{
-		bool bTrue = !Q_stricmp(param, "true");
-
-		if ( !bTrue && Q_stricmp(param, "false") )
-			DevWarning("ControlElement_t GetParamBool() is neither true or false!\n");
-
-		return bTrue;
-	}
+	Slider	*slider;
 };
 
 //------------------------------------------------------------------------------
-// Options Panel
+// Purpose: 
 //------------------------------------------------------------------------------
-
 class CSubPanel : public vgui::EditablePanel
 {
 	DECLARE_CLASS_SIMPLE(CSubPanel, vgui::EditablePanel);
 
 public:
-
-	CSubPanel(vgui::Panel* parent ) : EditablePanel(parent, NULL) {}
-	~CSubPanel() {}
-	
-	// Initialize all our control methods.
-	virtual void SubPanelInit( void ) 
+	// Constructor
+	CSubPanel( vgui::PropertyDialog *parent, GenericElement_t *pElementList ) : EditablePanel(parent, NULL)
 	{
-		if ( m_ControlElementList != NULL )
-			m_ControlElementList->InitElements( this, m_ControlElementList );
+		m_GenericElementList = pElementList;
 	}
 
 	// Enable the apply button.
-	virtual void OnControlModified( Panel *panel )
+	virtual void OnControlModified( void )
 	{ 
 		PostActionSignal(new KeyValues("ApplyButtonEnable")); 
 	}
-	
-private:
-	// Updates all our control methods.
-	MESSAGE_FUNC( OnApplyChanges, "ApplyChanges" )
+
+	// Updates ConVars related to a given GenericElement array.
+	virtual void UpdateElements( void )
 	{
-		if ( m_ControlElementList != NULL )
-			m_ControlElementList->UpdateElements( this, m_ControlElementList );
+		if ( m_GenericElementList == NULL )
+			return;
+
+		// The number of elements is stored in the 0th index of a GenericElements array.
+		int iNumElements = m_GenericElementList[0].type;
+
+		for (int i = 1; i < iNumElements + 1; i++)
+			m_GenericElementList[i].element->Update();
 	}
 
-	// Execute OnControlModified() when any action should enable the apply button.
-	MESSAGE_FUNC_PTR(OnCheckButtonChecked, "CheckButtonChecked", panel) { OnControlModified(panel); }
-	MESSAGE_FUNC_PTR(OnRadioButtonChecked, "RadioButtonChecked", panel) { OnControlModified(panel); }
-	MESSAGE_FUNC_PTR( OnTextChanged, "TextChanged", panel )				{ OnControlModified(panel); }
-	MESSAGE_FUNC_PTR( OnSliderMoved, "SliderMoved", panel )				{ OnControlModified(panel); }
-	
-public:
-	ControlElement_t *m_ControlElementList = NULL;
-};
-//------------------------------------------------------------------------------
-// Scrollable Panel
-//------------------------------------------------------------------------------
-class CSubScrollablePanel : public vgui::ScrollableEditablePanel
-{
-	DECLARE_CLASS_SIMPLE(CSubScrollablePanel, vgui::ScrollableEditablePanel);
-	
-public:
-	CSubScrollablePanel::CSubScrollablePanel( vgui::Panel* parent, vgui::EditablePanel* child ) : 
-	ScrollableEditablePanel(parent, child, NULL) {}
-	
-	~CSubScrollablePanel() {}
-	
-private:
-	// Since the main panel sends the apply message to this panel, and not its child panel that has all the actual elements on it,
-	// we need to manually send the apply message to the child panel.
-	MESSAGE_FUNC( OnApplyChanges, "ApplyChanges" ) { ipanel()->SendMessage(GetChild(0)->GetVPanel(), new KeyValues("ApplyChanges"), GetVPanel()); }
-};
-//------------------------------------------------------------------------------
-// Options Page
-//------------------------------------------------------------------------------
-struct OptionsPage_t
-{
-	const char	*pLabel;
-	const char	*pResourcePath;
-	
-	ControlElement_t	*ControlElements; // List of all elements in this panel.
-	
-	// if this is greater than 1, add a scrollbar to this panel and extend it's height down by this percentage.
-	float			AdditionalHeightPerc; 
-	
-	int				Size;
-	CSubPanel		*Panel;
-
-	// Parses a given OptionsPage array.
-	void ParseOptionsPanels( PropertyDialog *parent, OptionsPage_t OptionsPages[] )
+	#define CREATE_NEW_ELEMENT(x, y) y *x = new y; V_strcpy_safe(x->Name, element.name); V_strcpy_safe(x->Convar, element.convar);
+	virtual void InitElements( Panel *parent, const char *resource )
 	{
-		int iNumElements = atoi(OptionsPages[0].pLabel);
-		for ( int i = 1; i < iNumElements; i++ )
+		if ( m_GenericElementList == NULL )
+			return;
+
+		// The number of elements is stored in the 0th index of a GenericElements array.
+		int iNumElements = m_GenericElementList[0].type;
+		for (int i = 1; i < iNumElements + 1; i++)
 		{
-			if (!OptionsPages[i].Panel)
-				OptionsPages[i].Panel = new CSubPanel(parent);
-
-			// Pass our control methods to the new panel.
-			OptionsPages[i].Panel->m_ControlElementList = OptionsPages[i].ControlElements;
-			
-			// Init
-			OptionsPages[i].Panel->SubPanelInit();
-			OptionsPages[i].Panel->LoadControlSettings( OptionsPages[i].pResourcePath );
-				
-			// Parent this panel to a scrollable panel if we need extra height.
-			if ( OptionsPages[i].AdditionalHeightPerc > 1.0f )
+			GenericElement_t element = m_GenericElementList[i];
+			switch( m_GenericElementList[i].type )
 			{
-				CSubScrollablePanel* m_pScrollablePanel;
-				m_pScrollablePanel = new CSubScrollablePanel( parent, OptionsPages[i].Panel );
+			case TYPE_CVAR_CHECKBOX:
+				{
+					CREATE_NEW_ELEMENT(checkbutton, CConvarCheckButtonElement);
 
-				OptionsPages[i].Panel->SetBounds(0, 0, parent->GetWide(), parent->GetTall() * ( 1.0f + ( OptionsPages[i].AdditionalHeightPerc / 100 ) ) );
-				
-				// Add this scrollable panel to our parents page-list.
-				parent->AddPage(m_pScrollablePanel, OptionsPages[i].pLabel);
+					// Parameters
+					V_strcpy_safe( checkbutton->Values, element.parameters[0] );
+
+					// Init
+					checkbutton->Init(parent);
+					m_GenericElementList[i].element = checkbutton;
+				}
+				break;
+
+			case TYPE_CVAR_TICKSLIDER:
+				{
+					CREATE_NEW_ELEMENT(tickslider, CConvarTickSliderElement);
+
+					// Parameters
+					tickslider->numticks =		(int)GetParamValue(element.parameters[0]);
+					tickslider->numindicators = (int)GetParamValue(element.parameters[1]);
+					tickslider->min = GetParamValue(element.parameters[2]);
+					tickslider->max = GetParamValue(element.parameters[3]);
+
+					// Init
+					tickslider->Init(parent);
+					m_GenericElementList[i].element = tickslider;
+				}
+				break;
+
+			case TYPE_CVAR_BOXBUTTON:
+				{
+					CREATE_NEW_ELEMENT(boxbutton, CConvarBoxButtonElement);
+
+					// Parameters
+					V_strcpy_safe( boxbutton->ElementNames, element.parameters[0] );
+					V_strcpy_safe( boxbutton->ElementValues, element.parameters[1] );
+
+					// Init
+					boxbutton->Init(parent);
+					m_GenericElementList[i].element = boxbutton;
+				}
+				break;
 			}
-			else
+		}
+
+		LoadControlSettings( resource );
+	}
+
+#define GET_ELEMENT(variable, name) variable = NULL; variable = GetElement(variable, name); variable
+
+// HACKHACKHACKHACKHACK: This is levels of hackiness not seen before by mankind...
+// From: https://stackoverflow.com/questions/652815/
+#define CONCAT_IMPL( x, y ) x##y
+#define MACRO_CONCAT( x, y ) CONCAT_IMPL( x, y )
+#define GET_ELEMENT_PANEL(type, name) type *MACRO_CONCAT(variable, __LINE__ ); GET_ELEMENT(MACRO_CONCAT(variable, __LINE__ ), name)->GetPanel()
+
+	template <typename T>
+	T *GetElement( T *pElement, const char *pName )
+	{
+		// The number of elements is stored in the 0th index of a GenericElements array.
+		int iNumElements = m_GenericElementList[0].type;
+		for (int i = 1; i < iNumElements + 1; i++)
+		{
+			if ( !Q_stricmp( m_GenericElementList[i].name, pName ) )
+				return dynamic_cast<T *>(m_GenericElementList[i].element);
+		}
+
+		return NULL;
+	}
+
+	// Converts an element string into a float, which we can cast as int or bool.
+	float GetParamValue( const char *param )
+	{
+		return atof(param);
+	}
+
+	
+	void DebugElementList( void )
+	{
+		// The number of elements is stored in the 0th index of a GenericElements array.
+		int iNumElements = m_GenericElementList[0].type;
+
+		DevMsg("Full Element list is:\n\n");
+		for (int i = 1; i < iNumElements; i++)
+		{
+			DevMsg("[%s'n] Parameters are:\n", m_GenericElementList[i].name);
+			for (int j = 0; j < 10; j++ )
 			{
-				// Add this panel to our parents page-list.
-				parent->AddPage(OptionsPages[i].Panel, OptionsPages[i].pLabel);
+				DevMsg("	Parameter [%i] is: [%s]\n", j, m_GenericElementList[i].parameters[j]);
 			}
+			DevMsg("\n");
 		}
 	}
 
-	void KillOptionsPanels(OptionsPage_t OptionsPages[])
-	{
-		for ( int i = 0; i < OptionsPages[0].Size; i++ )
-		{
-			if (OptionsPages[i].Panel)
-				OptionsPages[i].Panel = NULL;
-		}	
-	}
+private:
+	// Updates all our control methods.
+	MESSAGE_FUNC( OnApplyChanges, "ApplyChanges" ) { UpdateElements(); }
+
+	// Execute OnControlModified() when any action should enable the apply button.
+	MESSAGE_FUNC_PTR(OnCheckButtonChecked, "CheckButtonChecked", panel) { OnControlModified(); }
+	MESSAGE_FUNC_PTR(OnRadioButtonChecked, "RadioButtonChecked", panel) { OnControlModified(); }
+	MESSAGE_FUNC_PTR( OnTextChanged, "TextChanged", panel )				{ OnControlModified(); }
+	MESSAGE_FUNC_PTR( OnSliderMoved, "SliderMoved", panel )				{ OnControlModified(); }
+	
+private:
+	GenericElement_t *m_GenericElementList = NULL;
 };
 
 #endif

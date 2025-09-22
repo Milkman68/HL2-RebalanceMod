@@ -41,8 +41,8 @@
 #define MACHINE_GUN_BURST_TIME		0.075f
 #define MACHINE_GUN_BURST_PAUSE_TIME	2.0f
 
-#define ROCKET_SALVO_SIZE				5
-#define ROCKET_DELAY_TIME				1.5
+#define ROCKET_SALVO_SIZE				3
+#define ROCKET_DELAY_TIME				0.5
 #define ROCKET_MIN_BURST_PAUSE_TIME		3
 #define ROCKET_MAX_BURST_PAUSE_TIME		4
 #define ROCKET_SPEED					800
@@ -159,10 +159,10 @@ void CPropAPC::Spawn( void )
 
 	CreateAPCLaserDot();
 
-	if( g_pGameRules->GetAutoAimMode() == AUTOAIM_ON_CONSOLE )
-	{
+//	if( g_pGameRules->GetAutoAimMode() == AUTOAIM_ON_CONSOLE )
+//	{
 		AddFlag( FL_AIMTARGET );
-	}
+//	}
 }
 
 //-----------------------------------------------------------------------------
@@ -181,7 +181,7 @@ void CPropAPC::CreateAPCLaserDot( void )
 //-----------------------------------------------------------------------------
 bool CPropAPC::ShouldAttractAutoAim( CBaseEntity *pAimingEnt )
 {
-	if( g_pGameRules->GetAutoAimMode() == AUTOAIM_ON_CONSOLE && pAimingEnt->IsPlayer() && GetDriver() )
+	if( /*g_pGameRules->GetAutoAimMode() == AUTOAIM_ON_CONSOLE &&*/ pAimingEnt->IsPlayer() && GetDriver() )
 	{
 		return true;
 	}

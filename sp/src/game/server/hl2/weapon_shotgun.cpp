@@ -256,7 +256,7 @@ float CWeaponShotgun::GetMinRestTime()
 {
 	if( GetOwner() && GetOwner()->Classify() == CLASS_COMBINE )
 	{
-		return 1.2f;
+		return 0.5f;
 	}
 	
 	return BaseClass::GetMinRestTime();
@@ -268,7 +268,7 @@ float CWeaponShotgun::GetMaxRestTime()
 {
 	if( GetOwner() && GetOwner()->Classify() == CLASS_COMBINE )
 	{
-		return 1.5f;
+		return 1.0f;
 	}
 
 	return BaseClass::GetMaxRestTime();

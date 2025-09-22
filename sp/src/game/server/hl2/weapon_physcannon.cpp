@@ -1238,7 +1238,8 @@ public:
 	void	ItemPostFrame();
 	void	ItemBusyFrame();
 
-	virtual float GetMaxAutoAimDeflection() { return 0.90f; }
+//	virtual float GetMaxAutoAimDeflection() { return 0.90f; }
+	virtual float WeaponAutoAimScale();
 
 	void	ForceDrop( void );
 	bool	DropIfEntityHeld( CBaseEntity *pTarget );	// Drops its held entity if it matches the entity passed in
@@ -4515,6 +4516,11 @@ bool CWeaponPhysCannon::IsAccountableForObject( CBaseEntity *pObject )
 	}
 
 	return false;
+}
+
+float CWeaponPhysCannon::WeaponAutoAimScale()
+{
+	return m_grabController.GetAttached() || IsMegaPhysCannon() ? 1.0f : 0.0f;
 }
 
 //-----------------------------------------------------------------------------

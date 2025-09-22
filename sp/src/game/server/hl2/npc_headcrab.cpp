@@ -566,7 +566,7 @@ void CBaseHeadcrab::JumpAttack( bool bRandomJump, const Vector &vecPos, bool bTh
 		float speed = sqrt( 2 * gravity * fabsf(height) );
 		float time = speed / gravity;
 
-		DevMsg("speed is: [%f]\n time is: [%f]\n", speed, time );
+	//	DevMsg("speed is: [%f]\n time is: [%f]\n", speed, time );
 
 		// add in the time it takes to fall the additional height
 		// So the impact takes place on the downward slope at the original height

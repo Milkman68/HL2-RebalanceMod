@@ -34,6 +34,7 @@
 
 //ConVar	pistol_use_new_accuracy( "pistol_use_new_accuracy", "1" );
 ConVar sk_pistol_can_secondary_attack("sk_pistol_can_secondary_attack", "1" );
+extern ConVar hl2r_bullet_tracer_freq;
 
 //-----------------------------------------------------------------------------
 // CWeaponPistol
@@ -284,7 +285,7 @@ void CWeaponPistol::SecondaryAttack( void )
 	info.m_iShots	= 1;
 	info.m_flDistance = MAX_TRACE_LENGTH;
 	info.m_iAmmoType = m_iPrimaryAmmoType;
-	info.m_iTracerFreq = 1;
+	info.m_iTracerFreq = hl2r_bullet_tracer_freq.GetInt();
 	info.m_vecSpread = pOwner->GetAttackSpread( this );
 
 	WeaponSound(SINGLE, 0);

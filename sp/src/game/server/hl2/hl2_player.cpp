@@ -47,6 +47,7 @@
 #include "filters.h"
 #include "func_tank.h"
 #include "tier0/icommandline.h"
+#include "vehicle_base.h"
 
 #ifdef HL2_EPISODIC
 #include "npc_alyx_episodic.h"
@@ -123,7 +124,7 @@ extern ConVar hl2r_episodic_flashlight;
 ConVar sv_stickysprint("sv_stickysprint", "0", FCVAR_ARCHIVE | FCVAR_ARCHIVE_XBOX);
 
 //#define	FLASH_DRAIN_TIME	 1.1111	// 100 units / 90 secs
-#define	FLASH_DRAIN_TIME	 5	// 100 units / 20 secs
+#define	FLASH_DRAIN_TIME	 2	// 100 units / 20 secs
 //#define	FLASH_CHARGE_TIME	 50.0f	// 100 units / 2 secs
 #define	FLASH_CHARGE_TIME	 28.0f	// 100 units / 3.5 secs
 
@@ -2597,6 +2598,20 @@ void CHL2_Player::GetAutoaimVector( autoaim_params_t &params )
 		params.m_fScale *= flViewScale;
 	}
 
+	CPropVehicleDriveable *pVehicleDriveable = dynamic_cast< CPropVehicleDriveable * >( GetVehicleEntity() );
+	if ( pVehicleDriveable )
+	{
+		if ( pVehicleDriveable->m_bHasGun )
+		{
+			params.m_fScale *= 3.0;
+			params.m_fMaxDist *= 3.0;
+		}
+		else
+		{
+			params.m_fScale = 0.0f;
+		}
+	}
+
 
 	BaseClass::GetAutoaimVector( params );
 
@@ -2711,6 +2726,7 @@ void CHL2_Player::UpdateAutoaimData( void )
 	m_bAutoaimViewCorrection = true;
 
 	GetAutoaimVector(params);
+
 	m_HL2Local.m_hAutoAimTarget.Set(params.m_hAutoAimEntity);
 	m_HL2Local.m_vecAutoAimPoint.Set(params.m_vecAutoAimPoint);
 	m_HL2Local.m_bAutoAimTarget = (params.m_bAutoAimAssisting || params.m_bOnTargetNatural);

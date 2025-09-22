@@ -15,6 +15,8 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
+extern ConVar hl2r_bullet_tracer_freq;
+
 IMPLEMENT_SERVERCLASS_ST( CHLMachineGun, DT_HLMachineGun )
 END_SEND_TABLE()
 
@@ -93,7 +95,7 @@ void CHLMachineGun::PrimaryAttack( void )
 	info.m_vecSpread = pPlayer->GetAttackSpread( this );
 	info.m_flDistance = MAX_TRACE_LENGTH;
 	info.m_iAmmoType = m_iPrimaryAmmoType;
-	info.m_iTracerFreq = 1;
+	info.m_iTracerFreq = hl2r_bullet_tracer_freq.GetInt();
 	FireBullets( info );
 
 	//Factor in the view kick
@@ -457,7 +459,7 @@ void CHLSelectFireMachineGun::BurstThink( void )
 	info.m_vecSpread = RandomVector( -vecSpread.x, vecSpread.x );;
 	info.m_flDistance = MAX_TRACE_LENGTH;
 	info.m_iAmmoType = m_iPrimaryAmmoType;
-	info.m_iTracerFreq = 1;
+	info.m_iTracerFreq = hl2r_bullet_tracer_freq.GetInt();
 	FireBullets( info );
 
 	//Factor in the view kick

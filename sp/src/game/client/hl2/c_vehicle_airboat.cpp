@@ -50,6 +50,7 @@ ConVar r_AirboatPitchCurveLinear( "r_AirboatPitchCurveLinear", "60.0", FCVAR_CHE
 ConVar airboat_joy_response_move( "airboat_joy_response_move", "1" );					// Quadratic steering response
 
 extern ConVar r_mirrored;
+extern ConVar autoaim_viewcorrection_speed;
 																						
 
 #define AIRBOAT_DELTA_LENGTH_MAX	12.0f			// 1 foot
@@ -282,8 +283,6 @@ void C_PropAirboat::DrawHudElements( )
 		}
 		y -= 0.5 * screen[1] * screenHeight + 0.5;
 
-		DevMsg("x is: %f", x );
-
 	//	x -= pIcon->Width() / 2; 
 	//	y -= pIcon->Height() / 2; 
 		
@@ -296,6 +295,49 @@ void C_PropAirboat::DrawHudElements( )
 //-----------------------------------------------------------------------------
 void C_PropAirboat::UpdateViewAngles( C_BasePlayer *pLocalPlayer, CUserCmd *pCmd )
 {
+	if ( engine->IsPaused() )
+		return;
+
+	C_BaseHLPlayer *pLocalHLPlayer = (C_BaseHLPlayer *)pLocalPlayer;
+	CBaseEntity *pTarget = pLocalHLPlayer->m_HL2Local.m_hAutoAimTarget.Get();
+
+	if ( pTarget )
+	{
+
+		if ( m_bHasGun && !m_bUnableToFire )
+		{
+			if (pLocalHLPlayer->m_HL2Local.m_hAutoAimTarget.Get())	
+			{
+				int eyeAttachmentIndex = LookupAttachment( "vehicle_driver_eyes" );
+				Vector vehicleEyeOrigin;
+				QAngle vehicleEyeAngles;
+				GetAttachment( eyeAttachmentIndex, vehicleEyeOrigin, vehicleEyeAngles );
+
+				Vector vecAutoAimPoint = pLocalHLPlayer->m_HL2Local.m_vecAutoAimPoint;
+				Vector vecDir = vecAutoAimPoint - vehicleEyeOrigin;
+				VectorNormalize(vecDir);
+
+				QAngle targetangles;
+				VectorAngles(vecDir, targetangles);
+
+				float speed = autoaim_viewcorrection_speed.GetFloat();
+
+				float targetYaw = targetangles[1] - vehicleEyeAngles[1] + 90;
+				float currentYaw = pCmd->viewangles[1];
+
+				float vehicleYaw = vehicleEyeAngles[1];
+
+			//	DevMsg("Yaw Vehicle Difference is [%f]\n", fabsf(AngleDistance(vehicleYaw + currentYaw - 90, vehicleYaw)) );
+
+				if( fabsf(AngleDistance(vehicleYaw + currentYaw - 90, vehicleYaw)) < 70.0f )
+					pCmd->viewangles[1] = ApproachAngle(targetYaw, currentYaw, (AngleDistance(targetYaw, currentYaw) / 360) * gpGlobals->frametime * speed);
+			}
+		}
+
+		BaseClass::UpdateViewAngles( pLocalPlayer, pCmd );
+		return;
+	}
+
 	if ( r_AirboatViewBlendTo.GetInt() )
 	{
 		//
@@ -305,25 +347,7 @@ void C_PropAirboat::UpdateViewAngles( C_BasePlayer *pLocalPlayer, CUserCmd *pCmd
 
 		if ( ( pCmd->mousedx != 0 || pCmd->mousedy != 0 ) || ( fabsf( m_flThrottle ) < 0.01f ) )
 		{
-			if ( IsX360() )
-			{
-				// Only reset this if there isn't an autoaim target!
-				C_BaseHLPlayer *pLocalHLPlayer = (C_BaseHLPlayer *)pLocalPlayer;
-				if ( pLocalHLPlayer )
-				{
-					// Get the autoaim target.
-					CBaseEntity *pTarget = pLocalHLPlayer->m_HL2Local.m_hAutoAimTarget.Get();
-
-					if( !pTarget )
-					{
-						bResetViewAngleTime = true;
-					}
-				}
-			}
-			else
-			{
-				bResetViewAngleTime = true;
-			}
+			bResetViewAngleTime = true;
 		}
 
 		if( bResetViewAngleTime )

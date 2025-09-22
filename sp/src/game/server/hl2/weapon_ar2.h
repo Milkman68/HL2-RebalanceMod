@@ -54,8 +54,8 @@ public:
 	// NPC
 	int		GetMinBurst( void ) { return 3; }
 	int		GetMaxBurst( void ) { return 3; }
-	float	GetMinRestTime( void ) { return 0.6f; }
-	float	GetMaxRestTime( void ) { return 1.0f; }
+	float	GetMinRestTime( void ) { return 0.4f; }
+	float	GetMaxRestTime( void ) { return 0.7f; }
 
 	bool	CanHolster( void );
 	bool	Reload( void );

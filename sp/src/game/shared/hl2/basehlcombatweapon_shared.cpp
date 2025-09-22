@@ -47,8 +47,8 @@ END_DATADESC()
 BEGIN_PREDICTION_DATA( CBaseHLCombatWeapon )
 END_PREDICTION_DATA()
 
-ConVar sk_auto_reload_time( "sk_auto_reload_time", "3.0", FCVAR_REPLICATED );
-ConVar sk_allow_auto_reload( "sk_allow_auto_reload", "0", FCVAR_REPLICATED );
+ConVar sk_auto_reload_time( "sk_auto_reload_time", "3.0", FCVAR_REPLICATED | FCVAR_ARCHIVE );
+ConVar sk_allow_auto_reload( "sk_allow_auto_reload", "0", FCVAR_REPLICATED | FCVAR_ARCHIVE );
 
 //-----------------------------------------------------------------------------
 // Purpose: 

@@ -420,10 +420,10 @@ int CAI_TacticalServices::FindCoverNode(const Vector &vNearPos, const Vector &vT
 					if ( flDesiredDist > 0.0f )
 					{
 						// Only do a path distance calculation every 3 nodes we check.
-						if ( iNumCoverPositions == 0 || iNumCoverPositions % 3 == 0)
-						{
-							flPathDist = GetOuter()->GetPathDistanceToPoint( GetAbsOrigin(), vThreatPos );
-						}
+				//		if ( iNumCoverPositions == 0 || iNumCoverPositions % 3 == 0)
+				//		{
+				//			flPathDist = GetOuter()->GetPathDistanceToPoint( GetAbsOrigin(), vThreatPos );
+				//		}
 
 						iNumCoverPositions++;
 
@@ -689,7 +689,7 @@ int CAI_TacticalServices::FindLosNode( const Vector &vThreatPos, const Vector &v
 							{
 							//	NDebugOverlay::Box( nodeOrigin, Vector(5, 5, 5), -Vector(5, 5, 5), 255,0,0, true, 10 );
 								
-								float flNewScore = GetOuter()->GetLOSPositionScore( vThreatPos, nodeOrigin, flPathDist, flDesiredDist, iMyNode == iIdealNode );
+								float flNewScore = GetOuter()->GetLOSPositionScore( vThreatPos, nodeOrigin, flPathDist, flDesiredDist );
 									
 								if ( flNewScore > flScore )
 								{

@@ -29,6 +29,10 @@ public:
 	void	TraceAttack( const CTakeDamageInfo &info, const Vector &vecDir, trace_t *ptr, CDmgAccumulator *pAccumulator );
 	bool	ShouldLookForBetterWeapon() { return false; }
 	bool	IsReadinessCapable() { return false; }
+
+	virtual	bool		UsesNewProficiencySystem( void ) { return true; }
+	virtual int			GetNewProficiencyTier( void ) { return 1; };
+
 	void	DeathSound( const CTakeDamageInfo &info );
 
 	EHANDLE	m_hEmpTool;

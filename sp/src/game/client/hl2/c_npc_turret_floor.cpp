@@ -10,7 +10,7 @@
 #define	LASER_BEAM_SPRITE	"effects/laser1.vmt"
 
 #define	LASER_BEAM_RANGE		512
-#define	LASER_BEAM_BRIGHTNESS	100
+#define	LASER_BEAM_BRIGHTNESS	50
 #define	LASER_BEAM_WIDTH		5.0f
 
 //#define	LASER_DOT_SCALE		5.0f
@@ -172,13 +172,17 @@ void C_TurretFloor::UpdateLaserBeam( Vector start, Vector end, float r, float g,
 	Vector vecDir = (end - start);
 	VectorNormalize(vecDir);
 
+	extern ConVar hl2r_dynamic_light_level;
+	if ( hl2r_dynamic_light_level.GetInt() != 0 ) // VFX + Entities
+		return;
+
 	dlight_t *dl = effects->CL_AllocDlight ( index );
-	dl->origin = start + (vecDir * MIN(32, flDist));
+	dl->origin = start + (vecDir * MIN(48, flDist));
 	dl->color.r = r * a;
 	dl->color.g = g * a;
 	dl->color.b = b * a;
-	dl->color.exponent = -3;
-	dl->radius = 128;
+	dl->color.exponent = -4;
+	dl->radius = 192;
 	dl->die = gpGlobals->curtime + 0.01;
 	dl->decay = 512;
 }

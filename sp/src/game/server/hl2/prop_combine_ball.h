@@ -132,7 +132,7 @@ private:
 
 	void CollisionEventToTrace( int index, gamevcollisionevent_t *pEvent, trace_t &tr );
 	bool DissolveEntity( CBaseEntity *pEntity );
-	void OnHitEntity( CBaseEntity *pHitEntity, float flSpeed, int index, gamevcollisionevent_t *pEvent );
+	void OnHitEntity( CBaseEntity *pHitEntity, float flSpeed, int index = -1, gamevcollisionevent_t *pEvent = NULL );
 	void DoImpactEffect( const Vector &preVelocity, int index, gamevcollisionevent_t *pEvent );
 
 	// Bounce inside the spawner: 

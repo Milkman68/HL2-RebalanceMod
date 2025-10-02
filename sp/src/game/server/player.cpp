@@ -126,6 +126,8 @@ extern ConVar *sv_maxreplay;
 
 extern CServerGameDLL g_ServerGameDLL;
 
+ConVar	hl2_dmg_flinch_scale( "hl2_dmg_flinch_scale", "1", FCVAR_REPLICATED );
+
 // TIME BASED DAMAGE AMOUNT
 // tweak these values based on gameplay feedback:
 #define PARALYZE_DURATION	2		// number of 2 second intervals to take damage
@@ -1353,11 +1355,12 @@ int CBasePlayer::OnTakeDamage( const CTakeDamageInfo &inputInfo )
 	}
 
 	float flPunch = -2;
-
 	if ( info.GetAttacker()->MyNPCPointer() != NULL )
 	{
+		// Clamp to a min of -3 and a max of -8.
 	//	float flDist = ( info.GetAttacker()->GetAbsOrigin() - GetAbsOrigin() ).Length();
-		flPunch = -5; // Clamp to a min of -3 and a max of -8.
+
+		flPunch = -hl2_dmg_flinch_scale.GetFloat(); 
 	}
 
 	m_Local.m_vecPunchAngle.SetX( flPunch );

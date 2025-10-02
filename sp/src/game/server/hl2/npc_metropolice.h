@@ -166,6 +166,11 @@ private:
 	virtual	bool		UsesNewProficiencySystem( void ) { return true; }
 	virtual int			GetNewProficiencyTier( void ) { return m_iTier; };
 
+	virtual Activity	GetDoorOpenActivity( void );
+	virtual float		GetDoorOpenSpeedMult( void );
+	virtual int			GetDoorOpenStyle( void );
+	virtual float		GetDoorOpenActivityDelay( void ) { return 0.3; };
+
 	WeaponProficiency_t CalcWeaponProficiency( CBaseCombatWeapon *pWeapon );
 
 	// Inputs

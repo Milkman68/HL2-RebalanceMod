@@ -28,6 +28,7 @@
 #include "gamestats.h"
 #include "beam_shared.h"
 #include "npc_combine.h"
+#include "ndebugoverlay.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -49,7 +50,8 @@ ConVar	sk_combine_ball_search_radius( "sk_combine_ball_search_radius", "512", FC
 ConVar	sk_combineball_seek_angle( "sk_combineball_seek_angle","15.0", FCVAR_REPLICATED);
 ConVar	sk_combineball_seek_kill( "sk_combineball_seek_kill","0", FCVAR_REPLICATED);
 
-ConVar	sk_combineball_radius_kill( "sk_combineball_radius_kill","1", FCVAR_REPLICATED);
+ConVar	sk_combineball_radial_damage( "sk_combineball_radial_damage","0", FCVAR_REPLICATED);
+ConVar	sk_combineball_dmg_radius( "sk_combineball_dmg_radius","32", FCVAR_REPLICATED);
 
 extern ConVar sk_plr_weapon_ar2_alt_fire_speed;
 
@@ -332,7 +334,10 @@ bool CPropCombineBall::CreateVPhysics()
 {
 	SetSolid( SOLID_BBOX );
 
-	float flSize = sk_combineball_radius_kill.GetInt() > 0 ? 1 : m_flRadius;
+	float flSize = m_flRadius;
+
+	if ( sk_combineball_radial_damage.GetBool() )
+		flSize = 1.0f;
 
 	SetCollisionBounds( Vector(-flSize, -flSize, -flSize), Vector(flSize, flSize, flSize) );
 	objectparams_t params = g_PhysDefaultObjectParams;
@@ -389,7 +394,9 @@ void CPropCombineBall::Spawn( void )
 	}
 
 	CreateVPhysics();
-	SearchThink();
+
+	if ( sk_combineball_radial_damage.GetBool() )
+		SearchThink();
 
 	Vector vecAbsVelocity = GetAbsVelocity();
 	VPhysicsGetObject()->SetVelocity( &vecAbsVelocity, NULL );
@@ -1133,6 +1140,7 @@ void CPropCombineBall::DoExplosion( )
 		}
 	}
 
+	SetContextThink( NULL, gpGlobals->curtime, s_pSearchThinkContext );
 	SetContextThink( &CPropCombineBall::SUB_Remove, gpGlobals->curtime + 0.5f, s_pRemoveContext );
 	StopLoopingSounds();
 }
@@ -1191,11 +1199,11 @@ bool CPropCombineBall::DissolveEntity( CBaseEntity *pEntity )
 	m_bStruckEntity = true;
 	
 	// Force an NPC to not drop their weapon if dissolved
-//	CBaseCombatCharacter *pBCC = ToBaseCombatCharacter( pEntity );
-//	if ( pBCC != NULL )
-//	{
-//		pEntity->AddSpawnFlags( SF_NPC_NO_WEAPON_DROP );
-//	}
+	CBaseCombatCharacter *pBCC = ToBaseCombatCharacter( pEntity );
+	if ( pBCC != NULL )
+	{
+		pEntity->AddSpawnFlags( SF_NPC_NO_WEAPON_DROP );
+	}
 
 	return true;
 }
@@ -1205,10 +1213,19 @@ bool CPropCombineBall::DissolveEntity( CBaseEntity *pEntity )
 //-----------------------------------------------------------------------------
 void CPropCombineBall::OnHitEntity( CBaseEntity *pHitEntity, float flSpeed, int index, gamevcollisionevent_t *pEvent )
 {
+	bool bIsRadialCollision = index < 0;
+
 	// Detonate on the strider + the bone followers in the strider
 	if ( FClassnameIs( pHitEntity, "npc_strider" ) || FClassnameIs( pHitEntity, "npc_antlionguard" ) ||
 		(pHitEntity->GetOwnerEntity() && FClassnameIs( pHitEntity->GetOwnerEntity(), "npc_strider" )) )
 	{
+		// Since we might've not collided with this entity, we still need to damage it.
+		if ( bIsRadialCollision )
+		{
+			CTakeDamageInfo radiusinfo(this, pHitEntity, GetAbsVelocity() * 1000, pHitEntity->WorldSpaceCenter(), 1000, DMG_CRUSH);
+			pHitEntity->TakeDamage(radiusinfo);
+		}
+
 		DoExplosion();
 		return;
 	}
@@ -1272,7 +1289,6 @@ void CPropCombineBall::OnHitEntity( CBaseEntity *pHitEntity, float flSpeed, int 
 				}
 				if ( (m_nState != STATE_HOLDING) )
 				{
-
 					CBasePlayer *pPlayer = ToBasePlayer( GetOwnerEntity() );
 					if ( pPlayer && UTIL_IsAR2CombineBall( this ) && ToBaseCombatCharacter( pHitEntity ) )
 					{
@@ -1280,15 +1296,27 @@ void CPropCombineBall::OnHitEntity( CBaseEntity *pHitEntity, float flSpeed, int 
 					}
 
 					DissolveEntity( pHitEntity );
+
+					// Since we might've not collided with this entity, we still need to damage it.
+					if ( bIsRadialCollision )
+					{
+						CTakeDamageInfo radiusinfo(this, pHitEntity, GetAbsVelocity() * 1000, pHitEntity->WorldSpaceCenter(), 1000, DMG_CRUSH);
+						pHitEntity->TakeDamage(radiusinfo);
+					}
+
 					if ( pHitEntity->ClassMatches( "npc_hunter" ) )
 					{
 						DoExplosion();
 						return;
 					}
+
 				}
 			}
 		}
 	}
+
+	if ( bIsRadialCollision )
+		return;
 
 	Vector vecFinalVelocity;
 //	if ( IsInField() )
@@ -1697,29 +1725,24 @@ void CPropCombineBall::AnimThink( void )
 //-----------------------------------------------------------------------------
 void CPropCombineBall::SearchThink( void )
 {
-	if( !IsInField() && !IsBeingCaptured() && sk_combineball_radius_kill.GetInt() > 0 )
+	SetContextThink( &CPropCombineBall::SearchThink, gpGlobals->curtime + 0.01f, s_pSearchThinkContext );
+
+	if ( GetState() == STATE_HOLDING )
+		return;
+
+	if ( IsInField() )
+		return;
+
+	if ( IsBeingCaptured()  )
+		return;
+
+	CAI_BaseNPC *pNpc = FindNearestNPC();
+	if ( pNpc && IsHittableEntity( pNpc ) )
 	{
-		CAI_BaseNPC *pNpc = FindNearestNPC();
-		if ( pNpc )
-		{
-			Vector vecNpcCenter = pNpc->EyePosition() + Vector( 0, 0, -20 );
-			float flDist = (GetAbsOrigin() - vecNpcCenter).Length();
-
-			if ( flDist <= sk_combineball_radius_kill.GetInt() )
-			{
-				Vector vecDir = ( vecNpcCenter - GetAbsOrigin() );
-				VectorNormalize( vecDir );
-
-				CTakeDamageInfo info(this, GetOwnerEntity(), vecDir * 50000, GetAbsOrigin() + (vecDir * flDist), 999, DMG_CRUSH);
-				DissolveEntity(pNpc);
-
-				pNpc->TakeDamage(info);
-				EmitSound("NPC_CombineBall.KillImpact");
-			}
-		}
+		float flDist = ( GetAbsOrigin() - pNpc->WorldSpaceCenter() ).Length();
+		if ( flDist <= sk_combineball_dmg_radius.GetFloat() )
+			OnHitEntity(pNpc, GetSpeed());
 	}
-	
-	SetContextThink( &CPropCombineBall::SearchThink, gpGlobals->curtime + 0.05f, s_pSearchThinkContext );
 }
 //-----------------------------------------------------------------------------
 // Purpose: 

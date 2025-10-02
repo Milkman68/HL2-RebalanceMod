@@ -166,7 +166,13 @@ public:
 
 	virtual bool	ShouldPickADeathPose( void );
 	virtual bool	IsJumpLegal(const Vector &startPos, const Vector &apex, const Vector &endPos) const;
-	bool			MovementCost( int moveType, const Vector &vecStart, const Vector &vecEnd, float *pCost );
+	virtual bool	MovementCost( int moveType, const Vector &vecStart, const Vector &vecEnd, float *pCost );
+
+	virtual Activity	GetDoorOpenActivity( void );
+	virtual float		GetDoorOpenSpeedMult( void );
+	virtual int			GetDoorOpenStyle( void );
+	virtual float		GetDoorOpenActivityDelay( void ) { return 0.4; };
+
 
 protected:
 	void			SetKickDamage( int nDamage ) { m_nKickDamage = nDamage; }

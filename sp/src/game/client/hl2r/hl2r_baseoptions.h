@@ -20,11 +20,8 @@ enum eElementType
 	TYPE_NULL = 0,
 
 	TYPE_CVAR_CHECKBOX,
-	TYPE_CVAR_RADIOBUTTON,
 	TYPE_CVAR_BOXBUTTON,
 	TYPE_CVAR_TICKSLIDER,
-
-	TYPE_CVAR_LABEL,
 };
 
 //------------------------------------------------------------------------------
@@ -74,16 +71,14 @@ public:
 	virtual void Init( Panel *parent )
 	{
 		checkbutton = new CheckButton(parent, Name, "");
-
-		ConVarRef var(Convar);
-		checkbutton->SetSelected(GetStateFromValue(var.GetFloat()));
+		checkbutton->SetSelected( GetStateFromValue() );
 	}
 
 	// Update ConVar
 	virtual void Update()
 	{
 		ConVarRef var(Convar);
-		var.SetValue(GetValueFromState(checkbutton->IsSelected()));
+		var.SetValue(GetValueFromState());
 	}
 
 	virtual Panel *GetPanel( void )
@@ -96,8 +91,10 @@ public:
 		return checkbutton;
 	}
 
-	bool GetStateFromValue( float value )
+	bool GetStateFromValue( void )
 	{
+		ConVarRef var(Convar);
+
 		// Get our value list
 		char szValues[8];
 		V_strcpy_safe(szValues, Values);
@@ -110,7 +107,7 @@ public:
 		}
 
 		// First token always contains our "unckecked" value
-		if ( atof(pszToken) == value )
+		if ( atof(pszToken) == var.GetFloat() )
 			return false;
 		
 		pszToken = strtok( NULL, " " );
@@ -122,14 +119,14 @@ public:
 		}
 
 		// Second token always contains our "checked" value
-		if ( atof(pszToken) == value )
+		if ( atof(pszToken) == var.GetFloat() )
 			return true;
 
 		DevMsg("Warning! CheckButton %s's ConVar is set to an invalid value!\n", Name);
 		return false;
 	}
 
-	float GetValueFromState( bool state )
+	float GetValueFromState( void )
 	{
 		// Get our value list
 		char szValues[8];
@@ -143,7 +140,7 @@ public:
 		}
 
 		// First token always contains our "unckecked" value
-		if ( !state )
+		if ( !checkbutton->IsSelected() )
 			return atof(pszToken);
 		
 		pszToken = strtok( NULL, " " );
@@ -155,7 +152,7 @@ public:
 		}
 
 		// Second token always contains our "checked" value
-		if ( state )
+		if ( checkbutton->IsSelected() )
 			return atof(pszToken);
 
 		return -1;
@@ -197,17 +194,14 @@ public:
 		}
 			
 		ConVarRef var( Convar );
-		int iIndex = GetElementFromValue( var.GetInt() );
-		box->ActivateItem( iIndex );
+		box->ActivateItem( GetElementFromValue() );
 	}
 	
 	// Updates ConVars related to a given BoxButton array.
 	virtual void Update()
 	{
-		float flValue = GetValueFromElement( box->GetActiveItem() );
-			
 		ConVarRef var( Convar );
-		var.SetValue(flValue);
+		var.SetValue(GetValueFromElement());
 	}
 
 	virtual Panel *GetPanel( void )
@@ -221,8 +215,10 @@ public:
 	}
 
 	// return the element index associated with the inputed value
-	int GetElementFromValue( float value )
+	int GetElementFromValue( void )
 	{
+		ConVarRef var( Convar );
+
 		// Get element value list
 		char szElementValues[ELEMENT_VALUES_LENGTH];
 		V_strcpy_safe(szElementValues, ElementValues);
@@ -230,18 +226,18 @@ public:
 		int iElement = 0;
 		for ( char *pszToken = strtok( szElementValues, " " ); pszToken != NULL; pszToken = strtok( NULL, " " ))
 		{
-			if ( atof(pszToken) == value )
+			if ( atof(pszToken) == var.GetFloat() )
 				return iElement;
 
 			iElement++;
 		}
 
-		DevMsg("Warning! Value [%f] doesn't have an associated element!\n", value);
+		DevMsg("Warning! Value [%f] doesn't have an associated element!\n", var.GetFloat());
 		return -1;
 	}
 
 	// return the value associated with the inputed element index
-	float GetValueFromElement( int element )
+	float GetValueFromElement( void )
 	{
 		// Get element value list
 		char szElementValues[ELEMENT_VALUES_LENGTH];
@@ -250,13 +246,13 @@ public:
 		int iElement = 0;
 		for ( char *pszToken = strtok( szElementValues, " " ); pszToken != NULL; pszToken = strtok( NULL, " " ))
 		{
-			if ( iElement == element )
+			if ( iElement ==  box->GetActiveItem() )
 				return atof(pszToken);
 
 			iElement++;
 		}
 
-		DevMsg("Warning! Element [%i] doesn't have an associated value!\n", element);
+		DevMsg("Warning! Element [%i] doesn't have an associated value!\n",  box->GetActiveItem());
 		return -1.0f;
 	}
 
@@ -285,18 +281,14 @@ public:
 
 		slider->SetRange(0, numticks - 1); 
 		slider->SetNumTicks(numindicators - 1);
-
-		ConVarRef var( Convar );
-		int iSelectedTick = (int)RemapVal(var.GetFloat(), min, max, 0, numticks);
-
-		slider->SetValue( iSelectedTick );
+		slider->SetValue( GetSliderPosFromValue() );
 	}
 	
 	// Update ConVar
 	virtual void Update()
 	{
 		ConVarRef var( Convar );
-		var.SetValue( RemapVal(slider->GetValue(), 0.0f, numticks - 1, min, max) );
+		var.SetValue( GetValueFromSliderPos() );
 	}
 
 	virtual Panel *GetPanel( void )
@@ -307,6 +299,17 @@ public:
 	virtual Slider *GetTickSlider( void )
 	{
 		return slider;
+	}
+
+	float GetValueFromSliderPos( void )
+	{
+		return RemapVal(slider->GetValue(), 0.0f, numticks - 1, min, max);
+	}
+
+	int GetSliderPosFromValue( void )
+	{
+		ConVarRef var( Convar );
+		return RemapVal(var.GetFloat(), min, max, 0, numticks);
 	}
 
 public:
@@ -422,7 +425,7 @@ public:
 // From: https://stackoverflow.com/questions/652815/
 #define CONCAT_IMPL( x, y ) x##y
 #define MACRO_CONCAT( x, y ) CONCAT_IMPL( x, y )
-#define GET_ELEMENT_PANEL(type, name) type *MACRO_CONCAT(variable, __LINE__ ); GET_ELEMENT(MACRO_CONCAT(variable, __LINE__ ), name)->GetPanel()
+#define GET_ELEMENT_PTR(type, name) type *MACRO_CONCAT(variable, __LINE__ ); GET_ELEMENT(MACRO_CONCAT(variable, __LINE__ ), name)
 
 	template <typename T>
 	T *GetElement( T *pElement, const char *pName )

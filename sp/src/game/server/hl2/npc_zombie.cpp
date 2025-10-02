@@ -122,10 +122,15 @@ public:
 	virtual const char *GetHeadcrabClassname( void );
 	virtual const char *GetHeadcrabModel( void );
 
-	virtual bool OnObstructingDoor( AILocalMoveGoal_t *pMoveGoal, 
+	/*virtual bool OnObstructingDoor( AILocalMoveGoal_t *pMoveGoal, 
 								 CBaseDoor *pDoor,
 								 float distClear, 
-								 AIMoveResult_t *pResult );
+								 AIMoveResult_t *pResult );*/
+
+	virtual Activity	GetDoorOpenActivity( void ) { return ACT_MELEE_ATTACK1; };
+	virtual int			GetDoorOpenStyle( void ) { return DOOR_OPEN_IMPACT; };
+	virtual float		GetDoorOpenSpeedMult( void ) { return 2.5; };
+	virtual float		GetDoorOpenActivityDelay( void ) { return 0.6; };
 
 	Activity SelectDoorBash();
 
@@ -295,6 +300,7 @@ void CZombie::Spawn( void )
 	m_flFieldOfView		= 0.2;
 
 	CapabilitiesClear();
+	CapabilitiesAdd(bits_CAP_DOORS_GROUP);
 
 	//GetNavigator()->SetRememberStaleNodes( false );
 
@@ -571,7 +577,7 @@ void CZombie::GatherConditions( void )
 
 	ClearConditions( conditionsToClear, ARRAYSIZE( conditionsToClear ) );
 
-	if ( m_hBlockingDoor == NULL || 
+/*	if ( m_hBlockingDoor == NULL || 
 		 ( m_hBlockingDoor->m_toggle_state == TS_AT_TOP || 
 		   m_hBlockingDoor->m_toggle_state == TS_GOING_UP )  )
 	{
@@ -583,7 +589,7 @@ void CZombie::GatherConditions( void )
 		}
 	}
 	else
-		SetCondition( COND_BLOCKED_BY_DOOR );
+		SetCondition( COND_BLOCKED_BY_DOOR );*/
 
 	if ( ConditionInterruptsCurSchedule( COND_ZOMBIE_CHARGE_TARGET_MOVED ) )
 	{
@@ -605,13 +611,13 @@ void CZombie::GatherConditions( void )
 
 int CZombie::SelectFailSchedule( int failedSchedule, int failedTask, AI_TaskFailureCode_t taskFailCode )
 {
-	if ( HasCondition( COND_BLOCKED_BY_DOOR ) && m_hBlockingDoor != NULL )
+/*	if ( HasCondition( COND_BLOCKED_BY_DOOR ) && m_hBlockingDoor != NULL )
 	{
 		ClearCondition( COND_BLOCKED_BY_DOOR );
 		if ( m_NextTimeToStartDoorBash.Expired() && failedSchedule != SCHED_ZOMBIE_BASH_DOOR )
 			return SCHED_ZOMBIE_BASH_DOOR;
 		m_hBlockingDoor = NULL;
-	}
+	}*/
 
 	if ( failedSchedule != SCHED_ZOMBIE_CHARGE_ENEMY && 
 		 IsPathTaskFailure( taskFailCode ) &&
@@ -770,7 +776,7 @@ void CZombie::RunTask( const Task_t *pTask )
 //---------------------------------------------------------
 //---------------------------------------------------------
 
-bool CZombie::OnObstructingDoor( AILocalMoveGoal_t *pMoveGoal, CBaseDoor *pDoor, 
+/*bool CZombie::OnObstructingDoor( AILocalMoveGoal_t *pMoveGoal, CBaseDoor *pDoor, 
 							  float distClear, AIMoveResult_t *pResult )
 {
 	if ( BaseClass::OnObstructingDoor( pMoveGoal, pDoor, distClear, pResult ) )
@@ -784,7 +790,7 @@ bool CZombie::OnObstructingDoor( AILocalMoveGoal_t *pMoveGoal, CBaseDoor *pDoor,
 	}
 
 	return false;
-}
+}*/
 
 //---------------------------------------------------------
 //---------------------------------------------------------

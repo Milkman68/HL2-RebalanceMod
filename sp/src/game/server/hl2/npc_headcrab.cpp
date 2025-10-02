@@ -187,11 +187,17 @@ int ACT_HEADCRAB_CEILING_LAND;
 //-----------------------------------------------------------------------------
 // Skill settings.
 //-----------------------------------------------------------------------------
+
+// Normal
 ConVar	sk_headcrab_health( "sk_headcrab_health","0");
-ConVar	sk_headcrab_fast_health( "sk_headcrab_fast_health","0");
-ConVar	sk_headcrab_poison_health( "sk_headcrab_poison_health","0");
-ConVar	sk_headcrab_fast_melee_dmg( "sk_headcrab_fast_melee_dmg","0");
 ConVar	sk_headcrab_melee_dmg( "sk_headcrab_melee_dmg","0");
+
+// Fast
+ConVar	sk_headcrab_fast_health( "sk_headcrab_fast_health","0");
+ConVar	sk_headcrab_fast_melee_dmg( "sk_headcrab_fast_melee_dmg","0");
+ConVar	sk_headcrab_poison_health( "sk_headcrab_poison_health","0");
+
+// Poison
 ConVar	sk_headcrab_poison_dmg( "sk_headcrab_poison_dmg", "0" );
 ConVar	sk_headcrab_poison_ratio( "sk_headcrab_poison_ratio", "1" );
 ConVar	sk_headcrab_poison_npc_damage( "sk_headcrab_poison_npc_damage", "0" );

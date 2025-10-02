@@ -100,6 +100,9 @@ void LoadHudTextures( CUtlDict< CHudTexture *, int >& list, const char *szFilena
 					tex->cCharacterInFont = *(pTemp->GetString("character", ""));
 					Q_strncpy( tex->szTextureFile, pTemp->GetString( "font" ), sizeof( tex->szTextureFile ) );
 
+					if (  pTemp->GetString( "customfontscheme", NULL ) )
+						Q_strncpy( tex->szFontScheme, pTemp->GetString( "customfontscheme" ), sizeof( tex->szFontScheme ) );
+
 					list.Insert( tex->szShortName, tex );
 				}
 				else
@@ -179,6 +182,7 @@ CHudTexture::CHudTexture()
 {
 	Q_memset( szShortName, 0, sizeof( szShortName ) );
 	Q_memset( szTextureFile, 0, sizeof( szTextureFile ) );
+	Q_strcpy( szFontScheme, "resource/ClientScheme.res" );
 	Q_memset( texCoords, 0, sizeof( texCoords ) );
 	Q_memset( &rc, 0, sizeof( rc ) );
 	textureId = -1;
@@ -195,6 +199,7 @@ CHudTexture& CHudTexture::operator =( const CHudTexture& src )
 
 	Q_strncpy( szShortName, src.szShortName, sizeof( szShortName ) );
 	Q_strncpy( szTextureFile, src.szTextureFile, sizeof( szTextureFile ) );
+	Q_strncpy( szFontScheme, src.szFontScheme, sizeof( szFontScheme ) );
 	Q_memcpy( texCoords, src.texCoords, sizeof( texCoords ) );
 
 	if ( src.textureId == -1 )
@@ -461,6 +466,7 @@ void CHud::Init( void )
 
 	// check to see if we have sprites for this res; if not, step down
 	LoadHudTextures( textureList, "scripts/hud_textures", NULL );
+	LoadHudTextures( textureList, "scripts/hud_textures_custom", NULL );
 	LoadHudTextures( textureList, "scripts/mod_textures", NULL );
 
 	int c = textureList.Count();
@@ -722,7 +728,9 @@ void CHud::SetupNewHudTexture( CHudTexture *t )
 {
 	if ( t->bRenderUsingFont )
 	{
-		vgui::HScheme scheme = vgui::scheme()->GetScheme( "ClientScheme" );
+		vgui::HScheme scheme;
+		scheme = vgui::scheme()->LoadSchemeFromFile( t->szFontScheme, "Scheme");
+
 		t->hFont = vgui::scheme()->GetIScheme(scheme)->GetFont( t->szTextureFile, true );
 		t->rc.top = 0;
 		t->rc.left = 0;
@@ -841,6 +849,7 @@ void CHud::RefreshHudTextures()
 
 		// Update file
 		Q_strncpy( icon->szTextureFile, tex->szTextureFile, sizeof( icon->szTextureFile ) );
+		Q_strncpy( icon->szFontScheme, tex->szFontScheme, sizeof( icon->szFontScheme ) );
 
 		if ( !icon->bRenderUsingFont )
 		{
@@ -864,13 +873,15 @@ void CHud::RefreshHudTextures()
 
 	FreeHudTextureList( textureList );
 
-	// fixup all the font icons
-	vgui::HScheme scheme = vgui::scheme()->GetScheme( "ClientScheme" );
 	for (int i = m_Icons.First(); m_Icons.IsValidIndex(i); i = m_Icons.Next(i))
 	{
 		CHudTexture *icon = m_Icons[i];
 		if ( !icon )
 			continue;
+
+		// fixup all the font icons
+		vgui::HScheme scheme;
+		scheme = vgui::scheme()->LoadSchemeFromFile( icon->szFontScheme, "Scheme");
 
 		// Update file
 		if ( icon->bRenderUsingFont )

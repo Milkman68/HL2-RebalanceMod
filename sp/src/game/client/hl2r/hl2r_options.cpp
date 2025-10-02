@@ -71,10 +71,9 @@ CHL2RMenu::CHL2RMenu() : PropertyDialog(FindGameUIChildPanel("BaseGameUIPanel"),
 
 	SetTitle("#hl2r_options_title", true);
 
-	ADD_PAGE(CSubGamePanel, GamePage,		game_Elements,		"Gameplay",				"resource/ui/hl2r_options_gameplay.res");
-	ADD_PAGE(CSubPanel,		VisualPage,		visual_Elements,	"Visuals",				"resource/ui/hl2r_options_visuals.res");
-//	ADD_PAGE(CSubPanel,		FxPage,			fx_Elements,		"FX",					"resource/ui/hl2r_options_fx.res");
-	ADD_PAGE(CSubPanel,		CutContentPage, NULL,				"Cut and Fun Stuff",	"");
+	ADD_PAGE(CSubGamePanel,		GamePage,		game_Elements,		"#hl2r_options_gameplay",	"resource/ui/hl2r_options_gameplay.res");
+	ADD_PAGE(CSubVisualPanel,	VisualPage,		visual_Elements,	"#hl2r_options_visuals",	"resource/ui/hl2r_options_visuals.res");
+//	ADD_PAGE(CSubPanel,			CutContentPage, NULL,				"Experimental",	"");
 }
 
 void CHL2RMenu::Activate()

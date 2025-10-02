@@ -36,12 +36,15 @@
 #include "IEffects.h"
 #include "prop_combine_ball.h"
 #include "smoke_trail.h"
+#include "BasePropDoor.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
 int g_fCombineQuestion;				// true if an idle grunt asked a question. Cleared when someone answers. YUCK old global from grunt code
 extern ConVar hl2r_enemies_altfire;
+extern ConVar sk_combine_grenade_cooldown;
+extern ConVar sk_combine_altfire_cooldown;
 
 #define COMBINE_SKIN_DEFAULT		0
 #define COMBINE_SKIN_SHOTGUNNER		1
@@ -316,7 +319,6 @@ void CNPC_Combine::Precache()
 
 	PrecacheScriptSound( "NPC_Combine.ShieldImpact" );
 	PrecacheScriptSound( "NPC_Combine.ShieldBreak" );
-	PrecacheScriptSound( "NPC_Combine.ShieldCharge" );
 
 	PrecacheParticleSystem( "hunter_shield_impact" );
 	PrecacheParticleSystem( "warp_shield_impact" );
@@ -1041,7 +1043,7 @@ void CNPC_Combine::StartTask( const Task_t *pTask )
 					if( pCombine )
 					{
 						pCombine->ClearCondition( COND_COMBINE_CAN_GRENADE_ENEMY );
-						pCombine->m_flNextGrenadeCheck = gpGlobals->curtime + 5;
+						pCombine->m_flNextGrenadeCheck = gpGlobals->curtime + sk_combine_grenade_cooldown.GetFloat();
 					}
 
 					pSquadmate = m_pSquad->GetNextMember( &iter );
@@ -2605,7 +2607,7 @@ void CNPC_Combine::HandleAnimEvent( animevent_t *pEvent )
 				GetActiveWeapon()->Operator_HandleAnimEvent( &fakeEvent, this );
 
 				// Stop other squad members from combine balling for a while.
-				DelaySquadAltFireAttack( 10.0f );
+				DelaySquadAltFireAttack( sk_combine_altfire_cooldown.GetFloat() );
 
 				// I'm disabling this decrementor. At the time of this change, the elites
 				// don't bother to check if they have grenades anyway. This means that all
@@ -2677,7 +2679,7 @@ void CNPC_Combine::HandleAnimEvent( animevent_t *pEvent )
 
 				// wait six seconds before even looking again to see if a grenade can be thrown.
 				ClearCondition( COND_COMBINE_CAN_GRENADE_ENEMY );
-				m_flNextGrenadeCheck = gpGlobals->curtime + 6;
+				m_flNextGrenadeCheck = gpGlobals->curtime + sk_combine_grenade_cooldown.GetFloat();
 			}
 			handledEvent = true;
 			break;
@@ -2692,10 +2694,7 @@ void CNPC_Combine::HandleAnimEvent( animevent_t *pEvent )
 				
 				ClearCondition( COND_COMBINE_CAN_ALTFIRE_ENEMY );
 				
-				if ( g_pGameRules->IsSkillLevel(SKILL_HARD) )
-					m_flNextGrenadeCheck = gpGlobals->curtime + random->RandomFloat( 2, 5 );// wait a random amount of time before shooting again
-				else
-					m_flNextGrenadeCheck = gpGlobals->curtime + 6;// wait six seconds before even looking again to see if a grenade can be thrown.
+				m_flNextGrenadeCheck = gpGlobals->curtime + sk_combine_grenade_cooldown.GetFloat();// wait six seconds before even looking again to see if a grenade can be thrown.
 			}
 			handledEvent = true;
 			break;
@@ -2740,7 +2739,7 @@ void CNPC_Combine::HandleAnimEvent( animevent_t *pEvent )
 
 						EmitSound( "NPC_Combine.WeaponBash" );
 					}
-				}			
+				}
 
 				m_Sentences.Speak( "COMBINE_KICK" );
 				handledEvent = true;
@@ -4091,6 +4090,32 @@ bool CNPC_Combine::MovementCost( int moveType, const Vector &vecStart, const Vec
 	return bResult;
 }
 //-----------------------------------------------------------------------------
+// Purpose:
+//-----------------------------------------------------------------------------
+Activity CNPC_Combine::GetDoorOpenActivity( void )
+{
+	if ( GetState() == NPC_STATE_COMBAT )
+		return ACT_MELEE_ATTACK2;
+
+	return BaseClass::GetDoorOpenActivity();
+}
+
+float CNPC_Combine::GetDoorOpenSpeedMult( void )
+{
+	if ( GetState() == NPC_STATE_COMBAT )
+		return 2.5f;
+
+	return BaseClass::GetDoorOpenSpeedMult();
+}
+
+int	CNPC_Combine::GetDoorOpenStyle( void )
+{
+	if ( GetState() == NPC_STATE_COMBAT )
+		return DOOR_OPEN_IMPACT;
+
+	return BaseClass::GetDoorOpenStyle();
+}
+//-----------------------------------------------------------------------------
 //
 // Schedules
 //
@@ -4392,10 +4417,12 @@ DEFINE_SCHEDULE
  "		TASK_SET_SCHEDULE			SCHEDULE:SCHED_COMBINE_WAIT_IN_COVER"
  ""
  "	Interrupts"
+ "		COND_NEW_ENEMY"
  "		COND_CAN_MELEE_ATTACK1"
  "		COND_CAN_MELEE_ATTACK2"
  "		COND_HEAR_DANGER"
  "		COND_HEAR_MOVE_AWAY"
+ "		COND_HEAVY_DAMAGE"
  )
 
  //=========================================================

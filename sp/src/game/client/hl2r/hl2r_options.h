@@ -49,6 +49,8 @@ GenericElement_t game_Elements[] =
 };
 
 
+
+#define ENABLE_ELEMENT(type, name, enabled) GET_ELEMENT_PTR(type, name)->GetPanel()->SetEnabled(enabled);
 class CSubGamePanel : public CSubPanel
 {
 	DECLARE_CLASS_SIMPLE(CSubGamePanel, CSubPanel);
@@ -69,7 +71,6 @@ public:
 		BaseClass::InitElements(parent, resource);
 	}
 
-	#define ENABLE_ELEMENT(type, name, enabled) GET_ELEMENT_PANEL(type, name)->SetEnabled(enabled);
 	virtual void OnControlModified()
 	{
 		BaseClass::OnControlModified();
@@ -77,7 +78,6 @@ public:
 		// Auto-aim
 		CConvarCheckButtonElement *pAutoaimButtonElement;
 		GET_ELEMENT(pAutoaimButtonElement, "EnableAutoaimButton");
-
 		bool bAutoAimEnabled = pAutoaimButtonElement->GetButton()->IsSelected();
 
 		ENABLE_ELEMENT(CConvarTickSliderElement, "AutoaimScaleSlider", bAutoAimEnabled);
@@ -87,31 +87,13 @@ public:
 		// Auto-reload
 		CConvarCheckButtonElement *pAutoReloadElement;
 		GET_ELEMENT(pAutoReloadElement, "EnableAutoReloadButton");
-
 		bool bAutoReloadEnabled = pAutoReloadElement->GetButton()->IsSelected();
+
 		ENABLE_ELEMENT(CConvarTickSliderElement, "AutoreloadTimeSlider", bAutoReloadEnabled);
 
 		CConvarTickSliderElement *pAutoreloadSlider;
 		GET_ELEMENT(pAutoreloadSlider, "AutoreloadTimeSlider");
-
-		// Auto-reload label
-		int numticks = pAutoreloadSlider->numticks;
-		float min = pAutoreloadSlider->min;
-		float max = pAutoreloadSlider->max;
-
-		int iValue = RemapVal(pAutoreloadSlider->GetTickSlider()->GetValue(), 0.0f, numticks - 1, min, max);
-
-		char szAutoReloadValue[8];
-		V_sprintf_safe( szAutoReloadValue, "%i", iValue);
-		m_pAutoreloadTimeLabel->SetText(szAutoReloadValue);
-	}
-private:
-	void EnableElementPanel(const char *pName, bool bEnable)
-	{
-		CControlElement *element = NULL;
-		element = GetElement(element, pName);
-
-		element->GetPanel()->SetEnabled(false);
+		m_pAutoreloadTimeLabel->SetText( VarArgs("%i", (int)pAutoreloadSlider->GetValueFromSliderPos()) );
 	}
 
 private:
@@ -122,7 +104,7 @@ private:
 };
 
 //------------------------------------------------------------------------------
-// Player panel
+// Visual panel
 //------------------------------------------------------------------------------
 
 GenericElement_t visual_Elements[] =
@@ -134,19 +116,60 @@ GenericElement_t visual_Elements[] =
 	{ TYPE_CVAR_CHECKBOX,	"OldCrosshairsButton",		"hl2r_old_crosshair",			{"1 0"} },
 	{ TYPE_CVAR_TICKSLIDER, "ViewRollSlider",			"hl2r_rollangle",				{"11",	"11",	"0",	"10"}  },
 	{ TYPE_CVAR_TICKSLIDER, "ViewModelFovSlider",		"Viewmodel_fov",				{"37",	"37",	"54",	"90"}  },
-	{ TYPE_CVAR_BOXBUTTON,	"DynamicLightBoxButton",	"hl2r_dynamic_light_level",		{"Default Minimal Diabled", "0 1 2"} },
+	{ TYPE_CVAR_BOXBUTTON,	"DynamicLightBoxButton",	"hl2r_dynamic_light_level",		{"#hl2r_default #hl2r_less #hl2r_none", "0 1 2"} },
 	{ TYPE_CVAR_CHECKBOX,	"BulletTracerButton",		"hl2r_bullet_tracer_freq",		{"2 1"}  },
 };
 
-//------------------------------------------------------------------------------
-// Game panel
-//------------------------------------------------------------------------------
-/*
-GenericElement_t fx_Elements[] =
+
+class CSubVisualPanel : public CSubPanel
 {
-	{ 2 },
+	DECLARE_CLASS_SIMPLE(CSubVisualPanel, CSubPanel);
+	
+public:
+	CSubVisualPanel( vgui::PropertyDialog *parent, GenericElement_t *pElementList ) 
+	: CSubPanel(parent, pElementList)
+	{
+	}
+
+	virtual void InitElements( Panel *parent, const char *resource )
+	{
+		m_pViewRollAngleLabel = new Label(this, "ViewRollAngleLabel", "");
+		m_pViewmodelFovLabel = new Label(this, "ViewmodelFovLabel", "");
+
+		BaseClass::InitElements(parent, resource);
+	}
+
+	virtual void OnControlModified()
+	{
+		BaseClass::OnControlModified();
+
+		// View roll degree value label
+		CConvarTickSliderElement *pViewRollSlider;
+		GET_ELEMENT(pViewRollSlider, "ViewRollSlider");
+		m_pViewRollAngleLabel->SetText( VarArgs("%i", (int)pViewRollSlider->GetValueFromSliderPos()) );
+
+		// Weapon Fov value label
+		CConvarTickSliderElement *pViewModelFovSlider;
+		GET_ELEMENT(pViewModelFovSlider, "ViewModelFovSlider");
+		m_pViewmodelFovLabel->SetText( VarArgs("%i", (int)pViewModelFovSlider->GetValueFromSliderPos()) );
+	}
+
+private:
+	Label	*m_pViewRollAngleLabel;
+	Label	*m_pViewmodelFovLabel;
+};
+
+//------------------------------------------------------------------------------
+// Experimental panel
+//------------------------------------------------------------------------------
+
+/*GenericElement_t experimental_Elements[] =
+{
+	{ 3 },
 	//						[Name]						[ConVar]						[Parameters list]
-	{ TYPE_CVAR_BOXBUTTON,	"DynamicLightBoxButton",	"hl2r_dynamic_light_level",		{"Default Minimal Diabled", "2 1 0"} },
-	{ TYPE_CVAR_TICKSLIDER, "BulletTracerSlider",		"hl2r_bullet_tracer_freq",		{"4",	"4",	"0",	"4"}  },
+	Projected flashes
+	health regen
+
+	
 };*/
 #endif

@@ -61,8 +61,12 @@ public:
 	inline bool IsNPCOpening(CAI_BaseNPC *pNPC);
 	inline bool IsPlayerOpening();
 	inline bool IsOpener(CBaseEntity *pEnt);
+	inline bool IsDelayedOpener();
+	inline bool IsOpeningOnDelay();
 
 	bool NPCOpenDoor(CAI_BaseNPC *pNPC);
+	bool NPCOpenDoorDelayed(CAI_BaseNPC *pNPC, float flDelay);
+
 	bool TestCollision( const Ray_t &ray, unsigned int mask, trace_t& trace );
 	// }
 
@@ -74,6 +78,9 @@ public:
 	virtual void GetNPCOpenData(CAI_BaseNPC *pNPC, opendata_t &opendata) = 0;
 	virtual float GetOpenInterval(void) = 0;
 	// }
+
+	virtual void SetCustomSpeedMult(float flMult) { m_bUsingSpeedMult = true; m_flSpeedMult = flMult; }
+	virtual void SetDoorImpacted(bool impacted) { m_bDoorImpacted = impacted; }
 
 protected:
 
@@ -98,6 +105,8 @@ protected:
 	CUtlVector< CHandle< CBasePropDoor > >	m_hDoorList;	// List of doors linked to us
 
 	inline CBaseEntity *GetActivator();
+
+	float GetDoorSpeed( void ) { return !m_bUsingSpeedMult ? m_flSpeed : m_flSpeed * m_flSpeedMult; }
 
 private:
 
@@ -137,6 +146,7 @@ private:
 	void DoorOpenMoveDone();
 	void DoorCloseMoveDone();
 	void DoorAutoCloseThink();
+	void DoorDelayedOpenThink();
 
 	void Lock();
 	void Unlock();
@@ -183,6 +193,13 @@ private:
 	bool	m_bFirstBlocked;		// Marker for being the first door (in a group) to be blocked (needed for motion control)
 
 	bool m_bForceClosed;			// True if this door must close no matter what.
+
+	bool	m_bDoorImpacted;	// True if the door is being kicked-in by an npc;
+	bool	m_bInDelayedOpen;	// Is the door being opened on a delay?
+
+	// Custom speed multiplier
+	bool	m_bUsingSpeedMult;
+	float	m_flSpeedMult;		
 
 	string_t m_SoundMoving;
 	string_t m_SoundOpen;
@@ -270,6 +287,11 @@ inline bool CBasePropDoor::IsPlayerOpening()
 inline bool CBasePropDoor::IsOpener(CBaseEntity *pEnt)
 {
 	return ( GetActivator() == pEnt );
+}
+
+inline bool CBasePropDoor::IsOpeningOnDelay()
+{
+	return m_bInDelayedOpen;
 }
 
 #endif // BASEPROPDOOR_H

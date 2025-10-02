@@ -6104,6 +6104,32 @@ bool CNPC_MetroPolice::MovementCost( int moveType, const Vector &vecStart, const
 	return bResult;
 }
 //-----------------------------------------------------------------------------
+// Purpose:
+//-----------------------------------------------------------------------------
+Activity CNPC_MetroPolice::GetDoorOpenActivity( void )
+{
+	if ( GetState() == NPC_STATE_COMBAT )
+		return ACT_MELEE_ATTACK1;
+
+	return BaseClass::GetDoorOpenActivity();
+}
+
+float CNPC_MetroPolice::GetDoorOpenSpeedMult( void )
+{
+	if ( GetState() == NPC_STATE_COMBAT )
+		return 2.5f;
+
+	return BaseClass::GetDoorOpenSpeedMult();
+}
+
+int	CNPC_MetroPolice::GetDoorOpenStyle( void )
+{
+	if ( GetState() == NPC_STATE_COMBAT )
+		return DOOR_OPEN_IMPACT;
+
+	return BaseClass::GetDoorOpenStyle();
+}
+//-----------------------------------------------------------------------------
 //
 // Schedules
 //

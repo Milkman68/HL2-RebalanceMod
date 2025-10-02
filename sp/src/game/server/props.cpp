@@ -3553,6 +3553,9 @@ BEGIN_DATADESC(CBasePropDoor)
 	DEFINE_FIELD( m_hMaster, FIELD_EHANDLE ),
 	DEFINE_FIELD( m_hBlocker, FIELD_EHANDLE ),
 	DEFINE_FIELD( m_bFirstBlocked, FIELD_BOOLEAN ),
+	DEFINE_FIELD( m_bUsingSpeedMult, FIELD_BOOLEAN ),
+	DEFINE_FIELD( m_bDoorImpacted, FIELD_BOOLEAN ),
+	DEFINE_FIELD( m_flSpeedMult, FIELD_FLOAT ),
 	//DEFINE_FIELD(m_hDoorList, FIELD_CLASSPTR),	// Reconstructed
 	
 	DEFINE_INPUTFUNC(FIELD_VOID, "Open", InputOpen),
@@ -3577,6 +3580,7 @@ BEGIN_DATADESC(CBasePropDoor)
 	DEFINE_THINKFUNC(DoorOpenMoveDone),
 	DEFINE_THINKFUNC(DoorCloseMoveDone),
 	DEFINE_THINKFUNC(DoorAutoCloseThink),
+	DEFINE_THINKFUNC(DoorDelayedOpenThink),
 END_DATADESC()
 
 IMPLEMENT_SERVERCLASS_ST(CBasePropDoor, DT_BasePropDoor)
@@ -3605,11 +3609,9 @@ void CBasePropDoor::Spawn()
 	}
 
 	SetMoveType(MOVETYPE_PUSH);
-	
+
 	if (m_flSpeed == 0 || m_flSpeed == 100 )
-	{
 		m_flSpeed = sk_door_speed.GetInt();
-	}
 	
 	RemoveFlag(FL_STATICPROP);
 
@@ -3875,6 +3877,9 @@ void CBasePropDoor::SetDoorBlocker( CBaseEntity *pBlocker )
 //-----------------------------------------------------------------------------
 void CBasePropDoor::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value)
 {
+	if ( IsOpeningOnDelay() && GetActivator() != pActivator )
+		return;
+
 	if ( GetMaster() != NULL )
 	{
 		// Tell our owner we've been used
@@ -3918,7 +3923,9 @@ void CBasePropDoor::OnUse( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TY
 		{
 			m_hActivator = pActivator;
 
-			PlayLockSounds(this, &m_ls, FALSE, FALSE);
+			if ( !m_bDoorImpacted )
+				PlayLockSounds(this, &m_ls, FALSE, FALSE);
+
 			int nSequence = SelectWeightedSequence((Activity)ACT_DOOR_OPEN);
 			PropSetSequence(nSequence);
 
@@ -4094,7 +4101,13 @@ void CBasePropDoor::DoorOpen(CBaseEntity *pOpenAwayFrom)
 	// filter them out and leave a client stuck with looping door sounds!
 	if (!HasSpawnFlags(SF_DOOR_SILENT))
 	{
-		EmitSound( STRING( m_SoundMoving ) );
+		if ( m_bDoorImpacted )
+		{
+			IPhysicsObject *pPhysics = VPhysicsGetObject();
+			PhysicsImpactSound( this, pPhysics, CHAN_STATIC, pPhysics->GetMaterialIndex(), pPhysics->GetMaterialIndex(), 1.0, 8000 );
+		}
+		else
+			EmitSound( STRING( m_SoundMoving ) );
 
 		if ( m_hActivator && m_hActivator->IsPlayer() && !HasSpawnFlags( SF_DOOR_SILENT_TO_NPCS ) )
 		{
@@ -4174,6 +4187,10 @@ void CBasePropDoor::DoorOpenMoveDone(void)
 	OnDoorOpened();
 
 	m_hActivator = NULL;
+
+	m_bUsingSpeedMult = false;
+	m_bDoorImpacted = false;
+	m_bInDelayedOpen = false;
 }
 
 
@@ -4278,6 +4295,10 @@ void CBasePropDoor::DoorCloseMoveDone(void)
 	OnDoorClosed();
 
 	m_hActivator = NULL;
+
+	m_bUsingSpeedMult = false;
+	m_bDoorImpacted = false;
+	m_bInDelayedOpen = false;
 }
 
 //-----------------------------------------------------------------------------
@@ -4552,6 +4573,38 @@ bool CBasePropDoor::NPCOpenDoor( CAI_BaseNPC *pNPC )
 	return true;
 }
 
+//-----------------------------------------------------------------------------
+// Purpose: 
+// Input  : *pNPC - 
+//-----------------------------------------------------------------------------
+static const char *s_pDoorDelayedOpenThink = "DoorDelayedOpenThink";
+
+bool CBasePropDoor::NPCOpenDoorDelayed(CAI_BaseNPC *pNPC, float flDelay)
+{
+	if ( IsDoorClosed() )
+	{
+		SetThink( &CBasePropDoor::DoorDelayedOpenThink );
+		SetNextThink( gpGlobals->curtime + flDelay );
+
+		m_hActivator = pNPC;
+		m_bInDelayedOpen = true;
+	}
+
+	return true;
+}
+
+void CBasePropDoor::DoorDelayedOpenThink()
+{
+	if ( IsDoorClosed() )
+	{
+		// Use the door
+		Use( m_hActivator, m_hActivator, USE_ON, 0 );
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
 bool CBasePropDoor::TestCollision( const Ray_t &ray, unsigned int mask, trace_t& trace )
 {
 	if ( !VPhysicsGetObject() )
@@ -5279,7 +5332,7 @@ void CPropDoorRotating::BeginOpening(CBaseEntity *pOpenAwayFrom)
 		}
 	}
 
-	AngularMove(angOpen, m_flSpeed);
+	AngularMove(angOpen, GetDoorSpeed());
 }
 
 
@@ -5302,7 +5355,7 @@ void CPropDoorRotating::BeginClosing( void )
 		}
 	}
 
-	AngularMove(m_angRotationClosed, m_flSpeed);
+	AngularMove(m_angRotationClosed, GetDoorSpeed());
 }
 
 //-----------------------------------------------------------------------------
@@ -5320,7 +5373,7 @@ void CPropDoorRotating::DoorStop( void )
 void CPropDoorRotating::DoorResume( void )
 {
 	// Restart our angular movement
-	AngularMove( m_angGoal, m_flSpeed );
+	AngularMove( m_angGoal, GetDoorSpeed() );
 }
 
 //-----------------------------------------------------------------------------
@@ -5347,13 +5400,13 @@ void CPropDoorRotating::GetNPCOpenData(CAI_BaseNPC *pNPC, opendata_t &opendata)
 	if (pNPC->GetAbsOrigin().Dot(vecForward) > GetAbsOrigin().Dot(vecForward))
 	{
 		// In front of the door relative to the door's forward vector.
-		opendata.vecStandPos += vecForward * 64;
+		opendata.vecStandPos += vecForward * 40;
 		opendata.vecFaceDir = -vecForward;
 	}
 	else
 	{
 		// Behind the door relative to the door's forward vector.
-		opendata.vecStandPos -= vecForward * 64;
+		opendata.vecStandPos -= vecForward * 40;
 		opendata.vecFaceDir = vecForward;
 	}
 
@@ -5370,7 +5423,7 @@ float CPropDoorRotating::GetOpenInterval()
 	QAngle vecDestDelta = m_angRotationOpenForward - GetLocalAngles();
 	
 	// divide by speed to get time to reach dest
-	return vecDestDelta.Length() / m_flSpeed;
+	return vecDestDelta.Length() / GetDoorSpeed();
 }
 
 

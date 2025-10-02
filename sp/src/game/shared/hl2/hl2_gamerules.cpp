@@ -187,6 +187,9 @@ ConVar	sk_max_grenade			( "sk_max_grenade","0", FCVAR_REPLICATED);
 ConVar	sk_npc_dmg_turret			( "sk_npc_dmg_turret","0", FCVAR_REPLICATED);
 ConVar	sk_npc_dmg_turret_to_plr	( "sk_npc_dmg_turret_to_plr","0", FCVAR_REPLICATED);
 
+ConVar	sk_npc_dmg_apc				( "sk_npc_dmg_apc","0", FCVAR_REPLICATED);
+ConVar	sk_npc_dmg_apc_to_plr		( "sk_npc_dmg_apc_to_plr","0", FCVAR_REPLICATED);
+
 #ifdef HL2_EPISODIC
 ConVar	sk_max_hopwire			( "sk_max_hopwire", "3", FCVAR_REPLICATED);
 ConVar	sk_max_striderbuster	( "sk_max_striderbuster", "3", FCVAR_REPLICATED);
@@ -1897,7 +1900,8 @@ CAmmoDef *GetAmmoDef()
 		def.AddAmmoType("HelicopterGun",	DMG_BULLET,					TRACER_LINE_AND_WHIZ,	"sk_npc_dmg_helicopter_to_plr", "sk_npc_dmg_helicopter",	"sk_max_smg1",	BULLET_IMPULSE(400, 1225), AMMO_FORCE_DROP_IF_CARRIED | AMMO_INTERPRET_PLRDAMAGE_AS_DAMAGE_TO_PLAYER );
 		def.AddAmmoType("AR2AltFire",		DMG_DISSOLVE,				TRACER_NONE,			0, 0, "sk_max_ar2_altfire", 0, 0 );
 		def.AddAmmoType("Grenade",			DMG_BURN,					TRACER_NONE,			"sk_plr_dmg_grenade",		"sk_npc_dmg_grenade",		"sk_max_grenade",		0, 0);
-		def.AddAmmoType("CombineTurret",			DMG_BULLET,			TRACER_LINE,			"sk_npc_dmg_turret_to_plr", "sk_npc_dmg_turret", NULL, BULLET_IMPULSE(200, 1225), 0 ); // hit like a 1.5kg weight at 750 ft/s
+		def.AddAmmoType("CombineTurret",	DMG_BULLET,					TRACER_LINE,			"sk_npc_dmg_turret_to_plr",		"sk_npc_dmg_turret", NULL, BULLET_IMPULSE(200, 1225), 0 ); // hit like a 1.5kg weight at 750 ft/s
+		def.AddAmmoType("ApcMinigun",		DMG_BULLET,					TRACER_LINE,			"sk_npc_dmg_apc_to_plr",		"sk_npc_dmg_apc", NULL, BULLET_IMPULSE(200, 1225), 0 ); // hit like a 1.5kg weight at 750 ft/s
 #ifdef HL2_EPISODIC
 		def.AddAmmoType("Hopwire",			DMG_BLAST,					TRACER_NONE,			"sk_plr_dmg_grenade",		"sk_npc_dmg_grenade",		"sk_max_hopwire",		0, 0);
 		def.AddAmmoType("CombineHeavyCannon",	DMG_BULLET,				TRACER_LINE,			40,	40, NULL, 10 * 750 * 12, AMMO_FORCE_DROP_IF_CARRIED ); // hit like a 10 kg weight at 750 ft/s

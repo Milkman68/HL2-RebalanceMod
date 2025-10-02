@@ -1220,19 +1220,28 @@ void FX_BuildTeslaHitbox(
 	// Create an elight to illuminate the target
 	if ( pEntity != NULL )
 	{
-		dlight_t *el = effects->CL_AllocElight( LIGHT_INDEX_TE_DYNAMIC + pEntity->entindex() );
+		dlight_t *dl;;
+		extern ConVar hl2r_dynamic_light_level;
+		if ( hl2r_dynamic_light_level.GetInt() != 0 ) // VFX + Entities
+		{
+			dl = effects->CL_AllocElight( LIGHT_INDEX_TE_DYNAMIC + pEntity->entindex() );
+		}
+		else
+		{
+			dl = effects->CL_AllocDlight( LIGHT_INDEX_TE_DYNAMIC + pEntity->entindex() );
+		}
 
 		// Randomly place it
-		el->origin	= pEntity->WorldSpaceCenter() + RandomVector( -32, 32 );
+		dl->origin	= pEntity->WorldSpaceCenter() + RandomVector( -32, 32 );
 
-		el->color.r = 235;
-		el->color.g = 235;
-		el->color.b = 255;
-		el->color.exponent = 4;
+		dl->color.r = 235;
+		dl->color.g = 235;
+		dl->color.b = 255;
+		dl->color.exponent = 4;
 
-		el->radius	= random->RandomInt( 32, 128 );
-		el->decay	= el->radius / 0.1f;
-		el->die		= gpGlobals->curtime + 0.1f;
+		dl->radius	= random->RandomInt( 32, 128 );
+		dl->decay	= dl->radius / 0.1f;
+		dl->die		= gpGlobals->curtime + 0.1f;
 	}
 }
 

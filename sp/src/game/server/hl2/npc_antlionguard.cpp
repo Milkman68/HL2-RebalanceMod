@@ -95,6 +95,8 @@ ConVar	g_antlionguard_hemorrhage( "g_antlionguard_hemorrhage", "1", FCVAR_NONE, 
 #define	ANTLIONGUARD_CHARGE_MAX			2048
 
 ConVar	sk_antlionguard_health( "sk_antlionguard_health", "0" );
+ConVar	sk_antlionguard_charge_turnrate_curve_min( "sk_antlionguard_charge_turnrate_curve_min", "0" );
+ConVar	sk_antlionguard_charge_turnrate_curve_max( "sk_antlionguard_charge_turnrate_curve_max", "0" );
 
 int	g_interactionAntlionGuardFoundPhysicsObject = 0;	// We're moving to a physics object to shove it, don't all choose the same object
 int	g_interactionAntlionGuardShovedPhysicsObject = 0;	// We've punted an object, it is now clear to be chosen by others
@@ -1344,25 +1346,12 @@ float CNPC_AntlionGuard::MaxYawSpeed( void )
 
 		if ( dist > 512 )
 			return 16.0f;
-		
-		float yawSpeed;
 
-		//Alter by skill level
-		if ( g_pGameRules->IsSkillLevel( SKILL_HARD ) )
-		{
-			yawSpeed = RemapVal( dist, 0, 512, 6.0f, 6.0f );
-			yawSpeed = clamp( yawSpeed, 6.0f, 6.0f );
-		}
-		else if ( g_pGameRules->IsSkillLevel( SKILL_MEDIUM ) )
-		{
-			yawSpeed = RemapVal( dist, 0, 512, 3.5f, 4.0f );
-			yawSpeed = clamp( yawSpeed, 3.5f, 4.0f );
-		}
-		else
-		{
-			yawSpeed = RemapVal( dist, 0, 512, 1.0f, 2.0f );
-			yawSpeed = clamp( yawSpeed, 1.0f, 2.0f );
-		}
+		float min = sk_antlionguard_charge_turnrate_curve_min.GetFloat();
+		float max = sk_antlionguard_charge_turnrate_curve_max.GetFloat();
+
+		float yawSpeed = RemapVal( dist, 0, 512, min, max );
+		yawSpeed = clamp( yawSpeed, min, max );
 
 		return yawSpeed;
 	}
@@ -2185,7 +2174,7 @@ int CNPC_AntlionGuard::OnTakeDamage_Alive( const CTakeDamageInfo &info )
 		// Always take a set amount of damage from a combine ball
 		if ( info.GetInflictor() && UTIL_IsCombineBall( info.GetInflictor() ) )
 		{
-			dInfo.SetDamage( 50 );
+			dInfo.SetDamage( 200 );
 		}
 
 		UTIL_ScreenShake( GetAbsOrigin(), 32.0f, 8.0f, 0.5f, 512, SHAKE_START );

@@ -481,7 +481,7 @@ float CNPC_BaseZombie::MaxYawSpeed( void )
 //-----------------------------------------------------------------------------
 bool CNPC_BaseZombie::OverrideMoveFacing( const AILocalMoveGoal_t &move, float flInterval )
 {
-	if (!HasPoseParameter( GetSequence(), m_poseMove_Yaw ))
+	if ( !HasPoseParameter( GetSequence(), m_poseMove_Yaw ) || m_hOpeningDoor )
 	{
 		return BaseClass::OverrideMoveFacing( move, flInterval );
 	}

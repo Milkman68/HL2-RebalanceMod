@@ -2170,11 +2170,8 @@ bool CBaseCombatCharacter::CalcNewWeaponProficiency( CBaseCombatWeapon *pWeapon 
 		else
 		{
 			// Increase the tier index every iteration of a proficency list.
-			if ( index > 0 && index % PROFICENCY_LIST_SIZE == 0 )
-			{
+			if ( index > 0 && (index + 1) % PROFICENCY_LIST_SIZE == 0 )
 				tier++;
-				continue;
-			}
 		}
 
 		index++;

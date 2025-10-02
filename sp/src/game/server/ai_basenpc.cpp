@@ -12282,7 +12282,7 @@ bool CAI_BaseNPC::OnUpcomingPropDoor( AILocalMoveGoal_t *pMoveGoal,
 		m_hOpeningDoor = NULL;
 	}
 
-	if ((CapabilitiesGet() & bits_CAP_DOORS_GROUP) && !pDoor->IsDoorLocked() && (pDoor->IsDoorClosed() || pDoor->IsDoorClosing()))
+	if ((CapabilitiesGet() & bits_CAP_DOORS_GROUP) && !pDoor->IsDoorLocked() && (pDoor->IsDoorClosed() /*|| pDoor->IsDoorClosing()*/))
 	{
 		AI_Waypoint_t *pOpenDoorRoute = NULL;
 
@@ -12313,6 +12313,7 @@ bool CAI_BaseNPC::OnUpcomingPropDoor( AILocalMoveGoal_t *pMoveGoal,
 			pOpenDoorRoute->m_hData = pDoor;
 
 			GetNavigator()->GetPath()->PrependWaypoints( pOpenDoorRoute );
+			GetNavigator()->SetArrivalDirection( opendata.vecFaceDir );
 
 			m_hOpeningDoor = pDoor;
 			pMoveGoal->maxDist = distClear;
@@ -12334,15 +12335,29 @@ bool CAI_BaseNPC::OnUpcomingPropDoor( AILocalMoveGoal_t *pMoveGoal,
 //-----------------------------------------------------------------------------
 void CAI_BaseNPC::OpenPropDoorBegin( CBasePropDoor *pDoor )
 {
-	// dvs: not quite working, disabled for now.
-	//opendata_t opendata;
-	//pDoor->GetNPCOpenData(this, opendata);
-	//
-	//if (HaveSequenceForActivity(opendata.eActivity))
-	//{
-	//	SetIdealActivity(opendata.eActivity);
-	//}
-	//else
+	Activity nOpenActivity = GetDoorOpenActivity();
+	if ( nOpenActivity != ACT_INVALID )
+	{
+		AddGesture( nOpenActivity );
+
+		float flDuration = GetDoorOpenActivityDelay();
+		float flSpeedMult = GetDoorOpenSpeedMult();
+		int iOpenStype = GetDoorOpenStyle();
+
+		pDoor->SetCustomSpeedMult( flSpeedMult );
+		pDoor->NPCOpenDoorDelayed(this, flDuration);
+		pDoor->SetDoorImpacted(iOpenStype == DOOR_OPEN_IMPACT);
+
+		// Face the door and wait for the activity to finish before trying to move through the doorway.B
+		m_flMoveWaitFinished = gpGlobals->curtime + flDuration + pDoor->GetOpenInterval();
+
+		// Set facing dir
+		opendata_t opendata;
+		pDoor->GetNPCOpenData(this, opendata);
+
+		GetMotor()->SetIdealYawAndUpdate( opendata.vecFaceDir, AI_KEEP_YAW_SPEED );
+	}
+	else
 	{
 		// We don't have an appropriate sequence, just open the door magically.
 		OpenPropDoorNow( pDoor );
@@ -12359,6 +12374,7 @@ void CAI_BaseNPC::OpenPropDoorNow( CBasePropDoor *pDoor )
 {
 	// Start the door moving.
 	pDoor->NPCOpenDoor(this);
+	pDoor->SetCustomSpeedMult( GetDoorOpenSpeedMult() );
 
 	// Wait for the door to finish opening before trying to move through the doorway.
 	m_flMoveWaitFinished = gpGlobals->curtime + pDoor->GetOpenInterval();

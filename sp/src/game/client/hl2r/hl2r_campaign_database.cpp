@@ -84,8 +84,8 @@ void CCampaignDatabase::DoCampaignScan( void )
 
 		// We found a campaign directory that isn't listed in the script. 
 		// Create a blank entry for it in our script.
-		int i = m_Campaigns.AddToTail(new CampaignData_t);
-		CampaignData_t* pNewCampaign = m_Campaigns[i];
+
+		CampaignData_t *pNewCampaign = new CampaignData_t;
 
 		V_strcpy_safe(pNewCampaign->id, dirName);
 		V_strcpy_safe(pNewCampaign->name, "undefined");
@@ -96,6 +96,8 @@ void CCampaignDatabase::DoCampaignScan( void )
 		pNewCampaign->startingmap = -1;
 		pNewCampaign->filesize = GetVPKSize(dirName);
 		pNewCampaign->datetable = GetVPKDate(dirName);
+
+		m_Campaigns.AddToTail(pNewCampaign);
 	}
 
 	g_pFullFileSystem->FindClose( fh );
@@ -241,8 +243,7 @@ void CCampaignDatabase::WriteScriptToList( void )
 	m_Campaigns.RemoveAll();
 	for ( KeyValues *pCampaign = pCampaignScript->GetFirstSubKey(); pCampaign; pCampaign = pCampaign->GetNextKey() )
 	{
-		int iCampaign = m_Campaigns.AddToTail(new CampaignData_t);
-		CampaignData_t *pCampaignData = m_Campaigns[iCampaign];
+		CampaignData_t *pCampaignData = new CampaignData_t;
 
 		V_strcpy_safe(				pCampaignData->id, pCampaign->GetString("id") );
 		V_strcpy_safe(				pCampaignData->name, pCampaign->GetString("name") );
@@ -283,6 +284,8 @@ void CCampaignDatabase::WriteScriptToList( void )
 
 		pCampaignData->startingmap = pCampaign->GetInt("startingmap", -1 );
 		pCampaignData->filesize =	pCampaign->GetInt("filesize");
+
+		m_Campaigns.AddToTail(pCampaignData);
 	}
 }
 //-----------------------------------------------------------------------------
@@ -593,9 +596,9 @@ const char *szMonths[12] =
 	"Jun",
 	"Jul",
 	"Aug",
-	"Sep"
-	"Oct"
-	"Nov"
+	"Sep",
+	"Oct",
+	"Nov",
 	"Dec"
 };
 

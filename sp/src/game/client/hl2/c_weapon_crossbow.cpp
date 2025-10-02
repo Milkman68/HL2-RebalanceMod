@@ -226,7 +226,7 @@ void CBoltGlowProxy::OnBind( void *pC_BaseEntity )
 		return;
 	
 	Assert( m_pResult );
-	m_pResult->SetFloatValue( (float)pCrossbow->GetCharge() );
+	m_pResult->SetFloatValue( (float)pCrossbow->GetCharge() / 2 );
 }
 
 EXPOSE_INTERFACE( CBoltGlowProxy, IMaterialProxy, "BoltGlow" IMATERIAL_PROXY_INTERFACE_VERSION );

@@ -72,6 +72,7 @@ public:
 
 	char		szShortName[ 64 ];
 	char		szTextureFile[ 64 ];
+	char		szFontScheme[ 64 ];
 
 	bool		bRenderUsingFont;
 	bool		bPrecached;

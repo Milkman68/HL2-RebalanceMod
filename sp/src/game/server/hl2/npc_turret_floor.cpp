@@ -327,7 +327,7 @@ void CNPC_FloorTurret::Spawn( void )
 	SetPoseParameter( m_poseAim_Yaw, 0 );
 	SetPoseParameter( m_poseAim_Pitch, 0 );
 
-	m_iAmmoType = GetAmmoDef()->Index( "PISTOL" );
+	m_iAmmoType = GetAmmoDef()->Index( "CombineTurret" );
 
 	m_iMuzzleAttachment = LookupAttachment( "eyes" );
 	m_iEyeAttachment = LookupAttachment( "light" );
@@ -1162,7 +1162,7 @@ void CNPC_FloorTurret::Shoot( const Vector &vecSrc, const Vector &vecDirToEnemy,
 		info.m_pAttacker = this;
 		info.m_vecSpread = VECTOR_CONE_PRECALCULATED;
 		info.m_flDistance = MAX_COORD_RANGE;
-		info.m_iAmmoType = GetAmmoDef()->Index("CombineTurret"); ;
+		info.m_iAmmoType = m_iAmmoType;
 	}
 	else
 	{
@@ -1173,7 +1173,7 @@ void CNPC_FloorTurret::Shoot( const Vector &vecSrc, const Vector &vecDirToEnemy,
 		info.m_pAttacker = this;
 		info.m_vecSpread = GetAttackSpread( NULL, GetEnemy() );
 		info.m_flDistance = MAX_COORD_RANGE;
-		info.m_iAmmoType = GetAmmoDef()->Index("CombineTurret"); ;
+		info.m_iAmmoType = m_iAmmoType;
 	}
 
 	FireBullets( info );

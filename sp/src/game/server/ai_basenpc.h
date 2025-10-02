@@ -1353,8 +1353,21 @@ public:
 											float distClear,
 											AIMoveResult_t *pResult );
 
-	void	OpenPropDoorBegin( CBasePropDoor *pDoor );
-	void	OpenPropDoorNow( CBasePropDoor *pDoor );
+	virtual void		OpenPropDoorBegin( CBasePropDoor *pDoor );
+	virtual void		OpenPropDoorNow( CBasePropDoor *pDoor );
+
+	enum eDoorOpenStyle
+	{
+		DOOR_OPEN_HANDLE = 0,
+		DOOR_OPEN_IMPACT
+	};
+
+	// Turn this into a struct:
+	virtual Activity	GetDoorOpenActivity( void ) { return ACT_INVALID; }
+	virtual float		GetDoorOpenActivityDelay( void ) { return 0.0f; } // How long the door takes to open after playing our open activity.
+	virtual int			GetDoorOpenStyle( void ) { return DOOR_OPEN_HANDLE; }
+
+	virtual float		GetDoorOpenSpeedMult( void ) { return 1.0f; }
 
 	//---------------------------------
 	

@@ -37,12 +37,12 @@
 #define MACHINE_GUN_MAX_LEFT_YAW	30
 #define MACHINE_GUN_MAX_RIGHT_YAW	30
 
-#define MACHINE_GUN_BURST_SIZE		10
+#define MACHINE_GUN_BURST_SIZE		sk_apc_gun_burst_size.GetInt()
 #define MACHINE_GUN_BURST_TIME		0.075f
 #define MACHINE_GUN_BURST_PAUSE_TIME	2.0f
 
-#define ROCKET_SALVO_SIZE				3
-#define ROCKET_DELAY_TIME				0.5
+#define ROCKET_SALVO_SIZE				sk_apc_missile_burst_size.GetInt()
+#define ROCKET_DELAY_TIME				sk_apc_missile_burst_firerate.GetFloat()
 #define ROCKET_MIN_BURST_PAUSE_TIME		3
 #define ROCKET_MAX_BURST_PAUSE_TIME		4
 #define ROCKET_SPEED					800
@@ -54,6 +54,9 @@ extern short g_sModelIndexFireball; // Echh...
 
 
 ConVar sk_apc_health( "sk_apc_health", "750" );
+ConVar sk_apc_gun_burst_size( "sk_apc_gun_burst_size", "10" );
+ConVar sk_apc_missile_burst_size( "sk_apc_missile_burst_size", "3" );
+ConVar sk_apc_missile_burst_firerate( "sk_apc_missile_burst_firerate", "0.75" );
 
 
 #define APC_MAX_CHUNKS	3
@@ -842,7 +845,7 @@ void CPropAPC::FireMachineGun( void )
 	GetAttachment( m_nMachineGunMuzzleAttachment, vecMachineGunShootPos, &vecMachineGunDir );
 	
 	// Fire the round
-	int	bulletType = GetAmmoDef()->Index("AR2");
+	int	bulletType = GetAmmoDef()->Index("ApcMinigun");
 	FireBullets( 1, vecMachineGunShootPos, vecMachineGunDir, VECTOR_CONE_8DEGREES, MAX_TRACE_LENGTH, bulletType, 1 );
 	DoMuzzleFlash();
 

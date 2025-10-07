@@ -196,6 +196,9 @@ public:
 
 	virtual void StopLoopingSounds( void );
 
+	virtual Activity	GetDoorOpenActivity( void ) { return ACT_MELEE_ATTACK1; };
+	virtual float		GetDoorOpenActivityDelay( void ) { return 0.6; };
+
 protected:
 
 	virtual void MoanSound( envelopePoint_t *pEnvelope, int iEnvelopeSize );
@@ -298,6 +301,7 @@ void CNPC_PoisonZombie::Spawn( void )
 
 	CapabilitiesClear();
 	CapabilitiesAdd( bits_CAP_MOVE_GROUND | bits_CAP_INNATE_MELEE_ATTACK1 | bits_CAP_INNATE_RANGE_ATTACK1 | bits_CAP_INNATE_RANGE_ATTACK2 );
+	CapabilitiesAdd(bits_CAP_DOORS_GROUP);
 
 	BaseClass::Spawn();
 	CapabilitiesRemove( bits_CAP_PUNTABLE );

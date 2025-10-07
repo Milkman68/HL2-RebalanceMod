@@ -128,8 +128,6 @@ public:
 								 AIMoveResult_t *pResult );*/
 
 	virtual Activity	GetDoorOpenActivity( void ) { return ACT_MELEE_ATTACK1; };
-	virtual int			GetDoorOpenStyle( void ) { return DOOR_OPEN_IMPACT; };
-	virtual float		GetDoorOpenSpeedMult( void ) { return 2.5; };
 	virtual float		GetDoorOpenActivityDelay( void ) { return 0.6; };
 
 	Activity SelectDoorBash();

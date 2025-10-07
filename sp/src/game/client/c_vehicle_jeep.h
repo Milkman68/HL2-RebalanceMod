@@ -38,6 +38,8 @@ public:
 public:
 
 	void UpdateViewAngles( C_BasePlayer *pLocalPlayer, CUserCmd *pCmd );
+	void UpdateAutoaim( C_BasePlayer *pLocalPlayer, CUserCmd *pCmd );
+
 	void DampenEyePosition( Vector &vecVehicleEyePos, QAngle &vecVehicleEyeAngles );
 
 	void OnEnteredVehicle( C_BasePlayer *pPlayer );
@@ -66,7 +68,16 @@ private:
 	float		m_flJeepFOV;
 	CHeadlightEffect *m_pHeadlight;
 	bool		m_bHeadlightIsOn;
-	bool		m_bHasGun;
+//	bool		m_bHasGun;
+
+	// Autoaim stuff
+	CHandle<CBaseEntity>	m_hAutoAimTarget;
+
+	float		m_flTrueYaw;
+	float		m_flPrevYaw;	
+	float		m_flYawAutoAimOffset;
+
+	float		m_bResetView;
 };
 
 #endif // C_VEHICLE_JEEP_H

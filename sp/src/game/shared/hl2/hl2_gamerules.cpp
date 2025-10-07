@@ -127,9 +127,10 @@ ConVar	autoaim_viewcorrection_speed( "autoaim_viewcorrection_speed", "1125.0", F
 ConVar	autoaim_bulletcorrection_scale( "autoaim_bulletcorrection_scale", "-1.0", FCVAR_ARCHIVE | FCVAR_REPLICATED );
 
 // Quantity scale for ammo received by the player.
-ConVar	sk_ammo_qty_scale1 ( "sk_ammo_qty_scale1", "1.20", FCVAR_REPLICATED );
-ConVar	sk_ammo_qty_scale2 ( "sk_ammo_qty_scale2", "1.00", FCVAR_REPLICATED );
-ConVar	sk_ammo_qty_scale3 ( "sk_ammo_qty_scale3", "0.60", FCVAR_REPLICATED );
+//ConVar	sk_ammo_qty_scale1 ( "sk_ammo_qty_scale1", "1.20", FCVAR_REPLICATED );
+//ConVar	sk_ammo_qty_scale2 ( "sk_ammo_qty_scale2", "1.00", FCVAR_REPLICATED );
+//ConVar	sk_ammo_qty_scale3 ( "sk_ammo_qty_scale3", "0.60", FCVAR_REPLICATED );
+ConVar	sk_ammo_qty_scale ( "sk_ammo_qty_scale", "1.0", FCVAR_REPLICATED );
 
 ConVar	sk_plr_health_drop_time		( "sk_plr_health_drop_time", "30", FCVAR_REPLICATED );
 ConVar	sk_plr_grenade_drop_time	( "sk_plr_grenade_drop_time", "30", FCVAR_REPLICATED );
@@ -1772,7 +1773,7 @@ float CHalfLife2::GetAutoAimScale( CBasePlayer *pPlayer )
 //---------------------------------------------------------
 float CHalfLife2::GetAmmoQuantityScale( int iAmmoIndex )
 {
-	float flscale;
+/*	float flscale;
 	switch( GetSkillLevel() )
 	{
 	case SKILL_EASY:
@@ -1791,8 +1792,8 @@ float CHalfLife2::GetAmmoQuantityScale( int iAmmoIndex )
 		flscale = 0.0f;
 		break;
 	}
-	
-	return flscale * ( hl2r_less_ammo.GetBool() ? 0.5 : 1.0 );
+	*/
+	return sk_ammo_qty_scale.GetFloat() * ( hl2r_less_ammo.GetBool() ? 0.5 : 1.0 );
 }
 
 void CHalfLife2::LevelInitPreEntity()

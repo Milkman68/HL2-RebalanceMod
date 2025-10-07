@@ -296,6 +296,9 @@ public:
 	virtual const char *GetLegsModel( void );
 	virtual const char *GetTorsoModel( void );
 
+	virtual Activity	GetDoorOpenActivity( void ) { return (Activity)ACT_FASTZOMBIE_BIG_SLASH; };
+	virtual float		GetDoorOpenActivityDelay( void ) { return 0.4; };
+
 //=============================================================================
 #ifdef HL2_EPISODIC
 
@@ -680,6 +683,7 @@ void CFastZombie::Spawn( void )
 
 	CapabilitiesClear();
 	CapabilitiesAdd( bits_CAP_MOVE_CLIMB | bits_CAP_MOVE_JUMP | bits_CAP_MOVE_GROUND | bits_CAP_INNATE_RANGE_ATTACK1 /* | bits_CAP_INNATE_MELEE_ATTACK1 */);
+	CapabilitiesAdd( bits_CAP_DOORS_GROUP );
 
 	if ( m_fIsTorso == true )
 	{

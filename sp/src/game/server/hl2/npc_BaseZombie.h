@@ -237,6 +237,9 @@ public:
 
 	virtual	bool		AllowedToIgnite( void ) { return true; }
 
+	virtual int			GetDoorOpenStyle( void ) { return DOOR_OPEN_IMPACT; };
+	virtual float		GetDoorOpenSpeedMult( void ) { return 2.5; };
+
 public:
 	CAI_ActBusyBehavior		m_ActBusyBehavior;
 

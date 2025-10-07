@@ -531,10 +531,10 @@ void CAI_PlayerAlly::PrescheduleThink( void )
 
 		float flHealthRegen = flHealthPerSecond * flDelta;
 
-		if ( g_pGameRules->IsSkillLevel(SKILL_HARD) )
+	/*	if ( g_pGameRules->IsSkillLevel(SKILL_HARD) )
 			flHealthRegen *= 0.5f;
 		else if ( g_pGameRules->IsSkillLevel(SKILL_EASY) )
-			flHealthRegen *= 1.5f;
+			flHealthRegen *= 1.5f;*/
 
 		m_flTimeLastRegen = gpGlobals->curtime;
 

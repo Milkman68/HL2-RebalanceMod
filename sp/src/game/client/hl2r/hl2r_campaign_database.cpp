@@ -14,6 +14,82 @@ using namespace vgui;
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
+
+//-----------------------------------------------------------------------------
+// Purpose:
+//-----------------------------------------------------------------------------
+const char *GetSteamAppsDir(void)
+{
+	static char steamappsdir[MAX_PATH];
+
+	V_strcpy(steamappsdir, engine->GetGameDirectory() );
+
+	int iSliceChar = MAX_PATH;
+	int iSlashCount = 0;
+
+	// Iterate backwards from the end of our GetGameDirectory() string to the start and look for any slashes.
+	// As soon as we've found 2 (moved up 2 directories) stop and return that as the steamapps directory.
+	while ( iSliceChar > 0 )
+	{
+		if ( steamappsdir[iSliceChar] && steamappsdir[iSliceChar] == '\\' )
+			iSlashCount++;
+
+		if (iSlashCount == 2)
+			break;
+
+		iSliceChar--;
+	}
+
+	if (iSliceChar == 0)
+		return NULL;
+
+	V_StrSlice(steamappsdir, 0, iSliceChar, steamappsdir, MAX_PATH );
+	return steamappsdir;
+}
+//-----------------------------------------------------------------------------
+// Purpose:
+//-----------------------------------------------------------------------------
+void RemoveFilesInDirectory( const char *pDir, const char *pSearch )
+{
+	char szSearchPath[MAX_PATH];
+	V_sprintf_safe( szSearchPath, "%s\\*.*", pDir);
+
+	FileFindHandle_t fh;
+	for ( const char *dirName = g_pFullFileSystem->FindFirst( szSearchPath, &fh ); dirName; dirName = g_pFullFileSystem->FindNext( fh ))
+	{
+		if ( !Q_stricmp( dirName, "root" ) || !Q_stricmp( dirName, ".." ) || !Q_stricmp( dirName, "." ) )
+			continue;
+
+		char szFilePath[MAX_PATH];
+		V_sprintf_safe( szFilePath, "%s\\%s", pDir, dirName );
+
+		if ( g_pFullFileSystem->IsDirectory(szFilePath) )
+		{
+			RemoveFilesInDirectory(szFilePath, pSearch);
+			RemoveDirectory(szFilePath);
+		}
+		else
+		{
+			if ( pSearch != NULL )
+			{
+				if ( V_stristr( szFilePath, pSearch ) )
+					g_pFullFileSystem->RemoveFile(szFilePath);
+			}
+			else
+			{
+				g_pFullFileSystem->RemoveFile(szFilePath);
+			}
+		}
+	}
+
+	g_pFullFileSystem->FindClose( fh );
+	RemoveDirectory(pDir);
+}
+
+
+
+
+
 CCampaignDatabase *g_pCampaignDatabase = NULL;
 CCampaignDatabase *GetCampaignDatabase( void )
 {
@@ -729,37 +805,6 @@ CampaignDateTable_t *CCampaignDatabase::GetVPKDate( const char *pAddonID)
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-const char *CCampaignDatabase::GetSteamAppsDir(void)
-{
-	static char steamappsdir[MAX_PATH];
-
-	V_strcpy(steamappsdir, engine->GetGameDirectory() );
-
-	int iSliceChar = MAX_PATH;
-	int iSlashCount = 0;
-
-	// Iterate backwards from the end of our GetGameDirectory() string to the start and look for any slashes.
-	// As soon as we've found 2 (moved up 2 directories) stop and return that as the steamapps directory.
-	while ( iSliceChar > 0 )
-	{
-		if ( steamappsdir[iSliceChar] && steamappsdir[iSliceChar] == '\\' )
-			iSlashCount++;
-
-		if (iSlashCount == 2)
-			break;
-
-		iSliceChar--;
-	}
-
-	if (iSliceChar == 0)
-		return NULL;
-
-	V_StrSlice(steamappsdir, 0, iSliceChar, steamappsdir, MAX_PATH );
-	return steamappsdir;
-}
-//-----------------------------------------------------------------------------
-// Purpose:
-//-----------------------------------------------------------------------------
 bool CCampaignDatabase::HLExtractInstalled(void)
 {
 	char szHLExtractDir[MAX_PATH];
@@ -1102,39 +1147,6 @@ bool CCampaignDatabase::HandleSaveFileConflict( const char *pStoredFile, const c
 	return true;
 }
 //-----------------------------------------------------------------------------
-// Purpose: This sounds bad I know, but it's just being used exclusively for 
-// cleaning up previously mounted campaign folders. The reason this is here is because this kind of function 
-// doesn't exist in the filesystem class, so I had to make one myself.
-//-----------------------------------------------------------------------------
-void CCampaignDatabase::RemoveFilesInDirectory( const char *pDir )
-{
-	char szSearchPath[MAX_PATH];
-	V_sprintf_safe( szSearchPath, "%s\\*.*", pDir);
-
-	FileFindHandle_t fh;
-	for ( const char *dirName = g_pFullFileSystem->FindFirst( szSearchPath, &fh ); dirName; dirName = g_pFullFileSystem->FindNext( fh ))
-	{
-		if ( !Q_stricmp( dirName, "root" ) || !Q_stricmp( dirName, ".." ) || !Q_stricmp( dirName, "." ) )
-			continue;
-
-		char szFilePath[MAX_PATH];
-		V_sprintf_safe( szFilePath, "%s\\%s", pDir, dirName );
-
-		if ( g_pFullFileSystem->IsDirectory(szFilePath) )
-		{
-			RemoveFilesInDirectory(szFilePath);
-			RemoveDirectory(szFilePath);
-		}
-		else
-		{
-			g_pFullFileSystem->RemoveFile(szFilePath);
-		}
-	}
-
-	g_pFullFileSystem->FindClose( fh );
-	RemoveDirectory(pDir);
-}
-//-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
 void CCampaignDatabase::ClearCampaignFolder( void )
@@ -1154,7 +1166,7 @@ void CCampaignDatabase::ClearCampaignFolder( void )
 		char szDirPath[MAX_PATH];
 		V_sprintf_safe( szDirPath, "%s\\mounted\\%s", engine->GetGameDirectory(), dirName );
 
-		RemoveFilesInDirectory(szDirPath);
+		RemoveFilesInDirectory(szDirPath, NULL);
 	}
 
 	g_pFullFileSystem->FindClose( fh );
@@ -1208,15 +1220,15 @@ void CCampaignDatabase::FixupMountedCampaignFiles( const char *pCampaignID )
 		char szFilePath[MAX_PATH];
 		V_sprintf_safe( szFilePath, "%s\\mounted\\%s\\%s", engine->GetGameDirectory(), pCampaignID, pFile->GetString() );
 
-		if ( g_pFullFileSystem->IsDirectory(szFilePath) )
+	/*	if ( g_pFullFileSystem->IsDirectory(szFilePath) )
 		{
-			RemoveFilesInDirectory(szFilePath);
+			RemoveFilesInDirectory(szFilePath, NULL);
 		}
 		else
-		{
+		{*/
 			if ( g_pFullFileSystem->FileExists(szFilePath) )
 				g_pFullFileSystem->RemoveFile(szFilePath);
-		}
+//		}
 	}
 }
 //-----------------------------------------------------------------------------
@@ -1253,11 +1265,8 @@ void CCampaignDatabase::FlushMountedCampaignGraphs( void )
 	char szCampaignNodeGraphPath[MAX_PATH];
 	V_sprintf_safe( szCampaignNodeGraphPath, "%s\\mounted\\%s\\maps\\graphs", engine->GetGameDirectory(), GetMountedCampaign()->id );
 
-	RemoveFilesInDirectory(szCampaignNodeGraphPath);
+	RemoveFilesInDirectory(szCampaignNodeGraphPath, ".ain");
 }
-//-----------------------------------------------------------------------------
-// Purpose:
-//-----------------------------------------------------------------------------
 CON_COMMAND(campaign_flush_nodegraph, "Clears all .ain  files from our mounted campaign's maps folder.")
 {
 	CCampaignDatabase *database = GetCampaignDatabase();
@@ -1265,4 +1274,37 @@ CON_COMMAND(campaign_flush_nodegraph, "Clears all .ain  files from our mounted c
 		return;
 
 	database->FlushMountedCampaignGraphs();
+}
+//-----------------------------------------------------------------------------
+// Purpose:
+//-----------------------------------------------------------------------------
+void CCampaignDatabase::FlushMountedCampaignSoundCache( void )
+{
+	// The sound cache in our mounted campaign:
+	g_pFullFileSystem->RemoveFile( VarArgs("%s\\mounted\\%s\\sound\\sound.cache", engine->GetGameDirectory(), GetMountedCampaign()->id) );
+}
+
+CON_COMMAND(campaign_flush_soundcache, "Clears all .sound.cache files in the mounted campaign's sound folder")
+{
+	CCampaignDatabase *database = GetCampaignDatabase();
+	if ( !database )
+		return;
+
+	database->FlushMountedCampaignSoundCache();
+}
+
+//-----------------------------------------------------------------------------
+// Purpose:
+//-----------------------------------------------------------------------------
+CON_COMMAND(flush_soundcache, "Clears all .sound.cache files")
+{
+	// The sound cache in our game's sound file:
+	g_pFullFileSystem->RemoveFile("sound\\sound.cache", "GAME");
+
+	// HACKHACK: I think this is one of the only pieces of code that requires a file to directly associate with the hl2r name
+	// it's so niche though that i don't think it really matters.
+	g_pFullFileSystem->RemoveFile( VarArgs("%s\\sourcemods\\hl2_rebalance_base\\hl2r_misc.vpk.sound.cache", GetSteamAppsDir()) );
+
+	// Cache files can exist in the workshop directory too!
+	RemoveFilesInDirectory( VarArgs("%s\\workshop\\content\\220", GetSteamAppsDir()), ".cache" );
 }

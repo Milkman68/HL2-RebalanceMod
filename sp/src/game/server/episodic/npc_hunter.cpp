@@ -3723,8 +3723,8 @@ void CNPC_Hunter::RunTask( const Task_t *pTask )
 				if ( IsActivityFinished() )
 				{
 					m_flNextChargeTime = gpGlobals->curtime + hunter_charge_min_delay.GetFloat() + random->RandomFloat( 0, 2.5 ) + random->RandomFloat( 0, 2.5 );
-					float delayMultiplier = ( g_pGameRules->IsSkillLevel( SKILL_EASY ) ) ? 1.5 : 1.0;
-					float groupDelay = gpGlobals->curtime +  ( 2.0  + random->RandomFloat( 0, 2 ) ) * delayMultiplier;
+				//	float delayMultiplier = ( g_pGameRules->IsSkillLevel( SKILL_EASY ) ) ? 1.5 : 1.0;
+					float groupDelay = gpGlobals->curtime +  ( 2.0  + random->RandomFloat( 0, 2 ) ) /** delayMultiplier*/;
 					for ( int i = 0; i < g_Hunters.Count(); i++ )
 					{
 						if ( g_Hunters[i] != this && g_Hunters[i]->m_flNextChargeTime < groupDelay )
@@ -5992,10 +5992,10 @@ int CNPC_Hunter::CountRangedAttackers()
 //-----------------------------------------------------------------------------
 void CNPC_Hunter::DelayRangedAttackers( float minDelay, float maxDelay, bool bForced )
 {
-	float delayMultiplier = ( g_pGameRules->IsSkillLevel( SKILL_EASY ) ) ? 1.25 : 1.0;
+//	float delayMultiplier = ( g_pGameRules->IsSkillLevel( SKILL_EASY ) ) ? 1.25 : 1.0;
 	if ( !m_bEnableSquadShootDelay && !bForced )
 	{
-		m_flNextRangeAttack2Time = gpGlobals->curtime + random->RandomFloat( minDelay, maxDelay ) * delayMultiplier;
+		m_flNextRangeAttack2Time = gpGlobals->curtime + random->RandomFloat( minDelay, maxDelay )/* * delayMultiplier*/;
 		return;
 	}
 
@@ -6005,7 +6005,7 @@ void CNPC_Hunter::DelayRangedAttackers( float minDelay, float maxDelay, bool bFo
 		CNPC_Hunter *pOtherHunter = g_Hunters[i];
 		if ( pOtherHunter->GetEnemy() == pEnemy )
 		{
-			float nextTime = gpGlobals->curtime + random->RandomFloat( minDelay, maxDelay ) * delayMultiplier;
+			float nextTime = gpGlobals->curtime + random->RandomFloat( minDelay, maxDelay )/* * delayMultiplier*/;
 			if ( nextTime > pOtherHunter->m_flNextRangeAttack2Time )
 				pOtherHunter->m_flNextRangeAttack2Time = nextTime;
 		}

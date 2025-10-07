@@ -148,6 +148,9 @@ public:
 
 	virtual bool HandleInteraction( int interactionType, void *data, CBaseCombatCharacter *sourceEnt );
 
+	virtual Activity	GetDoorOpenActivity( void ) { return (Activity)ACT_ZOMBINE_ATTACK_FAST; };
+	virtual float		GetDoorOpenActivityDelay( void ) { return 0.2; };
+
 	enum
 	{
 		COND_ZOMBINE_GRENADE = LAST_BASE_ZOMBIE_CONDITION,
@@ -220,6 +223,7 @@ void CNPC_Zombine::Spawn( void )
 	m_flFieldOfView		= 0.2;
 
 	CapabilitiesClear();
+	CapabilitiesAdd( bits_CAP_DOORS_GROUP );
 
 	BaseClass::Spawn();
 	SetPuntScale(0.5);

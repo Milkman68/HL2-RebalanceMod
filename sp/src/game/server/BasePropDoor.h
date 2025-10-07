@@ -63,6 +63,7 @@ public:
 	inline bool IsOpener(CBaseEntity *pEnt);
 	inline bool IsDelayedOpener();
 	inline bool IsOpeningOnDelay();
+	inline bool IsOpeningOnImpact();
 
 	bool NPCOpenDoor(CAI_BaseNPC *pNPC);
 	bool NPCOpenDoorDelayed(CAI_BaseNPC *pNPC, float flDelay);
@@ -79,8 +80,8 @@ public:
 	virtual float GetOpenInterval(void) = 0;
 	// }
 
-	virtual void SetCustomSpeedMult(float flMult) { m_bUsingSpeedMult = true; m_flSpeedMult = flMult; }
-	virtual void SetDoorImpacted(bool impacted) { m_bDoorImpacted = impacted; }
+	virtual void SetCustomSpeedMult(float flMult);
+	virtual void SetDoorImpacted(bool impacted);
 
 protected:
 
@@ -106,7 +107,7 @@ protected:
 
 	inline CBaseEntity *GetActivator();
 
-	float GetDoorSpeed( void ) { return !m_bUsingSpeedMult ? m_flSpeed : m_flSpeed * m_flSpeedMult; }
+	float GetDoorSpeed( void ) { return m_flSpeedMult <= 0 ? m_flSpeed : m_flSpeed * m_flSpeedMult; }
 
 private:
 
@@ -292,6 +293,11 @@ inline bool CBasePropDoor::IsOpener(CBaseEntity *pEnt)
 inline bool CBasePropDoor::IsOpeningOnDelay()
 {
 	return m_bInDelayedOpen;
+}
+
+inline bool CBasePropDoor::IsOpeningOnImpact()
+{
+	return m_bDoorImpacted;
 }
 
 #endif // BASEPROPDOOR_H

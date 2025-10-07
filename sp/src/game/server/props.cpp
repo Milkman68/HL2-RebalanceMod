@@ -3553,8 +3553,8 @@ BEGIN_DATADESC(CBasePropDoor)
 	DEFINE_FIELD( m_hMaster, FIELD_EHANDLE ),
 	DEFINE_FIELD( m_hBlocker, FIELD_EHANDLE ),
 	DEFINE_FIELD( m_bFirstBlocked, FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_bUsingSpeedMult, FIELD_BOOLEAN ),
 	DEFINE_FIELD( m_bDoorImpacted, FIELD_BOOLEAN ),
+	DEFINE_FIELD( m_bInDelayedOpen, FIELD_BOOLEAN ),
 	DEFINE_FIELD( m_flSpeedMult, FIELD_FLOAT ),
 	//DEFINE_FIELD(m_hDoorList, FIELD_CLASSPTR),	// Reconstructed
 	
@@ -3877,7 +3877,7 @@ void CBasePropDoor::SetDoorBlocker( CBaseEntity *pBlocker )
 //-----------------------------------------------------------------------------
 void CBasePropDoor::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value)
 {
-	if ( IsOpeningOnDelay() && GetActivator() != pActivator )
+	if ( ( IsOpeningOnDelay() || IsOpeningOnImpact() ) && GetActivator() != pActivator )
 		return;
 
 	if ( GetMaster() != NULL )
@@ -4140,6 +4140,9 @@ void CBasePropDoor::DoorOpen(CBaseEntity *pOpenAwayFrom)
 			{
 				// If the door isn't already moving, get it moving
 				pLinkedDoor->m_hActivator = m_hActivator;
+				pLinkedDoor->SetCustomSpeedMult( m_flSpeedMult );
+				pLinkedDoor->SetDoorImpacted( m_bDoorImpacted );
+
 				pLinkedDoor->DoorOpen( pOpenAwayFrom );
 			}
 		}
@@ -4188,9 +4191,8 @@ void CBasePropDoor::DoorOpenMoveDone(void)
 
 	m_hActivator = NULL;
 
-	m_bUsingSpeedMult = false;
+	m_flSpeedMult = -1.0f;
 	m_bDoorImpacted = false;
-	m_bInDelayedOpen = false;
 }
 
 
@@ -4296,9 +4298,8 @@ void CBasePropDoor::DoorCloseMoveDone(void)
 
 	m_hActivator = NULL;
 
-	m_bUsingSpeedMult = false;
+	m_flSpeedMult = -1.0f;
 	m_bDoorImpacted = false;
-	m_bInDelayedOpen = false;
 }
 
 //-----------------------------------------------------------------------------
@@ -4597,6 +4598,8 @@ void CBasePropDoor::DoorDelayedOpenThink()
 {
 	if ( IsDoorClosed() )
 	{
+		m_bInDelayedOpen = false;
+
 		// Use the door
 		Use( m_hActivator, m_hActivator, USE_ON, 0 );
 	}
@@ -4626,6 +4629,20 @@ bool CBasePropDoor::TestCollision( const Ray_t &ray, unsigned int mask, trace_t&
 	}
 
 	return false;
+}
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CBasePropDoor::SetCustomSpeedMult(float flMult) 
+{ 
+	m_flSpeedMult = flMult; 
+}
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CBasePropDoor::SetDoorImpacted(bool impacted) 
+{ 
+	m_bDoorImpacted = impacted; 
 }
 
 

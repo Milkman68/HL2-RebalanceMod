@@ -140,14 +140,14 @@ public:
 	ESaveFileOverrideType	GetSaveFileOverrideType( void ) { return m_SaveOverrideType; }
 
 	bool	TransferGameinfoFiles( int currentgameinfo, int newgameinfo );
+
 	void	FlushMountedCampaignGraphs( void );
+	void	FlushMountedCampaignSoundCache( void );
 
 private:
 
 	int					GetVPKSize( const char *pAddonID);
 	CampaignDateTable_t	*GetVPKDate( const char *pAddonID);
-
-	const char	*GetSteamAppsDir(void);
 
 	const char	*ParseCMD( const char *pAddonID, const char *pAppend = NULL );
 
@@ -171,7 +171,7 @@ private:
 	bool		MountExtractedFiles( const char *pCampaignID );
 
 	// File Cleanup:
-	void		RemoveFilesInDirectory( const char *pDir );
+//	void		RemoveFilesInDirectory( const char *pDir );
 	void		ClearCampaignFolder( void );
 
 	// Gameinfo Storage/Retrieveal:

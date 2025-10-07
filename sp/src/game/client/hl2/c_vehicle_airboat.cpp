@@ -51,6 +51,7 @@ ConVar airboat_joy_response_move( "airboat_joy_response_move", "1" );					// Qua
 
 extern ConVar r_mirrored;
 extern ConVar autoaim_viewcorrection_speed;
+extern ConVar sk_allow_autoaim;
 																						
 
 #define AIRBOAT_DELTA_LENGTH_MAX	12.0f			// 1 foot
@@ -115,6 +116,8 @@ private:
 	int	 DrawWake( void );
 	void DrawSegment( const BeamSeg_t &beamSeg, const Vector &vNormal );
 
+	void UpdateAutoaim( C_BasePlayer *pLocalPlayer, CUserCmd *pCmd );
+
 	TrailPoint_t *GetTrailPoint( int n )
 	{
 		int nIndex = (n + m_nFirstStep) & WAKE_POINT_MASK;
@@ -145,6 +148,15 @@ private:
 	CMeshBuilder	m_Mesh;
 
 	Vector			m_vecPhysVelocity;
+
+	// Autoaim stuff
+	CHandle<CBaseEntity>	m_hAutoAimTarget;
+
+	float		m_flTrueYaw;
+	float		m_flPrevYaw;	
+	float		m_flYawAutoAimOffset;
+
+	float		m_bResetView;
 };
 
 IMPLEMENT_CLIENTCLASS_DT( C_PropAirboat, DT_PropAirboat, CPropAirboat )
@@ -298,47 +310,15 @@ void C_PropAirboat::UpdateViewAngles( C_BasePlayer *pLocalPlayer, CUserCmd *pCmd
 	if ( engine->IsPaused() )
 		return;
 
-	C_BaseHLPlayer *pLocalHLPlayer = (C_BaseHLPlayer *)pLocalPlayer;
-	CBaseEntity *pTarget = pLocalHLPlayer->m_HL2Local.m_hAutoAimTarget.Get();
-
-	if ( pTarget )
+	// Making autoaim mutually exclusive with the view-blending code below
+	// because I would have to incorperate that into m_flTrueYaw's angle calculations 
+	// and I really don't feel like doing it.
+	if ( sk_allow_autoaim.GetBool() )
 	{
-
 		if ( m_bHasGun && !m_bUnableToFire )
-		{
-			if (pLocalHLPlayer->m_HL2Local.m_hAutoAimTarget.Get())	
-			{
-				int eyeAttachmentIndex = LookupAttachment( "vehicle_driver_eyes" );
-				Vector vehicleEyeOrigin;
-				QAngle vehicleEyeAngles;
-				GetAttachment( eyeAttachmentIndex, vehicleEyeOrigin, vehicleEyeAngles );
-
-				Vector vecAutoAimPoint = pLocalHLPlayer->m_HL2Local.m_vecAutoAimPoint;
-				Vector vecDir = vecAutoAimPoint - vehicleEyeOrigin;
-				VectorNormalize(vecDir);
-
-				QAngle targetangles;
-				VectorAngles(vecDir, targetangles);
-
-				float speed = autoaim_viewcorrection_speed.GetFloat();
-
-				float targetYaw = targetangles[1] - vehicleEyeAngles[1] + 90;
-				float currentYaw = pCmd->viewangles[1];
-
-				float vehicleYaw = vehicleEyeAngles[1];
-
-			//	DevMsg("Yaw Vehicle Difference is [%f]\n", fabsf(AngleDistance(vehicleYaw + currentYaw - 90, vehicleYaw)) );
-
-				if( fabsf(AngleDistance(vehicleYaw + currentYaw - 90, vehicleYaw)) < 70.0f )
-					pCmd->viewangles[1] = ApproachAngle(targetYaw, currentYaw, (AngleDistance(targetYaw, currentYaw) / 360) * gpGlobals->frametime * speed);
-			}
-		}
-
-		BaseClass::UpdateViewAngles( pLocalPlayer, pCmd );
-		return;
+			UpdateAutoaim(pLocalPlayer, pCmd);
 	}
-
-	if ( r_AirboatViewBlendTo.GetInt() )
+	else if ( r_AirboatViewBlendTo.GetInt() )
 	{
 		//
 		// Autocenter the view after a period of no mouse movement while throttling.
@@ -375,7 +355,65 @@ void C_PropAirboat::UpdateViewAngles( C_BasePlayer *pLocalPlayer, CUserCmd *pCmd
 
 	BaseClass::UpdateViewAngles( pLocalPlayer, pCmd );
 }
+//-----------------------------------------------------------------------------
+// Purpose:
+//-----------------------------------------------------------------------------
+#define MAX_AUTOAIM_ANGLE_DIFF 40
+#define VIEW_RESET_SPEED 2000
 
+void C_PropAirboat::UpdateAutoaim( C_BasePlayer *pLocalPlayer, CUserCmd *pCmd )
+{
+	C_BaseHLPlayer *pLocalHLPlayer = (C_BaseHLPlayer*)pLocalPlayer;
+	CBaseEntity *pTarget = pLocalHLPlayer->m_HL2Local.m_hAutoAimTarget;
+
+	float flYawDiff = AngleDistance(m_flPrevYaw, pCmd->viewangles[YAW] - m_flYawAutoAimOffset);
+	m_flPrevYaw = pCmd->viewangles[YAW] - m_flYawAutoAimOffset;
+	m_flTrueYaw -= flYawDiff;
+
+	bool bInRange = fabsf(AngleDistance( m_flTrueYaw, pCmd->viewangles[YAW] )) < MAX_AUTOAIM_ANGLE_DIFF;
+	if ( pTarget && bInRange && !m_bResetView )
+	{
+		if ( m_hAutoAimTarget != pTarget )
+		{
+			m_flYawAutoAimOffset = 0.0f;
+		}
+		m_hAutoAimTarget = pTarget;
+		
+		int eyeAttachmentIndex = LookupAttachment("vehicle_driver_eyes");
+		Vector vehicleEyeOrigin;
+		QAngle vehicleEyeAngles;
+		GetAttachment(eyeAttachmentIndex, vehicleEyeOrigin, vehicleEyeAngles);
+
+		Vector vecAutoAimPoint = pLocalHLPlayer->m_HL2Local.m_vecAutoAimPoint;
+		Vector vecDir = vecAutoAimPoint - vehicleEyeOrigin;
+		VectorNormalize(vecDir);
+
+		QAngle targetangles;
+		VectorAngles(vecDir, targetangles);
+
+		float speed = autoaim_viewcorrection_speed.GetFloat();
+		float targetYaw = targetangles[YAW] - vehicleEyeAngles[YAW] + 90;
+
+		float currentYaw = pCmd->viewangles[YAW];
+		float newYaw = ApproachAngle(targetYaw, currentYaw, (AngleDistance(targetYaw, currentYaw) / 360) * gpGlobals->frametime * speed);
+		float yawImpulse = AngleDistance(newYaw, currentYaw);
+
+		pCmd->viewangles[YAW] += yawImpulse;
+		m_flYawAutoAimOffset += yawImpulse;
+	}
+	else
+	{
+		float currentYaw = pCmd->viewangles[YAW];
+
+		float newYaw = ApproachAngle(m_flTrueYaw, currentYaw, (AngleDistance(m_flTrueYaw, currentYaw) / 360) * gpGlobals->frametime * VIEW_RESET_SPEED);
+		float yawImpulse = AngleDistance(newYaw, currentYaw);
+
+		pCmd->viewangles[YAW] += yawImpulse;
+		m_flYawAutoAimOffset += yawImpulse;
+
+		m_bResetView = fabsf(m_flYawAutoAimOffset) > 1;
+	}
+}
 
 //-----------------------------------------------------------------------------
 // Purpose:

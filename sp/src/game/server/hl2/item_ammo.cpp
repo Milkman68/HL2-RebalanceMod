@@ -61,13 +61,13 @@ int ITEM_GiveAmmo( CBasePlayer *pPlayer, float flCount, const char *pszAmmoName,
 		Msg("ERROR: Attempting to give unknown ammo type (%s)\n",pszAmmoName);
 		return 0;
 	}
-
+	/*
 #ifdef HL2_DLL
 	flCount *= HL2GameRules()->GetAmmoQuantityScale(iAmmoType);
 #else
 	flCount *= g_pGameRules->GetAmmoQuantityScale(iAmmoType);
 #endif
-
+*/
 	// Don't give out less than 1 of anything.
 	flCount = MAX( 1.0f, flCount );
 

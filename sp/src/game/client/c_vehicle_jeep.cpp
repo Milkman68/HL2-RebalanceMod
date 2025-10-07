@@ -13,11 +13,21 @@
 #include "c_te_effect_dispatch.h"
 #include "fx.h"
 #include "ammodef.h"
+#include "c_basehlplayer.h"
+#include "iviewrender.h"
+#include "vgui/ISurface.h"
+#include "client_virtualreality.h"
+#include "../hud_crosshair.h"
+#include "sourcevr/isourcevirtualreality.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
+int ScreenTransform( const Vector& point, Vector& screen );
+
 extern ConVar default_fov;
+extern ConVar autoaim_viewcorrection_speed;
+extern ConVar sk_allow_autoaim;
 
 ConVar r_JeepViewBlendTo( "r_JeepViewBlendTo", "1", FCVAR_CHEAT );
 ConVar r_JeepViewBlendToScale( "r_JeepViewBlendToScale", "0.03", FCVAR_CHEAT );
@@ -101,7 +111,18 @@ void C_PropJeep::Simulate( void )
 //-----------------------------------------------------------------------------
 void C_PropJeep::UpdateViewAngles( C_BasePlayer *pLocalPlayer, CUserCmd *pCmd )
 {
-	if ( r_JeepViewBlendTo.GetInt() )
+	if ( engine->IsPaused() )
+		return;
+
+	// Making autoaim mutually exclusive with the view-blending code below
+	// because I would have to incorperate that into m_flTrueYaw's angle calculations 
+	// and I really don't feel like doing it.
+	if ( sk_allow_autoaim.GetBool() )
+	{
+		if ( m_bHasGun && !m_bUnableToFire )
+			UpdateAutoaim(pLocalPlayer, pCmd);
+	}
+	else if ( r_JeepViewBlendTo.GetInt() && false )
 	{
 		// Check to see if the mouse has been touched in a bit or that we are not throttling.
 		if ( ( pCmd->mousedx != 0 || pCmd->mousedy != 0 ) || ( fabsf( m_flThrottle ) < 0.01f ) )
@@ -128,6 +149,65 @@ void C_PropJeep::UpdateViewAngles( C_BasePlayer *pLocalPlayer, CUserCmd *pCmd )
 	}
 
 	BaseClass::UpdateViewAngles( pLocalPlayer, pCmd );
+}
+//-----------------------------------------------------------------------------
+// Purpose:
+//-----------------------------------------------------------------------------
+#define MAX_AUTOAIM_ANGLE_DIFF 40
+#define VIEW_RESET_SPEED 2000
+
+void C_PropJeep::UpdateAutoaim( C_BasePlayer *pLocalPlayer, CUserCmd *pCmd )
+{
+	C_BaseHLPlayer *pLocalHLPlayer = (C_BaseHLPlayer*)pLocalPlayer;
+	CBaseEntity *pTarget = pLocalHLPlayer->m_HL2Local.m_hAutoAimTarget;
+
+	float flYawDiff = AngleDistance(m_flPrevYaw, pCmd->viewangles[YAW] - m_flYawAutoAimOffset);
+	m_flPrevYaw = pCmd->viewangles[YAW] - m_flYawAutoAimOffset;
+	m_flTrueYaw -= flYawDiff;
+
+	bool bInRange = fabsf(AngleDistance( m_flTrueYaw, pCmd->viewangles[YAW] )) < MAX_AUTOAIM_ANGLE_DIFF;
+	if ( pTarget && bInRange && !m_bResetView )
+	{
+		if ( m_hAutoAimTarget != pTarget )
+		{
+			m_flYawAutoAimOffset = 0.0f;
+		}
+		m_hAutoAimTarget = pTarget;
+		
+		int eyeAttachmentIndex = LookupAttachment("vehicle_driver_eyes");
+		Vector vehicleEyeOrigin;
+		QAngle vehicleEyeAngles;
+		GetAttachment(eyeAttachmentIndex, vehicleEyeOrigin, vehicleEyeAngles);
+
+		Vector vecAutoAimPoint = pLocalHLPlayer->m_HL2Local.m_vecAutoAimPoint;
+		Vector vecDir = vecAutoAimPoint - vehicleEyeOrigin;
+		VectorNormalize(vecDir);
+
+		QAngle targetangles;
+		VectorAngles(vecDir, targetangles);
+
+		float speed = autoaim_viewcorrection_speed.GetFloat();
+		float targetYaw = targetangles[YAW] - vehicleEyeAngles[YAW] + 90;
+
+		float currentYaw = pCmd->viewangles[YAW];
+		float newYaw = ApproachAngle(targetYaw, currentYaw, (AngleDistance(targetYaw, currentYaw) / 360) * gpGlobals->frametime * speed);
+		float yawImpulse = AngleDistance(newYaw, currentYaw);
+
+		pCmd->viewangles[YAW] += yawImpulse;
+		m_flYawAutoAimOffset += yawImpulse;
+	}
+	else
+	{
+		float currentYaw = pCmd->viewangles[YAW];
+
+		float newYaw = ApproachAngle(m_flTrueYaw, currentYaw, (AngleDistance(m_flTrueYaw, currentYaw) / 360) * gpGlobals->frametime * VIEW_RESET_SPEED);
+		float yawImpulse = AngleDistance(newYaw, currentYaw);
+
+		pCmd->viewangles[YAW] += yawImpulse;
+		m_flYawAutoAimOffset += yawImpulse;
+
+		m_bResetView = fabsf(m_flYawAutoAimOffset) > 1;
+	}
 }
 
 //-----------------------------------------------------------------------------

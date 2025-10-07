@@ -236,7 +236,9 @@ void CCampaignListPanel::ItemSelected(int itemID)
 		CampaignData_t *pSelectedCampaign = GetCampaignDatabase()->GetCampaignDataFromID(pCampaignID);
 		
 		m_SelectedCampaignPanel->SetSelected(pSelectedCampaign);
-		m_MountButton->SetEnabled(true);
+
+		// Don't enable mounting if we're already mounted!
+		m_MountButton->SetEnabled(!pSelectedCampaign->mounted);
 	}
 	else	
 	{

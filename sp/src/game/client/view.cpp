@@ -1264,19 +1264,18 @@ void CViewRender::Render( vrect_t *rect )
 			// we should use the monitor view from the left eye for both eyes
 			flags |= RENDERVIEW_SUPPRESSMONITORRENDERING;
 		}
-		if ( pPlayer && pPlayer->InFirstPersonView() && pPlayer->GetViewModel( 0 ) )
-{
-	int iCamAttachment = pPlayer->GetViewModel( 0 )->LookupAttachment( "camera" );
+	/*	if ( pPlayer && pPlayer->InFirstPersonView() && pPlayer->GetViewModel( 0 ) )
+		{
+			int iCamAttachment = pPlayer->GetViewModel( 0 )->LookupAttachment( "muzzle" );
 
-	if ( iCamAttachment != -1 )
-	{
-		Vector cameraOrigin = Vector(0, 0, 0);
-		QAngle cameraAngles = QAngle(0, 0, 0);
-		pPlayer->GetViewModel( 0 )->GetAttachmentLocal( iCamAttachment, cameraOrigin, cameraAngles );
-		view.angles += cameraAngles;
-		view.origin += cameraOrigin;
-	}
-}
+			if ( iCamAttachment != -1 )
+			{
+				Vector cameraOrigin = Vector(0, 0, 0);
+				QAngle cameraAngles = QAngle(0, 0, 0);
+				pPlayer->GetViewModel( 0 )->GetAttachmentLocal( iCamAttachment, cameraOrigin, cameraAngles );
+				view.angles += cameraAngles;
+			}
+		}*/
 	    RenderView( view, nClearFlags, flags );
 
 		if ( UseVR() )

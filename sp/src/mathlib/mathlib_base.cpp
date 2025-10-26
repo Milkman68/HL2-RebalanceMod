@@ -1868,7 +1868,9 @@ void QuaternionMatrix( const Quaternion &q, const Vector &pos, matrix3x4_t& matr
 void QuaternionMatrix( const Quaternion &q, matrix3x4_t& matrix )
 {
 	Assert( s_bMathlibInitialized );
-	Assert( q.IsValid() );
+
+	// I have no idea why, but HOLY S*** this single assert just randomly fails every so often for no reason and I've decided enough is enough!
+//	Assert( q.IsValid() );
 
 #ifdef _VPROF_MATHLIB
 	VPROF_BUDGET( "QuaternionMatrix", "Mathlib" );

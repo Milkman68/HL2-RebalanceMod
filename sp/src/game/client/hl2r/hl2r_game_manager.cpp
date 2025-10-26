@@ -8,7 +8,18 @@ using namespace vgui;
 #include "utlbuffer.h"
 #include <vgui_controls/QueryBox.h>
 #include "ienginevgui.h"
+#include "hl2r_utils.h"
+#include "hl2r_campaign_database.h"
 #include "hl2r_game_manager.h"
+
+CGameManager *g_pCGameManager = NULL;
+CGameManager *GetGameManager( void )
+{
+	if ( !g_pCGameManager )
+		static CGameManager StaticGameManager;
+
+	return g_pCGameManager;
+}
 
 //-----------------------------------------------------------------------------
 // Purpose: Creates A Message box with a question in it and yes/no buttons
@@ -33,8 +44,13 @@ public:
 		if (!stricmp(command, "OK") && GetSelectedGameType() != -1)
 		{
 			CGameManager *manager = GetGameManager();
+			CCampaignDatabase *database = GetCampaignDatabase();
 
 			engine->ClientCmd("disconnect");
+
+			// If we're switching games through the main-menu then its because the user
+			// wants to switch to the base-game. Unmount any mounted campaigns.
+			database->UnmountMountedCampaign();
 			manager->SetGameType( GetSelectedGameType() );
 
 			engine->ClientCmd("_restart");
@@ -50,13 +66,6 @@ private:
 //------------------------------------------------------------------------------x
 // Purpose:
 //------------------------------------------------------------------------------
-/*const char *szGameFilePaths[3] =
-{
-	"games\\hl2",
-	"games\\ep1",
-	"games\\ep2",
-};
-*/
 CGameManager::CGameManager()
 {
 	Assert( g_pCGameManager == NULL );
@@ -90,24 +99,7 @@ CGameManager::CGameManager()
 		}
 	}
 
-	// Get all listed folders we have to transfer:
-	KeyValues *pFoldersKey = pGameFile->FindKey("FolderTransfer");
-	if ( pFoldersKey != NULL )
-	{
-		int i = 0;
-		for ( char index[GM_MAX_FOLDERS] =  "0"; pFoldersKey->FindKey(index); V_sprintf_safe(index, "%d", i) )
-		{
-			const char *pFolderName = pFoldersKey->GetString(index);
-
-			int len = V_strlen( pFolderName );
-			char *out = new char[ len + 1 ];
-			V_memcpy( out, pFolderName, len );
-			out[ len ] = 0;
-
-			m_FolderTransferList.AddToTail( out );
-			i++;
-		}
-	}
+	m_GlobalFilesList = new CUtlVector<const char *>;
 
 	// Get all globalfiles:
 	KeyValues *pGlobalFilesKey = pGameFile->FindKey("GlobalFiles");
@@ -123,7 +115,7 @@ CGameManager::CGameManager()
 			V_memcpy( out, pFileName, len );
 			out[ len ] = 0;
 
-			m_GlobalFilesList.AddToTail( out );
+			m_GlobalFilesList->AddToTail( out );
 			i++;
 		}
 	}
@@ -155,132 +147,87 @@ int CGameManager::GetCurrentGameType( void )
 //-----------------------------------------------------------------------------
 bool CGameManager::SetGameType( int gametype )
 {
-	if ( GetCurrentGameType() == gametype )
-		return true;
-
-	return TransferGameFiles(gametype);
-}
-
-//-----------------------------------------------------------------------------
-// Purpose:
-//-----------------------------------------------------------------------------
-bool CGameManager::TransferGameFiles( int gametype )
-{
-	Assert(gametype != -1);
-	Assert(GetCurrentGameType() != -1);
-
 	if ( gametype == -1 )
 		return false;
 
-	// Iterate through the directories we should transfer from our gameswitch.txt script.
-	for ( int i = 0; i < m_FolderTransferList.Count(); i++ )
-	{
-		// First move the current game's folder into our storage folder.
-		if ( !MoveDirectory( "none", m_FolderTransferList[i], m_GameList[ GetCurrentGameType() ]->directory ) )
-			return false;
+	if ( gametype == GetCurrentGameType() )
+		return false;
 
-		// Get the folder from storage and move it into our main game directory.
-		if ( !MoveDirectory( m_GameList[ gametype ]->directory, m_FolderTransferList[i], "none") )
-			return false;
-	}
+	HandleSaveFiles(gametype);
 
-	// Finally transfer the gameinfo.txt files.
+	if ( !TransferGameFiles(gametype) )
+		return false;
+
 	if ( !DoGameinfoFilesTransfer(gametype) )
 		return false;
 
 	return true;
 }
-//-----------------------------------------------------------------------------
-// Purpose: Moves a directory from one location to another
-// Input  : pDirFolder - The directory that contains the directory we want to move.
-//			pDir - The directory we want to move.
-//			pTargetDir - the directory we want to move the input directory to.
-// Output : The sucess of this process.
-//-----------------------------------------------------------------------------
-bool CGameManager::MoveDirectory( const char *pDirFolder, const char *pDir, const char *pTargetDir )
-{
-	// The directory the file transfer is happening in.
-	char szSearchPath[MAX_PATH];
 
-	if ( !Q_stricmp(pDirFolder, "none") )
+//-----------------------------------------------------------------------------
+// Purpose:
+//-----------------------------------------------------------------------------
+#define NUM_GAME_FOLDERS 4
+const char *szGameFolders[NUM_GAME_FOLDERS] =
+{
+	"cfg",
+	"scripts",
+	"resource",
+	"maps"
+};
+
+bool CGameManager::TransferGameFiles( int gametype )
+{
+	bool bSucess = false;
+
+	// Iterate through the directories we should transfer from our gameswitch.txt script.
+	for ( int i = 0; i < NUM_GAME_FOLDERS; i++ )
 	{
-		V_sprintf_safe( szSearchPath, "%s\\%s\\*.*", engine->GetGameDirectory(), pDir );
+		// First move the current game's folders into our storage folder.
+		if ( MoveDirectory( NULL, szGameFolders[i], m_GameList[ GetCurrentGameType() ]->directory, m_GlobalFilesList ) )
+			bSucess = true;
+
+		// Get the folder from storage and move it into our main game directory.
+		if ( MoveDirectory( m_GameList[ gametype ]->directory, szGameFolders[i], NULL, m_GlobalFilesList ) )
+			bSucess = true;
+	}
+
+	return bSucess;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose:
+//-----------------------------------------------------------------------------
+void CGameManager::HandleSaveFiles( int gametype )
+{
+	// We're assumeing that the campaign database is handling the transfer of our basegame saves to its
+	// storage folder and vice-versa.
+	char szSaveDir[MAX_PATH];
+	if ( IsWorkshopCampaignMounted() )
+	{
+		V_strcpy_safe(szSaveDir, DEFAULT_GAME_SAVE_STORE_DIR);
 	}
 	else
 	{
-		V_sprintf_safe( szSearchPath, "%s\\%s\\%s\\*.*", engine->GetGameDirectory(), pDirFolder, pDir );
+		V_strcpy_safe(szSaveDir, "save");
 	}
 
-	//DevMsg("Directory folder is: [%s]		Directory is: [%s]		TargetDirectory is: [%s]\n\n\n", pDirFolder, pDir, pTargetDir);
+	char szGameSaveDir[MAX_PATH];
+	V_sprintf_safe(szGameSaveDir, "%s\\save", m_GameList[ GetCurrentGameType() ]->directory);
 
-	// Iterate through all files in this directory
-	FileFindHandle_t fh;
-	for ( const char *pFileName = g_pFullFileSystem->FindFirst( szSearchPath, &fh ); pFileName; pFileName = g_pFullFileSystem->FindNext( fh ))
-	{
-		// Handle invalid directories
-		if ( !Q_stricmp( pFileName, "root" ) || !Q_stricmp( pFileName, ".." ) || !Q_stricmp( pFileName, "." ) )
-			continue;
+	// Move files from our save directory to our game storage's save directory.
+	MoveFilesInDirectory( szSaveDir, szGameSaveDir );
 
-		char szFilePath[MAX_PATH];
-		if ( !Q_stricmp(pDirFolder, "none") )
-		{
-			V_sprintf_safe( szFilePath, "%s\\%s", pDir, pFileName );
-		}
-		else
-		{
-			V_sprintf_safe( szFilePath, "%s\\%s\\%s", pDirFolder, pDir, pFileName );
-		}
+	char szNewGameSaveDir[MAX_PATH];
+	V_sprintf_safe(szNewGameSaveDir, "%s\\save", m_GameList[ gametype ]->directory);
 
-		// If we hit a directory, transfer the files in it too.
-		if ( g_pFullFileSystem->IsDirectory(szFilePath) )
-		{
-			char szRelativeFilePath[MAX_PATH];
-			V_sprintf_safe( szRelativeFilePath, "%s\\%s", pDir, pFileName );
-
-		//	DevMsg("\n\n");
-			MoveDirectory(pDirFolder, szRelativeFilePath, pTargetDir);
-		}
-		else
-		{
-			bool bIsGlobalFile = false;
-			for (int i = 0; i < m_GlobalFilesList.Count(); i++ )
-			{
-				if ( !Q_stricmp(pFileName, m_GlobalFilesList[i] ) )
-				{
-					bIsGlobalFile = true;
-					break;
-				}
-			}
-
-			if ( bIsGlobalFile )
-				continue;
-
-			char szNewFilePath[MAX_PATH];
-			if ( !Q_stricmp(pTargetDir, "none") )
-			{
-				V_sprintf_safe( szNewFilePath, "%s\\%s", pDir, pFileName );
-			}
-			else
-			{
-				V_sprintf_safe( szNewFilePath, "%s\\%s\\%s", pTargetDir, pDir, pFileName );
-			}
-
-	//		DevMsg("	Filepath is: [%s]		RenameFile Command is: [%s]", szFilePath, szNewFilePath);
-	//		DevMsg("\n");
-
-			g_pFullFileSystem->RenameFile(szFilePath, szNewFilePath);
-		}
-
-	}
-
-	DevMsg("\n\n");
-
-	g_pFullFileSystem->FindClose( fh );
-	return true;
+	// Move files from our new game storage's save directory to our save directory.
+	MoveFilesInDirectory( szNewGameSaveDir, szSaveDir );
 }
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
+#define MoveFile( start, dest ) g_pFullFileSystem->RenameFile(start, dest)
 
 bool CGameManager::DoGameinfoFilesTransfer( int gametype )
 {
@@ -293,13 +240,13 @@ bool CGameManager::DoGameinfoFilesTransfer( int gametype )
 	char szGameinfoStoragePath[MAX_PATH];
 	V_sprintf_safe(szGameinfoStoragePath, "%s\\%s\\gameinfo.txt", engine->GetGameDirectory(), m_GameList[ GetCurrentGameType() ]->directory);
 
-	if (!g_pFullFileSystem->RenameFile(szGameinfoPath, szGameinfoStoragePath))
+	if (!MoveFile(szGameinfoPath, szGameinfoStoragePath))
 		return false;
 
 	char szNewGameinfoStoragePath[MAX_PATH];
 	V_sprintf_safe(szNewGameinfoStoragePath, "%s\\%s\\gameinfo.txt", engine->GetGameDirectory(), m_GameList[ gametype ]->directory );
 
-	if (!g_pFullFileSystem->RenameFile(szNewGameinfoStoragePath, szGameinfoPath))
+	if (!MoveFile(szNewGameinfoStoragePath, szGameinfoPath))
 		return false;
 
 	return true;
@@ -346,7 +293,8 @@ static void CC_SwitchGame( const CCommand &args )
 		if (iGame < 0)
 			return;
 
-		if ( iGame == GetGameManager()->GetCurrentGameType() )
+		// Allow game switching to the same game if we have a campaign mounted.
+		if ( iGame == GetGameManager()->GetCurrentGameType() && !IsWorkshopCampaignMounted() )
 			return;
 
 		GameSwitchQueryBox *pBox = new GameSwitchQueryBox("#GameManager_SwitchGame_Disclaimer", "#GameManager_SwitchGame_Text", FindGameUIChildPanel("BaseGameUIPanel"));

@@ -23,29 +23,20 @@ public:
 			CGameManager();
 public:
 
-	int	GetCurrentGameType(void);
+	int		GetCurrentGameType(void);
 	bool	SetGameType( int gametype );
 		
 private:
 
 	bool	TransferGameFiles( int gametype );
-
-	bool	MoveDirectory( const char *pDirFolder, const char *pDir, const char *pTargetDir );
+	void	HandleSaveFiles( int gametype );
 	bool	DoGameinfoFilesTransfer( int gametype );
 
 private:
 	CUtlVector<Game_t *>		m_GameList;
-
-	CUtlVector<const char *>	m_FolderTransferList;
-	CUtlVector<const char *>	m_GlobalFilesList;
+	CUtlVector<const char *>	*m_GlobalFilesList;
 };
 
-CGameManager *g_pCGameManager = NULL;
-CGameManager *GetGameManager( void )
-{
-	if ( !g_pCGameManager )
-		static CGameManager StaticGameManager;
+CGameManager *GetGameManager();
 
-	return g_pCGameManager;
-}
 #endif

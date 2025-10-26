@@ -1895,6 +1895,9 @@
     <ClInclude Include="hl2r\hl2r_options.h">
       <Filter>Source Files\HL2R</Filter>
     </ClInclude>
+    <ClInclude Include="hl2r\hl2r_utils.h">
+      <Filter>Source Files\HL2R</Filter>
+    </ClInclude>
     <ClInclude Include="sixense\in_sixense.h">
       <Filter>Source Files\Sixense</Filter>
     </ClInclude>
@@ -3239,6 +3242,9 @@
       <Filter>Source Files\HL2R</Filter>
     </ClCompile>
     <ClCompile Include="hl2r\hl2r_options.cpp">
+      <Filter>Source Files\HL2R</Filter>
+    </ClCompile>
+    <ClCompile Include="hl2r\hl2r_utils.cpp">
       <Filter>Source Files\HL2R</Filter>
     </ClCompile>
     <ClCompile Include="stdafx.cpp">

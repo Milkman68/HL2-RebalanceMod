@@ -121,7 +121,9 @@ $Project "Client (HL2)"
 			$File	"hl2r\hl2r_baseoptions.h"
 			$File	"hl2r\hl2r_campaign_panel.cpp"
 			$File	"hl2r\hl2r_campaign_panel.h"
-			$File	"hl2r\hl2r_campaign_database.cpp"
+
+			$File	"hl2r\hl2r_campaign_database.cpp"		\
+					"hl2r\hl2r_utils.cpp"
 			{
 				$Configuration
 				{
@@ -131,7 +133,9 @@ $Project "Client (HL2)"
 					}
 				}
 			}
+
 			$File	"hl2r\hl2r_campaign_database.h"
+			$File	"hl2r\hl2r_utils.h"
 			$File	"hl2r\hl2r_gamelogo.cpp"
 			$File	"hl2r\hl2r_gamelogo.h"
 			$File	"hl2r\hl2r_game_manager.cpp"

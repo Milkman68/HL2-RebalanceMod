@@ -23,6 +23,10 @@ class CCampaignEditPanel;
 
 class SelectableColumnHeader;
 
+#define RES_CAMPAIGN_LIST_PANEL		"resource/ui/hl2r_campaign_list.res"
+#define RES_CAMPAIGN_BROWSER_PANEL	"resource/ui/hl2r_campaign_browser.res"
+#define RES_CAMPAIGN_EDIT_PANEL		"resource/ui/hl2r_campaign_editor.res"
+
 //------------------------------------------------------------------------------
 // Sub panel
 //------------------------------------------------------------------------------
@@ -127,7 +131,7 @@ CCampaignBrowserPanel::CCampaignBrowserPanel(Panel *parent, const char *name) : 
 	m_CampaignWindow->DisableBrowserClicks(true);
 	m_CampaignWindow->SetContextMenuEnabled(false);
 
-	LoadControlSettings("resource/ui/hl2r_browserwindow.res");
+	LoadControlSettings(RES_CAMPAIGN_BROWSER_PANEL);
 }
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -206,7 +210,7 @@ public:
 	MESSAGE_FUNC( OnMenuItemSelected, "MenuItemSelected" ){	CheckApplyButton();	}
 
 private:
-	CampaignData_t *GetCampaign( void ) { return m_Campaign; }
+	CampaignData_t *GetSetCampaign( void ) { return m_Campaign; }
 
 	void SetPageState( EPageState type);
 
@@ -291,7 +295,7 @@ CCampaignEditPanel::CCampaignEditPanel(CCampaignListPanel *parent, const char *n
 	m_pGameSelectBox->AddItem("Episode 2 [Recomended]", NULL);
 	m_pGameSelectBoxLabel = new Label(this, "GameSelectBoxLabel", "");
 
-	LoadControlSettings("resource/ui/hl2r_editpanel.res");
+	LoadControlSettings(RES_CAMPAIGN_EDIT_PANEL);
 }
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -302,10 +306,10 @@ void CCampaignEditPanel::SetCampaign(CampaignData_t* campaign)
 
 	ResetPage();
 
-	if (GetCampaign())
+	if (GetSetCampaign())
 	{
 		CreateMapList();
-		if (GetCampaign()->mounted)
+		if (GetSetCampaign()->mounted)
 		{
 			SetPageState(MOUNTED_CAMPAIGN);
 		}
@@ -314,14 +318,14 @@ void CCampaignEditPanel::SetCampaign(CampaignData_t* campaign)
 			SetPageState(UNMOUNTED_CAMPAIGN);
 		}
 
-		if (Q_stricmp(GetCampaign()->name, "undefined"))
-			m_pNameEntry->SetText(GetCampaign()->name);
+		if (Q_stricmp(GetSetCampaign()->name, "undefined"))
+			m_pNameEntry->SetText(GetSetCampaign()->name);
 
-		if (GetCampaign()->game != -1)
-			m_pGameSelectBox->ActivateItem(GetCampaign()->game);
+		if (GetSetCampaign()->game != -1)
+			m_pGameSelectBox->ActivateItem(GetSetCampaign()->game);
 
-		if (GetCampaign()->startingmap != -1)
-			m_iPrevStartMap = GetCampaign()->startingmap;
+		if (GetSetCampaign()->startingmap != -1)
+			m_iPrevStartMap = GetSetCampaign()->startingmap;
 
 		m_pNameEntry->GetText(m_pPrevName, 512);
 		m_iPrevGame = m_pGameSelectBox->GetActiveItem();
@@ -354,9 +358,7 @@ void CCampaignEditPanel::OnCommand(const char* pcCommand)
 	}
 	if ( !stricmp(pcCommand, "applychangesmountedconfirmed") )
 	{
-		CCampaignDatabase *database = GetCampaignDatabase();
-
-		int iCurrentGametype = database->GetMountedCampaign()->game;
+/*		int iCurrentGametype = GetMountedCampaign()->game;
 		int iNewGametype = m_pGameSelectBox->GetActiveItem();
 
 		if ( !database->TransferGameinfoFiles(iCurrentGametype, iNewGametype))
@@ -373,7 +375,7 @@ void CCampaignEditPanel::OnCommand(const char* pcCommand)
 
 		//	engine->ClientCmd("quit");
 			engine->ClientCmd("_restart");
-		}
+		}*/
 	}
 	if ( !stricmp(pcCommand, "setstartmap") )
 	{
@@ -387,7 +389,7 @@ void CCampaignEditPanel::OnCommand(const char* pcCommand)
 void CCampaignEditPanel::SetStartingMap(int selecteditemID)
 {
 	m_iPrevStartMap = selecteditemID;
-	GetCampaign()->startingmap = selecteditemID;
+	GetSetCampaign()->startingmap = selecteditemID;
 
 	GetCampaignDatabase()->WriteListToScript();
 	RefreshMapList();
@@ -462,35 +464,35 @@ void CCampaignEditPanel::CreateMapList( void )
 	m_MapListPanelTitle->SetText("#hl2r_editpanel_maplist_title_1");
 	m_MapListPanelTitleMapname->SetText("");
 
-	for (int i = 0; i < GetCampaign()->maplist.Count(); i++ )
+	for (int i = 0; i < GetSetCampaign()->maplist.Count(); i++ )
 	{
 		KeyValues *pMap = new KeyValues("map");
 		if ( !pMap )
 			continue;
 
 		char szMapLabel[CAMPAIGN_NAME_LENGTH];
-		if ( GetCampaign()->startingmap == i )
+		if ( GetSetCampaign()->startingmap == i )
 		{
 			char szStartingMapString[64];
 			wchar_t *pLocalizedStartingMapLabel = g_pVGuiLocalize->Find("hl2r_startmap_label");
 
 			g_pVGuiLocalize->ConvertUnicodeToANSI( pLocalizedStartingMapLabel, szStartingMapString, sizeof(szStartingMapString) );
-			V_sprintf_safe( szMapLabel, "%s%s", GetCampaign()->maplist[i], szStartingMapString);
+			V_sprintf_safe( szMapLabel, "%s%s", GetSetCampaign()->maplist[i], szStartingMapString);
 
 			m_MapListPanelTitle->SetText("#hl2r_editpanel_maplist_title_2");
 			m_MapListPanelTitle->SetFgColor(m_TextEnabledColor);
 
-			m_MapListPanelTitleMapname->SetText(GetCampaign()->maplist[i]);
+			m_MapListPanelTitleMapname->SetText(GetSetCampaign()->maplist[i]);
 		}
 		else
 		{
-			V_sprintf_safe( szMapLabel, "%s", GetCampaign()->maplist[i]);
+			V_sprintf_safe( szMapLabel, "%s", GetSetCampaign()->maplist[i]);
 		}
 
 		pMap->SetString("map", szMapLabel);
 		int itemID = m_MapListPanel->AddItem(0, pMap );
 
-		if ( GetCampaign()->startingmap == i )
+		if ( GetSetCampaign()->startingmap == i )
 			m_MapListPanel->SetItemFgColor(itemID, COLOR_BLUE);
 	}
 
@@ -522,7 +524,7 @@ void CCampaignEditPanel::SetPageState( EPageState state)
 		m_EditBoxBackground->SetVisible(false);
 
 		char szId[CAMPAIGN_ID_LENGTH + 2];
-		V_sprintf_safe( szId, "(%s)", GetCampaign()->id);
+		V_sprintf_safe( szId, "(%s)", GetSetCampaign()->id);
 		m_CampaignIDLabel->SetText(szId);
 	}
 
@@ -551,7 +553,7 @@ void CCampaignEditPanel::CheckApplyButton( void )
 	}
 	else
 	{
-		if ( GetCampaign()->mounted )
+		if ( GetSetCampaign()->mounted )
 		{
 			m_ApplyButton->SetText("#hl2r_editpanel_applybutton_mounted_label");
 			m_ApplyButton->SetCommand("applychangesmounted");
@@ -570,10 +572,10 @@ bool CCampaignEditPanel::ApplyChanges( void )
 	CCampaignDatabase* database = GetCampaignDatabase();
 	for (int i = 0; i < database->GetCampaignCount(); i++)
 	{
-		if (!Q_stricmp(database->GetCampaignData(i)->id, GetCampaign()->id))
+		if ( !Q_stricmp( database->GetCampaign(i)->id, GetSetCampaign()->id ) )
 			continue;
 
-		if (!Q_stricmp(database->GetCampaignData(i)->name, entrytext))
+		if ( !Q_stricmp( database->GetCampaign(i)->name, entrytext ) )
 		{
 			MessageBox *box = new MessageBox("#hl2r_warning_title", "#hl2r_editpanel_error_1", this);
 			box->DoModal();
@@ -582,8 +584,8 @@ bool CCampaignEditPanel::ApplyChanges( void )
 		}
 	}
 
-	V_strcpy(GetCampaign()->name, !stricmp(entrytext, "") ? "undefined" : entrytext);
-	GetCampaign()->game = m_pGameSelectBox->GetActiveItem();
+	V_strcpy(GetSetCampaign()->name, !stricmp(entrytext, "") ? "undefined" : entrytext);
+	GetSetCampaign()->game = m_pGameSelectBox->GetActiveItem();
 
 	database->SortCampaignList(database->GetSortType(), database->GetSortDir());
 	database->WriteListToScript();

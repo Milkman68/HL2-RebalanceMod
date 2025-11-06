@@ -26,6 +26,7 @@ extern ConVar sk_auto_reload_time;
 extern ConVar sk_plr_num_shotgun_pellets;
 extern ConVar sk_plr_num_shotgun_pellets_double;
 extern ConVar sk_npc_num_shotgun_pellets;
+extern ConVar hl2r_bullet_tracer_freq;
 
 // HL1 Values
 #define VECTOR_CONE_SHOTGUN	Vector( 0.08716, 0.04362, 0.00  )// 10 degrees by 5 degrees
@@ -492,7 +493,7 @@ void CWeaponShotgun::PrimaryAttack( void )
 	pPlayer->SetMuzzleFlashTime( gpGlobals->curtime + 1.0 );
 	
 	// Fire the bullets, and force the first shot to be perfectly accuracy
-	pPlayer->FireBullets( sk_plr_num_shotgun_pellets.GetInt(), vecSrc, vecAiming, GetBulletSpread(), MAX_TRACE_LENGTH, m_iPrimaryAmmoType, 2 );
+	pPlayer->FireBullets( sk_plr_num_shotgun_pellets.GetInt(), vecSrc, vecAiming, GetBulletSpread(), MAX_TRACE_LENGTH, m_iPrimaryAmmoType, hl2r_bullet_tracer_freq.GetInt() );
 	
 	QAngle viewPunch = QAngle( -5, random->RandomFloat( -0.6, 0.6 ), 0 );
 	pPlayer->ViewPunch( viewPunch );
@@ -568,7 +569,7 @@ void CWeaponShotgun::BurstThink( void )
 	Vector vecAiming = pPlayer->GetAutoaimVector( AUTOAIM_SCALE_DEFAULT );	
 
 	// Fire the bullets
-	pPlayer->FireBullets( sk_plr_num_shotgun_pellets.GetInt(), vecSrc, vecAiming, GetBulletSpread(), MAX_TRACE_LENGTH, m_iPrimaryAmmoType, 2 );
+	pPlayer->FireBullets( sk_plr_num_shotgun_pellets.GetInt(), vecSrc, vecAiming, GetBulletSpread(), MAX_TRACE_LENGTH, m_iPrimaryAmmoType, hl2r_bullet_tracer_freq.GetInt() );
 
 	//Disorient the player
 	QAngle viewPunch = QAngle( -4, random->RandomFloat( -2, 2 ), 0 );

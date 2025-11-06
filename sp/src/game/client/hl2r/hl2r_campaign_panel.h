@@ -5,6 +5,7 @@
 #endif
 
 #include "hl2r_campaign_database.h"
+#include "hl2r_game_manager.h"
 
 #include <vgui_controls/HTML.h>
 #include <vgui_controls/ImagePanel.h>
@@ -358,10 +359,10 @@ void CCampaignEditPanel::OnCommand(const char* pcCommand)
 	}
 	if ( !stricmp(pcCommand, "applychangesmountedconfirmed") )
 	{
-/*		int iCurrentGametype = GetMountedCampaign()->game;
-		int iNewGametype = m_pGameSelectBox->GetActiveItem();
+		CGameManager *manager = GetGameManager();
 
-		if ( !database->TransferGameinfoFiles(iCurrentGametype, iNewGametype))
+		int iNewGametype = m_pGameSelectBox->GetActiveItem();
+		if ( !manager->SetGameType(iNewGametype) )
 		{
 			MessageBox *box = new MessageBox("#hl2r_error_title", "#hl2r_mounterror_3", this);
 			box->DoModal();
@@ -373,9 +374,8 @@ void CCampaignEditPanel::OnCommand(const char* pcCommand)
 			ResetPage();
 			m_Parent->RefreshList();
 
-		//	engine->ClientCmd("quit");
 			engine->ClientCmd("_restart");
-		}*/
+		}
 	}
 	if ( !stricmp(pcCommand, "setstartmap") )
 	{

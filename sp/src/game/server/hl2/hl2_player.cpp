@@ -87,7 +87,10 @@ ConVar hl2_autoaim_manual_locking( "hl2_autoaim_manual_locking", "0" );
 
 extern int gEvilImpulse101;
 
-ConVar hl2_zoomfov( "hl2_zoomfov", "45" );
+ConVar hl2_zoomfov( "hl2_zoomfov", "20" );
+ConVar hl2r_zoom_force_walk( "hl2r_zoom_force_walk", "1" );
+ConVar hl2r_zoomfov_subtract( "hl2r_zoomfov_subtract", "1" );
+
 extern ConVar hl2r_togglezoom;
 
 ConVar sv_autojump( "sv_autojump", "0" );
@@ -522,6 +525,7 @@ void CHL2_Player::HandleSpeedChanges( void )
 	bool bCanSprint = CanSprint();
 	bool bIsSprinting = IsSprinting();
 	bool bWantSprint = ( bCanSprint && IsSuitEquipped() && (m_nButtons & IN_SPEED) );
+
 	if ( bIsSprinting != bWantSprint && (buttonsChanged & IN_SPEED) )
 	{
 		// If someone wants to sprint, make sure they've pressed the button to do so. We want to prevent the
@@ -555,7 +559,7 @@ void CHL2_Player::HandleSpeedChanges( void )
 	
 	if( IsSuitEquipped() )
 	{
-		bWantWalking = (m_nButtons & IN_WALK) && !IsSprinting() && !(m_nButtons & IN_DUCK);
+		bWantWalking = ( ( m_nButtons & IN_WALK ) || ( IsZooming() && hl2r_zoom_force_walk.GetBool() ) ) && !IsSprinting() && !(m_nButtons & IN_DUCK);
 	}
 	else
 	{
@@ -574,7 +578,7 @@ void CHL2_Player::HandleSpeedChanges( void )
 		}
 	}
 	
-	if ( !bIsSprinting && !bWantSprint && !bIsWalking && !bWantWalking )
+	if ( !bIsSprinting && !(bWantSprint && buttonsChanged) && !bIsWalking && !bWantWalking )
 	{
 		if ( !hl2r_fear_style_movement.GetBool() )
 		{
@@ -1295,6 +1299,12 @@ void CHL2_Player::StartSprinting( void )
 	CPASAttenuationFilter filter( this );
 	filter.UsePredictionRules();
 	EmitSound( filter, entindex(), "HL2Player.SprintStart" );
+
+	if ( IsZooming() )
+	{
+		if ( hl2r_zoom_force_walk.GetBool() )
+			StopZooming();
+	}
 	
 	if ( !hl2r_fear_style_movement.GetBool() )
 	{
@@ -1401,10 +1411,16 @@ void CHL2_Player::ToggleZoom(void)
 //-----------------------------------------------------------------------------
 void CHL2_Player::StartZooming( void )
 {
-	int iFOV = hl2_zoomfov.GetFloat();//bookmark
+	int iFOV = hl2r_zoomfov_subtract.GetBool() ? GetFOV() - hl2_zoomfov.GetFloat() : hl2_zoomfov.GetFloat();
 	if ( SetFOV( this, iFOV, 0.2f ) )
 	{
 		m_HL2Local.m_bZooming = true;
+	}
+
+	if ( hl2r_zoom_force_walk.GetBool() )
+	{
+		if ( IsSprinting() )
+			StopSprinting();
 	}
 }
 

@@ -702,3 +702,37 @@ CON_COMMAND(StartWorkshopCampaign, "Starts the currently mounted campaign")
 
 	engine->ClientCmd(szMapCommand);
 }
+
+//-----------------------------------------------------------------------------
+// Purpose: Creates A Message box with a question in it and yes/no buttons
+//-----------------------------------------------------------------------------
+class StartCampaignQueryBox : public QueryBox
+{
+	DECLARE_CLASS_SIMPLE( StartCampaignQueryBox, QueryBox );
+
+public:
+	StartCampaignQueryBox(const char *title, const char *queryText, Panel *parent = NULL ) : QueryBox(title, queryText, parent)
+	{
+
+	}
+	StartCampaignQueryBox(const wchar_t *wszTitle, const wchar_t *wszQueryText, Panel *parent = NULL) : QueryBox(wszTitle, wszQueryText, parent)
+	{
+
+	}
+public: 
+	void OnCommand(const char *command)
+	{
+		if (!stricmp(command, "OK") )
+		{
+			CCampaignDatabase *database = GetCampaignDatabase();
+			int iMapIndex = database->GetMountedCampaign()->startingmap;
+
+			char szMapCommand[64];
+			V_sprintf_safe(szMapCommand, "map %s", database->GetMountedCampaign()->maplist[iMapIndex] );
+
+			engine->ClientCmd(szMapCommand);
+		}
+	
+		BaseClass::OnCommand(command);
+	}
+};

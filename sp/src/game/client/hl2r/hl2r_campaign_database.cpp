@@ -907,6 +907,12 @@ void CCampaignDatabase::SetCampaignAsMounted( const char *pCampaignID )
 	// Import any previously stored savefiles from the campaign we're mounting if we have any.
 	MoveSaveFiles( RETRIEVE_FROM_CAMPAIGN, pCampaignID );
 
+	// Mount our launcher content.
+	MountLauncherContent(true);
+
+	// Mount any custom sounds this mod has.
+//	HandleCustomSoundScripts(pCampaignID);
+
 	GetCampaignFromID(pCampaignID)->mounted = true;
 	WriteListToScript();
 }
@@ -927,7 +933,8 @@ void CCampaignDatabase::FixupMountedCampaignFiles( const char *pCampaignID )
 		if ( g_pFullFileSystem->FileExists(szFilePath) )
 			g_pFullFileSystem->RemoveFile(szFilePath);
 	}
-}//-----------------------------------------------------------------------------
+}
+//-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
 void CCampaignDatabase::MoveSaveFiles( EMoveSaveFileType movetype, const char *pCampaignID )
@@ -955,6 +962,113 @@ void CCampaignDatabase::MoveSaveFiles( EMoveSaveFileType movetype, const char *p
 		MoveFilesInDirectory( VarArgs("%s\\%s", CAMPAIGN_LAUCHER_SAVE_STORE_DIR, pCampaignID), "save" );
 		break;
 	}
+}
+//-----------------------------------------------------------------------------
+// Purpose:
+//-----------------------------------------------------------------------------
+void CCampaignDatabase::MountLauncherContent( bool bMount )
+{
+	char szContentDisabledDir[MAX_PATH];
+	V_sprintf_safe(szContentDisabledDir, "%s\\%s", CONTENT_PARENT_FOLDER, CONTENT_DISABLED_FOLDER);
+
+	char szContentEnabledDir[MAX_PATH];
+	V_sprintf_safe(szContentEnabledDir, "%s\\%s", CONTENT_PARENT_FOLDER, CONTENT_ENABLED_FOLDER);
+
+	if ( bMount )
+	{
+		// Mount our launcher content.
+		MoveDirectory( szContentDisabledDir, CONTENT_FOLDER, szContentEnabledDir );
+	}
+	else
+	{
+		// Unmount our launcher content.
+		MoveDirectory( szContentEnabledDir, CONTENT_FOLDER, szContentDisabledDir );
+	}
+}
+//-----------------------------------------------------------------------------
+// Purpose:
+//-----------------------------------------------------------------------------
+void CCampaignDatabase::HandleCustomSoundScripts( const char *pCampaignID )
+{
+	// Get a list of all of hl2's normal soundscripts.
+	KeyValues *pDefaultSoundManifestFile = new KeyValues("defaultmanifest");
+	if ( !pDefaultSoundManifestFile->LoadFromFile( filesystem, CAMPAIGN_DEFAULT_SOUNDSCRIPTS_FILE, "MOD" ) )
+		return;
+
+	// Get our campaign's sound_manifest file.
+	char szCampaignSoundManifest[MAX_PATH];
+	V_sprintf_safe( szCampaignSoundManifest, "%s\\%s\\scripts\\game_sounds_manifest.txt", CAMPAIGN_MOUNT_DIR, pCampaignID );
+
+	KeyValues *pCampaignSoundManifest = new KeyValues("campaignmanifest");
+	if ( !pCampaignSoundManifest->LoadFromFile( filesystem, szCampaignSoundManifest, "MOD" ) )
+		return;
+
+	// A list of all new soundscript files our campaign's manifest contains.
+	CUtlVector<const char *> *pNewSoundScriptList = new CUtlVector<const char *>;
+	bool bFoundScripts = false;
+
+	for ( KeyValues *pCampaignSoundScript = pCampaignSoundManifest->GetFirstSubKey(); pCampaignSoundScript; pCampaignSoundScript = pCampaignSoundScript->GetNextKey() )
+	{
+		char szFilePath[64];
+		V_strcpy_safe(szFilePath, pCampaignSoundScript->GetString());
+
+		// Check if this file is a soundscript file already in hl2.
+		bool bInsideList = false;
+		for ( KeyValues *pFile = pDefaultSoundManifestFile->GetFirstSubKey(); pFile; pFile = pFile->GetNextKey() )
+		{
+			if ( !Q_stricmp(pFile->GetString(), szFilePath ) )
+				bInsideList = true;
+		}
+
+		// If it has the same name as a default file, don't mount it.
+		if ( bInsideList )
+			continue;
+
+		bFoundScripts = true;
+		pNewSoundScriptList->AddToTail(szFilePath);
+	}
+
+	if ( bFoundScripts )
+		MountSoundScripts( pNewSoundScriptList );
+
+	pDefaultSoundManifestFile->deleteThis();
+	pCampaignSoundManifest->deleteThis();
+}
+//-----------------------------------------------------------------------------
+// Purpose:
+//-----------------------------------------------------------------------------
+void CCampaignDatabase::MountSoundScripts( CUtlVector< const char *> *pSoundScripts )
+{
+	// This is not the manifest, but a text file that contains a copy of our mod's
+	// custom sounds contained in the vpk.
+	KeyValues *pSoundOverrideTemplate = new KeyValues("defaultmodsounds");
+	if ( !g_pFullFileSystem->LoadKeyValues(*pSoundOverrideTemplate, g_pFullFileSystem->TYPE_SOUNDEMITTER, DEFAULT_SOUNDSCRIPT_FILE, "MOD" ) )
+		return;
+
+	// Iterate through all this campaign's custom-soundscripts.
+/*	for ( int i = 0; i < pSoundScripts->Count(); i++ )
+	{
+		KeyValues *pCampaignSoundScript = new KeyValues( "campaignsoundscript" );
+		if ( !pCampaignSoundScript->LoadFromFile( filesystem, pSoundScripts->Element(i), "MOD" ) )
+			continue;
+
+		// Add every sound in the soundscript to our template.
+		for ( KeyValues *pSound = pCampaignSoundScript->GetFirstSubKey(); pSound; pSound = pSound->GetNextKey() )
+			pSoundOverrideTemplate->SetNextKey(pSound);
+	}
+	*/
+	// Output to our override file.
+	CUtlBuffer buf( 0, 0, CUtlBuffer::TEXT_BUFFER );
+	pSoundOverrideTemplate->RecursiveSaveToFile( buf, 0 );
+
+	FileHandle_t fh;
+	fh = g_pFullFileSystem->Open( CAMPAIGN_SOUND_OVERRIDE_FILE, "wb" );
+
+	if ( fh == FILESYSTEM_INVALID_HANDLE )
+		return;
+
+	g_pFullFileSystem->Write( buf.Base(), buf.TellPut(), fh );
+	g_pFullFileSystem->Close( fh );
 }
 //-----------------------------------------------------------------------------
 // Purpose:
@@ -988,6 +1102,10 @@ void CCampaignDatabase::UnmountMountedCampaign( void )
 	MoveSaveFiles( STORE_TO_CAMPAIGN, GetMountedCampaign()->id );
 	MoveSaveFiles( RETRIEVE_FROM_DEFAULT );
 
+	// Unmount our launcher content.
+	MountLauncherContent(false);
+
+	// Clear out the mounted campaigns folder.
 	ClearCampaignFolder();
 
 	GetMountedCampaign()->mounted = false;
@@ -1012,4 +1130,21 @@ CON_COMMAND(campaign_flush_nodegraph, "Clears all .ain  files from our mounted c
 		return;
 
 	database->FlushMountedCampaignGraphs();
+}
+
+//-----------------------------------------------------------------------------
+// Purpose:
+//-----------------------------------------------------------------------------
+void CCampaignDatabase::RunSoundScriptMount( void )
+{
+	HandleCustomSoundScripts(GetMountedCampaign()->id);
+}
+
+CON_COMMAND(campaign_run_soundscript_mount, "")
+{
+	CCampaignDatabase *database = GetCampaignDatabase();
+	if ( !database )
+		return;
+
+	database->RunSoundScriptMount();
 }

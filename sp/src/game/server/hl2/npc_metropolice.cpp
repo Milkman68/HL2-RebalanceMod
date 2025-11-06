@@ -127,6 +127,9 @@ ConVar  metropolice_move_and_melee("metropolice_move_and_melee", "1" );
 ConVar  metropolice_charge("metropolice_charge", "0" );
 ConVar  metropolice_baton_switch("metropolice_baton_switch", "0" );
 
+ConVar  sk_metropolice_turnspeed_mult("sk_metropolice_turnspeed_mult", "1" );
+ConVar  sk_metropolice_speed_mult("sk_metropolice_speed_mult", "1" );
+
 extern ConVar  hl2r_random_weapons;
 
 // How many clips of pistol ammo a metropolice carries.
@@ -808,7 +811,7 @@ void CNPC_MetroPolice::Spawn( void )
 	m_flChasePlayerTime = 0;
 	m_vecPreChaseOrigin = vec3_origin;
 	m_flPreChaseYaw = 0;
-	SetGroundSpeedMultiplier(1.2);
+	SetGroundSpeedMultiplier(sk_metropolice_speed_mult.GetFloat());
 
 	SetUse( &CNPC_MetroPolice::PrecriminalUse );
 
@@ -2767,17 +2770,19 @@ int CNPC_MetroPolice::GetSoundInterests( void )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
+#define DEFAULT_SPEED 45 * sk_metropolice_turnspeed_mult.GetFloat()
+
 float CNPC_MetroPolice::MaxYawSpeed( void )
 {
 	switch( GetActivity() )
 	{
 	case ACT_TURN_LEFT:
 	case ACT_TURN_RIGHT:
-		return 120;
+		return DEFAULT_SPEED;
 
 	case ACT_RUN:
 	case ACT_RUN_HURT:
-		return 15;
+		return DEFAULT_SPEED;
 
 	case ACT_WALK:
 	case ACT_WALK_CROUCH:
@@ -2785,7 +2790,7 @@ float CNPC_MetroPolice::MaxYawSpeed( void )
 		return 25;
 
 	default:
-		return 120;
+		return DEFAULT_SPEED;
 	}
 }
 
@@ -3283,7 +3288,7 @@ bool CNPC_MetroPolice::CanOccupyAttackSlot( void )
 				// Check if any squadmembers have a slot that currently isn't being used for attacking.
 				if ( pMetroCop->HasStrategySlotRange( SQUAD_SLOT_ATTACK1, SQUAD_SLOT_ATTACK2 ) )
 				{
-					if ( !pMetroCop->HasCondition( COND_CAN_RANGE_ATTACK1 ) || pMetroCop->IsCurSchedule( SCHED_METROPOLICE_TAKE_COVER_FROM_ENEMY ) )
+					if ( !pMetroCop->HasCondition( COND_CAN_RANGE_ATTACK1 ) )
 					{
 						bOverrideSlot = true;
 						break;
@@ -4448,20 +4453,6 @@ int CNPC_MetroPolice::SelectFailSchedule( int failedSchedule, int failedTask, AI
 		return SCHED_METROPOLICE_ESTABLISH_LINE_OF_FIRE;
 	}
 	
-	if( failedSchedule == SCHED_METROPOLICE_TAKE_COVER_FROM_ENEMY || failedSchedule == SCHED_METROPOLICE_HIDE_AND_RELOAD )
-	{
-		if ( GetEnemy() )
-		{
-			if( failedSchedule == SCHED_METROPOLICE_HIDE_AND_RELOAD  )
-				return SCHED_RELOAD;
-	
-			if ( HasCondition( COND_CAN_RANGE_ATTACK1 ) && CanOccupyAttackSlot() )
-				return SCHED_RANGE_ATTACK1;
-		}
-		
-		return SCHED_FAIL;
-	}
-	
 	switch( failedSchedule )
 	{
 	case SCHED_METROPOLICE_HIDE_AND_RELOAD:
@@ -4643,7 +4634,6 @@ int CNPC_MetroPolice::TranslateSchedule( int scheduleType )
 //-----------------------------------------------------------------------------
 bool CNPC_MetroPolice::ShouldMoveAndShoot()
 {
-	
  	if( IsCurSchedule( SCHED_METROPOLICE_TAKE_COVER_FROM_ENEMY, false ) )
 	{
 		m_flStopMoveShootTime = gpGlobals->curtime + random->RandomFloat( 0.4f, 0.6f );
@@ -5253,7 +5243,6 @@ void CNPC_MetroPolice::RunTask( const Task_t *pTask )
 					{
 						OnRangeAttack1();
 						ResetIdealActivity( ACT_RANGE_ATTACK1 );
-						m_flNextAttack = gpGlobals->curtime + m_flShotDelay;
 					}
 				}
 			}
@@ -6940,8 +6929,8 @@ DEFINE_SCHEDULE
 	"		TASK_RUN_PATH				0"
 	"		TASK_WAIT_FOR_MOVEMENT		0"
 	"		TASK_REMEMBER				MEMORY:INCOVER"
-	"		TASK_FACE_ENEMY				0"
 	"		TASK_RELOAD					0"
+	"		TASK_FACE_ENEMY				0"
 	"		TASK_SET_SCHEDULE			SCHEDULE:SCHED_METROPOLICE_WAIT_IN_COVER"
 	""
 	"	Interrupts"
@@ -6964,7 +6953,7 @@ DEFINE_SCHEDULE
  "	Tasks"
  "		TASK_STOP_MOVING				0"
  "		TASK_METROPOLICE_PLAY_COVER_SEQUENCE	0"
- "		TASK_FACE_ENEMY					0"
+ "		TASK_WAIT_FACE_ENEMY			3"
  ""
  "	Interrupts"
  "		COND_NEW_ENEMY"

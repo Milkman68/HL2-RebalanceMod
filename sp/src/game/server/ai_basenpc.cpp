@@ -4625,7 +4625,7 @@ void CAI_BaseNPC::CheckFlinches( void )
 			// Clear the heavy damage condition so we don't interrupt schedules
 			// when we play a gesture flinch because we recently did a full flinch.
 			// Prevents the player from stun-locking enemies, even though they don't full flinch.
-		//	ClearCondition( COND_HEAVY_DAMAGE );
+			ClearCondition( COND_HEAVY_DAMAGE );
 		}
 		else if ( !HasInterruptCondition(COND_HEAVY_DAMAGE) )
 		{
@@ -12733,7 +12733,7 @@ float CAI_BaseNPC::GetCoverPositionScore( const Vector &vecThreat, const Vector 
 	// Setup our distance metrics.
 	float flCoverToThreat = ( vecThreat - vecCover ).Length();
 	
-/*	float flCoverToThis = ( GetAbsOrigin() - vecCover ).Length();
+	float flCoverToThis = ( GetAbsOrigin() - vecCover ).Length();
 	if ( flPathDist != NULL )
 	{
 		flCoverToThis += flPathDist;
@@ -12741,7 +12741,7 @@ float CAI_BaseNPC::GetCoverPositionScore( const Vector &vecThreat, const Vector 
 	}
 	
 	// Bias nodes that are closer to us than the enemy.
-	flNodeScore += (1.0 - ( flCoverToThis / flCoverToThreat ));*/
+	flNodeScore += (1.0 - ( flCoverToThis / flCoverToThreat ));
 	
 	// Score it based on how close it is to the desired distance from the threat.
 	flNodeScore += ( flIdealDist - fabsf(flCoverToThreat - flIdealDist) ) / flIdealDist;
@@ -12791,7 +12791,7 @@ float CAI_BaseNPC::GetLOSPositionScore( const Vector &vecThreat, const Vector &v
 	flNodeScore += ( flIdealDist - fabsf(flCoverToThreat - flIdealDist) ) / flIdealDist;
 
 	// Bias out nodes that are farther away from us than the enemy.
-	flNodeScore += 1.0 - ( flCoverToThreat / flCoverToThis );
+	//flNodeScore += 1.0 - ( flCoverToThreat / flCoverToThis );
 
 	// Give greater score to nodes that have highground over our enemy.
 	flNodeScore += (vecPos.z - vecThreat.z) * 0.001;

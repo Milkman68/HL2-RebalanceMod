@@ -27,7 +27,7 @@
 #define SF_COMBINE_NO_GRENADEDROP ( 1 << 17 )
 #define SF_COMBINE_NO_AR2DROP ( 1 << 18 )
 
-#define RECENT_DAMAGE_THRESHOLD			10
+#define RECENT_DAMAGE_THRESHOLD			6
 #define	RECENT_DAMAGE_INTERVAL			0.5
 
 //=========================================================

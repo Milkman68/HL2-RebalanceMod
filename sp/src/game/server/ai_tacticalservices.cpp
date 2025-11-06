@@ -371,35 +371,33 @@ int CAI_TacticalServices::FindCoverNode(const Vector &vNearPos, const Vector &vT
 	CVarBitVec wasVisited(GetNetwork()->NumNodes());	// Nodes visited
 
 	// mark start as visited
-	list.Insert( AI_NearNode_t(iMyNode, 0) ); 
+	list.Insert( AI_NearNode_t(iMyNode, 0.0f) ); 
 	//wasVisited.Set( iMyNode );
 	float flMinDistSqr = flMinDist*flMinDist;
 	float flMaxDistSqr = flMaxDist*flMaxDist;
 	
 	int iIdealNode = NULL;
-	bool bWantCrouch = false;
+	static int nSearchRandomizer = 0;		// tries to ensure the links are searched in a different order each time;
 	
 	float flScore = 0;
 
-	int iNumCoverPositions = 0;
-	float flPathDist = 0;
-	
-	static int nSearchRandomizer = 0;		// tries to ensure the links are searched in a different order each time;
-	
 	bool bThreatReachable = GetOuter()->GetPathDistanceToPoint( GetAbsOrigin(), vThreatPos ) != NULL;
+	bool bWantCrouch = false;
 
 	// Search until the list is empty bookmark
 	while( list.Count() )
 	{
 		// Get the node that is closest in the number of steps and remove from the list
 		int nodeIndex = list.ElementAtHead().nodeIndex;
+		float flAccumulatedDist = list.ElementAtHead().dist;
+
 		list.RemoveAtHead();
 
 		CAI_Node *pNode = GetNetwork()->GetNode(nodeIndex);
 		Vector nodeOrigin = pNode->GetPosition(GetHullType());
 
-		float dist = (vNearPos - nodeOrigin).LengthSqr();
-		if (dist >= flMinDistSqr && dist < flMaxDistSqr)
+		float absdist = (vNearPos - nodeOrigin).LengthSqr();
+		if (absdist >= flMinDistSqr && absdist < flMaxDistSqr)
 		{
 			Activity nCoverActivity = GetOuter()->GetCoverActivity( pNode->GetHint() );
 			Vector vEyePos = nodeOrigin + GetOuter()->EyeOffset(nCoverActivity);
@@ -419,15 +417,7 @@ int CAI_TacticalServices::FindCoverNode(const Vector &vNearPos, const Vector &vT
 					
 					if ( flDesiredDist > 0.0f )
 					{
-						// Only do a path distance calculation every 3 nodes we check.
-				//		if ( iNumCoverPositions == 0 || iNumCoverPositions % 3 == 0)
-				//		{
-				//			flPathDist = GetOuter()->GetPathDistanceToPoint( GetAbsOrigin(), vThreatPos );
-				//		}
-
-						iNumCoverPositions++;
-
-						float flNewScore = GetOuter()->GetCoverPositionScore( vThreatPos, nodeOrigin, flPathDist, flDesiredDist, bThreatReachable );
+						float flNewScore = GetOuter()->GetCoverPositionScore( vThreatPos, nodeOrigin, flAccumulatedDist, flDesiredDist, bThreatReachable );
 						if ( flNewScore > flScore )
 						{
 							bWantCrouch = GetOuter()->ShouldForceCrouchCover();
@@ -473,21 +463,19 @@ int CAI_TacticalServices::FindCoverNode(const Vector &vNearPos, const Vector &vT
 				// Don't accept climb nodes or nodes that aren't ready to use yet
 				if ( GetNetwork()->GetNode(newID)->GetType() != NODE_CLIMB && !GetNetwork()->GetNode(newID)->IsLocked() )
 				{
-					// UNDONE: Shouldn't we really accumulate the distance by path rather than
-					// absolute distance.  After all, we are performing essentially an A* here.
-					nodeOrigin = GetNetwork()->GetNode(newID)->GetPosition(GetHullType());
-					dist = (vNearPos - nodeOrigin).LengthSqr();
+					Vector vecNewNodeOrigin = GetNetwork()->GetNode(newID)->GetPosition(GetHullType());
+					float flPathDist = flAccumulatedDist + ( vecNewNodeOrigin - nodeOrigin ).Length();
 
-					// use distance to threat as a heuristic to keep AIs from running toward
-					// the threat in order to take cover from it.
-					float threatDist = (vThreatPos - nodeOrigin).LengthSqr();
+					trace_t	tr;
+					AI_TraceLOS( vecNewNodeOrigin + GetOuter()->GetViewOffset(), vThreatEyePos, NULL, &tr );
 
-					// Now check this node is not too close towards the threat
-					if ( dist < threatDist * 1.5 )
-					{
-						list.Insert( AI_NearNode_t(newID, dist) );
-					}
+					float flDistToEnemy = ( vecNewNodeOrigin - vThreatPos ).Length();
+					if ( flDistToEnemy > flDesiredDist * 0.5f || tr.fraction != 1.0f )
+						list.Insert( AI_NearNode_t(newID, flPathDist) );
+				/*	else
+						NDebugOverlay::Box( vecNewNodeOrigin, GetOuter()->GetHullMins(), GetOuter()->GetHullMaxs(), 255,0,0, true, 10 );*/
 				}
+
 				// mark visited
 				wasVisited.Set(newID);
 			}
@@ -516,6 +504,7 @@ int CAI_TacticalServices::FindCoverNode(const Vector &vNearPos, const Vector &vT
 		GetOuter()->SetForceCrouchCover( bWantCrouch );
 		
 //		DebugFindCover( pNode->GetId(), vEyePos, vThreatEyePos, 0, 255, 0 );
+
 		return iIdealNode;
 	}
 
@@ -577,11 +566,12 @@ int CAI_TacticalServices::FindLosNode( const Vector &vThreatPos, const Vector &v
 	float flScore = 0;
 
 	int iNumPositions = 0;
-	float flPathDist = 0;
 
 	while ( list.Count() )
 	{
 		int nodeIndex = list.ElementAtHead().nodeIndex;
+		float flAccumulatedDist = list.ElementAtHead().dist;
+
 		// remove this item from the list
 		list.RemoveAtHead();
 
@@ -676,12 +666,6 @@ int CAI_TacticalServices::FindLosNode( const Vector &vThreatPos, const Vector &v
 							if ( iIdealNode == NULL )
 								iIdealNode = nodeIndex;
 
-							// Only do a path distance calculation every 3 nodes we check.
-							if ( iNumPositions == 0 || iNumPositions % 3 == 0)
-							{
-								flPathDist = GetOuter()->GetPathDistanceToPoint( GetAbsOrigin(), vThreatPos );
-							}
-
 							iNumPositions++;
 							
 							// If there's no desired dist, use the first node given to us (This is default behavior)
@@ -689,7 +673,7 @@ int CAI_TacticalServices::FindLosNode( const Vector &vThreatPos, const Vector &v
 							{
 							//	NDebugOverlay::Box( nodeOrigin, Vector(5, 5, 5), -Vector(5, 5, 5), 255,0,0, true, 10 );
 								
-								float flNewScore = GetOuter()->GetLOSPositionScore( vThreatPos, nodeOrigin, flPathDist, flDesiredDist );
+								float flNewScore = GetOuter()->GetLOSPositionScore( vThreatPos, nodeOrigin, flAccumulatedDist, flDesiredDist );
 									
 								if ( flNewScore > flScore )
 								{
@@ -742,23 +726,27 @@ int CAI_TacticalServices::FindLosNode( const Vector &vThreatPos, const Vector &v
 			int newID = nodeLink->DestNodeID(nodeIndex);
 			
 
-			// If not already visited, add to the list
+			// If not already on the closed list, add to it and set its distance
 			if (!wasVisited.IsBitSet(newID))
 			{
-				float dist = (GetLocalOrigin() - GetNetwork()->GetNode(newID)->GetPosition(GetHullType())).LengthSqr();
-				if ( flDesiredDist > 0.0f )
+				// Don't accept climb nodes or nodes that aren't ready to use yet
+				if ( GetNetwork()->GetNode(newID)->GetType() != NODE_CLIMB && !GetNetwork()->GetNode(newID)->IsLocked() )
 				{
-					float threatDist = (vThreatPos - nodeOrigin).LengthSqr();
-					
-					if ( threatDist > flDesiredDist * 0.25f )
-						list.Insert( AI_NearNode_t(newID, dist) );
+					Vector vecNewNodeOrigin = GetNetwork()->GetNode(newID)->GetPosition(GetHullType());
+					float flPathDist = flAccumulatedDist + ( vecNewNodeOrigin - nodeOrigin ).Length();
+
+					trace_t	tr;
+					AI_TraceLOS( vecNewNodeOrigin + GetOuter()->GetViewOffset(), vThreatEyePos, NULL, &tr );
+
+					float flDistToEnemy = ( vecNewNodeOrigin - vThreatPos ).Length();
+					if ( flDistToEnemy > flDesiredDist * 0.5f || tr.fraction == 1.0f )
+						list.Insert( AI_NearNode_t(newID, flPathDist) );
+				/*	else
+						NDebugOverlay::Box( vecNewNodeOrigin, GetOuter()->GetHullMins(), GetOuter()->GetHullMaxs(), 255,0,0, true, 10 );*/
 				}
-				else
-				{
-					list.Insert( AI_NearNode_t(newID, dist) );
-				}
-				
-				wasVisited.Set( newID );
+
+				// mark visited
+				wasVisited.Set(newID);
 			}
 		}
 	}

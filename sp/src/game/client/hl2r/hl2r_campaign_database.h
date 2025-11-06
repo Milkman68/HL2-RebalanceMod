@@ -21,13 +21,22 @@
 #define CAMPAIGN_LAUCHER_SAVE_STORE_DIR			"save\\campaign_launcher"
 #define DEFAULT_GAME_SAVE_STORE_DIR				"save\\default"
 
-#define CAMPAIGN_LAUCHER_CONTENT_DIR			"campaign_launcher\\content"
-#define CAMPAIGN_LAUCHER_CONTENT_DISABLED_DIR	"campaign_launcher\\content_disabled"
+#define CONTENT_PARENT_FOLDER		"campaign_launcher"
+#define CONTENT_FOLDER				"content"
+#define CONTENT_DISABLED_FOLDER		"content_disabled"
+#define CONTENT_ENABLED_FOLDER		"content_enabled"
 
 // Filepaths:
 #define CAMPAIGN_LAUCHER_HLEXTRACT_DIR	"campaign_launcher\\hllib\\bin\\x64\\HLExtract.exe"
 #define CAMPAIGN_SCRIPT_FILE			"campaign_launcher\\campaigns.txt"
 #define CAMPAIGN_BLACKLIST_FILE			"campaign_launcher\\file_blacklist.txt"
+
+// Sound files:
+#define CAMPAIGN_DEFAULT_SOUNDSCRIPTS_FILE	"campaign_launcher\\default_soundscripts.txt"	// Contains a list of all non-custom soundscripts in hl2 and its episodes.
+#define DEFAULT_SOUNDSCRIPT_FILE			"scripts\\level_sounds_e3_bugbait.txt"			// Our own mod's soundscript to use as a template to output to our override file.
+
+// A file that overrides our mod's soundscript to support both custom-campaign sounds and mods that replace game_sounds_manifest.
+#define CAMPAIGN_SOUND_OVERRIDE_FILE	"campaign_launcher\\content_enabled\\content\\scripts\\level_sounds_e3_bugbait.txt"	
 
 // Global string sizes:
 #define CAMPAIGN_INDEX_LENGTH		5	// Allows up to 99999 listed Campaigns.
@@ -155,6 +164,7 @@ public:
 
 	// Nodegraph hotfix:
 	void	FlushMountedCampaignGraphs( void );
+	void	RunSoundScriptMount( void );
 
 private:
 
@@ -185,6 +195,13 @@ private:
 
 // Save files:
 	void	MoveSaveFiles( EMoveSaveFileType movetype, const char *pCampaignID = NULL );
+
+// Sounds:
+	void	HandleCustomSoundScripts( const char *pCampaignID );
+	void	MountSoundScripts( CUtlVector< const char *> *pFilePaths );
+
+// Misc content:
+	void	MountLauncherContent( bool bMount );
 
 private:
 	CUtlVector<CampaignData_t *>	*m_Campaigns;

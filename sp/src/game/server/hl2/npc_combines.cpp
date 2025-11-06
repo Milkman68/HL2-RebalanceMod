@@ -37,15 +37,17 @@ ConVar sk_combine_guard_kick( "sk_combine_guard_kick", "0");
 // Whether or not the combine guard should spawn health on death
 ConVar combine_guard_spawn_health( "combine_guard_spawn_health", "1" );
 
+// Speed
+ConVar	sk_combine_turnspeed_mult( "sk_combine_turnspeed_mult","1");
+ConVar	sk_combine_speed_mult( "sk_combine_speed_mult","1");
+
+// Ability cooldowns
 ConVar	sk_combine_grenade_cooldown( "sk_combine_grenade_cooldown","5");
 ConVar	sk_combine_altfire_cooldown( "sk_combine_altfire_cooldown","10");
 
 // Shield
 ConVar sk_combine_guard_shield( "sk_combine_guard_shield", "0");
 ConVar sk_combine_shield( "sk_combine_shield", "0");
-
-extern ConVar sk_plr_dmg_buckshot;	
-extern ConVar sk_plr_num_shotgun_pellets;
 
 //Whether or not the combine should spawn health on death
 ConVar	combine_spawn_health( "combine_spawn_health", "1" );

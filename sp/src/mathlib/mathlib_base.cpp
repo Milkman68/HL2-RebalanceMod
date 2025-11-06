@@ -1856,7 +1856,7 @@ void QuaternionMult( const Quaternion &p, const Quaternion &q, Quaternion &qt )
 
 void QuaternionMatrix( const Quaternion &q, const Vector &pos, matrix3x4_t& matrix )
 {
-	Assert( pos.IsValid() );
+//	Assert( pos.IsValid() );
 
 	QuaternionMatrix( q, matrix );
 
@@ -1868,8 +1868,6 @@ void QuaternionMatrix( const Quaternion &q, const Vector &pos, matrix3x4_t& matr
 void QuaternionMatrix( const Quaternion &q, matrix3x4_t& matrix )
 {
 	Assert( s_bMathlibInitialized );
-
-	// I have no idea why, but HOLY S*** this single assert just randomly fails every so often for no reason and I've decided enough is enough!
 //	Assert( q.IsValid() );
 
 #ifdef _VPROF_MATHLIB

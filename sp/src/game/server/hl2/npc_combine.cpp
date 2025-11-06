@@ -43,8 +43,12 @@
 
 int g_fCombineQuestion;				// true if an idle grunt asked a question. Cleared when someone answers. YUCK old global from grunt code
 extern ConVar hl2r_enemies_altfire;
+
 extern ConVar sk_combine_grenade_cooldown;
 extern ConVar sk_combine_altfire_cooldown;
+
+extern ConVar sk_combine_turnspeed_mult;
+extern ConVar sk_combine_speed_mult;
 
 #define COMBINE_SKIN_DEFAULT		0
 #define COMBINE_SKIN_SHOTGUNNER		1
@@ -398,10 +402,10 @@ void CNPC_Combine::Spawn( void )
 	m_flNextAltFireTime = gpGlobals->curtime;
 	m_flDelayAttacksTime = -1.0;
 	
-	if ( !IsElite() )
-	{
-		SetGroundSpeedMultiplier( 1.2 );
-	}
+//	if ( !IsElite() )
+//	{
+		SetGroundSpeedMultiplier( sk_combine_speed_mult.GetFloat() );
+//	}
 	GetEnemies()->SetFreeKnowledgeDuration( 0.0 );
 	
 	m_iNumGrenades = 1;
@@ -641,17 +645,19 @@ void CNPC_Combine::DelaySquadAltFireAttack( float flDelay )
 //-----------------------------------------------------------------------------
 // Purpose: degrees to turn in 0.1 seconds
 //-----------------------------------------------------------------------------
+#define DEFAULT_SPEED 45 * sk_combine_turnspeed_mult.GetFloat()
+
 float CNPC_Combine::MaxYawSpeed( void )
 {
 	switch( GetActivity() )
 	{
 	case ACT_TURN_LEFT:
 	case ACT_TURN_RIGHT:
-		return 120;
+		return DEFAULT_SPEED;
 		break;
 	case ACT_RUN:
 	case ACT_RUN_HURT:
-		return 15;
+		return DEFAULT_SPEED;
 		break;
 	case ACT_WALK:
 	case ACT_WALK_CROUCH:
@@ -663,7 +669,7 @@ float CNPC_Combine::MaxYawSpeed( void )
 	case ACT_MELEE_ATTACK2:
 		return 35;
 	default:
-		return 120;
+		return DEFAULT_SPEED;
 		break;
 	}
 }
@@ -1927,7 +1933,7 @@ int CNPC_Combine::SelectCombatSchedule()
 	//	AnnounceAssault(); 
 	//	return SCHED_COMBINE_ASSAULT;
 		
-		return SCHED_TAKE_COVER_FROM_ENEMY;
+		return SCHED_COMBINE_REPOSITION;
 	} 
 
 	return SCHED_NONE;
@@ -2160,37 +2166,6 @@ int CNPC_Combine::SelectSchedule( void )
 //-----------------------------------------------------------------------------
 int CNPC_Combine::SelectFailSchedule( int failedSchedule, int failedTask, AI_TaskFailureCode_t taskFailCode )
 {
-/* 	if( failedSchedule == SCHED_COMBINE_TAKE_COVER1 )
-	{
-		if( IsInSquad() && IsStrategySlotRangeOccupied(SQUAD_SLOT_ATTACK1, SQUAD_SLOT_ATTACK2) && HasCondition(COND_SEE_ENEMY) )
-		{
-			// This eases the effects of an unfortunate bug that usually plagues shotgunners. Since their rate of fire is low,
-			// they spend relatively long periods of time without an attack squad slot. If you corner a shotgunner, usually 
-			// the other memebers of the squad will hog all of the attack slots and pick schedules to move to establish line of
-			// fire. During this time, the shotgunner is prevented from attacking. If he also cannot find cover (the fallback case)
-			// he will stand around like an idiot, right in front of you. Instead of this, we have him run up to you for a melee attack.
-			return SCHED_TAKE_COVER_FROM_ENEMY;
-		}
-	} */
-	
-	if( failedSchedule == SCHED_COMBINE_TAKE_COVER1 || failedSchedule == SCHED_COMBINE_HIDE_AND_RELOAD )
-	{
-		Forget( bits_MEMORY_RETREAT_TO_COVER );
-		if ( GetEnemy() )
-		{
-			if( failedSchedule == SCHED_COMBINE_HIDE_AND_RELOAD  )
-				return SCHED_RELOAD;
-	
-			if ( HasCondition( COND_CAN_RANGE_ATTACK1 ) && CanOccupyAttackSlot() )
-				return SCHED_RANGE_ATTACK1;
-			
-			if ( HasCondition( COND_COMBINE_CAN_GRENADE_ENEMY ) && OccupyStrategySlot( SQUAD_SLOT_GRENADE1 ) )
-				return SCHED_RANGE_ATTACK2;
-		}
-		
-		return SCHED_FAIL;
-	}
-	
 	return BaseClass::SelectFailSchedule( failedSchedule, failedTask, taskFailCode );
 }
 
@@ -2305,7 +2280,7 @@ int CNPC_Combine::SelectScheduleAttack()
 			}
 		}
 		
-		return SCHED_TAKE_COVER_FROM_ENEMY;
+		return SCHED_COMBINE_REPOSITION;
 	}
 
 	if (HasCondition(COND_WEAPON_SIGHT_OCCLUDED))
@@ -2335,6 +2310,7 @@ int CNPC_Combine::TranslateSchedule( int scheduleType )
 	switch( scheduleType )
 	{
 	case SCHED_TAKE_COVER_FROM_ENEMY:
+	case SCHED_COMBINE_REPOSITION:
 		{
 			// Have to explicitly check innate range attack condition as may have weapon with range attack 2
 			if ( HasCondition(COND_CAN_RANGE_ATTACK2) && OccupyStrategySlot( SQUAD_SLOT_GRENADE1 ) )
@@ -2352,27 +2328,12 @@ int CNPC_Combine::TranslateSchedule( int scheduleType )
 				return SCHED_COMBINE_TAKE_COVER1;
 			}
 		}
+
 	case SCHED_TAKE_COVER_FROM_BEST_SOUND:
 		{
 			return SCHED_COMBINE_TAKE_COVER_FROM_BEST_SOUND;
 		}
-		break;
-	case SCHED_COMBINE_TAKECOVER_FAILED:
-		{
-			SetCondition( COND_TAKECOVER_FAILED );
-			//DevMsg("FAILED TO TAKE COVER!\n");
-			
-			// Shoot if we can.
-			if ( HasCondition( COND_CAN_RANGE_ATTACK1 ) && CanOccupyAttackSlot() )
-			{
-				return TranslateSchedule( SCHED_RANGE_ATTACK1 );
-			}
 
-			// Run somewhere randomly
-			return TranslateSchedule( SCHED_COWER ); 
-			break;
-		}
-		break;
 	case SCHED_FAIL_ESTABLISH_LINE_OF_FIRE:
 		{
 			if( HasCondition( COND_SEE_ENEMY ) )
@@ -2383,10 +2344,10 @@ int CNPC_Combine::TranslateSchedule( int scheduleType )
 			{
 				// Don't patrol if I'm in the middle of an assault, because 
 				// I'll never return to the assault. 
-		//		if ( GetEnemy() )
-		//		{
-		//			RememberUnreachable( GetEnemy() );
-		//		}
+				if ( GetEnemy() )
+				{
+					RememberUnreachable( GetEnemy() );
+				}
 
 				return TranslateSchedule( SCHED_COMBINE_WAIT_IN_COVER );
 			}
@@ -3797,8 +3758,7 @@ bool CNPC_Combine::CanOccupyAttackSlot( void )
 				// Check if any squadmembers have a slot that currently isn't being used for attacking.
 				if ( pCombine->HasStrategySlotRange( SQUAD_SLOT_ATTACK1, SQUAD_SLOT_ATTACK2 ) )
 				{
-					if ( !pCombine->HasCondition( COND_CAN_RANGE_ATTACK1 ) ||
-					pCombine->IsCurSchedule( SCHED_COMBINE_TAKE_COVER1 ) )
+					if ( !pCombine->HasCondition( COND_CAN_RANGE_ATTACK1 ) )
 					{
 						bOverrideSlot = true;
 						break;
@@ -4298,58 +4258,6 @@ DEFINE_SCHEDULE
  "		COND_HEAVY_DAMAGE"
  "		COND_COMBINE_CAN_ALTFIRE_ENEMY"
  )
- 
- DEFINE_SCHEDULE 
- (
- SCHED_COMBINE_ESTABLISH_LINE_OF_FIRE_LKP,
-
- "	Tasks "
- "		TASK_SET_FAIL_SCHEDULE			SCHEDULE:SCHED_COMBINE_REPOSITION"
- "		TASK_SET_TOLERANCE_DISTANCE		48"
- "		TASK_GET_PATH_TO_ENEMY_LKP_LOS_IN_WEAPON_RANGE	0"
- "		TASK_COMBINE_SET_STANDING		1"
- "		TASK_SPEAK_SENTENCE				1"
- "		TASK_RUN_PATH					0"
- "		TASK_WAIT_FOR_MOVEMENT			0"
- "		TASK_WAIT_FACE_ENEMY			3"
- "	Interrupts "
- "		COND_NEW_ENEMY"
- "		COND_ENEMY_DEAD"
- //"		COND_CAN_RANGE_ATTACK1"
- //"		COND_CAN_RANGE_ATTACK2"
- "		COND_CAN_MELEE_ATTACK1"
- "		COND_CAN_MELEE_ATTACK2"
- "		COND_HEAR_DANGER"
- "		COND_HEAR_MOVE_AWAY"
- "		COND_HEAVY_DAMAGE"
- )
-//=========================================================
-// Move to a flanking position, then shoot if possible.
-//=========================================================
-DEFINE_SCHEDULE
-(
-	SCHED_COMBINE_FLANK_ENEMY,
-
-	"	Tasks"
-	"		TASK_SET_FAIL_SCHEDULE					SCHEDULE:SCHED_FAIL_ESTABLISH_LINE_OF_FIRE"
-	"		TASK_STOP_MOVING						0"
-	"		TASK_COMBINE_BEGIN_FLANK				0"
-	"		TASK_GET_FLANK_ARC_PATH_TO_ENEMY_LOS	40"
-	"		TASK_SPEAK_SENTENCE						1"
-	"		TASK_RUN_PATH							0"
-	"		TASK_WAIT_FOR_MOVEMENT					0"
-	""
-	"	Interrupts"
-	"		COND_NEW_ENEMY"
-	//"		COND_CAN_RANGE_ATTACK1"
-	//"		COND_CAN_RANGE_ATTACK2"
-	"		COND_CAN_MELEE_ATTACK1"
-	"		COND_CAN_MELEE_ATTACK2"
-	"		COND_ENEMY_DEAD"
-	"		COND_ENEMY_UNREACHABLE"
-	"		COND_TOO_CLOSE_TO_ATTACK"
-	"		COND_LOST_ENEMY"
-)
  //=========================================================
  // SCHED_COMBINE_PRESS_ATTACK
  //=========================================================
@@ -4412,8 +4320,8 @@ DEFINE_SCHEDULE
  "		TASK_RUN_PATH				0"
  "		TASK_WAIT_FOR_MOVEMENT		0"
  "		TASK_REMEMBER				MEMORY:INCOVER"
- "		TASK_FACE_ENEMY				0"
  "		TASK_RELOAD					0"
+ "		TASK_FACE_ENEMY				0"
  "		TASK_SET_SCHEDULE			SCHEDULE:SCHED_COMBINE_WAIT_IN_COVER"
  ""
  "	Interrupts"
@@ -4538,7 +4446,7 @@ DEFINE_SCHEDULE
  "		TASK_STOP_MOVING				0"
  "		TASK_COMBINE_SET_STANDING		0"
  "		TASK_PLAY_COVER_SEQUENCE		0"
- "		TASK_FACE_ENEMY					0"
+ "		TASK_WAIT_FACE_ENEMY			3"
  ""
  "	Interrupts"
  "		COND_NEW_ENEMY"

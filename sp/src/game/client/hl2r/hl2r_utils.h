@@ -26,5 +26,6 @@ bool	MoveFilesInDirectory( const char *pDir,
 
 
 const char	*GetSteamAppsDir(void);
+char*		ReadFileIntoBuffer( const char *pFilePath, int &len );
 
 #endif

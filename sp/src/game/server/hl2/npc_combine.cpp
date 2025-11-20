@@ -1528,8 +1528,14 @@ void CNPC_Combine::BuildScheduleTestBits( void )
 		ClearCondition( COND_GOT_PUNTED );
 	}
 	
- 	if ( GetEnemy() != NULL && ( IsRunningApproachEnemySchedule() && !IsElite() ) )//bookmark
-		SetCustomInterruptCondition( COND_CAN_RANGE_ATTACK1 );
+ 	if ( GetEnemy() != NULL && ( IsRunningApproachEnemySchedule() && !IsElite() ) )
+	{
+		if( HasCondition(COND_CAN_RANGE_ATTACK1) && m_flTimeSawEnemyAgain != -1 )
+		{
+			if( (gpGlobals->curtime - m_flTimeSawEnemyAgain) >= 0.25f )
+				SetCustomInterruptCondition( COND_CAN_RANGE_ATTACK1 );
+		}
+	}
 	 
 	if ( HasStrategySlotRange( SQUAD_SLOT_ATTACK1, SQUAD_SLOT_ATTACK2 ) || IsRunningApproachEnemySchedule() )
 	{
@@ -1904,11 +1910,11 @@ int CNPC_Combine::SelectCombatSchedule()
 				// Start with trying to see if a grenade can be thrown!
 				return SCHED_RANGE_ATTACK2;
 			}
-			else if ( CanSuppressEnemy() && OccupyStrategySlot( SQUAD_SLOT_OVERWATCH ) )
+		/*	else if ( CanSuppressEnemy() && OccupyStrategySlot( SQUAD_SLOT_OVERWATCH ) )
 			{
 				return SCHED_RANGE_ATTACK1;
 			}
-  			else if ( m_flDelayAttacksTime < gpGlobals->curtime && CanOccupyAttackSlot() )
+  			else*/ if ( m_flDelayAttacksTime < gpGlobals->curtime && CanOccupyAttackSlot() )
 			{
 				// Try to charge in and break the enemy's cover!
 				return SCHED_ESTABLISH_LINE_OF_FIRE;
@@ -3846,7 +3852,7 @@ int CNPC_Combine::OnTakeDamage_Alive( const CTakeDamageInfo &inputInfo )
 	//Take extra damage from physics and explosions.
 	if ( inputInfo.GetDamageType() == DMG_CRUSH || inputInfo.GetDamageType() == DMG_BLAST )
 	{
-		float flDamage = info.GetDamage() * 1.5;
+		float flDamage = info.GetDamage() * 1.25;
 		info.SetDamage( flDamage );
 	}
 

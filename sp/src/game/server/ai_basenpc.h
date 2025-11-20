@@ -1655,9 +1655,15 @@ public:
 	virtual bool		IsValidShootPosition ( const Vector &vecCoverLocation, CAI_Node *pNode, CAI_Hint const *pHint );
 	virtual bool		TestShootPosition(const Vector &vecShootPos, const Vector &targetPos )	{ return WeaponLOSCondition( vecShootPos, targetPos, false ); }
 	virtual bool		IsCoverPosition( const Vector &vecThreat, const Vector &vecPosition );
+
 	virtual float		GetCoverPositionScore( const Vector &vecThreat, const Vector &vecCover, float flPathDist, float flIdealDist = 500.0f, bool bEnemyReachable = true );
 	virtual float		GetLOSPositionScore( const Vector &vecThreat, const Vector &vecPos,  float flPathDist, float flIdealDist = 500.0f );
+
+	virtual bool		IsCoverLinkUsable( const Vector &vecStart, const Vector &vecEnd, const Vector &vecThreat, const Vector &vecThreatEyePos, float flIdealDist = 500.0f );
+	virtual bool		IsLOSLinkUsable( const Vector &vecStart, const Vector &vecEnd, const Vector &vecThreat, const Vector &vecThreatEyePos, float flIdealDist = 500.0f );
+
 	virtual float		GetPathDistanceToPoint( const Vector& vecStart, const Vector& vecPosition ) ;
+
 	virtual float		CoverRadius( void ) { return 1024; } // Default cover radius
 	virtual float		GetMaxTacticalLateralMovement( void ) { return MAXTACLAT_IGNORE; }
 
@@ -1735,6 +1741,8 @@ public:
 	virtual bool		CurrentWeaponLOSCondition(const Vector &targetPos, bool bSetConditions) { return WeaponLOSCondition( GetAbsOrigin(), targetPos, bSetConditions ); }
 	virtual bool		IsWaitingToRappel( void ) { return false; }
 	virtual void		BeginRappel() {}
+
+	virtual bool		CanRangeAttackNotFacingEnemy()	{ return false; }
 
 	// override to change the chase location of an enemy
 	// This is where your origin should go when you are chasing pEnemy when his origin is at chasePosition

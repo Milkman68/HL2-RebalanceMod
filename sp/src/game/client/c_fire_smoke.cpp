@@ -386,24 +386,25 @@ void C_EntityFlame::Simulate( void )
 	if ( hl2r_dynamic_light_level.GetInt() == 2 ) // None
 		return;
 		
-		dlight_t *dl = effects->CL_AllocDlight ( index );
-		dl->origin = GetAbsOrigin();
-		dl->color.r = 255;
-		dl->color.g = 100;
-		dl->color.b = 10;
-		dl->color.exponent = -3;
-		dl->die = gpGlobals->curtime + 0.1;
-		dl->style = 6;
-	if ( IsEffectActive(EF_BRIGHTLIGHT) || IsEffectActive(EF_DIMLIGHT) )
-	{
+	dlight_t *dl = effects->CL_AllocDlight(index);
+	dl->origin = GetAbsOrigin();
+	dl->color.r = 255;
+	dl->color.g = 100;
+	dl->color.b = 10;
+	dl->color.exponent = -3;
+	dl->die = gpGlobals->curtime + 0.1;
+	dl->style = 6;
+
+//	if ( IsEffectActive(EF_BRIGHTLIGHT) || IsEffectActive(EF_DIMLIGHT) )
+//	{
 		dl->radius = random->RandomFloat(600, 830);
 		dl->decay = dl->radius / 0.1;
-	}
+/*	}
 	else
 	{
 		dl->radius = 192;
 		dl->decay = dl->radius / 0.1;
-	}
+	}*/
 }
 
 //-----------------------------------------------------------------------------

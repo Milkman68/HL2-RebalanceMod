@@ -63,144 +63,6 @@ static int GetAdjustedSize( int iValue )
 	return (int)iValue;
 }
 
-
-
-
-//-----------------------------------------------------------------------------
-// Purpose: An extension of SectionedListPanelHeader that allows individual columns to be
-// selected via togglebuttons that sends the currently selected column's index to a target panel.
-//-----------------------------------------------------------------------------
-class SelectableColumnHeader : public SectionedListPanelHeader
-{
-	DECLARE_CLASS_SIMPLE( SelectableColumnHeader, SectionedListPanelHeader );
-
-public:
-	SelectableColumnHeader(Panel* signaltarget, SectionedListPanel *parent, const char *name, int sectionID);
-
-	virtual void PerformLayout();
-	virtual void OnChildAdded(VPANEL child);
-
-	virtual void ApplySchemeSettings(IScheme *pScheme);
-	void OnCommand(const char* pcCommand);
-
-	// Get the currently selected column.
-	int		GetSelectedColumn( void );
-
-	// Set what column is initially selected on startup.
-	void	SetSelectedColumn( int iColumn, bool bDepressed );
-
-private:
-	CUtlVector<ToggleButton *>	m_ColumnButtons;
-
-	int		m_iSelectedColumn;
-	bool	m_iSelectedColumnDepressed;
-
-	Color	m_SelectedColor;
-	Color	m_UnselectedColor;
-};
-
-
-SelectableColumnHeader::SelectableColumnHeader(Panel* signaltarget, SectionedListPanel *parent, const char *name, int sectionID) : SectionedListPanelHeader(parent, name, sectionID)
-{
-	m_iSelectedColumn = -1;
-	m_iSelectedColumnDepressed = true;
-
-	AddActionSignalTarget(signaltarget);
-}
-
-// Just overriding this from the baseclass cause it throws errors: (professional programming practices)
-void SelectableColumnHeader::OnChildAdded(VPANEL child)
-{
-//	Assert( !_flags.IsFlagSet( IN_PERFORM_LAYOUT ) );
-}
-
-void SelectableColumnHeader::PerformLayout() 
-{
-	int colCount = m_pListPanel->GetColumnCountBySection(m_iSectionID);
-
-	int xpos = 0;
-	for (int i = 0; i < colCount; i++)
-	{
-		int columnWidth = m_pListPanel->GetColumnWidthBySection(m_iSectionID, i);
-
-		int x, y, wide, tall;
-		GetBounds(x, y, wide, tall);
-
-		// Create a button for this column:
-		char szColumnLabel[64];
-		const wchar_t *pColumnLabel = m_pListPanel->GetColumnTextBySection(m_iSectionID, i);
-		g_pVGuiLocalize->ConvertUnicodeToANSI(pColumnLabel, szColumnLabel, sizeof(szColumnLabel));
-
-		char szButtonName[32];
-		V_sprintf_safe(szButtonName, "columnbutton_%d", i);
-
-		ToggleButton *pColumnButton = new ToggleButton(this, szButtonName, szColumnLabel);
-		pColumnButton->AddActionSignalTarget(this->GetVPanel());
-		pColumnButton->SetCommand(m_pListPanel->GetColumnNameBySection(m_iSectionID, i));
-		pColumnButton->SetSize(columnWidth, tall);
-		pColumnButton->SetPos(xpos, 0);
-
-		// SetFgColor doesn't want work on these buttons.
-	//	pColumnButton->SetFgColor(m_UnselectedColor);
-
-		if ( m_iSelectedColumn == i )
-		{
-			pColumnButton->SetSelected(true);
-
-			if ( m_iSelectedColumnDepressed )
-				pColumnButton->ForceDepressed(true);
-
-		//	pColumnButton->SetFgColor(m_SelectedColor);
-		}
-
-		m_ColumnButtons.AddToTail(pColumnButton);
-		xpos += columnWidth;
-	}
-};
-
-
-void SelectableColumnHeader::ApplySchemeSettings(IScheme *pScheme)
-{
-	BaseClass::ApplySchemeSettings(pScheme);
-	SetFont(pScheme->GetFont("Default", IsProportional()));
-
-	m_SelectedColor = GetSchemeColor("Label.TextDullColor", pScheme);
-	m_UnselectedColor = GetSchemeColor("Label.TextBrightColor", pScheme);
-}
-
-void SelectableColumnHeader::OnCommand(const char* pcCommand)
-{
-	// Only allow 1 column to be selected at a time.
-	int colCount = m_pListPanel->GetColumnCountBySection(m_iSectionID);
-	for (int i = 0; i < colCount; i++ )
-	{
-		const char *pColumnName = m_pListPanel->GetColumnNameBySection(m_iSectionID, i);
-		if ( !stricmp(pcCommand, pColumnName) )
-		{
-			m_iSelectedColumn = i;
-			PostActionSignal(new KeyValues("ColumnSelected", "column", m_iSelectedColumn));
-		}
-		else
-		{
-			m_ColumnButtons[i]->SetSelected(false);
-			m_ColumnButtons[i]->ForceDepressed(false);
-		}
-	}
-
-	BaseClass::OnCommand(pcCommand);
-}
-
-int SelectableColumnHeader::GetSelectedColumn( void )
-{
-	return m_iSelectedColumn;
-}
-
-void SelectableColumnHeader::SetSelectedColumn( int iColumn, bool bDepressed )
-{
-	m_iSelectedColumn = iColumn;
-	m_iSelectedColumnDepressed = bDepressed;
-}
-
 //------------------------------------------------------------------------------
 // Sub panel
 //------------------------------------------------------------------------------
@@ -218,7 +80,7 @@ CCampaignListPanel::CCampaignListPanel(vgui::Panel* parent ) : EditablePanel(par
 	m_CampaignScanButton->SetCommand("scancampaigns");
 
 	m_SelectedCampaignPanel = new CSelectedCampaignPanel(this, "SelectedCampaignPanel" );
-	m_SelectedCampaignPanel->SetSelected(NULL);
+	m_SelectedCampaignPanel->SetSelected(CAMPAIGN_HANDLE_INVALID);
 
 	LoadControlSettings(RES_CAMPAIGN_LIST_PANEL);
 
@@ -234,15 +96,15 @@ void CCampaignListPanel::ItemSelected(int itemID)
 	{
 		CCampaignDatabase *database = GetCampaignDatabase();
 
-		const char *id = m_ListPanel->GetSelectedItemData()->GetString("id");
-		m_SelectedCampaignPanel->SetSelected( database->GetCampaignFromID(id) );
+		const char *campaignID = m_ListPanel->GetSelectedItemData()->GetString("id");
+		m_SelectedCampaignPanel->SetSelected( database->GetCampaignHandleFromID(campaignID) );
 
 		// Don't enable mounting if we're already mounted!
-		m_MountButton->SetEnabled( !database->GetCampaignFromID(id)->mounted );
+		m_MountButton->SetEnabled( !database->GetCampaignFromID(campaignID)->mounted );
 	}
 	else	
 	{
-		m_SelectedCampaignPanel->SetSelected(NULL);
+		m_SelectedCampaignPanel->SetSelected(CAMPAIGN_HANDLE_INVALID);
 		m_MountButton->SetEnabled(false);
 	}
 }
@@ -298,7 +160,7 @@ void CCampaignListPanel::ColumnSelected()
 	m_PrevSortType = type;
 	m_PrevSortDir = dir;
 
-	m_SelectedCampaignPanel->SetSelected(NULL);
+	m_SelectedCampaignPanel->SetSelected(CAMPAIGN_HANDLE_INVALID);
 
 	GetCampaignDatabase()->SortCampaignList(type, dir);
 	RefreshList(false);
@@ -604,7 +466,7 @@ CSelectedCampaignPanel::CSelectedCampaignPanel(CCampaignListPanel *parent, const
 //------------------------------------------------------------------------------
 // Purpose:
 //------------------------------------------------------------------------------
-void CSelectedCampaignPanel::SetSelected( CampaignData_t *campaign )
+void CSelectedCampaignPanel::SetSelected( CAMPAIGN_HANDLE campaign )
 {
 	if ( GetActivePage()->GetName() == m_EditPanel->GetName() )
 	{
@@ -669,8 +531,10 @@ void CHL2RCampaignPanel::OnScreenSizeChanged(int iOldWide, int iOldTall)
 	isCampaignPanelActive = false;
 }
 //------------------------------------------------------------------------------
-// Purpose: Console Command
+// Purpose:
 //------------------------------------------------------------------------------
+//ConVar hl2r_campaign_launcher_show_disclaimer( "hl2r_campaign_launcher_show_disclaimer", "0", FCVAR_REPLICATED | FCVAR_ARCHIVE );
+
 CHL2RCampaignPanel* CampaignPanel = NULL;
 CON_COMMAND(OpenHL2RCampaignDialog, "Opens the campaign manager ui")
 {
@@ -683,6 +547,9 @@ CON_COMMAND(OpenHL2RCampaignDialog, "Opens the campaign manager ui")
 	CampaignPanel->Activate();
 }
 
+//------------------------------------------------------------------------------
+// Purpose:
+//------------------------------------------------------------------------------
 CON_COMMAND(StartWorkshopCampaign, "Starts the currently mounted campaign")
 {
 	CCampaignDatabase *database = GetCampaignDatabase();
@@ -704,35 +571,29 @@ CON_COMMAND(StartWorkshopCampaign, "Starts the currently mounted campaign")
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: Creates A Message box with a question in it and yes/no buttons
+// Purpose:
 //-----------------------------------------------------------------------------
-class StartCampaignQueryBox : public QueryBox
+
+ConVar hl2r_options_disable_disclaimer( "hl2r_options_disable_disclaimer", "0", FCVAR_REPLICATED | FCVAR_ARCHIVE );
+CON_COMMAND(Hl2rOpenOptionsDialog, "Opens the options panel")
 {
-	DECLARE_CLASS_SIMPLE( StartCampaignQueryBox, QueryBox );
+	char szCommand[32];
+	V_strcpy(szCommand, "gamemenucommand OpenOptionsDialog");
 
-public:
-	StartCampaignQueryBox(const char *title, const char *queryText, Panel *parent = NULL ) : QueryBox(title, queryText, parent)
+	char szConVar[32];
+	V_strcpy(szConVar, "hl2r_options_disable_disclaimer");
+
+	ConVarRef var(szConVar);
+	if ( !var.GetBool() )
 	{
+		CommandDisclaimerBox *disclaimerbox = new CommandDisclaimerBox("NOTICE", "HL2R is built off an older version of hl2 so not everything will be functional", 
+			szCommand, szConVar, FindGameUIChildPanel("BaseGameUIPanel"));
 
+		disclaimerbox->SetCancelButtonText("Don't show this again");
+		disclaimerbox->DoModal();
 	}
-	StartCampaignQueryBox(const wchar_t *wszTitle, const wchar_t *wszQueryText, Panel *parent = NULL) : QueryBox(wszTitle, wszQueryText, parent)
+	else
 	{
-
+		engine->ClientCmd("gamemenucommand OpenOptionsDialog");
 	}
-public: 
-	void OnCommand(const char *command)
-	{
-		if (!stricmp(command, "OK") )
-		{
-			CCampaignDatabase *database = GetCampaignDatabase();
-			int iMapIndex = database->GetMountedCampaign()->startingmap;
-
-			char szMapCommand[64];
-			V_sprintf_safe(szMapCommand, "map %s", database->GetMountedCampaign()->maplist[iMapIndex] );
-
-			engine->ClientCmd(szMapCommand);
-		}
-	
-		BaseClass::OnCommand(command);
-	}
-};
+}

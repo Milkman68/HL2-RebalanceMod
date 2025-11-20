@@ -11,6 +11,7 @@
 #include <vgui_controls/ImagePanel.h>
 #include <vgui_controls/Divider.h>
 #include <vgui_controls/ComboBox.h>
+#include <vgui_controls/CheckButton.h>
 
 #define HL2R_PANEL_WIDTH 896
 #define HL2R_PANEL_HEIGHT 640
@@ -85,7 +86,7 @@ class CSelectedCampaignPanel : public PropertySheet
 
 public:
 	CSelectedCampaignPanel(CCampaignListPanel *parent, const char *name);
-	void SetSelected( CampaignData_t *campaign );
+	void SetSelected( CAMPAIGN_HANDLE campaign );
 
 private:
 	CCampaignBrowserPanel	*m_BrowserPanel;
@@ -107,14 +108,13 @@ class CCampaignBrowserPanel : public EditablePanel
 public:
 	CCampaignBrowserPanel(Panel *parent, const char *name);
 
-	void SetSelected( CampaignData_t *campaign ) ;
+	void SetSelected( CAMPAIGN_HANDLE campaign ) ;
 
 	virtual void ApplySchemeSettings(IScheme* pScheme);
 	MESSAGE_FUNC( OnFinishRequest, "OnFinishRequest" );
 //	MESSAGE_FUNC_CHARPTR( OnURLChanged, "OnURLChanged", url );
 
 private:
-	CampaignData_t	*m_pCampaign;
 
 	HTML		*m_CampaignWindow;
 	ImagePanel	*m_CampaignWindowBackground;
@@ -138,15 +138,14 @@ CCampaignBrowserPanel::CCampaignBrowserPanel(Panel *parent, const char *name) : 
 // Purpose: 
 //-----------------------------------------------------------------------------
 #define BROWSER_MAX_URL 256
-void CCampaignBrowserPanel::SetSelected(CampaignData_t* campaign)
+void CCampaignBrowserPanel::SetSelected(CAMPAIGN_HANDLE campaign)
 {
-	m_pCampaign = campaign;
-
-	if (m_pCampaign != NULL)
+	CCampaignDatabase* database = GetCampaignDatabase();
+	if ( database->ValidCampaign(campaign) )
 	{
 		// Get the ID of the selected campaign and parse it into a url that can be opened.
 		char szURL[BROWSER_MAX_URL];
-		Q_snprintf(szURL, sizeof(szURL), "https://steamcommunity.com/sharedfiles/filedetails?id=%s", m_pCampaign->id);
+		Q_snprintf(szURL, sizeof(szURL), "https://steamcommunity.com/sharedfiles/filedetails?id=%s", database->GetCampaign(campaign)->id);
 
 		m_CampaignWindow->OpenURL(szURL, "");
 	}
@@ -199,7 +198,7 @@ class CCampaignEditPanel : public EditablePanel
 public:
 	CCampaignEditPanel(CCampaignListPanel *parent, const char *name);
 
-	void SetCampaign( CampaignData_t *campaign );
+	void SetCampaign( CAMPAIGN_HANDLE campaign );
 	MESSAGE_FUNC_INT( ItemSelected, "ItemSelected", itemID );
 	MESSAGE_FUNC_INT( ItemDoubleLeftClick, "ItemDoubleLeftClick", itemID ){ SetStartingMap(itemID); }
 
@@ -208,11 +207,8 @@ public:
 	void ApplySchemeSettings(IScheme *pScheme);
 
 	MESSAGE_FUNC( OnTextChanged, "TextChanged" ) { CheckApplyButton(); }
-	MESSAGE_FUNC( OnMenuItemSelected, "MenuItemSelected" ){	CheckApplyButton();	}
 
 private:
-	CampaignData_t *GetSetCampaign( void ) { return m_Campaign; }
-
 	void SetPageState( EPageState type);
 
 	void CreateMapList(void);
@@ -226,7 +222,7 @@ private:
 
 private:
 	CCampaignListPanel	*m_Parent;
-	CampaignData_t		*m_Campaign;
+	CAMPAIGN_HANDLE		m_Campaign;
 
 	Label				*m_CampaignIDLabel;
 	Label				*m_CampaignInfoLabel;
@@ -301,16 +297,16 @@ CCampaignEditPanel::CCampaignEditPanel(CCampaignListPanel *parent, const char *n
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CCampaignEditPanel::SetCampaign(CampaignData_t* campaign)
+void CCampaignEditPanel::SetCampaign(CAMPAIGN_HANDLE campaign)
 {
 	m_Campaign = campaign;
-
 	ResetPage();
 
-	if (GetSetCampaign())
+	CCampaignDatabase* db = GetCampaignDatabase();
+	if ( db->ValidCampaign(campaign) )
 	{
 		CreateMapList();
-		if (GetSetCampaign()->mounted)
+		if (db->GetCampaign(campaign)->mounted)
 		{
 			SetPageState(MOUNTED_CAMPAIGN);
 		}
@@ -319,14 +315,14 @@ void CCampaignEditPanel::SetCampaign(CampaignData_t* campaign)
 			SetPageState(UNMOUNTED_CAMPAIGN);
 		}
 
-		if (Q_stricmp(GetSetCampaign()->name, "undefined"))
-			m_pNameEntry->SetText(GetSetCampaign()->name);
+		if (Q_stricmp(db->GetCampaign(campaign)->name, "undefined"))
+			m_pNameEntry->SetText(db->GetCampaign(campaign)->name);
 
-		if (GetSetCampaign()->game != -1)
-			m_pGameSelectBox->ActivateItem(GetSetCampaign()->game);
+		if (db->GetCampaign(campaign)->game != -1)
+			m_pGameSelectBox->ActivateItem(db->GetCampaign(campaign)->game);
 
-		if (GetSetCampaign()->startingmap != -1)
-			m_iPrevStartMap = GetSetCampaign()->startingmap;
+		if (db->GetCampaign(campaign)->startingmap != -1)
+			m_iPrevStartMap = db->GetCampaign(campaign)->startingmap;
 
 		m_pNameEntry->GetText(m_pPrevName, 512);
 		m_iPrevGame = m_pGameSelectBox->GetActiveItem();
@@ -388,10 +384,12 @@ void CCampaignEditPanel::OnCommand(const char* pcCommand)
 //-----------------------------------------------------------------------------
 void CCampaignEditPanel::SetStartingMap(int selecteditemID)
 {
+	CCampaignDatabase* db = GetCampaignDatabase();
 	m_iPrevStartMap = selecteditemID;
-	GetSetCampaign()->startingmap = selecteditemID;
 
-	GetCampaignDatabase()->WriteListToScript();
+	db->GetCampaign(m_Campaign)->startingmap = selecteditemID;
+	db->WriteListToScript();
+
 	RefreshMapList();
 }
 //-----------------------------------------------------------------------------
@@ -461,38 +459,40 @@ void CCampaignEditPanel::RefreshMapList( void )
 //-----------------------------------------------------------------------------
 void CCampaignEditPanel::CreateMapList( void )
 {
+	CCampaignDatabase* db = GetCampaignDatabase();
+
 	m_MapListPanelTitle->SetText("#hl2r_editpanel_maplist_title_1");
 	m_MapListPanelTitleMapname->SetText("");
 
-	for (int i = 0; i < GetSetCampaign()->maplist.Count(); i++ )
+	for (int i = 0; i < db->GetCampaign(m_Campaign)->maplist.Count(); i++ )
 	{
 		KeyValues *pMap = new KeyValues("map");
 		if ( !pMap )
 			continue;
 
 		char szMapLabel[CAMPAIGN_NAME_LENGTH];
-		if ( GetSetCampaign()->startingmap == i )
+		if ( db->GetCampaign(m_Campaign)->startingmap == i )
 		{
 			char szStartingMapString[64];
 			wchar_t *pLocalizedStartingMapLabel = g_pVGuiLocalize->Find("hl2r_startmap_label");
 
 			g_pVGuiLocalize->ConvertUnicodeToANSI( pLocalizedStartingMapLabel, szStartingMapString, sizeof(szStartingMapString) );
-			V_sprintf_safe( szMapLabel, "%s%s", GetSetCampaign()->maplist[i], szStartingMapString);
+			V_sprintf_safe( szMapLabel, "%s%s", db->GetCampaign(m_Campaign)->maplist[i], szStartingMapString);
 
 			m_MapListPanelTitle->SetText("#hl2r_editpanel_maplist_title_2");
 			m_MapListPanelTitle->SetFgColor(m_TextEnabledColor);
 
-			m_MapListPanelTitleMapname->SetText(GetSetCampaign()->maplist[i]);
+			m_MapListPanelTitleMapname->SetText(db->GetCampaign(m_Campaign)->maplist[i]);
 		}
 		else
 		{
-			V_sprintf_safe( szMapLabel, "%s", GetSetCampaign()->maplist[i]);
+			V_sprintf_safe( szMapLabel, "%s", db->GetCampaign(m_Campaign)->maplist[i]);
 		}
 
 		pMap->SetString("map", szMapLabel);
 		int itemID = m_MapListPanel->AddItem(0, pMap );
 
-		if ( GetSetCampaign()->startingmap == i )
+		if ( db->GetCampaign(m_Campaign)->startingmap == i )
 			m_MapListPanel->SetItemFgColor(itemID, COLOR_BLUE);
 	}
 
@@ -502,6 +502,7 @@ void CCampaignEditPanel::CreateMapList( void )
 //-----------------------------------------------------------------------------
 void CCampaignEditPanel::SetPageState( EPageState state)
 {
+	CCampaignDatabase *db = GetCampaignDatabase();
 	bool bEditControlsVisible = false;
 	if ( state == NO_CAMPAIGN_SELECTED )
 	{
@@ -524,7 +525,7 @@ void CCampaignEditPanel::SetPageState( EPageState state)
 		m_EditBoxBackground->SetVisible(false);
 
 		char szId[CAMPAIGN_ID_LENGTH + 2];
-		V_sprintf_safe( szId, "(%s)", GetSetCampaign()->id);
+		V_sprintf_safe( szId, "(%s)", db->GetCampaign(m_Campaign)->id);
 		m_CampaignIDLabel->SetText(szId);
 	}
 
@@ -546,6 +547,7 @@ void CCampaignEditPanel::CheckApplyButton( void )
 	char nameEntry[CAMPAIGN_NAME_LENGTH];
 	m_pNameEntry->GetText(nameEntry, CAMPAIGN_NAME_LENGTH);
 
+	CCampaignDatabase* db = GetCampaignDatabase();
 	if ( m_pGameSelectBox->GetActiveItem() == m_iPrevGame )
 	{
 		if ( !Q_stricmp(nameEntry, m_pPrevName) )
@@ -553,7 +555,7 @@ void CCampaignEditPanel::CheckApplyButton( void )
 	}
 	else
 	{
-		if ( GetSetCampaign()->mounted )
+		if ( db->GetCampaign(m_Campaign)->mounted )
 		{
 			m_ApplyButton->SetText("#hl2r_editpanel_applybutton_mounted_label");
 			m_ApplyButton->SetCommand("applychangesmounted");
@@ -569,13 +571,13 @@ bool CCampaignEditPanel::ApplyChanges( void )
 	char entrytext[CAMPAIGN_NAME_LENGTH];
 	m_pNameEntry->GetText(entrytext, CAMPAIGN_NAME_LENGTH);
 
-	CCampaignDatabase* database = GetCampaignDatabase();
-	for (int i = 0; i < database->GetCampaignCount(); i++)
+	CCampaignDatabase* db = GetCampaignDatabase();
+	for (int i = 0; i < db->GetCampaignCount(); i++)
 	{
-		if ( !Q_stricmp( database->GetCampaign(i)->id, GetSetCampaign()->id ) )
+		if ( !Q_stricmp( db->GetCampaign(i)->id, db->GetCampaign(m_Campaign)->id ) )
 			continue;
 
-		if ( !Q_stricmp( database->GetCampaign(i)->name, entrytext ) )
+		if ( !Q_stricmp( db->GetCampaign(i)->name, entrytext ) )
 		{
 			MessageBox *box = new MessageBox("#hl2r_warning_title", "#hl2r_editpanel_error_1", this);
 			box->DoModal();
@@ -584,11 +586,11 @@ bool CCampaignEditPanel::ApplyChanges( void )
 		}
 	}
 
-	V_strcpy(GetSetCampaign()->name, !stricmp(entrytext, "") ? "undefined" : entrytext);
-	GetSetCampaign()->game = m_pGameSelectBox->GetActiveItem();
+	V_strcpy(db->GetCampaign(m_Campaign)->name, !stricmp(entrytext, "") ? "undefined" : entrytext);
+	db->GetCampaign(m_Campaign)->game = m_pGameSelectBox->GetActiveItem();
 
-	database->SortCampaignList(database->GetSortType(), database->GetSortDir());
-	database->WriteListToScript();
+	db->SortCampaignList(db->GetSortType(), db->GetSortDir());
+	db->WriteListToScript();
 
 	return true;
 
@@ -611,5 +613,185 @@ public:
 
 	virtual void Activate();
 	virtual void OnClose();
+};
+
+
+// HACK: These 2 classes below should REALLY go in their own files.
+
+//-----------------------------------------------------------------------------
+// Purpose: An extension of SectionedListPanelHeader that allows individual columns to be
+// selected via togglebuttons that sends the currently selected column's index to a target panel.
+//-----------------------------------------------------------------------------
+class SelectableColumnHeader : public SectionedListPanelHeader
+{
+	DECLARE_CLASS_SIMPLE( SelectableColumnHeader, SectionedListPanelHeader );
+
+public:
+	SelectableColumnHeader(Panel* signaltarget, SectionedListPanel *parent, const char *name, int sectionID);
+
+	virtual void PerformLayout();
+	virtual void OnChildAdded(VPANEL child);
+
+	virtual void ApplySchemeSettings(IScheme *pScheme);
+	void OnCommand(const char* pcCommand);
+
+	// Get the currently selected column.
+	int		GetSelectedColumn( void );
+
+	// Set what column is initially selected on startup.
+	void	SetSelectedColumn( int iColumn, bool bDepressed );
+
+private:
+	CUtlVector<ToggleButton *>	m_ColumnButtons;
+
+	int		m_iSelectedColumn;
+	bool	m_iSelectedColumnDepressed;
+
+	Color	m_SelectedColor;
+	Color	m_UnselectedColor;
+};
+
+
+SelectableColumnHeader::SelectableColumnHeader(Panel* signaltarget, SectionedListPanel *parent, const char *name, int sectionID) : SectionedListPanelHeader(parent, name, sectionID)
+{
+	m_iSelectedColumn = -1;
+	m_iSelectedColumnDepressed = true;
+
+	AddActionSignalTarget(signaltarget);
+}
+
+// Just overriding this from the baseclass cause it throws errors: (professional programming practices)
+void SelectableColumnHeader::OnChildAdded(VPANEL child)
+{
+//	Assert( !_flags.IsFlagSet( IN_PERFORM_LAYOUT ) );
+}
+
+void SelectableColumnHeader::PerformLayout() 
+{
+	int colCount = m_pListPanel->GetColumnCountBySection(m_iSectionID);
+
+	int xpos = 0;
+	for (int i = 0; i < colCount; i++)
+	{
+		int columnWidth = m_pListPanel->GetColumnWidthBySection(m_iSectionID, i);
+
+		int x, y, wide, tall;
+		GetBounds(x, y, wide, tall);
+
+		// Create a button for this column:
+		char szColumnLabel[64];
+		const wchar_t *pColumnLabel = m_pListPanel->GetColumnTextBySection(m_iSectionID, i);
+		g_pVGuiLocalize->ConvertUnicodeToANSI(pColumnLabel, szColumnLabel, sizeof(szColumnLabel));
+
+		char szButtonName[32];
+		V_sprintf_safe(szButtonName, "columnbutton_%d", i);
+
+		ToggleButton *pColumnButton = new ToggleButton(this, szButtonName, szColumnLabel);
+		pColumnButton->AddActionSignalTarget(this->GetVPanel());
+		pColumnButton->SetCommand(m_pListPanel->GetColumnNameBySection(m_iSectionID, i));
+		pColumnButton->SetSize(columnWidth, tall);
+		pColumnButton->SetPos(xpos, 0);
+
+		// SetFgColor doesn't want work on these buttons.
+	//	pColumnButton->SetFgColor(m_UnselectedColor);
+
+		if ( m_iSelectedColumn == i )
+		{
+			pColumnButton->SetSelected(true);
+
+			if ( m_iSelectedColumnDepressed )
+				pColumnButton->ForceDepressed(true);
+
+		//	pColumnButton->SetFgColor(m_SelectedColor);
+		}
+
+		m_ColumnButtons.AddToTail(pColumnButton);
+		xpos += columnWidth;
+	}
+};
+
+
+void SelectableColumnHeader::ApplySchemeSettings(IScheme *pScheme)
+{
+	BaseClass::ApplySchemeSettings(pScheme);
+	SetFont(pScheme->GetFont("Default", IsProportional()));
+
+	m_SelectedColor = GetSchemeColor("Label.TextDullColor", pScheme);
+	m_UnselectedColor = GetSchemeColor("Label.TextBrightColor", pScheme);
+}
+
+void SelectableColumnHeader::OnCommand(const char* pcCommand)
+{
+	// Only allow 1 column to be selected at a time.
+	int colCount = m_pListPanel->GetColumnCountBySection(m_iSectionID);
+	for (int i = 0; i < colCount; i++ )
+	{
+		const char *pColumnName = m_pListPanel->GetColumnNameBySection(m_iSectionID, i);
+		if ( !stricmp(pcCommand, pColumnName) )
+		{
+			m_iSelectedColumn = i;
+			PostActionSignal(new KeyValues("ColumnSelected", "column", m_iSelectedColumn));
+		}
+		else
+		{
+			m_ColumnButtons[i]->SetSelected(false);
+			m_ColumnButtons[i]->ForceDepressed(false);
+		}
+	}
+
+	BaseClass::OnCommand(pcCommand);
+}
+
+int SelectableColumnHeader::GetSelectedColumn( void )
+{
+	return m_iSelectedColumn;
+}
+
+void SelectableColumnHeader::SetSelectedColumn( int iColumn, bool bDepressed )
+{
+	m_iSelectedColumn = iColumn;
+	m_iSelectedColumnDepressed = bDepressed;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Creates a disclaimer box before executing a command.
+//-----------------------------------------------------------------------------
+class CommandDisclaimerBox : public QueryBox
+{
+	DECLARE_CLASS_SIMPLE( CommandDisclaimerBox, QueryBox );
+
+public:
+	CommandDisclaimerBox(const char *title, const char *queryText, const char *okcommand, const char *disableconvar, Panel *parent = NULL ) : QueryBox(title, queryText, parent)
+	{
+		V_strcpy(szOkCommand, okcommand);
+		V_strcpy(szDisableConvar, disableconvar);
+	}
+	CommandDisclaimerBox(const wchar_t *wszTitle, const wchar_t *wszQueryText, const char *okcommand, const char *disableconvar, Panel *parent = NULL) : QueryBox(wszTitle, wszQueryText, parent)
+	{
+		V_strcpy(szOkCommand, okcommand);
+		V_strcpy(szDisableConvar, disableconvar);
+	}
+
+public: 
+	void OnCommand(const char *command)
+	{
+		if (!stricmp(command, "OnOk") )
+		{
+			engine->ClientCmd(szOkCommand);
+		}
+		if (!stricmp(command, "OnCancel") )
+		{
+			ConVarRef var(szDisableConvar);
+			var.SetValue( !var.GetBool() );
+
+			engine->ClientCmd(szOkCommand);
+		}
+	
+		BaseClass::OnCommand(command);
+	}
+
+private:
+	char szDisableConvar[32];
+	char szOkCommand[32];
 };
 #endif

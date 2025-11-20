@@ -99,6 +99,8 @@ ConVar hl2_walkspeed( "hl2_walkspeed", "150" );
 ConVar hl2_normspeed( "hl2_normspeed", "190" );
 ConVar hl2_sprintspeed( "hl2_sprintspeed", "320" );
 
+ConVar hl2_flinch_scale( "hl2_flinch_scale", "0" );
+
 ConVar hl2_darkness_flashlight_factor ( "hl2_darkness_flashlight_factor", "1" );
 
 #ifdef HL2MP
@@ -2454,6 +2456,20 @@ int	CHL2_Player::OnTakeDamage( const CTakeDamageInfo &info )
 	}
 
 	gamestats->Event_PlayerDamage( this, info );
+
+	// Player flinching!
+	float flPunch = -2;
+
+	if ( info.GetAttacker()->MyNPCPointer() != NULL )
+	{
+		float flDamageScale = RemapValClamped( info.GetDamage(), 0.0f, 25.0f, 0.0f, 5.0f ); 
+		float flZoomScale = 1.0f - (( GetDefaultFOV() - GetFOV() ) * 0.01f);
+
+		flPunch = -hl2_flinch_scale.GetFloat() * flDamageScale * flZoomScale; 
+	}
+
+	m_Local.m_vecPunchAngle.SetX( flPunch );
+	m_Local.m_vecPunchAngle.SetY( random->RandomFloat( -flPunch, flPunch ) / 10 );
 
 	return BaseClass::OnTakeDamage( playerDamage );
 }

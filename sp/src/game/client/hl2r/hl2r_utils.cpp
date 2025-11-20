@@ -53,6 +53,8 @@ bool RemoveFilesInDirectory( const char *pDir, const char *pSearch )
 		}
 	}
 
+	RemoveDirectory(pDir);
+
 	g_pFullFileSystem->FindClose( fh );
 	return bSuccess;
 }
@@ -277,4 +279,24 @@ const char *GetSteamAppsDir(void)
 
 	V_StrSlice(steamappsdir, 0, iSliceChar, steamappsdir, MAX_PATH );
 	return steamappsdir;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose:
+//-----------------------------------------------------------------------------
+char* ReadFileIntoBuffer( const char *pFilePath, int &len )
+{
+	FileHandle_t fh = g_pFullFileSystem->Open(pFilePath, "rb");
+	if ( fh == FILESYSTEM_INVALID_HANDLE )
+		return NULL;
+
+	// read file into memory
+	int size = g_pFullFileSystem->Size(fh);
+	char* buf = new char[size + 1];
+	g_pFullFileSystem->Read(buf, size, fh);
+	buf[size] = 0;
+	g_pFullFileSystem->Close(fh);
+
+	len += size+1;
+	return buf;
 }

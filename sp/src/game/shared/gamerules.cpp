@@ -330,29 +330,19 @@ void CGameRules::RefreshSkillData ( bool forceUpdate )
 	}
 	
 	// Hl2r-specific .cfg's:
-	Q_snprintf( szExec, sizeof(szExec), "exec hl2r_skill.cfg\n" );
-		
-	engine->ServerCommand( szExec );
-	engine->ServerExecute();
-		
-//	Q_snprintf( szExec, sizeof(szExec), "exec hl2r_skill_episodic.cfg\n" );
-		
-//	engine->ServerCommand( szExec );
-//	engine->ServerExecute();
-	
 	if ( GetSkillLevel() == 3 )
 	{
-		Q_snprintf( szExec, sizeof(szExec), "exec skill_3.cfg\n" );
+		Q_snprintf( szExec, sizeof(szExec), "exec skill_manifest_3.cfg\n" );
 	}
 		
 	if ( GetSkillLevel() == 2 )
 	{
-		Q_snprintf(szExec, sizeof(szExec), "exec skill_2.cfg\n");
+		Q_snprintf(szExec, sizeof(szExec), "exec skill_manifest_2.cfg\n");
 	}
 		
 	if ( GetSkillLevel() == 1 )
 	{
-		Q_snprintf( szExec, sizeof(szExec), "exec skill_1.cfg\n" );
+		Q_snprintf( szExec, sizeof(szExec), "exec skill_manifest_1.cfg\n" );
 	}
 
 	engine->ServerCommand( szExec );

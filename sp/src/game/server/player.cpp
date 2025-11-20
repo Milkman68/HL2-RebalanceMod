@@ -126,7 +126,7 @@ extern ConVar *sv_maxreplay;
 
 extern CServerGameDLL g_ServerGameDLL;
 
-ConVar	hl2_dmg_flinch_scale( "hl2_dmg_flinch_scale", "1", FCVAR_REPLICATED );
+//ConVar	hl2_dmg_flinch_scale( "hl2_dmg_flinch_scale", "1", FCVAR_REPLICATED );
 
 // TIME BASED DAMAGE AMOUNT
 // tweak these values based on gameplay feedback:
@@ -1012,9 +1012,7 @@ void CBasePlayer::DamageEffect(float flDamage, int fDamageType)
 	
 	else if ( fDamageType & DMG_BUCKSHOT ) //bookmark
 	{	
-	    this->ViewPunch( QAngle( -flDamage * 0.2, random->RandomInt( 1, 1 ), 0 ) );
 	    EmitSound( "Flesh.BulletImpact" );
-	
 	}
 }
 
@@ -1354,6 +1352,8 @@ int CBasePlayer::OnTakeDamage( const CTakeDamageInfo &inputInfo )
 		}
 	}
 
+	// NOTE: Moved flinch code to hl2_player.cpp!
+	/*
 	float flPunch = -2;
 	if ( info.GetAttacker()->MyNPCPointer() != NULL )
 	{
@@ -1365,6 +1365,7 @@ int CBasePlayer::OnTakeDamage( const CTakeDamageInfo &inputInfo )
 
 	m_Local.m_vecPunchAngle.SetX( flPunch );
 	m_Local.m_vecPunchAngle.SetY( random->RandomFloat( -flPunch, flPunch ) / 10 );
+	*/
 
 	if (fTookDamage && !ftrivial && fmajor && flHealthPrev >= 75) 
 	{

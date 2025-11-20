@@ -464,16 +464,11 @@ int CAI_TacticalServices::FindCoverNode(const Vector &vNearPos, const Vector &vT
 				if ( GetNetwork()->GetNode(newID)->GetType() != NODE_CLIMB && !GetNetwork()->GetNode(newID)->IsLocked() )
 				{
 					Vector vecNewNodeOrigin = GetNetwork()->GetNode(newID)->GetPosition(GetHullType());
-					float flPathDist = flAccumulatedDist + ( vecNewNodeOrigin - nodeOrigin ).Length();
-
-					trace_t	tr;
-					AI_TraceLOS( vecNewNodeOrigin + GetOuter()->GetViewOffset(), vThreatEyePos, NULL, &tr );
-
-					float flDistToEnemy = ( vecNewNodeOrigin - vThreatPos ).Length();
-					if ( flDistToEnemy > flDesiredDist * 0.5f || tr.fraction != 1.0f )
+					if ( GetOuter()->IsCoverLinkUsable( nodeOrigin, vecNewNodeOrigin, vThreatPos, vThreatEyePos, flDesiredDist ) )
+					{
+						float flPathDist = flAccumulatedDist + ( vecNewNodeOrigin - nodeOrigin ).Length();
 						list.Insert( AI_NearNode_t(newID, flPathDist) );
-				/*	else
-						NDebugOverlay::Box( vecNewNodeOrigin, GetOuter()->GetHullMins(), GetOuter()->GetHullMaxs(), 255,0,0, true, 10 );*/
+					}
 				}
 
 				// mark visited
@@ -733,16 +728,11 @@ int CAI_TacticalServices::FindLosNode( const Vector &vThreatPos, const Vector &v
 				if ( GetNetwork()->GetNode(newID)->GetType() != NODE_CLIMB && !GetNetwork()->GetNode(newID)->IsLocked() )
 				{
 					Vector vecNewNodeOrigin = GetNetwork()->GetNode(newID)->GetPosition(GetHullType());
-					float flPathDist = flAccumulatedDist + ( vecNewNodeOrigin - nodeOrigin ).Length();
-
-					trace_t	tr;
-					AI_TraceLOS( vecNewNodeOrigin + GetOuter()->GetViewOffset(), vThreatEyePos, NULL, &tr );
-
-					float flDistToEnemy = ( vecNewNodeOrigin - vThreatPos ).Length();
-					if ( flDistToEnemy > flDesiredDist * 0.5f || tr.fraction == 1.0f )
+					if ( GetOuter()->IsLOSLinkUsable( nodeOrigin, vecNewNodeOrigin, vThreatPos, vThreatEyePos, flDesiredDist ) )
+					{
+						float flPathDist = flAccumulatedDist + ( vecNewNodeOrigin - nodeOrigin ).Length();
 						list.Insert( AI_NearNode_t(newID, flPathDist) );
-				/*	else
-						NDebugOverlay::Box( vecNewNodeOrigin, GetOuter()->GetHullMins(), GetOuter()->GetHullMaxs(), 255,0,0, true, 10 );*/
+					}
 				}
 
 				// mark visited
@@ -753,10 +743,10 @@ int CAI_TacticalServices::FindLosNode( const Vector &vThreatPos, const Vector &v
 	
 	if ( iIdealNode != NULL )
 	{
-	//	Vector nodeOrigin = GetNetwork()->GetNode(iIdealNode)->GetPosition(GetHullType());
-	//	NDebugOverlay::Box( nodeOrigin, GetOuter()->GetHullMins(), GetOuter()->GetHullMaxs(), 0,255,0, true, 10 );
+	/*	Vector nodeOrigin = GetNetwork()->GetNode(iIdealNode)->GetPosition(GetHullType());
+		NDebugOverlay::Box( nodeOrigin, GetOuter()->GetHullMins(), GetOuter()->GetHullMaxs(), 0,255,0, true, 10 );
 	
-	//	DevMsg("Score is: %f\n", flScore );
+		DevMsg("Score is: %f\n", flScore );*/
 	
 		bool bThreatReachable = GetOuter()->GetPathDistanceToPoint( GetAbsOrigin(), vThreatPos ) != NULL;
 		if ( !bThreatReachable || flScore > 0.25 || flDesiredDist <= 0.0f )

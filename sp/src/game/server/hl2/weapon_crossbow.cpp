@@ -55,7 +55,7 @@ void TE_StickyBolt( IRecipientFilter& filter, float delay,	Vector vecDirection, 
 #define	BOLT_SKIN_NORMAL	0
 #define BOLT_SKIN_GLOW		1
 
-#define CHARGE_TIME 1.5f
+#define CHARGE_TIME 1.0f
 
 //-----------------------------------------------------------------------------
 // Crossbow Bolt
@@ -879,7 +879,7 @@ void CWeaponCrossbow::ToggleZoom( void )
 	}
 	else
 	{
-		if ( pPlayer->SetFOV( this, 20, 0.1f ) )
+		if ( pPlayer->SetFOV( this, pPlayer->GetDefaultFOV() - 60, 0.1f ) )
 		{
 			m_bInZoom = true;
 		}

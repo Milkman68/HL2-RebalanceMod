@@ -326,6 +326,8 @@ private:
 	bool IsJumpLegal(const Vector &startPos, const Vector &apex, const Vector &endPos) const;
 	bool MovementCost( int moveType, const Vector &vecStart, const Vector &vecEnd, float *pCost );
 
+	virtual bool		CanRangeAttackNotFacingEnemy( void ) { return true; };
+
 private:
 	enum
 	{

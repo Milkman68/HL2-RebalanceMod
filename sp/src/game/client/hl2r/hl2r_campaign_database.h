@@ -7,6 +7,7 @@
 #include "tier0/icommandline.h"
 
 #define CAMPAIGN_HANDLE short int
+#define CAMPAIGN_HANDLE_INVALID -1
 
 // Campaign accessor macros:
 #define GetCampaign(index) CampaignList()->Element(index)
@@ -32,8 +33,8 @@
 #define CAMPAIGN_BLACKLIST_FILE			"campaign_launcher\\file_blacklist.txt"
 
 // Sound files:
-#define CAMPAIGN_DEFAULT_SOUNDSCRIPTS_FILE	"campaign_launcher\\default_soundscripts.txt"	// Contains a list of all non-custom soundscripts in hl2 and its episodes.
-#define DEFAULT_SOUNDSCRIPT_FILE			"scripts\\level_sounds_e3_bugbait.txt"			// Our own mod's soundscript to use as a template to output to our override file.
+#define CAMPAIGN_DEFAULT_SOUNDSCRIPTS_FILE	"scripts\\default_soundscripts.txt"		// Contains a list of all non-custom soundscripts in hl2 and its episodes.
+#define DEFAULT_SOUNDSCRIPT_FILE			"scripts\\default_sounds.txt"			// Our own mod's soundscript to use as a template to output to our override file.
 
 // A file that overrides our mod's soundscript to support both custom-campaign sounds and mods that replace game_sounds_manifest.
 #define CAMPAIGN_SOUND_OVERRIDE_FILE	"campaign_launcher\\content_enabled\\content\\scripts\\level_sounds_e3_bugbait.txt"	
@@ -43,6 +44,8 @@
 #define CAMPAIGN_FILESIZE_LENGTH	5	// Allows a filesize up to 99999 MB.
 #define CAMPAIGN_MAP_INDEX_LENGTH	3	// Allows up to 999 maps in a single campaign.
 #define CAMPAIGN_MAX_MAP_NAME		128
+
+#define MAX_SOUNDSCRIPT_LENGTH		262144 // 2^18 Characters
 
 //-----------------------------------------------------------------------------
 // Campaign Database:
@@ -197,8 +200,8 @@ private:
 	void	MoveSaveFiles( EMoveSaveFileType movetype, const char *pCampaignID = NULL );
 
 // Sounds:
-	void	HandleCustomSoundScripts( const char *pCampaignID );
-	void	MountSoundScripts( CUtlVector< const char *> *pFilePaths );
+	void		HandleCustomSoundScripts( const char *pCampaignID );
+	void		MountSoundScripts( CUtlVector< const char *> *pFilePaths );
 
 // Misc content:
 	void	MountLauncherContent( bool bMount );

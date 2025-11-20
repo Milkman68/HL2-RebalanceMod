@@ -172,6 +172,7 @@ public:
 	virtual float		GetDoorOpenSpeedMult( void );
 	virtual int			GetDoorOpenStyle( void );
 	virtual float		GetDoorOpenActivityDelay( void ) { return 0.4; };
+	virtual bool		CanRangeAttackNotFacingEnemy( void ) { return true; };
 
 
 protected:

@@ -153,6 +153,8 @@ ConVar	ai_use_think_optimizations( "ai_use_think_optimizations", "0" );
 
 ConVar	ai_test_moveprobe_ignoresmall( "ai_test_moveprobe_ignoresmall", "0" );
 
+ConVar	hl2r_ai_debug_los_links( "hl2r_ai_debug_los_links", "0" );
+
 #ifdef HL2_EPISODIC
 extern ConVar ai_vehicle_avoidance;
 #endif // HL2_EPISODIC
@@ -4292,14 +4294,22 @@ void CAI_BaseNPC::GatherAttackConditions( CBaseEntity *pTarget, float flDist )
 	{
 		AI_PROFILE_SCOPE( CAI_BaseNPC_GatherAttackConditions_WeaponRangeAttack1Condition );
 
-		float flRangeDist = flDist;
-		if ( HasSpawnFlags(SF_NPC_LONG_RANGE) )
-			flRangeDist = 128; // Approx an average value most weapons work at.
-
-		condition = GetActiveWeapon()->WeaponRangeAttack1Condition(flDot, flRangeDist);
+		condition = GetActiveWeapon()->WeaponRangeAttack1Condition(flDot, flDist);
 
 		if ( condition == COND_NOT_FACING_ATTACK && FInAimCone( targetPos ) )
 			DevMsg( "Warning: COND_NOT_FACING_ATTACK set but FInAimCone is true\n" );
+
+		if ( CanRangeAttackNotFacingEnemy() )
+		{
+			if ( condition == COND_NOT_FACING_ATTACK || !FInAimCone( targetPos ) )
+				condition = COND_CAN_RANGE_ATTACK1;
+		}
+
+		if ( HasSpawnFlags(SF_NPC_LONG_RANGE) )
+		{
+			if ( condition == COND_TOO_FAR_TO_ATTACK )
+				condition = COND_CAN_RANGE_ATTACK1;
+		}
 
 		if (condition != COND_CAN_RANGE_ATTACK1 || bWeaponHasLOS)
 		{
@@ -12791,7 +12801,7 @@ float CAI_BaseNPC::GetLOSPositionScore( const Vector &vecThreat, const Vector &v
 	flNodeScore += ( flIdealDist - fabsf(flCoverToThreat - flIdealDist) ) / flIdealDist;
 
 	// Bias out nodes that are farther away from us than the enemy.
-	//flNodeScore += 1.0 - ( flCoverToThreat / flCoverToThis );
+	flNodeScore += 1.0 - ( flCoverToThreat / flCoverToThis );
 
 	// Give greater score to nodes that have highground over our enemy.
 	flNodeScore += (vecPos.z - vecThreat.z) * 0.001;
@@ -12825,6 +12835,82 @@ float CAI_BaseNPC::GetLOSPositionScore( const Vector &vecThreat, const Vector &v
 	}
 	
 	return flNodeScore;
+}
+
+//-----------------------------------------------------------------------------
+
+bool CAI_BaseNPC::IsCoverLinkUsable( const Vector &vecStart, const Vector &vecEnd, const Vector &vecThreat, const Vector &vecThreatEyePos, float flIdealDist )
+{
+	float flDistToEnemy = (vecEnd - vecThreat).Length();
+	if ( flIdealDist <= 0.0f )
+	{
+		// Old behavior: (null ideal distance set)
+		float flDist = (GetAbsOrigin() - vecEnd).LengthSqr();
+		if ( flDist < flDistToEnemy * 1.5 )
+			return true;
+
+		return false;
+	}
+
+	trace_t	tr;
+	AI_TraceLOS(vecEnd + GetViewOffset(), vecThreatEyePos, NULL, &tr);
+
+	// Filter out links that are near our threat and visible.
+	if (flDistToEnemy > flIdealDist * 0.5f || tr.fraction != 1.0f)
+		return true;
+
+	return false;
+}
+
+//-----------------------------------------------------------------------------
+#define DEBUG_LOS_LINK(pos, r, g, b) if ( hl2r_ai_debug_los_links.GetBool() ) NDebugOverlay::Box( pos, GetHullMins(), GetHullMaxs(), r, g, b, true, 10.0 )
+
+bool CAI_BaseNPC::IsLOSLinkUsable( const Vector &vecStart, const Vector &vecEnd, const Vector &vecThreat, const Vector &vecThreatEyePos, float flIdealDist )
+{
+	// Old behavior: (null ideal distance set)
+	if ( flIdealDist <= 0.0f )
+		return true;
+		
+	trace_t	tr;
+	AI_TraceLOS(vecEnd + GetViewOffset(), vecThreatEyePos, NULL, &tr);
+
+	// Filter out links that are near our threat and visible.
+	float flDistToEnemy = (vecEnd - vecThreat).Length();
+	if (flDistToEnemy < flIdealDist * 0.5f && tr.fraction == 1.0f)
+	{
+		DEBUG_LOS_LINK(vecEnd, 255, 255, 0 );
+		return false;
+	}
+
+	CBaseCombatCharacter *pEnemyCombatCharacter = GetEnemyCombatCharacterPointer();
+	if ( pEnemyCombatCharacter )
+	{
+		Vector nodeorigin = ( vecThreatEyePos - vecEnd );
+		nodeorigin.z = 0;
+		VectorNormalize( nodeorigin );
+
+		Vector facingDir = pEnemyCombatCharacter->EyeDirection2D();
+ 		float flDot = DotProduct( nodeorigin, facingDir );
+
+		if ( flDot < -0.98 )
+		{
+			DEBUG_LOS_LINK(vecEnd, 255, 0, 0 );
+			return false;
+		}
+
+		nodeorigin = ( vecThreatEyePos - vecStart );
+		nodeorigin.z = 0;
+		VectorNormalize( nodeorigin );
+
+ 		flDot = DotProduct( nodeorigin, facingDir );
+		if ( flDot < -0.98 )
+		{
+			DEBUG_LOS_LINK(vecEnd, 255, 0, 255 );
+			return false;
+		}
+	}
+
+	return true;
 }
 
 //-----------------------------------------------------------------------------

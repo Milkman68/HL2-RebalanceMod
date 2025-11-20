@@ -911,7 +911,7 @@ void CCampaignDatabase::SetCampaignAsMounted( const char *pCampaignID )
 	MountLauncherContent(true);
 
 	// Mount any custom sounds this mod has.
-//	HandleCustomSoundScripts(pCampaignID);
+	HandleCustomSoundScripts(pCampaignID);
 
 	GetCampaignFromID(pCampaignID)->mounted = true;
 	WriteListToScript();
@@ -1025,7 +1025,13 @@ void CCampaignDatabase::HandleCustomSoundScripts( const char *pCampaignID )
 			continue;
 
 		bFoundScripts = true;
-		pNewSoundScriptList->AddToTail(szFilePath);
+
+		int len = V_strlen( szFilePath );
+		char *out = new char[ len + 1 ];
+		V_memcpy( out, szFilePath, len );
+		out[ len ] = 0;
+
+		pNewSoundScriptList->AddToTail(out);
 	}
 
 	if ( bFoundScripts )
@@ -1039,27 +1045,18 @@ void CCampaignDatabase::HandleCustomSoundScripts( const char *pCampaignID )
 //-----------------------------------------------------------------------------
 void CCampaignDatabase::MountSoundScripts( CUtlVector< const char *> *pSoundScripts )
 {
-	// This is not the manifest, but a text file that contains a copy of our mod's
-	// custom sounds contained in the vpk.
-	KeyValues *pSoundOverrideTemplate = new KeyValues("defaultmodsounds");
-	if ( !g_pFullFileSystem->LoadKeyValues(*pSoundOverrideTemplate, g_pFullFileSystem->TYPE_SOUNDEMITTER, DEFAULT_SOUNDSCRIPT_FILE, "MOD" ) )
-		return;
+	char szOutput[MAX_SOUNDSCRIPT_LENGTH];
+	int len = 0;
+
+	char *defaultscript = ReadFileIntoBuffer( DEFAULT_SOUNDSCRIPT_FILE, len );
+	Q_strcpy(szOutput, defaultscript);
 
 	// Iterate through all this campaign's custom-soundscripts.
-/*	for ( int i = 0; i < pSoundScripts->Count(); i++ )
+	for ( int i = 0; i < pSoundScripts->Count(); i++ )
 	{
-		KeyValues *pCampaignSoundScript = new KeyValues( "campaignsoundscript" );
-		if ( !pCampaignSoundScript->LoadFromFile( filesystem, pSoundScripts->Element(i), "MOD" ) )
-			continue;
-
-		// Add every sound in the soundscript to our template.
-		for ( KeyValues *pSound = pCampaignSoundScript->GetFirstSubKey(); pSound; pSound = pSound->GetNextKey() )
-			pSoundOverrideTemplate->SetNextKey(pSound);
+		char *soundscript = ReadFileIntoBuffer( pSoundScripts->Element(i), len );
+		Q_snprintf( szOutput, sizeof(szOutput), "%s\n%s", szOutput, soundscript);
 	}
-	*/
-	// Output to our override file.
-	CUtlBuffer buf( 0, 0, CUtlBuffer::TEXT_BUFFER );
-	pSoundOverrideTemplate->RecursiveSaveToFile( buf, 0 );
 
 	FileHandle_t fh;
 	fh = g_pFullFileSystem->Open( CAMPAIGN_SOUND_OVERRIDE_FILE, "wb" );
@@ -1067,9 +1064,10 @@ void CCampaignDatabase::MountSoundScripts( CUtlVector< const char *> *pSoundScri
 	if ( fh == FILESYSTEM_INVALID_HANDLE )
 		return;
 
-	g_pFullFileSystem->Write( buf.Base(), buf.TellPut(), fh );
+	g_pFullFileSystem->Write( szOutput, len + 1, fh );
 	g_pFullFileSystem->Close( fh );
 }
+
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------

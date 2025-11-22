@@ -8,6 +8,8 @@ $Macro SRCDIR		"..\.."
 $Macro GAMENAME 	"episodic" [!$SOURCESDK]
 $Macro GAMENAME 	"mod_episodic" [$SOURCESDK]
 
+$Macro OUTBINDIR 	"C:\Program Files (x86)\Steam\steamapps\sourcemods\hl2_rebalance\bin\bin_episodic\."
+
 $Include "$SRCDIR\game\server\server_base.vpc"
 
 $Configuration

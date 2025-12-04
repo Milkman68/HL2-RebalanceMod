@@ -1233,6 +1233,15 @@ void CPropCombineBall::OnHitEntity( CBaseEntity *pHitEntity, float flSpeed, int 
 	CNPC_Combine *pCombine = dynamic_cast<CNPC_Combine *>(pHitEntity);
 	if ( pCombine && pCombine->GetArmorCharge() > 0 )
 	{
+		trace_t	tr;
+		UTIL_TraceLine( WorldSpaceCenter(), pHitEntity->BodyTarget( WorldSpaceCenter() ), MASK_SOLID, this, COLLISION_GROUP_NONE, &tr );
+
+		CTakeDamageInfo info(this, this, 10000.0, DMG_CRUSH);
+		pHitEntity->DispatchTraceAttack(info, GetAbsVelocity().Normalized(), &tr);
+		ApplyMultiDamage();
+
+		pCombine->NPCVelocityImpulse( GetAbsVelocity().Normalized(), 3.0f );
+
 		DoExplosion();
 		return;
 	}
@@ -1300,8 +1309,12 @@ void CPropCombineBall::OnHitEntity( CBaseEntity *pHitEntity, float flSpeed, int 
 					// Since we might've not collided with this entity, we still need to damage it.
 					if ( bIsRadialCollision )
 					{
-						CTakeDamageInfo radiusinfo(this, pHitEntity, GetAbsVelocity() * 1000, pHitEntity->WorldSpaceCenter(), 1000, DMG_CRUSH);
-						pHitEntity->TakeDamage(radiusinfo);
+						trace_t	tr;
+						UTIL_TraceLine( WorldSpaceCenter(), pHitEntity->BodyTarget( WorldSpaceCenter() ), MASK_SOLID, this, COLLISION_GROUP_NONE, &tr );
+
+						CTakeDamageInfo info(this, this, 10000.0, DMG_CRUSH);
+						pHitEntity->DispatchTraceAttack(info, GetAbsVelocity().Normalized(), &tr);
+						ApplyMultiDamage();
 					}
 
 					if ( pHitEntity->ClassMatches( "npc_hunter" ) )
@@ -1776,10 +1789,10 @@ CAI_BaseNPC *CPropCombineBall::FindNearestNPC( void )
 				continue;	
 			
 			// Disregard entities of the same class
-			if( pNPC->m_iClassname == GetOwnerEntity()->m_iClassname )
+			if( GetOwnerEntity() && pNPC->m_iClassname == GetOwnerEntity()->m_iClassname )
 				continue;
 			
-			if( pNPC == GetOwnerEntity() )
+			if( GetOwnerEntity() && pNPC == GetOwnerEntity() )
 				continue;
 			
 			float flDist = (GetAbsOrigin() - pNPC->GetAbsOrigin()).LengthSqr();

@@ -16,6 +16,9 @@
     <Filter Include="Source Files\HL2 DLL">
       <UniqueIdentifier>{3C43D38A-46AF-2183-A5E5-44383B1D2652}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\HL2 DLL\HL2R">
+      <UniqueIdentifier>{EF5702CA-08DE-03CD-470C-9F21C331FB61}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source Files\HL2 DLL\Unused">
       <UniqueIdentifier>{20D13233-B4FE-1001-0E2E-FD22C227892B}</UniqueIdentifier>
     </Filter>
@@ -1739,6 +1742,12 @@
     <ClInclude Include="hl2\weapon_stunstick.h">
       <Filter>Source Files\HL2 DLL</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\game\shared\hl2r\hl2r_campaign_database.h">
+      <Filter>Source Files\HL2 DLL\HL2R</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\game\shared\hl2r\hl2r_utils.h">
+      <Filter>Source Files\HL2 DLL\HL2R</Filter>
+    </ClInclude>
     <ClInclude Include="hl2\grenade_beam.h">
       <Filter>Source Files\HL2 DLL\Unused</Filter>
     </ClInclude>
@@ -3261,6 +3270,21 @@
     </ClCompile>
     <ClCompile Include="hl2\weapon_stunstick.cpp">
       <Filter>Source Files\HL2 DLL</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\game\shared\hl2r\hl2r_campaign_database.cpp">
+      <Filter>Source Files\HL2 DLL\HL2R</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\game\shared\hl2r\hl2r_utils.cpp">
+      <Filter>Source Files\HL2 DLL\HL2R</Filter>
+    </ClCompile>
+    <ClCompile Include="hl2r\weapon_combinesniper.cpp">
+      <Filter>Source Files\HL2 DLL\HL2R</Filter>
+    </ClCompile>
+    <ClCompile Include="hl2r\weapon_hmg.cpp">
+      <Filter>Source Files\HL2 DLL\HL2R</Filter>
+    </ClCompile>
+    <ClCompile Include="hl2r\weapon_pulsecannon.cpp">
+      <Filter>Source Files\HL2 DLL\HL2R</Filter>
     </ClCompile>
     <ClCompile Include="hl2\grenade_beam.cpp">
       <Filter>Source Files\HL2 DLL\Unused</Filter>

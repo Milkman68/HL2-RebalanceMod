@@ -291,6 +291,27 @@ $Project "Server (Episodic)"
 			$File	"hl2\func_bulletshield.h"
 			$File	"episodic\npc_puppet.cpp"
 
+			$Folder	"HL2R"
+			{
+				$File	"hl2r\weapon_hmg.cpp"
+				$File	"hl2r\weapon_pulsecannon.cpp"
+				$File	"hl2r\weapon_combinesniper.cpp"
+
+				$File	"$SRCDIR\game\shared\hl2r\hl2r_campaign_database.cpp"		\
+						"$SRCDIR\game\shared\hl2r\hl2r_utils.cpp"
+				{
+					$Configuration
+					{
+						$Compiler
+						{
+							$Create/UsePrecompiledHeader	"Not Using Precompiled Headers"
+						}
+					}
+				}
+
+				$File	"$SRCDIR\game\shared\hl2r\hl2r_campaign_database.h"
+				$File	"$SRCDIR\game\shared\hl2r\hl2r_utils.h"
+			}
 
 			$Folder	"unused"
 			{

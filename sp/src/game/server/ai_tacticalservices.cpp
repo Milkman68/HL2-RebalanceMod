@@ -417,7 +417,7 @@ int CAI_TacticalServices::FindCoverNode(const Vector &vNearPos, const Vector &vT
 					
 					if ( flDesiredDist > 0.0f )
 					{
-						float flNewScore = GetOuter()->GetCoverPositionScore( vThreatPos, nodeOrigin, flAccumulatedDist, flDesiredDist, bThreatReachable );
+						float flNewScore = GetOuter()->GetCoverPositionScore( vThreatPos, vThreatEyePos, nodeOrigin, flAccumulatedDist, flDesiredDist, bThreatReachable );
 						if ( flNewScore > flScore )
 						{
 							bWantCrouch = GetOuter()->ShouldForceCrouchCover();
@@ -668,7 +668,7 @@ int CAI_TacticalServices::FindLosNode( const Vector &vThreatPos, const Vector &v
 							{
 							//	NDebugOverlay::Box( nodeOrigin, Vector(5, 5, 5), -Vector(5, 5, 5), 255,0,0, true, 10 );
 								
-								float flNewScore = GetOuter()->GetLOSPositionScore( vThreatPos, nodeOrigin, flAccumulatedDist, flDesiredDist );
+								float flNewScore = GetOuter()->GetLOSPositionScore( vThreatPos, vThreatEyePos, nodeOrigin, flAccumulatedDist, flDesiredDist );
 									
 								if ( flNewScore > flScore )
 								{

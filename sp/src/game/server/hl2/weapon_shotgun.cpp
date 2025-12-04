@@ -281,10 +281,10 @@ float CWeaponShotgun::GetMaxRestTime()
 //-----------------------------------------------------------------------------
 float CWeaponShotgun::GetFireRate()
 {
-//	if( GetOwner() && GetOwner()->Classify() == CLASS_COMBINE )
-//	{
-//		return 0.8f;
-//	}
+	if( GetOwner() && GetOwner()->Classify() == CLASS_COMBINE )
+	{
+		return 1.0f;
+	}
 
 	return 0.7;
 }

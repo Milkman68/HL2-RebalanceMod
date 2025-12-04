@@ -1,9 +1,8 @@
 #include <windows.h>
-
 #include "cbase.h"
 #include "filesystem.h"
 #include "hl2r_utils.h"
-
+#ifdef CLIENT_DLL
 //-----------------------------------------------------------------------------
 // Purpose: Removes all files in a given directory
 // 
@@ -280,7 +279,7 @@ const char *GetSteamAppsDir(void)
 	V_StrSlice(steamappsdir, 0, iSliceChar, steamappsdir, MAX_PATH );
 	return steamappsdir;
 }
-
+#endif
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------

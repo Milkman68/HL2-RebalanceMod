@@ -2113,7 +2113,7 @@ bool CBaseCombatCharacter::CalcNewWeaponProficiency( CBaseCombatWeapon *pWeapon 
 		return false;
 	}
 
-	char szProficencyValues[64];
+	char szProficencyValues[128];
 	V_strcpy_safe(szProficencyValues, var.GetString() );
 
 	// Tokenize our convar string to get all the values we need.

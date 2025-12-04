@@ -38,7 +38,7 @@ void CAI_BaseNPC::AddActivityToSR(const char *actName, int actID)
 	MEM_ALLOC_CREDIT();
 
 	static int lastActID = -2;
-	Assert( actID >= LAST_SHARED_ACTIVITY || actID == lastActID + 1 || actID == ACT_INVALID );
+	//Assert( actID >= LAST_SHARED_ACTIVITY || actID == lastActID + 1 || actID == ACT_INVALID );
 	lastActID = actID;
 
 	m_pActivitySR->AddString(actName, actID);

@@ -3288,7 +3288,10 @@ bool CNPC_MetroPolice::CanOccupyAttackSlot( void )
 				// Check if any squadmembers have a slot that currently isn't being used for attacking.
 				if ( pMetroCop->HasStrategySlotRange( SQUAD_SLOT_ATTACK1, SQUAD_SLOT_ATTACK2 ) )
 				{
-					if ( !pMetroCop->HasCondition( COND_CAN_RANGE_ATTACK1 ) )
+					float flEnemyDist = ( GetEnemy()->GetAbsOrigin() - GetAbsOrigin() ).Length();
+					float flOtherEnemyDist = ( pMetroCop->GetEnemy()->GetAbsOrigin() - pMetroCop->GetAbsOrigin() ).Length();
+
+					if ( !pMetroCop->HasCondition( COND_CAN_RANGE_ATTACK1 ) || flEnemyDist < flOtherEnemyDist )
 					{
 						bOverrideSlot = true;
 						break;
@@ -5001,7 +5004,7 @@ void CNPC_MetroPolice::StartTask( const Task_t *pTask )
 		break;
 		
 	case TASK_RANGE_ATTACK1:
-		m_flShotDelay = GetActiveWeapon()->GetFireRate();
+		OnRangeAttack1();
 		ResetIdealActivity( ACT_RANGE_ATTACK1 );
 
 		m_flNextAttack = gpGlobals->curtime + m_flShotDelay;
@@ -5231,24 +5234,21 @@ void CNPC_MetroPolice::RunTask( const Task_t *pTask )
 				GetMotor()->SetIdealYawAndUpdate( GetMotor()->GetIdealYaw(), AI_KEEP_YAW_SPEED );
 			}
 
-			if ( gpGlobals->curtime >= m_flNextAttack && !GetShotRegulator()->IsInRestInterval() )
+			if ( GetShotRegulator()->ShouldShoot() && !GetShotRegulator()->IsInRestInterval() )
 			{
-				if ( IsActivityFinished() )
-				{
-					if ( HasCondition( COND_ENEMY_OCCLUDED ) /* && !CanSupressEnemy() */ )
+			//	if ( IsActivityFinished() )
+			//	{
+					if ( HasCondition( COND_ENEMY_OCCLUDED ) && !CanSuppressEnemy() )
 					{
 						TaskComplete();
 					}
 					else
-					{
+					{ 
+						// DevMsg("ACT_RANGE_ATTACK1\n");
 						OnRangeAttack1();
 						ResetIdealActivity( ACT_RANGE_ATTACK1 );
 					}
-				}
-			}
-			else
-			{
-				// DevMsg("Wait\n");
+			//	}
 			}
 		}
 		break;
@@ -5405,17 +5405,11 @@ void CNPC_MetroPolice::BuildScheduleTestBits( void )
 	if( IsCurSchedule( SCHED_METROPOLICE_ESTABLISH_LINE_OF_FIRE, false ) 
 	|| IsCurSchedule( SCHED_METROPOLICE_FLANK_ENEMY, false ) )
 	{
-	//	if( HasCondition(COND_CAN_RANGE_ATTACK1) && m_flTimeSawEnemyAgain != NULL )
-	//	{
-		//	if( (gpGlobals->curtime - m_flTimeSawEnemyAgain) >= 0.2f )
-		//	{
-				// When we're running flank behavior, wait a moment AFTER being able to see the enemy before
-				// breaking my schedule to range attack. This helps assure that the hunter gets well inside
-				// the room before stopping to attack. Otherwise the Hunter may stop immediately in the doorway
-				// and stop the progress of any hunters behind it.
+		if( HasCondition(COND_CAN_RANGE_ATTACK1) && m_flTimeSawEnemyAgain != NULL )
+		{
+			if( (gpGlobals->curtime - m_flTimeSawEnemyAgain) >= 0.25f )
 				SetCustomInterruptCondition( COND_CAN_RANGE_ATTACK1 );
-		//	}
-	//	}
+		}
 	}
 	
 	if ( !IsCurSchedule( SCHED_CHASE_ENEMY ) &&
@@ -5852,13 +5846,34 @@ bool CNPC_MetroPolice::CanBecomeElite( void )
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-bool CNPC_MetroPolice::CanSupressEnemy( void )
+#define SUPPRESS_CURVE_MIN_DISTMULT 1.0f
+#define SUPPRESS_CURVE_MAX_DISTMULT 4.0f
+
+#define SUPPRESS_CURVE_MIN_CLIPMULT 0.5f
+#define SUPPRESS_CURVE_MAX_CLIPMULT 1.0f
+
+bool CNPC_MetroPolice::CanSuppressEnemy( void )
 {
 	if ( !GetEnemy() )
 		return false;
 
-	// Determine what point we're shooting at
-	Vector vecTarget = GetEnemies()->LastSeenPosition( GetEnemy() ) + (GetEnemy()->GetViewOffset()*0.75);// approximates the chest
+	if ( !GetActiveWeapon() )
+		return false;
+
+	float flSuppressTime = 1.0f;
+
+	// While the enemy is not visible, continue shooting for a set duration based on how far away they are.
+	float flEnemyDist = (GetAbsOrigin() - GetEnemy()->GetAbsOrigin()).Length();
+	flSuppressTime *= RemapValClamped(flEnemyDist, 256, 1024, SUPPRESS_CURVE_MIN_DISTMULT, SUPPRESS_CURVE_MAX_DISTMULT);
+
+	// Supress for less time the smaller our clipsize is.
+	float flClipSize = GetActiveWeapon()->GetMaxClip1();
+	flSuppressTime *= RemapValClamped(flClipSize, 5.0f, 30.0f, SUPPRESS_CURVE_MIN_CLIPMULT, SUPPRESS_CURVE_MAX_CLIPMULT);
+
+	return gpGlobals->curtime - GetEnemyLastTimeSeen() < flSuppressTime;
+
+/*	// Determine what point we're shooting at
+	Vector vecTarget = GetEnemies()->LastKnownPosition( GetEnemy() ) + (GetEnemy()->GetViewOffset()*0.75);// approximates the chest
 
 	trace_t tr;
 	trace_t traceGlass;
@@ -5875,23 +5890,24 @@ bool CNPC_MetroPolice::CanSupressEnemy( void )
 	// Check for glass, we'll know if the above trace is true and this one is not.
 	UTIL_TraceLine( vShootPosition, vecTarget, MASK_SOLID, this, COLLISION_GROUP_NONE, &traceGlass );
 
-	float flLength = (vShootPosition - vecTarget).Length();
-
-	flLength *= tr.fraction;
-
-	//If the bullets can travel at least 40% of the distance to the player then let the NPC shoot it.
-	if( tr.fraction >= 0.4 && flLength > 128.0f )
+	float flSuppressLength = (vShootPosition - vecTarget).Length();
+	if( flSuppressLength > 256.0f && flSuppressLength < 2048.0f )
 	{
 		// Don't suppress through glass!
 		if ( traceGlass.DidHitWorld() )
-		{
 			return false;
-		}
+		
+		float flLength = ( GetEnemies()->LastKnownPosition( GetEnemy() ) - GetAbsOrigin() ).Length();
+		
+		// Can't be closer to the enemy than our suppress point!
+		if ( flLength > ( GetEnemy()->GetAbsOrigin() - GetAbsOrigin() ).Length() )
+			return false;
+		
 		// Target is valid
 		return true;
 	}
 	
-	return false;
+	return false;*/
 }
 //-----------------------------------------------------------------------------
 // Purpose:

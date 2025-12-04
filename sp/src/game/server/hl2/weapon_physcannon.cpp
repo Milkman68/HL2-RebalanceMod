@@ -40,6 +40,7 @@
 #include "ai_interactions.h"
 #include "rumble_shared.h"
 #include "gamestats.h"
+#include "npc_combine.h"
 // NVNT haptic utils
 #include "haptics/haptic_utils.h"
 
@@ -1771,8 +1772,13 @@ void CWeaponPhysCannon::PuntNonVPhysics( CBaseEntity *pEntity, const Vector &for
 	info.SetDamagePosition( tr.endpos );
 
 	pEntity->DispatchTraceAttack( info, forward, &tr );
-
 	ApplyMultiDamage();
+
+	if ( pEntity->MyNPCPointer() )
+	{
+		float flScale = IsMegaPhysCannon() ? 2.0f : 1.0f;
+		pEntity->MyNPCPointer()->NPCVelocityImpulse( forward, flScale );
+	}
 	
 	//Explosion effect
 	DoEffect( EFFECT_LAUNCH, &tr.endpos );
@@ -1844,6 +1850,12 @@ void CWeaponPhysCannon::PuntVPhysics( CBaseEntity *pEntity, const Vector &vecFor
 	info.SetDamageType( DMG_PHYSGUN );
 	pEntity->DispatchTraceAttack( info, forward, &tr );
 	ApplyMultiDamage();
+
+	if ( pEntity->MyNPCPointer() )
+	{
+		float flScale = IsMegaPhysCannon() ? 2.0f : 1.0f;
+		pEntity->MyNPCPointer()->NPCVelocityImpulse( forward, flScale );
+	}
 
 	CBasePlayer *pOwner = ToBasePlayer( GetOwner() );
 	if ( Pickup_OnAttemptPhysGunPickup( pEntity, pOwner, PUNTED_BY_CANNON ) )
@@ -2244,6 +2256,21 @@ void CWeaponPhysCannon::PrimaryAttack( void )
 		{
 			if ( pEntity->IsNPC() && !pEntity->IsEFlagSet( EFL_NO_MEGAPHYSCANNON_RAGDOLL ) && pEntity->MyNPCPointer()->CanBecomeRagdoll() )
 			{
+				CNPC_Combine *pCombine = dynamic_cast<CNPC_Combine*>(pEntity);
+				if ( pCombine && pCombine->UsesArmor() && !pCombine->ArmorBroken() )
+				{
+					CTakeDamageInfo info( pOwner, pOwner, 10000.0, DMG_PHYSGUN );
+					pEntity->DispatchTraceAttack( info, forward, &tr );
+
+					ApplyMultiDamage();
+					PuntNonVPhysics( pEntity, forward, tr );
+
+					float flScale = IsMegaPhysCannon() ? 2.0f : 1.0f;
+					pCombine->NPCVelocityImpulse( forward, flScale );
+
+					return;
+				}
+
 				CTakeDamageInfo info( pOwner, pOwner, 1.0f, DMG_GENERIC );
 				CBaseEntity *pRagdoll = CreateServerRagdoll( pEntity->MyNPCPointer(), 0, info, COLLISION_GROUP_INTERACTIVE_DEBRIS, true );
 				PhysSetEntityGameFlags( pRagdoll, FVPHYSICS_NO_SELF_COLLISIONS );
@@ -2334,8 +2361,11 @@ void CWeaponPhysCannon::SecondaryAttack( void )
 			break;
 
 		case OBJECT_NOT_FOUND:
-			m_flNextSecondaryAttack = gpGlobals->curtime + 0.1f;
-			CloseElements();
+			if ( !IsMegaPhysCannon() )
+			{
+				m_flNextSecondaryAttack = gpGlobals->curtime + 0.1f;
+				CloseElements();
+			}
 			break;
 
 		case OBJECT_BEING_DETACHED:
@@ -2384,11 +2414,52 @@ bool CWeaponPhysCannon::AttachObject( CBaseEntity *pObject, const Vector &vPosit
 
 	bool bKilledByGrab = false;
 
+	CHL2_Player *pOwner = (CHL2_Player *)ToBasePlayer( GetOwner() );
+
 	bool bIsMegaPhysCannon = IsMegaPhysCannon();
 	if ( bIsMegaPhysCannon )
 	{
 		if ( pObject->IsNPC() && !pObject->IsEFlagSet( EFL_NO_MEGAPHYSCANNON_RAGDOLL ) )
 		{
+			CNPC_Combine *pCombine = dynamic_cast<CNPC_Combine*>(pObject);
+			if ( pOwner && pCombine && pCombine->UsesArmor() && !pCombine->ArmorBroken())
+			{
+				trace_t tr;
+				UTIL_PhyscannonTraceLine( pOwner->Weapon_ShootPosition(), pObject->WorldSpaceCenter(), pOwner, &tr );
+
+				if ( !tr.m_pEnt )
+					return false;
+
+				Vector forward;
+				pOwner->EyeVectors( &forward );
+
+				CTakeDamageInfo info(pOwner, pOwner, 10000.0, DMG_PHYSGUN);
+				pObject->DispatchTraceAttack(info, forward, &tr);
+				ApplyMultiDamage();
+
+				float flScale = IsMegaPhysCannon() ? 2.0f : 1.0f;
+				pCombine->NPCVelocityImpulse( forward, -flScale );
+
+				// Disable for 0.5 seconds
+				m_flElementDebounce =		gpGlobals->curtime + 0.5f;
+				m_flCheckSuppressTime =		gpGlobals->curtime + 0.5f;
+				m_flNextPrimaryAttack =		gpGlobals->curtime + 0.5f;
+				m_flNextSecondaryAttack =	gpGlobals->curtime + 0.5f;
+
+				// Debounce the button
+				m_nAttack2Debounce |= pOwner->m_nButtons;
+
+				m_flElementDestination = 0.3f;
+				m_nChangeState = ELEMENT_STATE_CLOSED;
+				m_bOpen = false;
+
+				pOwner->ViewPunch( QAngle(-3, random->RandomInt(-1,1) ,0) );
+				WeaponSound( MELEE_MISS );
+				SendWeaponAnim( ACT_VM_PRIMARYATTACK );
+
+				return false;
+			}
+
 			Assert( pObject->MyNPCPointer()->CanBecomeRagdoll() );
 			CTakeDamageInfo info( GetOwner(), GetOwner(), 1.0f, DMG_GENERIC );
 			CBaseEntity *pRagdoll = CreateServerRagdoll( pObject->MyNPCPointer(), 0, info, COLLISION_GROUP_INTERACTIVE_DEBRIS, true );
@@ -2411,8 +2482,6 @@ bool CWeaponPhysCannon::AttachObject( CBaseEntity *pObject, const Vector &vPosit
 	// Must be valid
 	if ( !pPhysics )
 		return false;
-
-	CHL2_Player *pOwner = (CHL2_Player *)ToBasePlayer( GetOwner() );
 
 	m_bActive = true;
 	if( pOwner )

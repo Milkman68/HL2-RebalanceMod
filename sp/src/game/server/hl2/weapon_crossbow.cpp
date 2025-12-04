@@ -40,6 +40,7 @@
 
 extern ConVar sk_plr_dmg_crossbow;
 extern ConVar sk_plr_dmg_crossbow_charged;
+extern ConVar sk_plr_dmg_crossbow_max_charge;
 
 extern ConVar sk_npc_dmg_crossbow;
 
@@ -786,10 +787,19 @@ void CWeaponCrossbow::FireBolt( void )
 	// Only start increasing damage after 1/3 of the max charge time has occurred.
 	float flChargeTime = MAX( gpGlobals->curtime - ( m_flChargeTime + flChargeRatio ), 0.0f );
 	
+	float flDamage = 0.0f;
+
 	// Lerp from default dmg to charged dmg based on our charge.
-	float flDamage = RemapValClamped( flChargeTime, 0.0f, CHARGE_TIME - flChargeRatio, 
-	sk_plr_dmg_crossbow.GetFloat(), 
-	sk_plr_dmg_crossbow_charged.GetFloat() );
+	if ( flChargeTime < CHARGE_TIME - flChargeRatio )
+	{
+		flDamage = RemapValClamped( flChargeTime, 0.0f, CHARGE_TIME - flChargeRatio, 
+		sk_plr_dmg_crossbow.GetFloat(), 
+		sk_plr_dmg_crossbow_charged.GetFloat() );
+	}
+	else
+	{
+		flDamage = sk_plr_dmg_crossbow_max_charge.GetFloat();
+	}
 
 	CCrossbowBolt *pBolt = CCrossbowBolt::BoltCreate( vecSrc, angAiming, pOwner, flDamage );
 

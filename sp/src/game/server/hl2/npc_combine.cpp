@@ -1117,11 +1117,9 @@ void CNPC_Combine::StartTask( const Task_t *pTask )
 		break;
 	case TASK_RANGE_ATTACK1:
 		{
-			m_nShots = GetActiveWeapon()->GetRandomBurst();
-			m_flShotDelay = GetActiveWeapon()->GetFireRate();
-
-			m_flNextAttack = gpGlobals->curtime + m_flShotDelay;
+			OnRangeAttack1();
 			ResetIdealActivity( ACT_RANGE_ATTACK1 );
+
 			m_flLastAttackTime = gpGlobals->curtime;
 		}
 		break;
@@ -1332,11 +1330,11 @@ void CNPC_Combine::RunTask( const Task_t *pTask )
 				return;
 			}
 
-			if ( gpGlobals->curtime >= m_flNextAttack && !GetShotRegulator()->IsInRestInterval() )
+			if ( GetShotRegulator()->ShouldShoot() && !GetShotRegulator()->IsInRestInterval() )
 			{
-				if ( IsActivityFinished() )
-				{
-					if ( HasCondition( COND_ENEMY_OCCLUDED )  && !CanSuppressEnemy() )
+			//	if ( IsActivityFinished() )
+			//	{
+					if ( HasCondition( COND_ENEMY_OCCLUDED ) && !CanSuppressEnemy() )
 					{
 						TaskComplete();
 					}
@@ -1345,9 +1343,8 @@ void CNPC_Combine::RunTask( const Task_t *pTask )
 						// DevMsg("ACT_RANGE_ATTACK1\n");
 						OnRangeAttack1();
 						ResetIdealActivity( ACT_RANGE_ATTACK1 );
-						m_flNextAttack = gpGlobals->curtime + m_flShotDelay;
 					}
-				}
+			//	}
 			}
 		}
 		break;
@@ -1842,6 +1839,9 @@ int CNPC_Combine::SelectCombatSchedule()
 	// ---------------------
 	if ( ( HasCondition ( COND_NO_PRIMARY_AMMO ) || HasCondition ( COND_LOW_PRIMARY_AMMO ) ) && !HasCondition( COND_CAN_MELEE_ATTACK1) )
 	{
+		if ( HasCondition( COND_ENEMY_OCCLUDED ) )
+			return SCHED_RELOAD;
+
 		return SCHED_HIDE_AND_RELOAD;
 	}
 
@@ -3281,17 +3281,33 @@ bool CNPC_Combine::CanAltFireEnemy( bool bUseFreeKnowledge )
 }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
+#define SUPPRESS_CURVE_MIN_DISTMULT 1.0f
+#define SUPPRESS_CURVE_MAX_DISTMULT 4.0f
+
+#define SUPPRESS_CURVE_MIN_CLIPMULT 0.5f
+#define SUPPRESS_CURVE_MAX_CLIPMULT 1.0f
+
 bool CNPC_Combine::CanSuppressEnemy( void )
 {
-	return false;
-
 	if ( !GetEnemy() )
 		return false;
-	
-	if ( HasShotgun() )
+
+	if ( !GetActiveWeapon() )
 		return false;
 
-	// Determine what point we're shooting at
+	float flSuppressTime = 1.0f;
+
+	// While the enemy is not visible, continue shooting for a set duration based on how far away they are.
+	float flEnemyDist = (GetAbsOrigin() - GetEnemy()->GetAbsOrigin()).Length();
+	flSuppressTime *= RemapValClamped(flEnemyDist, 256, 1024, SUPPRESS_CURVE_MIN_DISTMULT, SUPPRESS_CURVE_MAX_DISTMULT);
+
+	// Supress for less time the smaller our clipsize is.
+	float flClipSize = GetActiveWeapon()->GetMaxClip1();
+	flSuppressTime *= RemapValClamped(flClipSize, 5.0f, 30.0f, SUPPRESS_CURVE_MIN_CLIPMULT, SUPPRESS_CURVE_MAX_CLIPMULT);
+
+	return gpGlobals->curtime - GetEnemyLastTimeSeen() < flSuppressTime;
+
+/*	// Determine what point we're shooting at
 	Vector vecTarget = GetEnemies()->LastKnownPosition( GetEnemy() ) + (GetEnemy()->GetViewOffset()*0.75);// approximates the chest
 
 	trace_t tr;
@@ -3326,7 +3342,7 @@ bool CNPC_Combine::CanSuppressEnemy( void )
 		return true;
 	}
 	
-	return false;
+	return false;*/
 }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -3764,7 +3780,10 @@ bool CNPC_Combine::CanOccupyAttackSlot( void )
 				// Check if any squadmembers have a slot that currently isn't being used for attacking.
 				if ( pCombine->HasStrategySlotRange( SQUAD_SLOT_ATTACK1, SQUAD_SLOT_ATTACK2 ) )
 				{
-					if ( !pCombine->HasCondition( COND_CAN_RANGE_ATTACK1 ) )
+					float flEnemyDist = ( GetEnemy()->GetAbsOrigin() - GetAbsOrigin() ).Length();
+					float flOtherEnemyDist = ( pCombine->GetEnemy()->GetAbsOrigin() - pCombine->GetAbsOrigin() ).Length();
+
+					if ( !pCombine->HasCondition( COND_CAN_RANGE_ATTACK1 ) || flEnemyDist < flOtherEnemyDist )
 					{
 						bOverrideSlot = true;
 						break;
@@ -3873,6 +3892,12 @@ void CNPC_Combine::TakeDamageArmor( const CTakeDamageInfo &inputInfo, float flMu
 
 	const Vector origin = info.GetDamagePosition();
 
+	for (int i = 0; i < MIN(flDamage, 100); i += 20)
+	{
+		DispatchParticleEffect("hunter_shield_impact", origin, GetAbsAngles());
+		DispatchParticleEffect("warp_shield_impact", origin, GetAbsAngles());
+	}
+
 	if (GetArmorCharge() <= 0 && fPrevArmor > 0)
 	{
 		g_pEffects->Sparks(origin, 5, 2 );
@@ -3901,12 +3926,6 @@ void CNPC_Combine::TakeDamageArmor( const CTakeDamageInfo &inputInfo, float flMu
 	}
 	else
 	{
-		for (int i = 0; i < flDamage; i += 20)
-		{
-			DispatchParticleEffect("hunter_shield_impact", origin, GetAbsAngles());
-			DispatchParticleEffect("warp_shield_impact", origin, GetAbsAngles());
-		}
-
 		EmitSound("NPC_Combine.ShieldImpact");
 	}
 
@@ -4457,6 +4476,8 @@ DEFINE_SCHEDULE
  "	Interrupts"
  "		COND_NEW_ENEMY"
  "		COND_SEE_ENEMY"
+"		COND_NO_PRIMARY_AMMO"
+"		COND_LOW_PRIMARY_AMMO"
  "		COND_HEAR_DANGER"
  "		COND_HEAR_MOVE_AWAY"
  "		COND_COMBINE_ATTACK_SLOT_AVAILABLE"

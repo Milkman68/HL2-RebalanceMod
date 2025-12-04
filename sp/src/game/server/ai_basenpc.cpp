@@ -159,6 +159,8 @@ ConVar	hl2r_ai_debug_los_links( "hl2r_ai_debug_los_links", "0" );
 extern ConVar ai_vehicle_avoidance;
 #endif // HL2_EPISODIC
 
+extern ConVar skill;
+
 //#ifndef _RETAIL
 #define ShouldUseEfficiency()			( ai_use_think_optimizations.GetBool() && ai_use_efficiency.GetBool() )
 #define ShouldUseFrameThinkLimits()		( ai_use_think_optimizations.GetBool() && ai_use_frame_think_limits.GetBool() )
@@ -891,17 +893,6 @@ int CAI_BaseNPC::OnTakeDamage_Alive( const CTakeDamageInfo &info )
 	
 		NotifyFriendsOfDamage( info.GetAttacker() );
 	}
-	CTakeDamageInfo infoCopy = info;
-	
-	if ( info.GetDamageType() & DMG_PHYSGUN && !IsRunningDynamicInteraction() && ( CapabilitiesGet() & bits_CAP_PUNTABLE ) )
-	{
-		Vector	puntDir = ( info.GetDamageForce() * 200.0f * m_flPuntScale );
-		DevMsg("Current punt scale is: %f\n", m_flPuntScale );
-		SetGroundEntity( NULL );
-		ApplyAbsVelocityImpulse( puntDir );
-		
-		SetCondition( COND_GOT_PUNTED );
-	}
 
 	// ---------------------------------------------------------------
 	//  Insert a combat sound so that nearby NPCs know I've been hit
@@ -1058,6 +1049,24 @@ void CAI_BaseNPC::DoRadiusDamage( const CTakeDamageInfo &info, const Vector &vec
 	RadiusDamage( info, vecSrc, info.GetDamage() * 2.5, iClassIgnore, pEntityIgnore );
 }
 
+
+//-----------------------------------------------------------------------------
+// Purpose:
+//-----------------------------------------------------------------------------
+
+void CAI_BaseNPC::NPCVelocityImpulse( const Vector &vecDir, float flScale )
+{
+	if ( IsRunningDynamicInteraction() || !( CapabilitiesGet() & bits_CAP_PUNTABLE ) )
+		return;
+
+	Vector vecNewDir = vecDir;
+	vecNewDir.z = 0.0f;	// Zero out the z component.
+
+	SetGroundEntity( NULL );
+	ApplyAbsVelocityImpulse( vecNewDir * 200.0f * flScale * m_flPuntScale );
+		
+	SetCondition( COND_GOT_PUNTED );
+}
 
 //-----------------------------------------------------------------------------
 // Set the contents types that are solid by default to all NPCs
@@ -4767,6 +4776,12 @@ void CAI_BaseNPC::GatherConditions( void )
 		ClearCondition( COND_IN_PVS );
 
 	g_AIConditionsTimer.End();
+
+	if ( m_iSkillLevel != skill.GetInt() )
+	{
+		SetCondition(COND_GLOBAL_SKILL_CHANGED);
+		m_iSkillLevel = skill.GetInt();
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -9877,6 +9892,18 @@ bool CAI_BaseNPC::ShouldMoveAndShoot()
 	return ( ( CapabilitiesGet() & bits_CAP_MOVE_SHOOT ) != 0 ); 
 }
 
+//-----------------------------------------------------------------------------
+
+void CAI_BaseNPC::SetHealthSkillBased( const char *pConvar )
+{ 
+	ConVarRef var(pConvar);
+}
+
+void CAI_BaseNPC::SetSpeedSkillBased( const char *pConvar )
+{ 
+	ConVarRef var(pConvar);
+}
+
 
 //=========================================================
 // FacingIdeal - tells us if a npc is facing its ideal
@@ -10935,6 +10962,7 @@ void CAI_BaseNPC::Activate( void )
 	m_ScheduleHistory.RemoveAll();
 #endif//AI_MONITOR_FOR_OSCILLATION
 
+	m_iSkillLevel = skill.GetInt();
 }
 
 void CAI_BaseNPC::Precache( void )
@@ -12735,7 +12763,7 @@ bool CAI_BaseNPC::IsCoverPosition( const Vector &vecThreat, const Vector &vecPos
 
 //-----------------------------------------------------------------------------
 
-float CAI_BaseNPC::GetCoverPositionScore( const Vector &vecThreat, const Vector &vecCover, float flPathDist, float flIdealDist, bool bEnemyReachable )
+float CAI_BaseNPC::GetCoverPositionScore( const Vector &vecThreat, const Vector &vecThreatEye, const Vector &vecCover, float flPathDist, float flIdealDist, bool bEnemyReachable )
 {
 	// Try to base the cover location on the desired distance
 	float flNodeScore = 0;
@@ -12784,7 +12812,7 @@ float CAI_BaseNPC::GetCoverPositionScore( const Vector &vecThreat, const Vector 
 
 //-----------------------------------------------------------------------------
 
-float CAI_BaseNPC::GetLOSPositionScore( const Vector &vecThreat, const Vector &vecPos, float flPathDist, float flIdealDist )
+float CAI_BaseNPC::GetLOSPositionScore( const Vector &vecThreat, const Vector &vecThreatEye, const Vector &vecPos, float flPathDist, float flIdealDist )
 {
 	float flNodeScore = 0;
 
@@ -12810,7 +12838,7 @@ float CAI_BaseNPC::GetLOSPositionScore( const Vector &vecThreat, const Vector &v
 		
 	// Temporarily get our crouch cover activity offset.
 	Activity nCoverActivity = GetCoverActivity( NULL );
-	Vector vEyeOffset = EyeOffset(nCoverActivity);
+	Vector vCrouchedEyeOffset = EyeOffset(nCoverActivity);
 	
 	SetForceCrouchCover( false );
 	
@@ -12818,7 +12846,7 @@ float CAI_BaseNPC::GetLOSPositionScore( const Vector &vecThreat, const Vector &v
 	CTraceFilterLOS filter( NULL, COLLISION_GROUP_NONE, this );
 	
 	trace_t tr;
-	AI_TraceLOS( vecPos + vEyeOffset, vecThreat, this, &tr, &filter );
+	AI_TraceLOS( vecPos + vCrouchedEyeOffset, vecThreatEye, this, &tr, &filter );
 		
 	if ( tr.fraction != 1.0 )
 	{
@@ -12833,7 +12861,12 @@ float CAI_BaseNPC::GetLOSPositionScore( const Vector &vecThreat, const Vector &v
 			flNodeScore += 0.5;
 		}
 	}
-	
+
+	// Do an extra trace to check if this position gives the enemy waist-high cover over us.
+	AI_TraceLOS( vecPos + GetViewOffset(), vecThreat + Vector(0, 0, 16), this, &tr, &filter );
+	if ( tr.fraction != 1.0 )
+		flNodeScore -= 0.5;
+
 	return flNodeScore;
 }
 
@@ -12882,6 +12915,7 @@ bool CAI_BaseNPC::IsLOSLinkUsable( const Vector &vecStart, const Vector &vecEnd,
 		return false;
 	}
 
+	// Avoid nodes in the enemy's viewcode.
 	CBaseCombatCharacter *pEnemyCombatCharacter = GetEnemyCombatCharacterPointer();
 	if ( pEnemyCombatCharacter )
 	{
@@ -12894,8 +12928,11 @@ bool CAI_BaseNPC::IsLOSLinkUsable( const Vector &vecStart, const Vector &vecEnd,
 
 		if ( flDot < -0.98 )
 		{
-			DEBUG_LOS_LINK(vecEnd, 255, 0, 0 );
-			return false;
+			if ( pEnemyCombatCharacter->FVisible(vecEnd) )
+			{
+				DEBUG_LOS_LINK(vecEnd, 255, 0, 0 );
+				return false;
+			}
 		}
 
 		nodeorigin = ( vecThreatEyePos - vecStart );
@@ -12905,8 +12942,11 @@ bool CAI_BaseNPC::IsLOSLinkUsable( const Vector &vecStart, const Vector &vecEnd,
  		flDot = DotProduct( nodeorigin, facingDir );
 		if ( flDot < -0.98 )
 		{
-			DEBUG_LOS_LINK(vecEnd, 255, 0, 255 );
-			return false;
+			if ( pEnemyCombatCharacter->FVisible(vecStart) )
+			{
+				DEBUG_LOS_LINK(vecStart, 255, 0, 255 );
+				return false;
+			}
 		}
 	}
 

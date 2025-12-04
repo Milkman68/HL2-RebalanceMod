@@ -2462,7 +2462,7 @@ int	CHL2_Player::OnTakeDamage( const CTakeDamageInfo &info )
 
 	if ( info.GetAttacker()->MyNPCPointer() != NULL )
 	{
-		float flDamageScale = RemapValClamped( info.GetDamage(), 0.0f, 25.0f, 0.0f, 5.0f ); 
+		float flDamageScale = MIN( RemapValClamped( info.GetDamage(), 0.0f, 25.0f, 0.0f, 5.0f ), 2.0f ); 
 		float flZoomScale = 1.0f - (( GetDefaultFOV() - GetFOV() ) * 0.01f);
 
 		flPunch = -hl2_flinch_scale.GetFloat() * flDamageScale * flZoomScale; 

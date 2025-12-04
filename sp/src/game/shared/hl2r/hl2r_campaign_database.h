@@ -58,7 +58,7 @@ enum EGameType
 	GAME_EPISODE_1,
 	GAME_EPISODE_2,
 };
-
+#ifdef CLIENT_DLL
 enum EMountReturnCode
 {
 	SUCESSFULLY_MOUNTED = 0,
@@ -89,6 +89,7 @@ enum EMoveSaveFileType
 	RETRIEVE_FROM_DEFAULT,
 	RETRIEVE_FROM_CAMPAIGN
 };
+#endif
 
 struct CampaignDateTable_t
 {
@@ -129,22 +130,26 @@ struct CampaignData_t
 
 };
 
+#ifdef CLIENT_DLL
 struct CampaignSort_t
 {
 	ESortType	eType;
 	ESortDirection	eDir;
 };
-
+#endif
 class CCampaignDatabase
 {
 public:
 	CCampaignDatabase();
+
+#ifdef CLIENT_DLL
 
 	EMountReturnCode	MountCampaign(const char *pCampaignID);
 	void				UnmountMountedCampaign( void );
 
 	void				DoCampaignScan( void );
 	bool				HLExtractInstalled( void );
+#endif
 
 	// List accessor functions:
 	CUtlVector<CampaignData_t *>	*CampaignList( void ) { return m_Campaigns; };
@@ -157,8 +162,9 @@ public:
 	int					GetCampaignCount( void )	{ return CampaignList()->Count(); }
 	
 	// Campaign script file:
-	void	WriteListToScript( void );
 	void	WriteScriptToList( void );
+#ifdef CLIENT_DLL
+	void	WriteListToScript( void );
 
 	// Sorting:
 	void			SortCampaignList( ESortType sorttype, ESortDirection sortdir );
@@ -167,8 +173,10 @@ public:
 
 	// Nodegraph hotfix:
 	void	FlushMountedCampaignGraphs( void );
+#endif
 	void	RunSoundScriptMount( void );
-
+	void	RunBackgroundValidate( void );
+#ifdef CLIENT_DLL
 private:
 
 	// File dating:
@@ -199,19 +207,24 @@ private:
 // Save files:
 	void	MoveSaveFiles( EMoveSaveFileType movetype, const char *pCampaignID = NULL );
 
+#endif
 // Sounds:
 	void		HandleCustomSoundScripts( const char *pCampaignID );
 	void		MountSoundScripts( CUtlVector< const char *> *pFilePaths );
 
-// Misc content:
-	void	MountLauncherContent( bool bMount );
 
+// Misc content:
+#ifdef CLIENT_DLL
+	void	ValidateBackgrounds( const char *pCampaignID );
+	void	MountLauncherContent( bool bMount );
+#endif
 private:
 	CUtlVector<CampaignData_t *>	*m_Campaigns;
-
 	KeyValues *pCampaignScript;
 
+#ifdef CLIENT_DLL
 	CampaignSort_t m_SortMethod;
+#endif
 };
 
 CCampaignDatabase *GetCampaignDatabase();

@@ -1871,7 +1871,7 @@
     <ClInclude Include="hl2r\hl2r_baseoptions.h">
       <Filter>Source Files\HL2R</Filter>
     </ClInclude>
-    <ClInclude Include="hl2r\hl2r_campaign_database.h">
+    <ClInclude Include="..\..\game\shared\hl2r\hl2r_campaign_database.h">
       <Filter>Source Files\HL2R</Filter>
     </ClInclude>
     <ClInclude Include="hl2r\hl2r_campaign_panel.h">
@@ -1886,7 +1886,7 @@
     <ClInclude Include="hl2r\hl2r_options.h">
       <Filter>Source Files\HL2R</Filter>
     </ClInclude>
-    <ClInclude Include="hl2r\hl2r_utils.h">
+    <ClInclude Include="..\..\game\shared\hl2r\hl2r_utils.h">
       <Filter>Source Files\HL2R</Filter>
     </ClInclude>
     <ClInclude Include="sixense\in_sixense.h">
@@ -3184,7 +3184,7 @@
     <ClCompile Include="hl2\c_npc_turret_floor.cpp">
       <Filter>Source Files\HL2R</Filter>
     </ClCompile>
-    <ClCompile Include="hl2r\hl2r_campaign_database.cpp">
+    <ClCompile Include="..\..\game\shared\hl2r\hl2r_campaign_database.cpp">
       <Filter>Source Files\HL2R</Filter>
     </ClCompile>
     <ClCompile Include="hl2r\hl2r_campaign_panel.cpp">
@@ -3199,7 +3199,7 @@
     <ClCompile Include="hl2r\hl2r_options.cpp">
       <Filter>Source Files\HL2R</Filter>
     </ClCompile>
-    <ClCompile Include="hl2r\hl2r_utils.cpp">
+    <ClCompile Include="..\..\game\shared\hl2r\hl2r_utils.cpp">
       <Filter>Source Files\HL2R</Filter>
     </ClCompile>
     <ClCompile Include="stdafx.cpp">

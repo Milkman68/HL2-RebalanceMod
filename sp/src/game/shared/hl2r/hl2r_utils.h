@@ -4,7 +4,7 @@
 #pragma once
 #endif
 
-
+#ifdef CLIENT_DLL
 bool	RemoveFilesInDirectory( const char *pDir, const char *pSearch );
 
 
@@ -26,6 +26,7 @@ bool	MoveFilesInDirectory( const char *pDir,
 
 
 const char	*GetSteamAppsDir(void);
+#endif
 char*		ReadFileIntoBuffer( const char *pFilePath, int &len );
 
 #endif

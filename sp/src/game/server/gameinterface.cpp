@@ -90,6 +90,7 @@
 #include "serverbenchmark_base.h"
 #include "querycache.h"
 
+#include <hl2r\hl2r_campaign_database.h>
 
 #ifdef TF_DLL
 #include "gc_clientsystem.h"
@@ -619,6 +620,16 @@ bool CServerGameDLL::DLLInit( CreateInterfaceFn appSystemFactory,
 	// init each (seperated for ease of debugging)
 	if ( (engine = (IVEngineServer*)appSystemFactory(INTERFACEVERSION_VENGINESERVER, NULL)) == NULL )
 		return false;
+	if ( (filesystem = (IFileSystem *)fileSystemFactory(FILESYSTEM_INTERFACE_VERSION,NULL)) == NULL )
+		return false;
+
+	// Load our workshop content.
+	LoadAddons();
+
+	CCampaignDatabase *database = GetCampaignDatabase();
+	if ( database )
+		database->RunSoundScriptMount();
+
 	if ( (g_pVoiceServer = (IVoiceServer*)appSystemFactory(INTERFACEVERSION_VOICESERVER, NULL)) == NULL )
 		return false;
 	if ( (networkstringtable = (INetworkStringTableContainer *)appSystemFactory(INTERFACENAME_NETWORKSTRINGTABLESERVER,NULL)) == NULL )
@@ -635,8 +646,8 @@ bool CServerGameDLL::DLLInit( CreateInterfaceFn appSystemFactory,
 		return false;
 	if ( (enginetrace = (IEngineTrace *)appSystemFactory(INTERFACEVERSION_ENGINETRACE_SERVER,NULL)) == NULL )
 		return false;
-	if ( (filesystem = (IFileSystem *)fileSystemFactory(FILESYSTEM_INTERFACE_VERSION,NULL)) == NULL )
-		return false;
+//	if ( (filesystem = (IFileSystem *)fileSystemFactory(FILESYSTEM_INTERFACE_VERSION,NULL)) == NULL )
+//		return false;
 	if ( (gameeventmanager = (IGameEventManager2 *)appSystemFactory(INTERFACEVERSION_GAMEEVENTSMANAGER2,NULL)) == NULL )
 		return false;
 	if ( (datacache = (IDataCache*)appSystemFactory(DATACACHE_INTERFACE_VERSION, NULL )) == NULL )
@@ -659,7 +670,7 @@ bool CServerGameDLL::DLLInit( CreateInterfaceFn appSystemFactory,
 		return false;
 	
 	// Load our workshop content.
-	LoadAddons();
+//	LoadAddons();
 
 	// If not running dedicated, grab the engine vgui interface
 	if ( !engine->IsDedicatedServer() )

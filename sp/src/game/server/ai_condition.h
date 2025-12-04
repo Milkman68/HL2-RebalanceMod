@@ -113,6 +113,8 @@ enum SCOND_t
 	COND_NO_CUSTOM_INTERRUPTS,		// Don't call BuildScheduleTestBits for this schedule. Used for schedules that must strictly control their interruptibility.
 	
 	COND_GOT_PUNTED,
+
+	COND_GLOBAL_SKILL_CHANGED,		// Given every time the current difficulty changes. 
 	// ======================================
 	// IMPORTANT: This must be the last enum
 	// ======================================

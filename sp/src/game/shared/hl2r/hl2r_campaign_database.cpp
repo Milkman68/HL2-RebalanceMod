@@ -1,7 +1,9 @@
 #include <windows.h>
 #include "cbase.h"
 
+#ifdef CLIENT_DLL
 using namespace vgui;
+#endif
 
 #include "tier0/vprof.h"
 #include "KeyValues.h"
@@ -10,7 +12,9 @@ using namespace vgui;
 #include "hl2r_utils.h"
 #include <vgui_controls/PropertyDialog.h>
 #include "vgui/ISystem.h"
-#include "hl2r_game_manager.h"
+#ifdef CLIENT_DLL
+#include <hl2r\hl2r_game_manager.h>
+#endif
 #include "hl2r_campaign_database.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
@@ -43,13 +47,16 @@ CCampaignDatabase::CCampaignDatabase()
 
 		// Initilize our internal list: 
 		WriteScriptToList();
+#ifdef CLIENT_DLL
 		SortCampaignList(BY_DATE, DECENDING_ORDER);
 		WriteListToScript();
+#endif
 	}
 }
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
+#ifdef CLIENT_DLL
 void CCampaignDatabase::DoCampaignScan( void )
 {
 	// We need to find campaigns through manual directory searching as their id's are not listed anywhere.
@@ -218,6 +225,7 @@ bool CCampaignDatabase::IsMapReplacement( const char *pMap )
 
 	return false;
 }
+#endif
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
@@ -271,6 +279,7 @@ void CCampaignDatabase::WriteScriptToList( void )
 		CampaignList()->AddToTail(pCampaignData);
 	}
 }
+#ifdef CLIENT_DLL
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
@@ -292,6 +301,7 @@ void CCampaignDatabase::WriteListToScript( void )
 	g_pFullFileSystem->Write( buf.Base(), buf.TellPut(), fh );
 	g_pFullFileSystem->Close( fh );
 }
+#endif
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
@@ -378,6 +388,7 @@ KeyValues* CCampaignDatabase::GetKeyValuesFromCampaign( CAMPAIGN_HANDLE campaign
 
 	return pData;
 }
+#ifdef CLIENT_DLL
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
@@ -911,7 +922,12 @@ void CCampaignDatabase::SetCampaignAsMounted( const char *pCampaignID )
 	MountLauncherContent(true);
 
 	// Mount any custom sounds this mod has.
-	HandleCustomSoundScripts(pCampaignID);
+
+	// NOTE: This is now done through the server in gameinterface.cpp on startup.
+	//HandleCustomSoundScripts(pCampaignID);
+
+	// Prevent invalid background maps from loading.
+	ValidateBackgrounds(pCampaignID);
 
 	GetCampaignFromID(pCampaignID)->mounted = true;
 	WriteListToScript();
@@ -985,6 +1001,30 @@ void CCampaignDatabase::MountLauncherContent( bool bMount )
 		MoveDirectory( szContentEnabledDir, CONTENT_FOLDER, szContentDisabledDir );
 	}
 }
+//-----------------------------------------------------------------------------
+// Purpose:
+//-----------------------------------------------------------------------------
+void CCampaignDatabase::ValidateBackgrounds( const char *pCampaignID )
+{
+	char szChapterBackgroundsDir[MAX_PATH];
+	V_sprintf_safe(szChapterBackgroundsDir, "%s\\%s\\scripts\\chapterbackgrounds.txt", CAMPAIGN_MOUNT_DIR, pCampaignID );
+
+	// Get the chapterbackgrounds.txt file.
+	KeyValues *pChapterBackgroundsFile = new KeyValues("defaultmanifest");
+	if ( !pChapterBackgroundsFile->LoadFromFile( filesystem, CAMPAIGN_DEFAULT_SOUNDSCRIPTS_FILE, "MOD" ) )
+		return;
+
+	for ( KeyValues *pBackgroundMap = pChapterBackgroundsFile->GetFirstSubKey(); pBackgroundMap; pBackgroundMap = pBackgroundMap->GetNextKey() )
+	{
+		// If this campaign's background list contains a missing map get rid of the file.
+		if ( !g_pFullFileSystem->FileExists( VarArgs("maps\\%s.bsp", pBackgroundMap->GetString() )) )
+		{
+			g_pFullFileSystem->RemoveFile(szChapterBackgroundsDir);
+			return;
+		}
+	}
+}
+#endif
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
@@ -1064,10 +1104,10 @@ void CCampaignDatabase::MountSoundScripts( CUtlVector< const char *> *pSoundScri
 	if ( fh == FILESYSTEM_INVALID_HANDLE )
 		return;
 
-	g_pFullFileSystem->Write( szOutput, len + 1, fh );
+	g_pFullFileSystem->Write( szOutput, len, fh );
 	g_pFullFileSystem->Close( fh );
 }
-
+#ifdef CLIENT_DLL
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
@@ -1118,7 +1158,7 @@ void CCampaignDatabase::FlushMountedCampaignGraphs( void )
 	char szCampaignNodeGraphPath[MAX_PATH];
 	V_sprintf_safe( szCampaignNodeGraphPath, "%s\\%s\\%s\\maps\\graphs", engine->GetGameDirectory(), CAMPAIGN_MOUNT_DIR, GetMountedCampaign()->id );
 
-	RemoveFilesInDirectory(szCampaignNodeGraphPath, ".ain");
+	RemoveFilesInDirectory(szCampaignNodeGraphPath, NULL);
 }
 
 CON_COMMAND(campaign_flush_nodegraph, "Clears all .ain  files from our mounted campaign's maps folder.")
@@ -1129,15 +1169,38 @@ CON_COMMAND(campaign_flush_nodegraph, "Clears all .ain  files from our mounted c
 
 	database->FlushMountedCampaignGraphs();
 }
+#endif
+//-----------------------------------------------------------------------------
+// Purpose:
+//-----------------------------------------------------------------------------
+#ifdef CLIENT_DLL
+void CCampaignDatabase::RunBackgroundValidate( void )
+{
+	if ( !IsWorkshopCampaignMounted() )
+		return;
 
+	ValidateBackgrounds(GetMountedCampaign()->id);
+}
+CON_COMMAND(campaign_run_background_validate, "")
+{
+	CCampaignDatabase *database = GetCampaignDatabase();
+	if ( !database )
+		return;
+
+	database->RunBackgroundValidate();
+}
+#endif
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
 void CCampaignDatabase::RunSoundScriptMount( void )
 {
+	if ( !IsWorkshopCampaignMounted() )
+		return;
+
 	HandleCustomSoundScripts(GetMountedCampaign()->id);
 }
-
+#ifdef CLIENT_DLL
 CON_COMMAND(campaign_run_soundscript_mount, "")
 {
 	CCampaignDatabase *database = GetCampaignDatabase();
@@ -1146,3 +1209,4 @@ CON_COMMAND(campaign_run_soundscript_mount, "")
 
 	database->RunSoundScriptMount();
 }
+#endif

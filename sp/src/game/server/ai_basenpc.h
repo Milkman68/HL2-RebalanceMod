@@ -918,6 +918,8 @@ private:
 	bool				m_bWakeSquad;
 	int					m_nWakeTick;
 
+	int					m_iSkillLevel;	// The difficulty of the game when we spawn.
+
 public:
 	//-----------------------------------------------------
 	//
@@ -1060,7 +1062,9 @@ public:
 	virtual bool		ShouldPickADeathPose( void ) { return true; }
 
 	virtual	bool		AllowedToIgnite( void ) { return false; }
+
 	void				SetPuntScale( float scale = 1.0f ) { m_flPuntScale = scale; }
+	float				GetPuntScale( void ) { return m_flPuntScale; }
 
 protected:
 	virtual float 		GetGoalRepathTolerance( CBaseEntity *pGoalEnt, GoalType_t type, const Vector &curGoal, const Vector &curTargetPos );
@@ -1656,8 +1660,8 @@ public:
 	virtual bool		TestShootPosition(const Vector &vecShootPos, const Vector &targetPos )	{ return WeaponLOSCondition( vecShootPos, targetPos, false ); }
 	virtual bool		IsCoverPosition( const Vector &vecThreat, const Vector &vecPosition );
 
-	virtual float		GetCoverPositionScore( const Vector &vecThreat, const Vector &vecCover, float flPathDist, float flIdealDist = 500.0f, bool bEnemyReachable = true );
-	virtual float		GetLOSPositionScore( const Vector &vecThreat, const Vector &vecPos,  float flPathDist, float flIdealDist = 500.0f );
+	virtual float		GetCoverPositionScore( const Vector &vecThreat, const Vector &vecThreatEye, const Vector &vecCover, float flPathDist, float flIdealDist = 500.0f, bool bEnemyReachable = true );
+	virtual float		GetLOSPositionScore( const Vector &vecThreat, const Vector &vecThreatEye, const Vector &vecPos,  float flPathDist, float flIdealDist = 500.0f );
 
 	virtual bool		IsCoverLinkUsable( const Vector &vecStart, const Vector &vecEnd, const Vector &vecThreat, const Vector &vecThreatEyePos, float flIdealDist = 500.0f );
 	virtual bool		IsLOSLinkUsable( const Vector &vecStart, const Vector &vecEnd, const Vector &vecThreat, const Vector &vecThreatEyePos, float flIdealDist = 500.0f );
@@ -1823,6 +1827,12 @@ public:
 	virtual	bool		ShouldLeadShootTrajectory( void ) { return true; }
 
 	//---------------------------------
+	//  Difficulty
+	//---------------------------------
+	virtual	void		SetHealthSkillBased( const char *pConvar );
+	virtual	void		SetSpeedSkillBased( const char *pConvar );
+
+	//---------------------------------
 	//  Damage
 	//---------------------------------
 	virtual int			OnTakeDamage_Alive( const CTakeDamageInfo &info );
@@ -1837,6 +1847,8 @@ public:
 
 	void				DoRadiusDamage( const CTakeDamageInfo &info, int iClassIgnore, CBaseEntity *pEntityIgnore );
 	void				DoRadiusDamage( const CTakeDamageInfo &info, const Vector &vecSrc, int iClassIgnore, CBaseEntity *pEntityIgnore );
+
+	void				NPCVelocityImpulse( const Vector &vecDir, float flScale );
 
 	//---------------------------------
 

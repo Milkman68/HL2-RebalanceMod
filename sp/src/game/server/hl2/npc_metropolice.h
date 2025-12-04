@@ -314,7 +314,7 @@ private:
 	
 	// Can we become an Elite?
 	bool CanBecomeElite( void );
-	bool CanSupressEnemy( void );
+	bool CanSuppressEnemy( void );
 	
 	bool IsRunningFleeSchedule( void );
 	

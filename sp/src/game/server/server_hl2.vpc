@@ -258,6 +258,29 @@ $Project "Server (HL2)"
 			$File	"hl2\grenade_satchel.cpp"
 			$File	"hl2\grenade_satchel.h"
 
+			$Folder	"HL2R"
+			{
+				$File	"hl2r\weapon_hmg.cpp"
+				$File	"hl2r\weapon_pulsecannon.cpp"
+				$File	"hl2r\weapon_combinesniper.cpp"
+
+				$File	"$SRCDIR\game\shared\hl2r\hl2r_campaign_database.cpp"		\
+						"$SRCDIR\game\shared\hl2r\hl2r_utils.cpp"
+				{
+					$Configuration
+					{
+						$Compiler
+						{
+							$Create/UsePrecompiledHeader	"Not Using Precompiled Headers"
+						}
+					}
+				}
+
+				$File	"$SRCDIR\game\shared\hl2r\hl2r_campaign_database.h"
+				$File	"$SRCDIR\game\shared\hl2r\hl2r_utils.h"
+
+			}
+
 			$Folder	"Unused"
 			{
 				$File	"hl2\grenade_beam.cpp"

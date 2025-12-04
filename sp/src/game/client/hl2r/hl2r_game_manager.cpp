@@ -8,8 +8,8 @@ using namespace vgui;
 #include "utlbuffer.h"
 #include <vgui_controls/QueryBox.h>
 #include "ienginevgui.h"
-#include "hl2r_utils.h"
-#include "hl2r_campaign_database.h"
+#include <hl2r\hl2r_utils.h>
+#include <hl2r\hl2r_campaign_database.h>
 #include "hl2r_game_manager.h"
 
 CGameManager *g_pCGameManager = NULL;

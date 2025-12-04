@@ -35,6 +35,9 @@ STUB_WEAPON_CLASS( weapon_357, Weapon357, C_BaseHLCombatWeapon );
 //STUB_WEAPON_CLASS( weapon_crossbow, WeaponCrossbow, C_BaseHLCombatWeapon );
 STUB_WEAPON_CLASS( weapon_slam, Weapon_SLAM, C_BaseHLCombatWeapon );
 STUB_WEAPON_CLASS( weapon_crowbar, WeaponCrowbar, C_BaseHLBludgeonWeapon );
+STUB_WEAPON_CLASS( weapon_hmg, WeaponHMG, C_HLSelectFireMachineGun );
+STUB_WEAPON_CLASS( weapon_pulsecannon, WeaponPulseCannon, C_BaseHLCombatWeapon );
+STUB_WEAPON_CLASS( weapon_combinesniper, WeaponCombineSniper, C_BaseHLCombatWeapon );
 #ifdef HL2_EPISODIC
 STUB_WEAPON_CLASS( weapon_hopwire, WeaponHopwire, C_BaseHLCombatWeapon );
 //STUB_WEAPON_CLASS( weapon_proto1, WeaponProto1, C_BaseHLCombatWeapon );

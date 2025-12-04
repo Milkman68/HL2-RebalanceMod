@@ -477,7 +477,7 @@ bool CNPC_CombineS::IsHeavyDamage( const CTakeDamageInfo &info )
 {
 	if ( m_nRecentDamage > RECENT_DAMAGE_THRESHOLD && m_flRecentDamageTime != FLT_MAX )
 	{
-	/*	if ( random->RandomInt(0,1) == 1 )
+		if ( random->RandomInt(0,1) == 1 )
 		{
 			// This doesn't feel clean, as most responses go in the ai file, but its convinient so its going here.
 			GetSentences()->Speak( "COMBINE_TAUNT", SENTENCE_PRIORITY_HIGH, SENTENCE_CRITERIA_NORMAL ); 
@@ -486,10 +486,10 @@ bool CNPC_CombineS::IsHeavyDamage( const CTakeDamageInfo &info )
 			m_flRecentDamageTime = 0;
 		}
 		else
-		{*/
+		{
 			m_flRecentDamageTime = FLT_MAX;
 			return true;
-	//	}
+		}
 	}
 	
 	return false;

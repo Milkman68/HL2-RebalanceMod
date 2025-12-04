@@ -4,7 +4,7 @@
 #pragma once
 #endif
 
-#include "hl2r_campaign_database.h"
+#include <hl2r\hl2r_campaign_database.h>
 #include "hl2r_game_manager.h"
 
 #include <vgui_controls/HTML.h>
@@ -615,9 +615,6 @@ public:
 	virtual void OnClose();
 };
 
-
-// HACK: These 2 classes below should REALLY go in their own files.
-
 //-----------------------------------------------------------------------------
 // Purpose: An extension of SectionedListPanelHeader that allows individual columns to be
 // selected via togglebuttons that sends the currently selected column's index to a target panel.
@@ -731,6 +728,8 @@ void SelectableColumnHeader::OnCommand(const char* pcCommand)
 		{
 			m_iSelectedColumn = i;
 			PostActionSignal(new KeyValues("ColumnSelected", "column", m_iSelectedColumn));
+
+			m_pListPanel->ClearSelection();
 		}
 		else
 		{
@@ -752,46 +751,4 @@ void SelectableColumnHeader::SetSelectedColumn( int iColumn, bool bDepressed )
 	m_iSelectedColumn = iColumn;
 	m_iSelectedColumnDepressed = bDepressed;
 }
-
-//-----------------------------------------------------------------------------
-// Purpose: Creates a disclaimer box before executing a command.
-//-----------------------------------------------------------------------------
-class CommandDisclaimerBox : public QueryBox
-{
-	DECLARE_CLASS_SIMPLE( CommandDisclaimerBox, QueryBox );
-
-public:
-	CommandDisclaimerBox(const char *title, const char *queryText, const char *okcommand, const char *disableconvar, Panel *parent = NULL ) : QueryBox(title, queryText, parent)
-	{
-		V_strcpy(szOkCommand, okcommand);
-		V_strcpy(szDisableConvar, disableconvar);
-	}
-	CommandDisclaimerBox(const wchar_t *wszTitle, const wchar_t *wszQueryText, const char *okcommand, const char *disableconvar, Panel *parent = NULL) : QueryBox(wszTitle, wszQueryText, parent)
-	{
-		V_strcpy(szOkCommand, okcommand);
-		V_strcpy(szDisableConvar, disableconvar);
-	}
-
-public: 
-	void OnCommand(const char *command)
-	{
-		if (!stricmp(command, "OnOk") )
-		{
-			engine->ClientCmd(szOkCommand);
-		}
-		if (!stricmp(command, "OnCancel") )
-		{
-			ConVarRef var(szDisableConvar);
-			var.SetValue( !var.GetBool() );
-
-			engine->ClientCmd(szOkCommand);
-		}
-	
-		BaseClass::OnCommand(command);
-	}
-
-private:
-	char szDisableConvar[32];
-	char szOkCommand[32];
-};
 #endif

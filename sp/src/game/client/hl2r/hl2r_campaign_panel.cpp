@@ -10,7 +10,7 @@ using namespace vgui;
 #include "vgui/ILocalize.h"
 #include "ienginevgui.h"
 #include "hl2r_campaign_panel.h"
-#include "hl2r_campaign_database.h"
+#include <hl2r\hl2r_campaign_database.h>
 
 // TODO:
 
@@ -568,32 +568,4 @@ CON_COMMAND(StartWorkshopCampaign, "Starts the currently mounted campaign")
 	V_sprintf_safe(szMapCommand, "map %s", database->GetMountedCampaign()->maplist[szMapIndex] );
 
 	engine->ClientCmd(szMapCommand);
-}
-
-//-----------------------------------------------------------------------------
-// Purpose:
-//-----------------------------------------------------------------------------
-
-ConVar hl2r_options_disable_disclaimer( "hl2r_options_disable_disclaimer", "0", FCVAR_REPLICATED | FCVAR_ARCHIVE );
-CON_COMMAND(Hl2rOpenOptionsDialog, "Opens the options panel")
-{
-	char szCommand[32];
-	V_strcpy(szCommand, "gamemenucommand OpenOptionsDialog");
-
-	char szConVar[32];
-	V_strcpy(szConVar, "hl2r_options_disable_disclaimer");
-
-	ConVarRef var(szConVar);
-	if ( !var.GetBool() )
-	{
-		CommandDisclaimerBox *disclaimerbox = new CommandDisclaimerBox("NOTICE", "HL2R is built off an older version of hl2 so not everything will be functional", 
-			szCommand, szConVar, FindGameUIChildPanel("BaseGameUIPanel"));
-
-		disclaimerbox->SetCancelButtonText("Don't show this again");
-		disclaimerbox->DoModal();
-	}
-	else
-	{
-		engine->ClientCmd("gamemenucommand OpenOptionsDialog");
-	}
 }

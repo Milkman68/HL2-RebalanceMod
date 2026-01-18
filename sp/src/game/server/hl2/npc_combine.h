@@ -323,7 +323,8 @@ private:
 	float			m_flAlertPatrolTime;		// When to stop doing alert patrol
 	float			m_flNextAltFireTime;		// Elites only. Next time to begin considering alt-fire attack.
 	float			m_flTimeSawEnemyAgain;
-	float			m_flThrowSpeed;
+
+	Activity		m_eGrenadeThrowAnim;
 	
 	int				m_nShots;
 	float			m_flShotDelay;

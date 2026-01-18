@@ -70,6 +70,7 @@ public:
 	virtual void SetViewSourceEnabled( bool state );
 	virtual void NewWindowsOnly( bool state );
 	virtual void DisableBrowserClicks( bool disable );
+	virtual void ClickOpensInPCBrowser( bool disable );
 
 	bool IsScrolledToBottom();
 	bool IsScrollbarVisible();
@@ -241,6 +242,7 @@ private:
 	int	m_iScrollbarSize;
 	bool m_bNewWindowsOnly;
 	bool m_bBrowserClicksDisabled;
+	bool m_bClickOpensInPCBrowser;
 	int m_nViewSourceAllowedIndex;
 	CUtlString m_sDragURL;
 	int m_iDragStartX, m_iDragStartY;

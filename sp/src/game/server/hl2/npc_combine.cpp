@@ -175,7 +175,6 @@ DEFINE_FIELD( m_nShots, FIELD_INTEGER ),
 DEFINE_FIELD( m_flShotDelay, FIELD_FLOAT ),
 DEFINE_FIELD( m_flStopMoveShootTime, FIELD_TIME ),
 DEFINE_FIELD( m_flTimeSawEnemyAgain, FIELD_TIME ),
-DEFINE_FIELD( m_flThrowSpeed, FIELD_TIME ),
 DEFINE_FIELD( m_flDelayAttacksTime, FIELD_TIME ),
 DEFINE_KEYFIELD( m_iNumGrenades, FIELD_INTEGER, "NumGrenades" ),
 DEFINE_EMBEDDED( m_Sentences ),
@@ -204,6 +203,7 @@ DEFINE_INPUTFUNC( FIELD_VOID,	"HitByBugbait",		InputHitByBugbait ),
 DEFINE_INPUTFUNC( FIELD_STRING,	"ThrowGrenadeAtTarget",	InputThrowGrenadeAtTarget ),
 
 DEFINE_FIELD( m_iLastAnimEventHandled, FIELD_INTEGER ),
+DEFINE_FIELD( m_eGrenadeThrowAnim, FIELD_INTEGER ),
 DEFINE_FIELD( m_fIsElite, FIELD_BOOLEAN ),
 DEFINE_FIELD( m_bCanRun, FIELD_BOOLEAN ),
 DEFINE_FIELD( m_vecAltFireTarget, FIELD_VECTOR ),
@@ -502,12 +502,14 @@ void CNPC_Combine::GatherConditions()
 			}
 		}
 		
-		if ( gpGlobals->curtime > m_flNextGrenadeCheck )
+		if ( !IsElite() && gpGlobals->curtime > m_flNextGrenadeCheck )
 		{
 			if ( CanGrenadeEnemy() )
 				SetCondition( COND_COMBINE_CAN_GRENADE_ENEMY );
 			else
 				ClearCondition( COND_COMBINE_CAN_GRENADE_ENEMY );
+
+			m_flNextGrenadeCheck = gpGlobals->curtime + 1; // one full second.
 		}
 		
 		if ( IsElite() || hl2r_enemies_altfire.GetBool() )
@@ -518,6 +520,8 @@ void CNPC_Combine::GatherConditions()
 					SetCondition( COND_COMBINE_CAN_ALTFIRE_ENEMY );
 				else
 					ClearCondition( COND_COMBINE_CAN_ALTFIRE_ENEMY );
+
+				m_flNextAltFireTime = gpGlobals->curtime + 1; // one full second.
 			}
 		}
 		
@@ -688,8 +692,8 @@ bool CNPC_Combine::ShouldMoveAndShoot()
 	if ( !GetActiveWeapon() )
 		return false;
 	
-  	if( IsCurSchedule( SCHED_COMBINE_HIDE_AND_RELOAD, false ) )
-		return false;
+ // 	if( IsCurSchedule( SCHED_COMBINE_HIDE_AND_RELOAD, false ) )
+//		return false;
 
 	if ( IsRunningFleeSchedule() )
 		return false;
@@ -1166,20 +1170,13 @@ void CNPC_Combine::StartTask( const Task_t *pTask )
 		}
 	case TASK_PLAY_GRENADE_SEQUENCE:
 		{
-			if ( m_flThrowSpeed <= COMBINE_GRENADE_TOSS_SPEED )
-			{
-				SetIdealActivity( ACT_SPECIAL_ATTACK1 );
-			}
-			else
-			{
-				SetIdealActivity( ACT_RANGE_ATTACK2 );
-			}
-		break;
+			SetIdealActivity( m_eGrenadeThrowAnim );
+			break;
 		}
 	case TASK_PLAY_COVER_SEQUENCE:
 		{
 			SetActivity( GetCoverActivity( NULL ) );
-		break;
+			break;
 		}
 	case TASK_RELOAD:
 	{
@@ -3023,29 +3020,9 @@ bool CNPC_Combine::CanThrowGrenade( const Vector &vecTarget )
 	float flDist;
 	flDist = ( vecTarget - GetAbsOrigin() ).Length();
 
+	// Too close or too far!
 	if( flDist > 1024 || flDist < 128 )
-	{
-		// Too close or too far!
-		m_flNextGrenadeCheck = gpGlobals->curtime + 1; // one full second.
 		return false;
-	}
-
-	// -----------------------
-	// If moving, don't check.
-	// -----------------------
-//	if ( m_flGroundSpeed != 0 )
-	//	return false;
-
-#if 0
-	Vector vecEnemyLKP = GetEnemyLKP();
-	if ( !( GetEnemy()->GetFlags() & FL_ONGROUND ) && GetEnemy()->GetWaterLevel() == 0 && vecEnemyLKP.z > (GetAbsOrigin().z + WorldAlignMaxs().z)  )
-	{
-		//!!!BUGBUG - we should make this check movetype and make sure it isn't FLY? Players who jump a lot are unlikely to 
-		// be grenaded.
-		// don't throw grenades at anything that isn't on the ground!
-		return COND_NONE;
-	}
-#endif
 
 	// ---------------------------------------------------------------------
 	// Are any of my squad members near the intended grenade impact area?
@@ -3054,9 +3031,6 @@ bool CNPC_Combine::CanThrowGrenade( const Vector &vecTarget )
 	{
 		if (m_pSquad->SquadMemberPathInRange( vecTarget, COMBINE_MIN_GRENADE_CLEAR_DIST ))
 		{
-			// crap, I might blow my own guy up. Don't throw a grenade and don't check again for a while.
-			m_flNextGrenadeCheck = gpGlobals->curtime + 1; // one full second.
-
 			// Tell my squad members to clear out so I can get a grenade in
 			
 			// Don't displace soldiers from firing positions or cover just for the possibility of throwing a nade!
@@ -3081,64 +3055,24 @@ bool CNPC_Combine::CheckCanThrowGrenade( const Vector &vecTarget )
 	// Check that throw is legal and clear
 	// ---------------------------------------------------------------------
 	// FIXME: this is only valid for hand grenades, not RPG's
-	Vector vecToss;
+	Vector vecToss = vec3_origin;
 	Vector vecMins = -Vector(4,4,4);
 	Vector vecMaxs = Vector(4,4,4);
-			
-	float flDist;
-	flDist = ( vecTarget - GetAbsOrigin() ).Length();
-		
+
 	// Check what type of throw we're doing.
-	m_flThrowSpeed = flDist > 350 ? COMBINE_GRENADE_THROW_SPEED : COMBINE_GRENADE_TOSS_SPEED;
+	m_eGrenadeThrowAnim = ( vecTarget - GetAbsOrigin() ).Length() < 350 ? ACT_SPECIAL_ATTACK1 : ACT_RANGE_ATTACK2;
 	
-	if( FInViewCone( vecTarget ) && CBaseEntity::FVisible( vecTarget ) )
+	for (float ratio = 1.5f; ratio >= 0.15; ratio -= 0.15f)
 	{
-		trace_t tr;
-		
-		// Approximate chest-height.
-		Vector vecStart = EyePosition() + Vector( 0, 0, -40 );
-		
-		// HACKHACK: We need to do this trace since soldiers behind waist-high cover will nade themselves 
-		// because the position of their throw animation is lower than their eyes.
-		AI_TraceLine( vecStart, vecTarget, MASK_SOLID_BRUSHONLY, this, COLLISION_GROUP_NONE, &tr );
-		
-		// Do a high toss if this is the case!
-		if ( tr.fraction != 1.0 )
+		vecToss = VecCheckToss(this, EyePosition(), vecTarget, ratio, 1.0f, true, &vecMins, &vecMaxs);
+		if (vecToss != vec3_origin)
 		{
-			vecToss = VecCheckToss( this, vecStart, vecTarget, -1, 1.0, true, &vecMins, &vecMaxs );
-		}
-		else
-		{
-			vecToss = VecCheckThrow( this, EyePosition(), vecTarget, flDist, 1.0, &vecMins, &vecMaxs );
+			m_vecTossVelocity = vecToss;
+			return true;
 		}
 	}
-	else
-	{
-		// Have to try a high toss. Do I have enough room?
-		trace_t tr;
-		AI_TraceLine( EyePosition(), EyePosition() + Vector( 0, 0, 64 ), MASK_SHOT|CONTENTS_GRATE, this, COLLISION_GROUP_NONE, &tr );
-		if( tr.fraction != 1.0 )
-		{
-			return false;
-		}
 
-		vecToss = VecCheckToss( this, EyePosition(), vecTarget, -1, 1.0, true, &vecMins, &vecMaxs );
-	}
-
-	if ( vecToss != vec3_origin )
-	{
-		m_vecTossVelocity = vecToss;
-
-		// don't check again for a while.
-		m_flNextGrenadeCheck = gpGlobals->curtime + 1; // 1/3 second.
-		return true;
-	}
-	else
-	{
-		// don't check again for a while.
-		m_flNextGrenadeCheck = gpGlobals->curtime + 1; // one full second.
-		return false;
-	}
+	return false;
 }
 
 //-----------------------------------------------------------------------------
@@ -3190,11 +3124,8 @@ bool CNPC_Combine::CanAltFireEnemy( bool bUseFreeKnowledge )
 			return false;
 		
 		if ( ( vecTarget - GetLocalOrigin() ).Length2D() <= COMBINE_MIN_GRENADE_CLEAR_DIST )
-		{
-			// crap, I don't want to blow myself up
-			m_flNextAltFireTime = gpGlobals->curtime + 1; // one full second.
 			return false;
-		}
+
 		// ---------------------------------------------------------------------
 		// Trace a hull to make sure there's nothing between us and our target.
 		// ---------------------------------------------------------------------
@@ -3229,16 +3160,10 @@ bool CNPC_Combine::CanAltFireEnemy( bool bUseFreeKnowledge )
 		CBaseEntity *pTarget = NULL;
 		while ( ( pTarget = gEntList.FindEntityInSphere( pTarget, vecTarget, COMBINE_MIN_GRENADE_CLEAR_DIST ) ) != NULL )
 		{
-			//Check to see if the default relationship is hatred, and if so intensify that
 			if ( IRelationType( pTarget ) == D_LI )
-			{
-				// crap, I might blow my own guy up. Don't throw a grenade and don't check again for a while.
-				m_flNextAltFireTime = gpGlobals->curtime + 1; // one full second.
 				return false;
-			}
 		}
-		
-		m_flNextAltFireTime = gpGlobals->curtime + 1;
+
 		m_vecAltFireTarget = vecTarget;
 		return true;
 	}
@@ -3276,7 +3201,6 @@ bool CNPC_Combine::CanAltFireEnemy( bool bUseFreeKnowledge )
 
 	// Check again later
 	m_vecAltFireTarget = vec3_origin;
-	m_flNextAltFireTime = gpGlobals->curtime + 1.0f;
 	return false;
 }
 //-----------------------------------------------------------------------------
@@ -4340,7 +4264,7 @@ DEFINE_SCHEDULE
  SCHED_COMBINE_HIDE_AND_RELOAD,
 
  "	Tasks"
- "		TASK_SET_FAIL_SCHEDULE		SCHEDULE:SCHED_RELOAD"
+ "		TASK_SET_FAIL_SCHEDULE		SCHEDULE:SCHED_COMBINE_TAKECOVER_FAILED"
  "		TASK_FIND_COVER_FROM_ENEMY_IN_WEAPON_RANGE	0"
  "		TASK_RUN_PATH				0"
  "		TASK_WAIT_FOR_MOVEMENT		0"

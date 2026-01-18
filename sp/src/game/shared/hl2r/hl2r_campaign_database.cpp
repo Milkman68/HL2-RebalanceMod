@@ -929,6 +929,9 @@ void CCampaignDatabase::SetCampaignAsMounted( const char *pCampaignID )
 	// Prevent invalid background maps from loading.
 	ValidateBackgrounds(pCampaignID);
 
+	// Clear any prebuilt nodegraphs.
+	FlushCampaignGraphs(pCampaignID);
+
 	GetCampaignFromID(pCampaignID)->mounted = true;
 	WriteListToScript();
 }
@@ -1014,15 +1017,16 @@ void CCampaignDatabase::ValidateBackgrounds( const char *pCampaignID )
 	if ( !pChapterBackgroundsFile->LoadFromFile( filesystem, CAMPAIGN_DEFAULT_SOUNDSCRIPTS_FILE, "MOD" ) )
 		return;
 
+	bool bFound = false;
 	for ( KeyValues *pBackgroundMap = pChapterBackgroundsFile->GetFirstSubKey(); pBackgroundMap; pBackgroundMap = pBackgroundMap->GetNextKey() )
 	{
 		// If this campaign's background list contains a missing map get rid of the file.
-		if ( !g_pFullFileSystem->FileExists( VarArgs("maps\\%s.bsp", pBackgroundMap->GetString() )) )
-		{
-			g_pFullFileSystem->RemoveFile(szChapterBackgroundsDir);
-			return;
-		}
+		if ( g_pFullFileSystem->FileExists( VarArgs("maps\\%s.bsp", pBackgroundMap->GetString() )) )
+			bFound = true;
 	}
+
+	if ( !bFound )
+		g_pFullFileSystem->RemoveFile(szChapterBackgroundsDir);
 }
 #endif
 //-----------------------------------------------------------------------------
@@ -1152,11 +1156,11 @@ void CCampaignDatabase::UnmountMountedCampaign( void )
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-void CCampaignDatabase::FlushMountedCampaignGraphs( void )
+void CCampaignDatabase::FlushCampaignGraphs( const char *pCampaignID )
 {
 	// Remove the graphs folder.
 	char szCampaignNodeGraphPath[MAX_PATH];
-	V_sprintf_safe( szCampaignNodeGraphPath, "%s\\%s\\%s\\maps\\graphs", engine->GetGameDirectory(), CAMPAIGN_MOUNT_DIR, GetMountedCampaign()->id );
+	V_sprintf_safe( szCampaignNodeGraphPath, "%s\\%s\\%s\\maps\\graphs", engine->GetGameDirectory(), CAMPAIGN_MOUNT_DIR, pCampaignID );
 
 	RemoveFilesInDirectory(szCampaignNodeGraphPath, NULL);
 }
@@ -1167,7 +1171,7 @@ CON_COMMAND(campaign_flush_nodegraph, "Clears all .ain  files from our mounted c
 	if ( !database )
 		return;
 
-	database->FlushMountedCampaignGraphs();
+	database->FlushCampaignGraphs(database->GetMountedCampaign()->id);
 }
 #endif
 //-----------------------------------------------------------------------------

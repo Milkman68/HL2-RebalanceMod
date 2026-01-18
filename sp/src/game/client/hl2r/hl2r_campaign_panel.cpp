@@ -6,11 +6,14 @@ using namespace vgui;
 #include <vgui_controls/QueryBox.h>
 #include "vgui_controls/AnimationController.h"
 #include "vgui_controls/ToggleButton.h"
+#include "vgui_controls/WizardPanel.h"
 #include <vgui/ISurface.h>
 #include "vgui/ILocalize.h"
 #include "ienginevgui.h"
 #include "hl2r_campaign_panel.h"
 #include <hl2r\hl2r_campaign_database.h>
+#include <hl2r\vgui_controls\SelectableColumnHeader.h>
+#include <hl2r\vgui_controls\DisclaimerBox.h>
 
 // TODO:
 
@@ -533,10 +536,28 @@ void CHL2RCampaignPanel::OnScreenSizeChanged(int iOldWide, int iOldTall)
 //------------------------------------------------------------------------------
 // Purpose:
 //------------------------------------------------------------------------------
-//ConVar hl2r_campaign_launcher_show_disclaimer( "hl2r_campaign_launcher_show_disclaimer", "0", FCVAR_REPLICATED | FCVAR_ARCHIVE );
+ConVar hl2r_campaign_launcher_show_disclaimer( "hl2r_campaign_launcher_show_disclaimer", "0", FCVAR_ARCHIVE );
 
 CHL2RCampaignPanel* CampaignPanel = NULL;
 CON_COMMAND(OpenHL2RCampaignDialog, "Opens the campaign manager ui")
+{
+	if ( !isCampaignPanelActive && hl2r_campaign_launcher_show_disclaimer.GetBool() )
+	{
+		DisclaimerBox *box = new DisclaimerBox("#hl2r_notice_title", "#hl2r_campaign_list_disclaimer", FindGameUIChildPanel("BaseGameUIPanel"));
+		box->SetDismissConvar("hl2r_campaign_launcher_show_disclaimer");
+		box->SetOKClientCommand("OpenHL2RCampaignDialogConfirmed");
+
+		box->SetCancelButtonText("#hl2r_cancel");
+		box->SetCancelButtonVisible(true);
+		box->DoModal();
+
+		return;
+	}
+		
+	engine->ClientCmd_Unrestricted("OpenHL2RCampaignDialogConfirmed");
+}
+
+CON_COMMAND(OpenHL2RCampaignDialogConfirmed, "Opens the campaign manager ui")
 {
 	if (!isCampaignPanelActive)
 	{

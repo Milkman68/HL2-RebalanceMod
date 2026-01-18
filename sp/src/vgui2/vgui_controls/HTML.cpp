@@ -218,6 +218,7 @@ m_HideTooltip( this, &HTML::BrowserHideToolTip )
 	m_bContextMenuEnabled = true; 
 	m_bNewWindowsOnly = false;
 	m_bBrowserClicksDisabled = false;
+	m_bClickOpensInPCBrowser = false;
 	m_iMouseX = m_iMouseY = 0;
 	m_iDragStartX = m_iDragStartY = 0;
 	m_nViewSourceAllowedIndex = -1;
@@ -703,6 +704,8 @@ void HTML::OnMouseReleased(MouseCode code)
 //-----------------------------------------------------------------------------
 void HTML::OnCursorMoved(int x,int y)
 {
+	SetCursor( m_bClickOpensInPCBrowser ? dc_hand : dc_none );
+
 	if ( m_bBrowserClicksDisabled )
 		return;
 
@@ -744,6 +747,12 @@ void HTML::OnCursorMoved(int x,int y)
 //-----------------------------------------------------------------------------
 void HTML::OnMouseDoublePressed(MouseCode code)
 {
+	if ( m_SteamAPIContext.SteamHTMLSurface() && m_bClickOpensInPCBrowser )
+		 system()->ShellExecute("open", m_sCurrentURL);
+
+	if ( m_bBrowserClicksDisabled )
+		return;
+
 	if (m_SteamAPIContext.SteamHTMLSurface())
 		m_SteamAPIContext.SteamHTMLSurface()->MouseDoubleClick( m_unBrowserHandle, ConvertMouseCodeToCEFCode( code ) );
 }
@@ -1096,6 +1105,15 @@ void HTML::NewWindowsOnly( bool state )
 void HTML::DisableBrowserClicks( bool disable )
 {
 	m_bBrowserClicksDisabled = disable;
+}
+
+
+//-----------------------------------------------------------------------------
+// Purpose: data accessor
+//-----------------------------------------------------------------------------
+void HTML::ClickOpensInPCBrowser( bool disable )
+{
+	m_bClickOpensInPCBrowser = disable;
 }
 
 

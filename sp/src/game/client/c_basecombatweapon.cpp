@@ -267,7 +267,7 @@ void C_BaseCombatWeapon::DrawCrosshair()
 	if ( hl2r_old_crosshair.GetBool() )
 	{
 		Color white( 255, 255, 255, 255 );
-		crosshair->SetCrosshair( gHUD.GetIcon( "plushair" ), white );
+		crosshair->SetCrosshair( gHUD.GetIcon( "defaulthair" ), white );
 		return;
 	}
 

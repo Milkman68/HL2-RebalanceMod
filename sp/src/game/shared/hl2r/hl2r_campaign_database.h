@@ -172,7 +172,7 @@ public:
 	ESortDirection	GetSortDir() { return m_SortMethod.eDir; }
 
 	// Nodegraph hotfix:
-	void	FlushMountedCampaignGraphs( void );
+	void	FlushCampaignGraphs( const char *pCampaignID );
 #endif
 	void	RunSoundScriptMount( void );
 	void	RunBackgroundValidate( void );

@@ -12783,6 +12783,9 @@ float CAI_BaseNPC::GetCoverPositionScore( const Vector &vecThreat, const Vector 
 	
 	// Score it based on how close it is to the desired distance from the threat.
 	flNodeScore += ( flIdealDist - fabsf(flCoverToThreat - flIdealDist) ) / flIdealDist;
+
+	// Give greater score to nodes that have highground over our enemy.
+	flNodeScore += (vecCover.z - vecThreat.z) * 0.001;
 	
 	// Give bonus score if this node can double as a firing posistion.
 	if ( ShouldForceCrouchCover() )

@@ -132,6 +132,14 @@ $Project "Client (Episodic)"
 		
 		$Folder	"HL2R"
 		{
+			$Folder	"vgui_controls"
+			{
+				$File	"hl2r\vgui_controls\DisclaimerBox.cpp"
+				$File	"hl2r\vgui_controls\DisclaimerBox.h"
+				$File	"hl2r\vgui_controls\SelectableColumnHeader.cpp"
+				$File	"hl2r\vgui_controls\SelectableColumnHeader.h"
+			}
+
 			$File	"hl2r\hl2r_options.cpp"
 			$File	"hl2r\hl2r_options.h"
 			$File	"hl2r\hl2r_baseoptions.h"

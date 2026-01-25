@@ -148,6 +148,7 @@ private:
 	
 	// Mod loading:
 	void LoadAddons( void );
+	void MountPrioritySearchPaths( void );
 };
 
 

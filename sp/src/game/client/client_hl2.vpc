@@ -124,6 +124,8 @@ $Project "Client (HL2)"
 				$File	"hl2r\vgui_controls\DisclaimerBox.h"
 				$File	"hl2r\vgui_controls\SelectableColumnHeader.cpp"
 				$File	"hl2r\vgui_controls\SelectableColumnHeader.h"
+				$File	"hl2r\vgui_controls\GameSwitchQueryBox.cpp"
+				$File	"hl2r\vgui_controls\GameSwitchQueryBox.h"
 			}
 
 			$File	"hl2r\hl2r_options.cpp"
@@ -132,7 +134,7 @@ $Project "Client (HL2)"
 			$File	"hl2r\hl2r_campaign_panel.cpp"
 			$File	"hl2r\hl2r_campaign_panel.h"
 
-			$File	"$SRCDIR\game\shared\hl2r\hl2r_campaign_database.cpp"		\
+			$File	"$SRCDIR\game\shared\hl2r\hl2r_campaign_manager.cpp"		\
 					"$SRCDIR\game\shared\hl2r\hl2r_utils.cpp"
 			{
 				$Configuration
@@ -144,13 +146,15 @@ $Project "Client (HL2)"
 				}
 			}
 
-			$File	"$SRCDIR\game\shared\hl2r\hl2r_campaign_database.h"
+			$File	"$SRCDIR\game\shared\hl2r\hl2r_campaign_manager.h"
 			$File	"$SRCDIR\game\shared\hl2r\hl2r_utils.h"
 
 			$File	"hl2r\hl2r_gamelogo.cpp"
 			$File	"hl2r\hl2r_gamelogo.h"
 			$File	"hl2r\hl2r_game_manager.cpp"
 			$File	"hl2r\hl2r_game_manager.h"
+			$File	"hl2r\hl2r_shared_manager.cpp"
+			$File	"hl2r\hl2r_shared_manager.h"
 
 			$File	"hl2\c_npc_turret_floor.cpp"
 		}

@@ -93,6 +93,22 @@ bool MoveDirectory( const char *pDirFolder, const char *pDir, const char *pTarge
 		if ( !Q_stricmp( pFileName, "root" ) || !Q_stricmp( pFileName, ".." ) || !Q_stricmp( pFileName, "." ) )
 			continue;
 
+		if (pIgnoreList)
+		{
+			bool bIgnoreFile = false;
+			for (int i = 0; i < pIgnoreList->Count(); i++)
+			{
+				if (!Q_stricmp(pFileName, pIgnoreList->Element(i)))
+				{
+					bIgnoreFile = true;
+					break;
+				}
+			}
+
+			if (bIgnoreFile)
+				continue;
+		}
+
 		char szFilePath[MAX_PATH];
 		if ( pDirFolder == NULL )
 		{
@@ -115,22 +131,6 @@ bool MoveDirectory( const char *pDirFolder, const char *pDir, const char *pTarge
 		}
 		else
 		{
-			if ( pIgnoreList )
-			{
-				bool bIgnoreFile = false;
-				for (int i = 0; i < pIgnoreList->Count(); i++ )
-				{
-					if ( !Q_stricmp(pFileName, pIgnoreList->Element(i) ) )
-					{
-						bIgnoreFile = true;
-						break;
-					}
-				}
-
-				if ( bIgnoreFile )
-					continue;
-			}
-
 			char szNewFilePath[MAX_PATH];
 			if ( pTargetDir == NULL )
 			{

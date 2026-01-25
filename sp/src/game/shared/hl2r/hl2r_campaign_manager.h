@@ -1,5 +1,5 @@
-#ifndef hl2r_campaign_database
-#define hl2r_campaign_database
+#ifndef hl2r_campaign_Manager
+#define hl2r_campaign_Manager
 #ifdef _WIN32
 #pragma once
 #endif
@@ -11,10 +11,10 @@
 
 // Campaign accessor macros:
 #define GetCampaign(index) CampaignList()->Element(index)
-#define GetCampaignFromID(id) CampaignList()->Element( GetCampaignDatabase()->GetCampaignHandleFromID(id) )
-#define GetMountedCampaign() CampaignList()->Element( GetCampaignDatabase()->GetMountedCampaignHandle() )
+#define GetCampaignFromID(id) CampaignList()->Element( GetCampaignManager()->GetCampaignHandleFromID(id) )
+#define GetMountedCampaign() CampaignList()->Element( GetCampaignManager()->GetMountedCampaignHandle() )
 
-#define IsWorkshopCampaignMounted() GetCampaignDatabase()->ValidCampaign( GetCampaignDatabase()->GetMountedCampaignHandle() )
+#define IsWorkshopCampaignMounted() GetCampaignManager()->ValidCampaign( GetCampaignManager()->GetMountedCampaignHandle() )
 
 // Directories:
 #define CAMPAIGN_MOUNT_DIR						"campaign_launcher\\mounted"
@@ -48,7 +48,7 @@
 #define MAX_SOUNDSCRIPT_LENGTH		262144 // 2^18 Characters
 
 //-----------------------------------------------------------------------------
-// Campaign Database:
+// Campaign Manager:
 //-----------------------------------------------------------------------------
 enum EGameType
 {
@@ -80,14 +80,6 @@ enum ESortDirection
 {
 	ASCENDING_ORDER = 0,
 	DECENDING_ORDER
-};
-
-enum EMoveSaveFileType
-{
-	STORE_TO_DEFAULT = 0,
-	STORE_TO_CAMPAIGN,
-	RETRIEVE_FROM_DEFAULT,
-	RETRIEVE_FROM_CAMPAIGN
 };
 #endif
 
@@ -137,10 +129,10 @@ struct CampaignSort_t
 	ESortDirection	eDir;
 };
 #endif
-class CCampaignDatabase
+class CCampaignManager
 {
 public:
-	CCampaignDatabase();
+	CCampaignManager();
 
 #ifdef CLIENT_DLL
 
@@ -204,9 +196,6 @@ private:
 	void	SetCampaignAsMounted( const char *pCampaignID );
 	void	FixupMountedCampaignFiles( const char *pWorkshopModID );
 
-// Save files:
-	void	MoveSaveFiles( EMoveSaveFileType movetype, const char *pCampaignID = NULL );
-
 #endif
 // Sounds:
 	void		HandleCustomSoundScripts( const char *pCampaignID );
@@ -227,6 +216,6 @@ private:
 #endif
 };
 
-CCampaignDatabase *GetCampaignDatabase();
+CCampaignManager *GetCampaignManager();
 
 #endif

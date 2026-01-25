@@ -90,7 +90,7 @@
 #include "serverbenchmark_base.h"
 #include "querycache.h"
 
-#include <hl2r\hl2r_campaign_database.h>
+#include <hl2r\hl2r_campaign_manager.h>
 
 #ifdef TF_DLL
 #include "gc_clientsystem.h"
@@ -560,6 +560,47 @@ void DrawAllDebugOverlays( void )
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
+void CServerGameDLL::MountPrioritySearchPaths( void )
+{
+	KeyValues *pMainFile = new KeyValues( "gameinfo.txt" );
+	pMainFile->LoadFromFile( filesystem, "gameinfo.txt", "MOD" );
+
+	if (pMainFile)
+	{
+		KeyValues* pFileSystemKey = pMainFile->FindKey( "FileSystem" );
+		if (!pFileSystemKey)
+		{
+			pMainFile->deleteThis();
+			return;
+		}
+
+		KeyValues* pSearchPathKey = pFileSystemKey->FindKey( "SearchPaths" );
+		if (!pSearchPathKey)
+		{
+			pMainFile->deleteThis();
+			return;
+		}
+
+		for ( KeyValues *pKey = pSearchPathKey->GetFirstSubKey(); pKey; pKey = pKey->GetNextKey() )
+		{
+			// If the name is not "priority", skip.
+			if ( Q_stricmp( pKey->GetName(), "priority" ) )
+				continue;
+
+			char *szDirectoryString = new char[512];
+			Q_strncpy( szDirectoryString, UTIL_VarArgs( "../../sourcemods/hl2_rebalance/%s", pKey->GetString() ), MAX_PATH );
+
+			if ( filesystem )
+				filesystem->AddSearchPath( szDirectoryString, "GAME", PATH_ADD_TO_HEAD );
+		}
+	}
+
+	filesystem->PrintSearchPaths();
+	pMainFile->deleteThis();
+}
+//-----------------------------------------------------------------------------
+// Purpose:
+//-----------------------------------------------------------------------------
 void CServerGameDLL::LoadAddons( void )
 {
  	// Load our addon list.
@@ -574,8 +615,9 @@ void CServerGameDLL::LoadAddons( void )
 	CUtlVector<char*> addonList;
 	for ( KeyValues *pAddon = pWorkshopFile->GetFirstSubKey(); pAddon; pAddon = pAddon->GetNextKey() )
 	{
-		if ( !pAddon->GetBool() )
-			continue;
+		// This *should* work, but due to 2024 engine level stuff it doesn't. Ugh.
+	//	if ( !pAddon->GetBool() )
+	//		continue;
 
 		// Once we're done, add the addon's full path to our list.
 		char *szDirectoryString = new char[512];
@@ -625,10 +667,11 @@ bool CServerGameDLL::DLLInit( CreateInterfaceFn appSystemFactory,
 
 	// Load our workshop content.
 	LoadAddons();
+//	MountPrioritySearchPaths();
 
-	CCampaignDatabase *database = GetCampaignDatabase();
-	if ( database )
-		database->RunSoundScriptMount();
+	CCampaignManager *manager = GetCampaignManager();
+	if ( manager )
+		manager->RunSoundScriptMount();
 
 	if ( (g_pVoiceServer = (IVoiceServer*)appSystemFactory(INTERFACEVERSION_VOICESERVER, NULL)) == NULL )
 		return false;

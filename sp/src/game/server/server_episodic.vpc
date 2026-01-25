@@ -297,7 +297,7 @@ $Project "Server (Episodic)"
 				$File	"hl2r\weapon_pulsecannon.cpp"
 				$File	"hl2r\weapon_combinesniper.cpp"
 
-				$File	"$SRCDIR\game\shared\hl2r\hl2r_campaign_database.cpp"		\
+				$File	"$SRCDIR\game\shared\hl2r\hl2r_campaign_manager.cpp"		\
 						"$SRCDIR\game\shared\hl2r\hl2r_utils.cpp"
 				{
 					$Configuration
@@ -309,7 +309,7 @@ $Project "Server (Episodic)"
 					}
 				}
 
-				$File	"$SRCDIR\game\shared\hl2r\hl2r_campaign_database.h"
+				$File	"$SRCDIR\game\shared\hl2r\hl2r_campaign_manager.h"
 				$File	"$SRCDIR\game\shared\hl2r\hl2r_utils.h"
 			}
 

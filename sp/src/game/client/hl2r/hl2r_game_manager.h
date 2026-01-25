@@ -11,6 +11,9 @@
 #define GM_MAX_FOLDERS		15
 #define GM_MAX_GLOBALFILES	50
 
+#define GetCurrentGameType() GetGameManager()->m_GameList[ GetGameManager()->GetGameInfoGameType() ]
+#define GetGameType(index) GetGameManager()->m_GameList[ index ]
+
 struct Game_t
 {
 	const char *directory;
@@ -23,18 +26,17 @@ public:
 			CGameManager();
 public:
 
-	int		GetCurrentGameType(void);
+	int		GetGameInfoGameType(void);
 	bool	SetGameType( int gametype );
 		
 private:
 
 	bool	TransferGameFiles( int gametype );
-	void	HandleSaveFiles( int gametype );
 	bool	DoGameinfoFilesTransfer( int gametype );
 
-private:
+public:
 	CUtlVector<Game_t *>		m_GameList;
-	CUtlVector<const char *>	*m_GlobalFilesList;
+	CUtlVector<const char *>	*m_FileBlacklist;
 };
 
 CGameManager *GetGameManager();

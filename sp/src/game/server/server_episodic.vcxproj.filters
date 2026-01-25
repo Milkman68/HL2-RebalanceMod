@@ -1760,7 +1760,7 @@
     <ClInclude Include="hl2\weapon_stunstick.h">
       <Filter>Source Files\HL2 DLL</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\game\shared\hl2r\hl2r_campaign_database.h">
+    <ClInclude Include="..\..\game\shared\hl2r\hl2r_campaign_manager.h">
       <Filter>Source Files\HL2 DLL\HL2R</Filter>
     </ClInclude>
     <ClInclude Include="..\..\game\shared\hl2r\hl2r_utils.h">
@@ -3343,7 +3343,7 @@
     <ClCompile Include="hl2\weapon_stunstick.cpp">
       <Filter>Source Files\HL2 DLL</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\game\shared\hl2r\hl2r_campaign_database.cpp">
+    <ClCompile Include="..\..\game\shared\hl2r\hl2r_campaign_manager.cpp">
       <Filter>Source Files\HL2 DLL\HL2R</Filter>
     </ClCompile>
     <ClCompile Include="..\..\game\shared\hl2r\hl2r_utils.cpp">

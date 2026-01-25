@@ -12,8 +12,22 @@
 #include <vgui_controls/PropertySheet.h>
 #include <vgui_controls/ScrollableEditablePanel.h>
 
-// The purpose of all these is to contain instructions to create elements.
-// Not contain the elements themselves
+#define GetElement(elementname) m_ElementList[ GetElementIndexFromName(elementname) ]
+#define GetElementPtr(elementclass, elementname) dynamic_cast<elementclass *>(m_ElementList[GetElementIndexFromName(elementname)].element)
+#define GetElementPanel(elementname) GetElement(elementname).element->GetPanel()
+#define GetNumElements() m_ElementList[0].type
+
+// The number of elements is stored in the 0th index of a GenericElements array.
+#define IterateElements(iterator) for (int iterator = 1; iterator < GetNumElements() + 1; iterator++)
+
+#define START_ELEMENT_ARRAY(name, numelements) GenericElement_t name[] ={{numelements},
+
+#define ADD_CHECKBOX(name, convar, onValue, offValue) { TYPE_CVAR_CHECKBOX,	name, convar,	{onValue, offValue} },
+#define ADD_BOXBUTTON(name, convar, dropdownnames, dropdownvalues) { TYPE_CVAR_BOXBUTTON, name, convar,	{dropdownnames, dropdownvalues} },
+#define ADD_TICKSLIDER(name, convar, numticks, numindicators, minvalue, maxvalue) { TYPE_CVAR_TICKSLIDER, name, convar,	{numticks, numindicators, minvalue, maxvalue} },
+
+#define END_ELEMENT_ARRAY };
+
 
 enum eElementType
 {
@@ -95,65 +109,24 @@ public:
 	{
 		ConVarRef var(Convar);
 
-		// Get our value list
-		char szValues[8];
-		V_strcpy_safe(szValues, Values);
-
-		char *pszToken = strtok( szValues, " " );
-		if ( pszToken == NULL )
-		{
-			DevMsg("Warning! CheckButton [%s] doesn't have a valid value list!\n", Name);
-			return false; 
-		}
-
 		// First token always contains our "unckecked" value
-		if ( atof(pszToken) == var.GetFloat() )
+		if ( offvalue == var.GetFloat() )
 			return false;
-		
-		pszToken = strtok( NULL, " " );
-
-		if ( pszToken == NULL )
-		{
-			DevMsg("Warning! CheckButton [%s] doesn't have a second elenemt in its value list!\n", Name);
-			return false; 
-		}
 
 		// Second token always contains our "checked" value
-		if ( atof(pszToken) == var.GetFloat() )
+		if ( onvalue == var.GetFloat() )
 			return true;
 
-		DevMsg("Warning! CheckButton %s's ConVar is set to an invalid value!\n", Name);
 		return false;
 	}
 
 	float GetValueFromState( void )
 	{
-		// Get our value list
-		char szValues[8];
-		V_strcpy_safe(szValues, Values);
-
-		char *pszToken = strtok( szValues, " " );
-		if ( pszToken == NULL )
-		{
-			DevMsg("Warning! CheckButton [%s] doesn't have a valid value list!\n", Name);
-			return -1; 
-		}
-
-		// First token always contains our "unckecked" value
 		if ( !checkbutton->IsSelected() )
-			return atof(pszToken);
-		
-		pszToken = strtok( NULL, " " );
+			return offvalue;
 
-		if ( pszToken == NULL )
-		{
-			DevMsg("Warning! CheckButton [%s] doesn't have a second elenemt in its value list!\n", Name);
-			return -1; 
-		}
-
-		// Second token always contains our "checked" value
 		if ( checkbutton->IsSelected() )
-			return atof(pszToken);
+			return onvalue;
 
 		return -1;
 	}
@@ -161,7 +134,8 @@ public:
 public:
 	char		Name[32];
 	char		Convar[128];
-	char		Values[8];
+	float		onvalue;
+	float		offvalue;
 
 private:
 	CheckButton	*checkbutton;
@@ -169,8 +143,6 @@ private:
 //------------------------------------------------------------------------------
 // Box Buttons
 //------------------------------------------------------------------------------
-#if 1
-
 #define MAX_BOX_ELEMENTS 5
 
 #define ELEMENT_NAMES_LENGTH 256
@@ -266,7 +238,6 @@ public:
 private:
 	ComboBox	*box;
 };
-#endif
 
 //------------------------------------------------------------------------------
 // Tick Sliders
@@ -336,7 +307,7 @@ public:
 	// Constructor
 	CSubPanel( vgui::PropertyDialog *parent, GenericElement_t *pElementList ) : EditablePanel(parent, NULL)
 	{
-		m_GenericElementList = pElementList;
+		m_ElementList = pElementList;
 	}
 
 	// Enable the apply button.
@@ -348,45 +319,44 @@ public:
 	// Updates ConVars related to a given GenericElement array.
 	virtual void UpdateElements( void )
 	{
-		if ( m_GenericElementList == NULL )
+		if ( m_ElementList == NULL )
 			return;
 
-		// The number of elements is stored in the 0th index of a GenericElements array.
-		int iNumElements = m_GenericElementList[0].type;
-
-		for (int i = 1; i < iNumElements + 1; i++)
-			m_GenericElementList[i].element->Update();
+		IterateElements(i)
+			m_ElementList[i].element->Update();
 	}
 
-	#define CREATE_NEW_ELEMENT(x, y) y *x = new y; V_strcpy_safe(x->Name, element.name); V_strcpy_safe(x->Convar, element.convar);
 	virtual void InitElements( Panel *parent, const char *resource )
 	{
-		if ( m_GenericElementList == NULL )
+		if ( m_ElementList == NULL )
 			return;
 
-		// The number of elements is stored in the 0th index of a GenericElements array.
-		int iNumElements = m_GenericElementList[0].type;
-		for (int i = 1; i < iNumElements + 1; i++)
+		IterateElements(i)
 		{
-			GenericElement_t element = m_GenericElementList[i];
-			switch( m_GenericElementList[i].type )
+			GenericElement_t element = m_ElementList[i];
+			switch( m_ElementList[i].type )
 			{
 			case TYPE_CVAR_CHECKBOX:
 				{
-					CREATE_NEW_ELEMENT(checkbutton, CConvarCheckButtonElement);
+					CConvarCheckButtonElement *checkbutton = new CConvarCheckButtonElement; 
+					V_strcpy_safe(checkbutton->Name, element.name); 
+					V_strcpy_safe(checkbutton->Convar, element.convar);
 
 					// Parameters
-					V_strcpy_safe( checkbutton->Values, element.parameters[0] );
+					checkbutton->offvalue = GetParamValue(element.parameters[0]);
+					checkbutton->onvalue = GetParamValue(element.parameters[1]);
 
 					// Init
 					checkbutton->Init(parent);
-					m_GenericElementList[i].element = checkbutton;
+					m_ElementList[i].element = checkbutton;
 				}
 				break;
 
 			case TYPE_CVAR_TICKSLIDER:
 				{
-					CREATE_NEW_ELEMENT(tickslider, CConvarTickSliderElement);
+					CConvarTickSliderElement *tickslider = new CConvarTickSliderElement; 
+					V_strcpy_safe(tickslider->Name, element.name); 
+					V_strcpy_safe(tickslider->Convar, element.convar);
 
 					// Parameters
 					tickslider->numticks =		(int)GetParamValue(element.parameters[0]);
@@ -396,13 +366,15 @@ public:
 
 					// Init
 					tickslider->Init(parent);
-					m_GenericElementList[i].element = tickslider;
+					m_ElementList[i].element = tickslider;
 				}
 				break;
 
 			case TYPE_CVAR_BOXBUTTON:
 				{
-					CREATE_NEW_ELEMENT(boxbutton, CConvarBoxButtonElement);
+					CConvarBoxButtonElement *boxbutton = new CConvarBoxButtonElement; 
+					V_strcpy_safe(boxbutton->Name, element.name); 
+					V_strcpy_safe(boxbutton->Convar, element.convar);
 
 					// Parameters
 					V_strcpy_safe( boxbutton->ElementNames, element.parameters[0] );
@@ -410,7 +382,7 @@ public:
 
 					// Init
 					boxbutton->Init(parent);
-					m_GenericElementList[i].element = boxbutton;
+					m_ElementList[i].element = boxbutton;
 				}
 				break;
 			}
@@ -419,23 +391,12 @@ public:
 		LoadControlSettings( resource );
 	}
 
-#define GET_ELEMENT(variable, name) variable = NULL; variable = GetElement(variable, name); variable
-
-// HACKHACKHACKHACKHACK: This is levels of hackiness not seen before by mankind...
-// From: https://stackoverflow.com/questions/652815/
-#define CONCAT_IMPL( x, y ) x##y
-#define MACRO_CONCAT( x, y ) CONCAT_IMPL( x, y )
-#define GET_ELEMENT_PTR(type, name) type *MACRO_CONCAT(variable, __LINE__ ); GET_ELEMENT(MACRO_CONCAT(variable, __LINE__ ), name)
-
-	template <typename T>
-	T *GetElement( T *pElement, const char *pName )
+	int GetElementIndexFromName( const char *pName )
 	{
-		// The number of elements is stored in the 0th index of a GenericElements array.
-		int iNumElements = m_GenericElementList[0].type;
-		for (int i = 1; i < iNumElements + 1; i++)
+		IterateElements(i)
 		{
-			if ( !Q_stricmp( m_GenericElementList[i].name, pName ) )
-				return dynamic_cast<T *>(m_GenericElementList[i].element);
+			if ( !Q_stricmp( m_ElementList[i].name, pName ) )
+				return i;
 		}
 
 		return NULL;
@@ -445,24 +406,6 @@ public:
 	float GetParamValue( const char *param )
 	{
 		return atof(param);
-	}
-
-	
-	void DebugElementList( void )
-	{
-		// The number of elements is stored in the 0th index of a GenericElements array.
-		int iNumElements = m_GenericElementList[0].type;
-
-		DevMsg("Full Element list is:\n\n");
-		for (int i = 1; i < iNumElements; i++)
-		{
-			DevMsg("[%s'n] Parameters are:\n", m_GenericElementList[i].name);
-			for (int j = 0; j < 10; j++ )
-			{
-				DevMsg("	Parameter [%i] is: [%s]\n", j, m_GenericElementList[i].parameters[j]);
-			}
-			DevMsg("\n");
-		}
 	}
 
 private:
@@ -475,8 +418,8 @@ private:
 	MESSAGE_FUNC_PTR( OnTextChanged, "TextChanged", panel )				{ OnControlModified(); }
 	MESSAGE_FUNC_PTR( OnSliderMoved, "SliderMoved", panel )				{ OnControlModified(); }
 	
-private:
-	GenericElement_t *m_GenericElementList = NULL;
+public:
+	GenericElement_t *m_ElementList = NULL;
 };
 
 #endif

@@ -11,7 +11,7 @@ using namespace vgui;
 #include "vgui/ILocalize.h"
 #include "ienginevgui.h"
 #include "hl2r_campaign_panel.h"
-#include <hl2r\hl2r_campaign_database.h>
+#include <hl2r\hl2r_campaign_manager.h>
 #include <hl2r\vgui_controls\SelectableColumnHeader.h>
 #include <hl2r\vgui_controls\DisclaimerBox.h>
 
@@ -71,8 +71,8 @@ static int GetAdjustedSize( int iValue )
 //------------------------------------------------------------------------------
 CCampaignListPanel::CCampaignListPanel(vgui::Panel* parent ) : EditablePanel(parent, NULL)
 {
-	m_PrevSortType = GetCampaignDatabase()->GetSortType();
-	m_PrevSortDir = GetCampaignDatabase()->GetSortDir();
+	m_PrevSortType = GetCampaignManager()->GetSortType();
+	m_PrevSortDir = GetCampaignManager()->GetSortDir();
 
 	m_ListPanel = new SectionedListPanel(this, "listpanel_campaignlist");
 
@@ -97,13 +97,13 @@ void CCampaignListPanel::ItemSelected(int itemID)
 {
 	if (itemID != -1)
 	{
-		CCampaignDatabase *database = GetCampaignDatabase();
+		CCampaignManager *manager = GetCampaignManager();
 
 		const char *campaignID = m_ListPanel->GetSelectedItemData()->GetString("id");
-		m_SelectedCampaignPanel->SetSelected( database->GetCampaignHandleFromID(campaignID) );
+		m_SelectedCampaignPanel->SetSelected( manager->GetCampaignHandleFromID(campaignID) );
 
 		// Don't enable mounting if we're already mounted!
-		m_MountButton->SetEnabled( !database->GetCampaignFromID(campaignID)->mounted );
+		m_MountButton->SetEnabled( !manager->GetCampaignFromID(campaignID)->mounted );
 	}
 	else	
 	{
@@ -165,7 +165,7 @@ void CCampaignListPanel::ColumnSelected()
 
 	m_SelectedCampaignPanel->SetSelected(CAMPAIGN_HANDLE_INVALID);
 
-	GetCampaignDatabase()->SortCampaignList(type, dir);
+	GetCampaignManager()->SortCampaignList(type, dir);
 	RefreshList(false);
 }
 //------------------------------------------------------------------------------
@@ -173,8 +173,8 @@ void CCampaignListPanel::ColumnSelected()
 //------------------------------------------------------------------------------
 void CCampaignListPanel::RefreshList(bool bPreserveSelected)
 {
-	m_PrevSortType = GetCampaignDatabase()->GetSortType();
-	m_PrevSortDir = GetCampaignDatabase()->GetSortDir();
+	m_PrevSortType = GetCampaignManager()->GetSortType();
+	m_PrevSortDir = GetCampaignManager()->GetSortDir();
 
 	bool bHasItemSelected = m_ListPanel->GetSelectedItem() != -1;
 	char SelectedItemID[CAMPAIGN_ID_LENGTH];
@@ -215,8 +215,8 @@ void CCampaignListPanel::CreateListColumns(void)
 	m_ListPanel->AddColumnToSection(0, "size",	"#hl2r_filesize_label", SectionedListPanel::COLUMN_BRIGHT, SIZE_WIDTH);
 	m_ListPanel->AddColumnToSection(0, "date",	"#hl2r_date_label",		SectionedListPanel::COLUMN_BRIGHT, DATE_WIDTH);
 
-	int sorttype = GetCampaignDatabase()->GetSortType();
-	m_ListPanelSortHeader->SetSelectedColumn(sorttype, GetCampaignDatabase()->GetSortDir() == DECENDING_ORDER);
+	int sorttype = GetCampaignManager()->GetSortType();
+	m_ListPanelSortHeader->SetSelectedColumn(sorttype, GetCampaignManager()->GetSortDir() == DECENDING_ORDER);
 }
 //------------------------------------------------------------------------------
 // Purpose:
@@ -235,18 +235,18 @@ static const char *FixupDateChar( const char *pIn )
 	return pOut;
 }
 //------------------------------------------------------------------------------
-// Purpose: Fill our campaign list with campaigns from the database.
+// Purpose: Fill our campaign list with campaigns from the manager.
 //------------------------------------------------------------------------------
 void CCampaignListPanel::CreateList(void)
 {
-	CCampaignDatabase *database = GetCampaignDatabase();
-	for (CAMPAIGN_HANDLE i = 0; i < database->GetCampaignCount(); i++ )
+	CCampaignManager *manager = GetCampaignManager();
+	for (CAMPAIGN_HANDLE i = 0; i < manager->GetCampaignCount(); i++ )
 	{
 		// Don't do anything if this campaign is not currently not installed.
-		if ( !database->GetCampaign(i)->installed )
+		if ( !manager->GetCampaign(i)->installed )
 			continue;
 
-		KeyValues *pCampaign = database->GetKeyValuesFromCampaign( i );
+		KeyValues *pCampaign = manager->GetKeyValuesFromCampaign( i );
 
 		// Set our filesize label.
 		char szFilesize[CAMPAIGN_FILESIZE_LENGTH + 2];
@@ -308,7 +308,7 @@ void CCampaignListPanel::OnCommand(const char* pcCommand)
 {
 	if ( !stricmp(pcCommand, "scancampaigns") || !stricmp(pcCommand, "mountitem") )
 	{
-		if ( !GetCampaignDatabase()->HLExtractInstalled() )
+		if ( !GetCampaignManager()->HLExtractInstalled() )
 		{
 			MessageBox *box = new MessageBox("#hl2r_error_title", "#hl2r_missing_hlextract", this);
 			box->DoModal();
@@ -327,7 +327,11 @@ void CCampaignListPanel::OnCommand(const char* pcCommand)
 	{
 		engine->ClientCmd("disconnect");
 
+		CGameManager *gamemanager = GetGameManager();
+		CCampaignManager *campaignmanager = GetCampaignManager();
 		const char* szCampaignID = m_ListPanel->GetSelectedItemData()->GetString("id");
+
+		gamemanager->SetGameType( campaignmanager->GetCampaignFromID(szCampaignID)->game );
 		HandleCampaignMount(szCampaignID);
 	}
 	if (!stricmp(pcCommand, "quitcommand"))
@@ -357,8 +361,8 @@ void CCampaignListPanel::OnCommand(const char* pcCommand)
 //------------------------------------------------------------------------------
 void CCampaignListPanel::CreateMountDisclaimer( const char *pID )
 {
-	CCampaignDatabase *database = GetCampaignDatabase();
-	if ( !Q_stricmp( database->GetCampaignFromID(pID)->name, "undefined" ) || database->GetCampaignFromID(pID)->game == -1)
+	CCampaignManager *manager = GetCampaignManager();
+	if ( !Q_stricmp( manager->GetCampaignFromID(pID)->name, "undefined" ) || manager->GetCampaignFromID(pID)->game == -1)
 	{
 		MessageBox *box = new MessageBox("#hl2r_warning_title", "#hl2r_mountwarning_1", this);
 		box->DoModal();
@@ -366,7 +370,7 @@ void CCampaignListPanel::CreateMountDisclaimer( const char *pID )
 		return;
 	}
 
-	if ( database->GetCampaignFromID(pID)->startingmap == -1 )
+	if ( manager->GetCampaignFromID(pID)->startingmap == -1 )
 	{
 		MessageBox *box = new MessageBox("#hl2r_warning_title", "#hl2r_mountwarning_2", this);
 		box->DoModal();
@@ -386,7 +390,7 @@ void CCampaignListPanel::CreateMountDisclaimer( const char *pID )
 //------------------------------------------------------------------------------
 void CCampaignListPanel::HandleCampaignMount( const char *szCampaignID )
 {
-switch (GetCampaignDatabase()->MountCampaign(szCampaignID))
+switch (GetCampaignManager()->MountCampaign(szCampaignID))
 	{
 	case SUCESSFULLY_MOUNTED:
 		{
@@ -443,11 +447,11 @@ switch (GetCampaignDatabase()->MountCampaign(szCampaignID))
 //------------------------------------------------------------------------------
 void CCampaignListPanel::HandleCampaignScan( void )
 {
-	CCampaignDatabase *database = GetCampaignDatabase();
+	CCampaignManager *manager = GetCampaignManager();
 
-	database->DoCampaignScan();
-	database->SortCampaignList(database->GetSortType(), database->GetSortDir());
-	database->WriteListToScript();
+	manager->DoCampaignScan();
+	manager->SortCampaignList(manager->GetSortType(), manager->GetSortDir());
+	manager->WriteListToScript();
 
 	RefreshList();
 }
@@ -573,20 +577,20 @@ CON_COMMAND(OpenHL2RCampaignDialogConfirmed, "Opens the campaign manager ui")
 //------------------------------------------------------------------------------
 CON_COMMAND(StartWorkshopCampaign, "Starts the currently mounted campaign")
 {
-	CCampaignDatabase *database = GetCampaignDatabase();
+	CCampaignManager *manager = GetCampaignManager();
 
-	CAMPAIGN_HANDLE hMountedCampaign = GetCampaignDatabase()->GetMountedCampaignHandle();
-	if ( !database->ValidCampaign(hMountedCampaign) )
+	CAMPAIGN_HANDLE hMountedCampaign = GetCampaignManager()->GetMountedCampaignHandle();
+	if ( !manager->ValidCampaign(hMountedCampaign) )
 	{
 		MessageBox *box = new MessageBox("#hl2r_warning_title", "#hl2r_begincampaign_error", FindGameUIChildPanel("BaseGameUIPanel"));
 		box->DoModal();
 
 		return;
 	}
-	int szMapIndex = database->GetMountedCampaign()->startingmap;
+	int szMapIndex = manager->GetMountedCampaign()->startingmap;
 
 	char szMapCommand[64];
-	V_sprintf_safe(szMapCommand, "map %s", database->GetMountedCampaign()->maplist[szMapIndex] );
+	V_sprintf_safe(szMapCommand, "map %s", manager->GetMountedCampaign()->maplist[szMapIndex] );
 
 	engine->ClientCmd(szMapCommand);
 }

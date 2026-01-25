@@ -57,7 +57,7 @@ static int GetAdjustedSize( int iValue )
 //------------------------------------------------------------------------------
 // Purpose: Parent panel
 //------------------------------------------------------------------------------
-#define ADD_PAGE(y, x, elements, name, resource) y *x = new y(this, elements); x->InitElements(x, resource); AddPage(x, name)
+#define ADD_PAGE(panelclass, panelname, elements, label, resource) panelclass *panelname = new panelclass(this, elements); panelname->InitElements(panelname, resource); AddPage(panelname, label)
 
 CHL2RMenu::CHL2RMenu() : PropertyDialog(FindGameUIChildPanel("BaseGameUIPanel"), "OtherSettings")
 {

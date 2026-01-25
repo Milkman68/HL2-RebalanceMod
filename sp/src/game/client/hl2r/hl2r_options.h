@@ -29,28 +29,26 @@ public:
 // Gameplay panel
 //------------------------------------------------------------------------------
 
-GenericElement_t game_Elements[] =
-{
-	{ 8 },
-	//						[Name]						[ConVar]						[Parameters list]
-	{ TYPE_CVAR_CHECKBOX,	"MirrorModeButton",			"r_mirrored",					{"0 1"} },
-	{ TYPE_CVAR_CHECKBOX,	"Ep2FlashlightButton",		"hl2r_episodic_flashlight",		{"0 1"} },
+START_ELEMENT_ARRAY( game_Elements, 8 )
+	//				[Name]						[ConVar]						[Parameters list]
+	ADD_CHECKBOX(	"MirrorModeButton",			"r_mirrored",					"0",	"1" )
+	ADD_CHECKBOX(	"Ep2FlashlightButton",		"hl2r_episodic_flashlight",		"0",	"1" )
 
 	// Auto Reload
-	{ TYPE_CVAR_CHECKBOX,	"EnableAutoReloadButton",	"sk_allow_auto_reload",			{"0 1"} },
-	{ TYPE_CVAR_TICKSLIDER, "AutoreloadTimeSlider",		"sk_auto_reload_time",			{"58",		"20",		"3",		"60"} },
+	ADD_CHECKBOX(	"EnableAutoReloadButton",	"sk_allow_auto_reload",			"0",	"1" )
+	ADD_TICKSLIDER( "AutoreloadTimeSlider",		"sk_auto_reload_time",			"58",	"20",	"3",	"60")
 
 	// Autoaim
-	{ TYPE_CVAR_CHECKBOX,	"EnableAutoaimButton",		"sk_allow_autoaim",				{"0 1"} },
+	ADD_CHECKBOX(	"EnableAutoaimButton",		"sk_allow_autoaim",				"0",	"1" )
 
-	{ TYPE_CVAR_TICKSLIDER, "AutoaimScaleSlider",		"autoaim_viewcorrection_scale",	{"5",		"5",		"1",		"5"}  },
-	{ TYPE_CVAR_TICKSLIDER, "AutoaimSpeedSlider",		"autoaim_viewcorrection_speed",	{"5",		"5",		"500",		"3000"} },
-	{ TYPE_CVAR_CHECKBOX,	"AutoaimCrosshairButton",	"hud_draw_active_reticle",		{"0 1"} },
-};
+	ADD_TICKSLIDER( "AutoaimScaleSlider",		"autoaim_viewcorrection_scale",	"5",	"5",	"1",	"5")
+	ADD_TICKSLIDER( "AutoaimSpeedSlider",		"autoaim_viewcorrection_speed",	"5",	"5",	"500",	"3000" )
+	ADD_CHECKBOX(	"AutoaimCrosshairButton",	"hud_draw_active_reticle",		"0",	"1" )
+
+END_ELEMENT_ARRAY
 
 
 
-#define ENABLE_ELEMENT(type, name, enabled) GET_ELEMENT_PTR(type, name)->GetPanel()->SetEnabled(enabled);
 class CSubGamePanel : public CSubPanel
 {
 	DECLARE_CLASS_SIMPLE(CSubGamePanel, CSubPanel);
@@ -76,23 +74,16 @@ public:
 		BaseClass::OnControlModified();
 
 		// Auto-aim
-		CConvarCheckButtonElement *pAutoaimButtonElement;
-		GET_ELEMENT(pAutoaimButtonElement, "EnableAutoaimButton");
-		bool bAutoAimEnabled = pAutoaimButtonElement->GetButton()->IsSelected();
-
-		ENABLE_ELEMENT(CConvarTickSliderElement, "AutoaimScaleSlider", bAutoAimEnabled);
-		ENABLE_ELEMENT(CConvarTickSliderElement, "AutoaimSpeedSlider", bAutoAimEnabled);
-		ENABLE_ELEMENT(CConvarCheckButtonElement, "AutoaimCrosshairButton", bAutoAimEnabled);
+		bool bAutoAimEnabled = GetElementPtr( CConvarCheckButtonElement, "EnableAutoaimButton" )->GetButton()->IsSelected();
+		GetElementPanel("AutoaimScaleSlider")->SetEnabled(bAutoAimEnabled);
+		GetElementPanel("AutoaimSpeedSlider")->SetEnabled(bAutoAimEnabled);
+		GetElementPanel("AutoaimCrosshairButton")->SetEnabled(bAutoAimEnabled);
 
 		// Auto-reload
-		CConvarCheckButtonElement *pAutoReloadElement;
-		GET_ELEMENT(pAutoReloadElement, "EnableAutoReloadButton");
-		bool bAutoReloadEnabled = pAutoReloadElement->GetButton()->IsSelected();
+		bool bAutoReloadEnabled = GetElementPtr( CConvarCheckButtonElement, "EnableAutoReloadButton" )->GetButton()->IsSelected();
+		GetElementPanel("AutoreloadTimeSlider")->SetEnabled(bAutoReloadEnabled);
 
-		ENABLE_ELEMENT(CConvarTickSliderElement, "AutoreloadTimeSlider", bAutoReloadEnabled);
-
-		CConvarTickSliderElement *pAutoreloadSlider;
-		GET_ELEMENT(pAutoreloadSlider, "AutoreloadTimeSlider");
+		CConvarTickSliderElement *pAutoreloadSlider = GetElementPtr(CConvarTickSliderElement, "AutoreloadTimeSlider" );
 		m_pAutoreloadTimeLabel->SetText( VarArgs("%i", (int)pAutoreloadSlider->GetValueFromSliderPos()) );
 	}
 
@@ -107,18 +98,17 @@ private:
 // Visual panel
 //------------------------------------------------------------------------------
 
-GenericElement_t visual_Elements[] =
-{
-	{ 7 },
-	//						[Name]						[ConVar]						[Parameters list]
-	{ TYPE_CVAR_CHECKBOX,	"WeaponHintsButton",		"hl2r_hudhints",				{"0 1"} },
-	{ TYPE_CVAR_CHECKBOX,	"QuickInfoButton",			"hud_quickinfo",				{"0 1"} },
-	{ TYPE_CVAR_CHECKBOX,	"OldCrosshairsButton",		"hl2r_old_crosshair",			{"1 0"} },
-	{ TYPE_CVAR_TICKSLIDER, "ViewRollSlider",			"hl2r_rollangle",				{"11",	"11",	"0",	"10"}  },
-	{ TYPE_CVAR_TICKSLIDER, "ViewModelFovSlider",		"Viewmodel_fov",				{"37",	"37",	"54",	"90"}  },
-	{ TYPE_CVAR_BOXBUTTON,	"DynamicLightBoxButton",	"hl2r_dynamic_light_level",		{"#hl2r_default #hl2r_less #hl2r_none", "0 1 2"} },
-	{ TYPE_CVAR_CHECKBOX,	"BulletTracerButton",		"hl2r_bullet_tracer_freq",		{"2 1"}  },
-};
+START_ELEMENT_ARRAY( visual_Elements, 7 )
+	//				[Name]						[ConVar]						[Parameters list]
+	ADD_CHECKBOX(	"WeaponHintsButton",		"hl2r_hudhints",				"0",	"1" )
+	ADD_CHECKBOX(	"QuickInfoButton",			"hud_quickinfo",				"0",	"1" )
+	ADD_CHECKBOX(	"OldCrosshairsButton",		"hl2r_old_crosshair",			"1",	"0" )
+	ADD_TICKSLIDER( "ViewRollSlider",			"hl2r_rollangle",				"11",	"11",	"0",	"10" )
+	ADD_TICKSLIDER( "ViewModelFovSlider",		"Viewmodel_fov",				"37",	"37",	"54",	"90" )
+	ADD_BOXBUTTON(	"DynamicLightBoxButton",	"hl2r_dynamic_light_level",		"#hl2r_default #hl2r_less #hl2r_none", "0 1 2")
+	ADD_CHECKBOX(	"BulletTracerButton",		"hl2r_bullet_tracer_freq",		"2",	"1" )
+
+END_ELEMENT_ARRAY
 
 
 class CSubVisualPanel : public CSubPanel
@@ -144,13 +134,11 @@ public:
 		BaseClass::OnControlModified();
 
 		// View roll degree value label
-		CConvarTickSliderElement *pViewRollSlider;
-		GET_ELEMENT(pViewRollSlider, "ViewRollSlider");
+		CConvarTickSliderElement *pViewRollSlider = GetElementPtr(CConvarTickSliderElement, "ViewRollSlider" );
 		m_pViewRollAngleLabel->SetText( VarArgs("%i", (int)pViewRollSlider->GetValueFromSliderPos()) );
 
 		// Weapon Fov value label
-		CConvarTickSliderElement *pViewModelFovSlider;
-		GET_ELEMENT(pViewModelFovSlider, "ViewModelFovSlider");
+		CConvarTickSliderElement *pViewModelFovSlider = GetElementPtr(CConvarTickSliderElement, "ViewModelFovSlider" );
 		m_pViewmodelFovLabel->SetText( VarArgs("%i", (int)pViewModelFovSlider->GetValueFromSliderPos()) );
 	}
 

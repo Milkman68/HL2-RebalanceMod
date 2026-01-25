@@ -13,9 +13,9 @@ using namespace vgui;
 #include <vgui_controls/PropertyDialog.h>
 #include "vgui/ISystem.h"
 #ifdef CLIENT_DLL
-#include <hl2r\hl2r_game_manager.h>
+#include "hl2r/hl2r_shared_manager.h"
 #endif
-#include "hl2r_campaign_database.h"
+#include "hl2r_campaign_manager.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -23,22 +23,22 @@ using namespace vgui;
 #define HLE_MAX_OUTPUT_LENGTH 2048
 #define HLE_MAX_CMD_LENGTH 1024
 
-CCampaignDatabase *g_pCampaignDatabase = NULL;
-CCampaignDatabase *GetCampaignDatabase( void )
+CCampaignManager *g_pCampaignManager = NULL;
+CCampaignManager *GetCampaignManager( void )
 {
-	if ( !g_pCampaignDatabase )
-		static CCampaignDatabase StaticCampaignDatabase;
+	if ( !g_pCampaignManager )
+		static CCampaignManager StaticCampaignManager;
 
-	return g_pCampaignDatabase;
+	return g_pCampaignManager;
 }
 
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-CCampaignDatabase::CCampaignDatabase()
+CCampaignManager::CCampaignManager()
 {
-	Assert( g_pCampaignDatabase == NULL );
-	g_pCampaignDatabase = this;
+	Assert( g_pCampaignManager == NULL );
+	g_pCampaignManager = this;
 
 	pCampaignScript = new KeyValues( "campaignscript" );
 	if ( pCampaignScript->LoadFromFile( filesystem, CAMPAIGN_SCRIPT_FILE, "MOD" ) )
@@ -57,7 +57,7 @@ CCampaignDatabase::CCampaignDatabase()
 // Purpose:
 //-----------------------------------------------------------------------------
 #ifdef CLIENT_DLL
-void CCampaignDatabase::DoCampaignScan( void )
+void CCampaignManager::DoCampaignScan( void )
 {
 	// We need to find campaigns through manual directory searching as their id's are not listed anywhere.
 	FileFindHandle_t fh;
@@ -91,12 +91,12 @@ void CCampaignDatabase::DoCampaignScan( void )
 	}
 
 	g_pFullFileSystem->FindClose( fh );
-	GetCampaignDatabase()->WriteListToScript();
+	GetCampaignManager()->WriteListToScript();
 }
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-bool CCampaignDatabase::PotentialCampaignVPK( const char *pWorkshopModID)
+bool CCampaignManager::PotentialCampaignVPK( const char *pWorkshopModID)
 {
 	// Don't accept any invalid directories.
 	if ( !Q_stricmp( pWorkshopModID, ".." ) || !Q_stricmp( pWorkshopModID, "." ) || !Q_stricmp( pWorkshopModID, "sound" ) )
@@ -131,7 +131,7 @@ bool CCampaignDatabase::PotentialCampaignVPK( const char *pWorkshopModID)
 		if ( GetCampaign(hListedCampaign)->installed != bContainsVPK )
 		{
 			GetCampaign(hListedCampaign)->installed = bContainsVPK;
-			GetCampaignDatabase()->WriteListToScript();
+			GetCampaignManager()->WriteListToScript();
 		}
 
 		return false;
@@ -143,7 +143,7 @@ bool CCampaignDatabase::PotentialCampaignVPK( const char *pWorkshopModID)
 // Purpose: Scan the vpk in this directory for any maps, if there are any
 // output it to a CUtlVector
 //-----------------------------------------------------------------------------
-bool CCampaignDatabase::ScanForMapsInVPK( const char *pWorkshopModID, CUtlVector<const char *> *list )
+bool CCampaignManager::ScanForMapsInVPK( const char *pWorkshopModID, CUtlVector<const char *> *list )
 {
 	// Start up hlextract and get the output of the console window from running the
 	// "dir" command.
@@ -195,7 +195,7 @@ bool CCampaignDatabase::ScanForMapsInVPK( const char *pWorkshopModID, CUtlVector
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-bool CCampaignDatabase::IsMapReplacement( const char *pMap )
+bool CCampaignManager::IsMapReplacement( const char *pMap )
 {
 	static char *configBuffer = NULL;
 
@@ -229,7 +229,7 @@ bool CCampaignDatabase::IsMapReplacement( const char *pMap )
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-void CCampaignDatabase::WriteScriptToList( void )
+void CCampaignManager::WriteScriptToList( void )
 {
 	CampaignList()->RemoveAll();
 	for ( KeyValues *pCampaign = pCampaignScript->GetFirstSubKey(); pCampaign; pCampaign = pCampaign->GetNextKey() )
@@ -283,7 +283,7 @@ void CCampaignDatabase::WriteScriptToList( void )
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-void CCampaignDatabase::WriteListToScript( void )
+void CCampaignManager::WriteListToScript( void )
 {
 	pCampaignScript->Clear();
 	for ( CAMPAIGN_HANDLE i = 0; i < GetCampaignCount(); i++ )
@@ -305,7 +305,7 @@ void CCampaignDatabase::WriteListToScript( void )
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-CAMPAIGN_HANDLE CCampaignDatabase::GetCampaignHandleFromID(const char *id)
+CAMPAIGN_HANDLE CCampaignManager::GetCampaignHandleFromID(const char *id)
 {
 	if ( !id )
 		return NULL;
@@ -321,7 +321,7 @@ CAMPAIGN_HANDLE CCampaignDatabase::GetCampaignHandleFromID(const char *id)
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-CAMPAIGN_HANDLE CCampaignDatabase::GetMountedCampaignHandle( void )
+CAMPAIGN_HANDLE CCampaignManager::GetMountedCampaignHandle( void )
 {
 	for (CAMPAIGN_HANDLE i = 0; i < GetCampaignCount(); i++ )
 	{
@@ -334,7 +334,7 @@ CAMPAIGN_HANDLE CCampaignDatabase::GetMountedCampaignHandle( void )
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-KeyValues* CCampaignDatabase::GetKeyValuesFromCampaign( CAMPAIGN_HANDLE campaign )
+KeyValues* CCampaignManager::GetKeyValuesFromCampaign( CAMPAIGN_HANDLE campaign )
 {
 	char keyname[CAMPAIGN_INDEX_LENGTH];
 	V_sprintf_safe(keyname, "%d", campaign);
@@ -397,8 +397,8 @@ static int __cdecl CampaignSortFunc( CampaignData_t * const *ppLeft, CampaignDat
 	const CampaignData_t *pLeft = *ppLeft;
 	const CampaignData_t *pRight = *ppRight;
 
-	int higher = GetCampaignDatabase()->GetSortDir() == ASCENDING_ORDER ? 1 : -1;
-	int lower = GetCampaignDatabase()->GetSortDir() == ASCENDING_ORDER ? -1 : 1;
+	int higher = GetCampaignManager()->GetSortDir() == ASCENDING_ORDER ? 1 : -1;
+	int lower = GetCampaignManager()->GetSortDir() == ASCENDING_ORDER ? -1 : 1;
 
 	if ( !pLeft->mounted && pRight->mounted )
 		return 1;
@@ -412,7 +412,7 @@ static int __cdecl CampaignSortFunc( CampaignData_t * const *ppLeft, CampaignDat
 	if ( !Q_stricmp(pRight->name, "undefined" ) && Q_stricmp(pLeft->name, "undefined" ))
 		return -1;
 
-switch (GetCampaignDatabase()->GetSortType())
+switch (GetCampaignManager()->GetSortType())
 	{
 	case BY_SIZE:
 		{
@@ -511,7 +511,7 @@ switch (GetCampaignDatabase()->GetSortType())
 	return 0;
 }
 
-void CCampaignDatabase::SortCampaignList( ESortType sorttype, ESortDirection sortdir )
+void CCampaignManager::SortCampaignList( ESortType sorttype, ESortDirection sortdir )
 {
 	m_SortMethod.eType = sorttype;
 	m_SortMethod.eDir = sortdir;
@@ -521,7 +521,7 @@ void CCampaignDatabase::SortCampaignList( ESortType sorttype, ESortDirection sor
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-int CCampaignDatabase::GetVPKSize( const char *pWorkshopModID)
+int CCampaignManager::GetVPKSize( const char *pWorkshopModID)
 {
 	float total = 0;
 
@@ -576,7 +576,7 @@ enum
 	HOUR_TOKEN = 0
 };
 
-CampaignDateTable_t *CCampaignDatabase::GetVPKDate( const char *pWorkshopModID )
+CampaignDateTable_t *CCampaignManager::GetVPKDate( const char *pWorkshopModID )
 {
 	char szVpkPath[MAX_PATH];
 	V_sprintf_safe( szVpkPath, "%s\\workshop\\content\\220\\%s/workshop_dir.vpk", GetSteamAppsDir(), pWorkshopModID);
@@ -689,7 +689,7 @@ CampaignDateTable_t *CCampaignDatabase::GetVPKDate( const char *pWorkshopModID )
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-bool CCampaignDatabase::HLExtractInstalled(void)
+bool CCampaignManager::HLExtractInstalled(void)
 {
 	char szHLExtractDir[MAX_PATH];
 	V_sprintf_safe( szHLExtractDir, "%s\\%s", engine->GetGameDirectory(), CAMPAIGN_LAUCHER_HLEXTRACT_DIR );
@@ -701,7 +701,7 @@ bool CCampaignDatabase::HLExtractInstalled(void)
 // Purpose: Helper function to setup a string that can be sent to CreateProcessA
 // to start hlextract.
 //-----------------------------------------------------------------------------
-const char *CCampaignDatabase::ParseCMD( const char *pAddonID, const char *pAppend )
+const char *CCampaignManager::ParseCMD( const char *pAddonID, const char *pAppend )
 {
 	char szHLExtractPath[MAX_PATH];
 	V_sprintf_safe( szHLExtractPath, "%s\\%s", engine->GetGameDirectory(), CAMPAIGN_LAUCHER_HLEXTRACT_DIR );
@@ -728,7 +728,7 @@ const char *CCampaignDatabase::ParseCMD( const char *pAddonID, const char *pAppe
 //
 // It's not something I'm planning on doing in the future, but I just wanted to put this here just so everyone can know.
 //-----------------------------------------------------------------------------
-const char *CCampaignDatabase::GetOutputFromHLE( const char *pWorkshopModID, const char *pCommand )
+const char *CCampaignManager::GetOutputFromHLE( const char *pWorkshopModID, const char *pCommand )
 {
 	static char szOutputBuffer[HLE_MAX_OUTPUT_LENGTH];
 	memset(szOutputBuffer, 0, sizeof(szOutputBuffer));
@@ -808,7 +808,7 @@ const char *szVpkFilePaths[NUM_VPK_PATHS] =
 	"sound"
 };
 
-bool CCampaignDatabase::ExtractVPK(const char *pWorkshopModID)
+bool CCampaignManager::ExtractVPK(const char *pWorkshopModID)
 {
 	// Iterate through our list of files to extract.
 	char szExtractList[256];
@@ -843,7 +843,7 @@ bool CCampaignDatabase::ExtractVPK(const char *pWorkshopModID)
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-bool CCampaignDatabase::MountExtractedFiles( const char *pWorkshopModID )
+bool CCampaignManager::MountExtractedFiles( const char *pWorkshopModID )
 {
 	bool bMountedFile = false;
 
@@ -872,7 +872,7 @@ bool CCampaignDatabase::MountExtractedFiles( const char *pWorkshopModID )
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-void CCampaignDatabase::ClearCampaignFolder( void )
+void CCampaignManager::ClearCampaignFolder( void )
 {
 	char szMountedFolderPath[MAX_PATH];
 	V_sprintf_safe( szMountedFolderPath, "%s\\%s", engine->GetGameDirectory(), CAMPAIGN_MOUNT_DIR);
@@ -897,26 +897,27 @@ void CCampaignDatabase::ClearCampaignFolder( void )
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-void CCampaignDatabase::SetCampaignAsMounted( const char *pCampaignID )
+void CCampaignManager::SetCampaignAsMounted( const char *pCampaignID )
 {
 	FixupMountedCampaignFiles(pCampaignID);
+	CSharedManager *manager = GetSharedManager();
 
 	// Was a campaign already mounted?
 	if ( IsWorkshopCampaignMounted() )
 	{
 		// If true, store the previous campaign's save files in a dedicated location
-		MoveSaveFiles( STORE_TO_CAMPAIGN, GetMountedCampaign()->id );
+		manager->MoveSharedFiles( STORE_TO_CAMPAIGN, GetMountedCampaign()->id );
 		GetMountedCampaign()->mounted = false;
 	}
 	else
 	{
 		// We're going from the basegame to a custom campaign.
 		// Store the savefiles in a separate location.
-		MoveSaveFiles( STORE_TO_DEFAULT, GetMountedCampaign()->id );
+		manager->MoveSharedFiles( STORE_TO_DEFAULT, GetMountedCampaign()->id );
 	}
 
 	// Import any previously stored savefiles from the campaign we're mounting if we have any.
-	MoveSaveFiles( RETRIEVE_FROM_CAMPAIGN, pCampaignID );
+	manager->MoveSharedFiles( RETRIEVE_FROM_CAMPAIGN, pCampaignID );
 
 	// Mount our launcher content.
 	MountLauncherContent(true);
@@ -938,7 +939,7 @@ void CCampaignDatabase::SetCampaignAsMounted( const char *pCampaignID )
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-void CCampaignDatabase::FixupMountedCampaignFiles( const char *pCampaignID )
+void CCampaignManager::FixupMountedCampaignFiles( const char *pCampaignID )
 {
 	KeyValues *pBlacklistScript = new KeyValues("blacklist");
 	if ( !pBlacklistScript->LoadFromFile( filesystem, CAMPAIGN_BLACKLIST_FILE, "MOD" ) )
@@ -956,36 +957,7 @@ void CCampaignDatabase::FixupMountedCampaignFiles( const char *pCampaignID )
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-void CCampaignDatabase::MoveSaveFiles( EMoveSaveFileType movetype, const char *pCampaignID )
-{
-	if ( movetype == STORE_TO_CAMPAIGN || movetype == RETRIEVE_FROM_CAMPAIGN )
-	{
-		if ( pCampaignID == NULL )
-			return;
-	}
-
-	switch( movetype )
-	{
-	case STORE_TO_DEFAULT:
-		MoveFilesInDirectory("save", DEFAULT_GAME_SAVE_STORE_DIR );
-		break;
-
-	case STORE_TO_CAMPAIGN:
-		MoveFilesInDirectory("save", VarArgs("%s\\%s", CAMPAIGN_LAUCHER_SAVE_STORE_DIR, pCampaignID) );
-		break;
-
-	case RETRIEVE_FROM_DEFAULT:
-		MoveFilesInDirectory(DEFAULT_GAME_SAVE_STORE_DIR, "save" );
-
-	case RETRIEVE_FROM_CAMPAIGN:
-		MoveFilesInDirectory( VarArgs("%s\\%s", CAMPAIGN_LAUCHER_SAVE_STORE_DIR, pCampaignID), "save" );
-		break;
-	}
-}
-//-----------------------------------------------------------------------------
-// Purpose:
-//-----------------------------------------------------------------------------
-void CCampaignDatabase::MountLauncherContent( bool bMount )
+void CCampaignManager::MountLauncherContent( bool bMount )
 {
 	char szContentDisabledDir[MAX_PATH];
 	V_sprintf_safe(szContentDisabledDir, "%s\\%s", CONTENT_PARENT_FOLDER, CONTENT_DISABLED_FOLDER);
@@ -1007,7 +979,7 @@ void CCampaignDatabase::MountLauncherContent( bool bMount )
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-void CCampaignDatabase::ValidateBackgrounds( const char *pCampaignID )
+void CCampaignManager::ValidateBackgrounds( const char *pCampaignID )
 {
 	char szChapterBackgroundsDir[MAX_PATH];
 	V_sprintf_safe(szChapterBackgroundsDir, "%s\\%s\\scripts\\chapterbackgrounds.txt", CAMPAIGN_MOUNT_DIR, pCampaignID );
@@ -1032,7 +1004,7 @@ void CCampaignDatabase::ValidateBackgrounds( const char *pCampaignID )
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-void CCampaignDatabase::HandleCustomSoundScripts( const char *pCampaignID )
+void CCampaignManager::HandleCustomSoundScripts( const char *pCampaignID )
 {
 	// Get a list of all of hl2's normal soundscripts.
 	KeyValues *pDefaultSoundManifestFile = new KeyValues("defaultmanifest");
@@ -1087,7 +1059,7 @@ void CCampaignDatabase::HandleCustomSoundScripts( const char *pCampaignID )
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-void CCampaignDatabase::MountSoundScripts( CUtlVector< const char *> *pSoundScripts )
+void CCampaignManager::MountSoundScripts( CUtlVector< const char *> *pSoundScripts )
 {
 	char szOutput[MAX_SOUNDSCRIPT_LENGTH];
 	int len = 0;
@@ -1115,11 +1087,8 @@ void CCampaignDatabase::MountSoundScripts( CUtlVector< const char *> *pSoundScri
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-EMountReturnCode CCampaignDatabase::MountCampaign( const char *pCampaignID )
+EMountReturnCode CCampaignManager::MountCampaign( const char *pCampaignID )
 {
-	CGameManager *manager = GetGameManager();
-	manager->SetGameType( GetCampaignFromID(pCampaignID)->game );
-
 	ClearCampaignFolder();
 
 	if (!ExtractVPK( pCampaignID ))
@@ -1134,15 +1103,17 @@ EMountReturnCode CCampaignDatabase::MountCampaign( const char *pCampaignID )
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-void CCampaignDatabase::UnmountMountedCampaign( void )
+void CCampaignManager::UnmountMountedCampaign( void )
 {
 	if ( !IsWorkshopCampaignMounted() )
 		return;
 
+	CSharedManager *manager = GetSharedManager();
+
 	// Store our campaign's save files and retrieve the saves
 	// from our basegame.
-	MoveSaveFiles( STORE_TO_CAMPAIGN, GetMountedCampaign()->id );
-	MoveSaveFiles( RETRIEVE_FROM_DEFAULT );
+	manager->MoveSharedFiles( STORE_TO_CAMPAIGN, GetMountedCampaign()->id );
+	manager->MoveSharedFiles( RETRIEVE_FROM_DEFAULT );
 
 	// Unmount our launcher content.
 	MountLauncherContent(false);
@@ -1156,7 +1127,7 @@ void CCampaignDatabase::UnmountMountedCampaign( void )
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-void CCampaignDatabase::FlushCampaignGraphs( const char *pCampaignID )
+void CCampaignManager::FlushCampaignGraphs( const char *pCampaignID )
 {
 	// Remove the graphs folder.
 	char szCampaignNodeGraphPath[MAX_PATH];
@@ -1167,18 +1138,18 @@ void CCampaignDatabase::FlushCampaignGraphs( const char *pCampaignID )
 
 CON_COMMAND(campaign_flush_nodegraph, "Clears all .ain  files from our mounted campaign's maps folder.")
 {
-	CCampaignDatabase *database = GetCampaignDatabase();
-	if ( !database )
+	CCampaignManager *manager = GetCampaignManager();
+	if ( !manager )
 		return;
 
-	database->FlushCampaignGraphs(database->GetMountedCampaign()->id);
+	manager->FlushCampaignGraphs(manager->GetMountedCampaign()->id);
 }
 #endif
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
 #ifdef CLIENT_DLL
-void CCampaignDatabase::RunBackgroundValidate( void )
+void CCampaignManager::RunBackgroundValidate( void )
 {
 	if ( !IsWorkshopCampaignMounted() )
 		return;
@@ -1187,17 +1158,17 @@ void CCampaignDatabase::RunBackgroundValidate( void )
 }
 CON_COMMAND(campaign_run_background_validate, "")
 {
-	CCampaignDatabase *database = GetCampaignDatabase();
-	if ( !database )
+	CCampaignManager *manager = GetCampaignManager();
+	if ( !manager )
 		return;
 
-	database->RunBackgroundValidate();
+	manager->RunBackgroundValidate();
 }
 #endif
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-void CCampaignDatabase::RunSoundScriptMount( void )
+void CCampaignManager::RunSoundScriptMount( void )
 {
 	if ( !IsWorkshopCampaignMounted() )
 		return;
@@ -1207,10 +1178,10 @@ void CCampaignDatabase::RunSoundScriptMount( void )
 #ifdef CLIENT_DLL
 CON_COMMAND(campaign_run_soundscript_mount, "")
 {
-	CCampaignDatabase *database = GetCampaignDatabase();
-	if ( !database )
+	CCampaignManager *manager = GetCampaignManager();
+	if ( !manager )
 		return;
 
-	database->RunSoundScriptMount();
+	manager->RunSoundScriptMount();
 }
 #endif

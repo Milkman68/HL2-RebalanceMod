@@ -4,7 +4,7 @@
 #pragma once
 #endif
 
-#include <hl2r\hl2r_campaign_database.h>
+#include <hl2r\hl2r_campaign_manager.h>
 #include "hl2r_game_manager.h"
 
 #include <vgui_controls/HTML.h>
@@ -141,12 +141,12 @@ CCampaignBrowserPanel::CCampaignBrowserPanel(Panel *parent, const char *name) : 
 #define BROWSER_MAX_URL 256
 void CCampaignBrowserPanel::SetSelected(CAMPAIGN_HANDLE campaign)
 {
-	CCampaignDatabase* database = GetCampaignDatabase();
-	if ( database->ValidCampaign(campaign) )
+	CCampaignManager* manager = GetCampaignManager();
+	if ( manager->ValidCampaign(campaign) )
 	{
 		// Get the ID of the selected campaign and parse it into a url that can be opened.
 		char szURL[BROWSER_MAX_URL];
-		Q_snprintf(szURL, sizeof(szURL), "https://steamcommunity.com/sharedfiles/filedetails?id=%s", database->GetCampaign(campaign)->id);
+		Q_snprintf(szURL, sizeof(szURL), "https://steamcommunity.com/sharedfiles/filedetails?id=%s", manager->GetCampaign(campaign)->id);
 
 		m_CampaignWindow->OpenURL(szURL, "");
 	}
@@ -305,7 +305,7 @@ void CCampaignEditPanel::SetCampaign(CAMPAIGN_HANDLE campaign)
 	m_Campaign = campaign;
 	ResetPage();
 
-	CCampaignDatabase* db = GetCampaignDatabase();
+	CCampaignManager* db = GetCampaignManager();
 	if ( db->ValidCampaign(campaign) )
 	{
 		CreateMapList();
@@ -387,7 +387,7 @@ void CCampaignEditPanel::OnCommand(const char* pcCommand)
 //-----------------------------------------------------------------------------
 void CCampaignEditPanel::SetStartingMap(int selecteditemID)
 {
-	CCampaignDatabase* db = GetCampaignDatabase();
+	CCampaignManager* db = GetCampaignManager();
 	m_iPrevStartMap = selecteditemID;
 
 	db->GetCampaign(m_Campaign)->startingmap = selecteditemID;
@@ -462,7 +462,7 @@ void CCampaignEditPanel::RefreshMapList( void )
 //-----------------------------------------------------------------------------
 void CCampaignEditPanel::CreateMapList( void )
 {
-	CCampaignDatabase* db = GetCampaignDatabase();
+	CCampaignManager* db = GetCampaignManager();
 
 	m_MapListPanelTitle->SetText("#hl2r_editpanel_maplist_title_1");
 	m_MapListPanelTitleMapname->SetText("");
@@ -505,7 +505,7 @@ void CCampaignEditPanel::CreateMapList( void )
 //-----------------------------------------------------------------------------
 void CCampaignEditPanel::SetPageState( EPageState state)
 {
-	CCampaignDatabase *db = GetCampaignDatabase();
+	CCampaignManager *db = GetCampaignManager();
 	bool bEditControlsVisible = false;
 	if ( state == NO_CAMPAIGN_SELECTED )
 	{
@@ -550,7 +550,7 @@ void CCampaignEditPanel::CheckApplyButton( void )
 	char nameEntry[CAMPAIGN_NAME_LENGTH];
 	m_pNameEntry->GetText(nameEntry, CAMPAIGN_NAME_LENGTH);
 
-	CCampaignDatabase* db = GetCampaignDatabase();
+	CCampaignManager* db = GetCampaignManager();
 	if ( m_pGameSelectBox->GetActiveItem() == m_iPrevGame )
 	{
 		if ( !Q_stricmp(nameEntry, m_pPrevName) )
@@ -574,7 +574,7 @@ bool CCampaignEditPanel::ApplyChanges( void )
 	char entrytext[CAMPAIGN_NAME_LENGTH];
 	m_pNameEntry->GetText(entrytext, CAMPAIGN_NAME_LENGTH);
 
-	CCampaignDatabase* db = GetCampaignDatabase();
+	CCampaignManager* db = GetCampaignManager();
 	for (int i = 0; i < db->GetCampaignCount(); i++)
 	{
 		if ( !Q_stricmp( db->GetCampaign(i)->id, db->GetCampaign(m_Campaign)->id ) )

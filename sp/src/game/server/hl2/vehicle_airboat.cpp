@@ -71,6 +71,7 @@ static ConVar hud_airboathint_numentries( "hud_airboathint_numentries", "10", FC
 static ConVar airboat_fatal_stress( "airboat_fatal_stress", "5000", FCVAR_NONE, "Amount of stress in kg that would kill the airboat driver." );
 
 extern ConVar autoaim_max_dist;
+extern ConVar hl2r_new_screenshake_effects;
 
 class CPropAirboat : public CPropVehicleDriveable
 {
@@ -1645,10 +1646,17 @@ void CPropAirboat::FireGun( )//bookmark
 		m_flNextHeavyShotTime = gpGlobals->curtime + CANNON_HEAVY_SHOT_INTERVAL; 
 	}
 
-	if ( gpGlobals->curtime >= m_flNextGunShakeTime )
+	if ( hl2r_new_screenshake_effects.GetBool() )
 	{
-		UTIL_ScreenShakeObject( this, WorldSpaceCenter(), 0.2, 250.0, CANNON_SHAKE_INTERVAL, 250, SHAKE_START );
-		m_flNextGunShakeTime = gpGlobals->curtime + 0.5 * CANNON_SHAKE_INTERVAL; 
+		UTIL_ScreenShakeObject( this, WorldSpaceCenter(), 0.3, 150.0, 0.25, 250, SHAKE_START );
+	}
+	else
+	{
+		if ( gpGlobals->curtime >= m_flNextGunShakeTime )
+		{
+			UTIL_ScreenShakeObject( this, WorldSpaceCenter(), 0.2, 250.0, CANNON_SHAKE_INTERVAL, 250, SHAKE_START );
+			m_flNextGunShakeTime = gpGlobals->curtime + 0.5 * CANNON_SHAKE_INTERVAL; 
+		}
 	}
 
 	// Specifically kill APC missiles in the cone. But we're going to totally cheat

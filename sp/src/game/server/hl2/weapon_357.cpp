@@ -24,6 +24,7 @@
 #include "tier0/memdbgon.h"
 
 ConVar sk_deagle_style_357("sk_deagle_style_357", "0" );
+extern ConVar hl2r_new_screenshake_effects;
 
 //-----------------------------------------------------------------------------
 // CWeapon357
@@ -252,6 +253,9 @@ void CWeapon357::PrimaryAttack( void )
 
 	pPlayer->SnapEyeAngles( angles );
 	pPlayer->ViewPunch( viewPunch );
+
+	if ( hl2r_new_screenshake_effects.GetBool() )
+		UTIL_ScreenShake( pPlayer->GetAbsOrigin(), 4.0 * viewPunch.Length(), 150.0, 0.25, 128, SHAKE_START );
 
 	CSoundEnt::InsertSound( SOUND_COMBAT, GetAbsOrigin(), 600, 0.2, GetOwner() );
 

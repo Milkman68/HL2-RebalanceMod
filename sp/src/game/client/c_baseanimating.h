@@ -71,6 +71,104 @@ struct RagdollInfo_t
 	Quaternion	m_rgBoneQuaternion[MAXSTUDIOBONES];
 };
 
+struct dFlashInfo_t
+{
+	void SetLightRadius( float flRadius, float flDecay )
+	{
+		radius = flRadius;
+		decay = flDecay;
+	}
+
+	void SetLightRadius( float flRadius )
+	{
+		radius = flRadius;
+		decay = flRadius / 0.1;
+	}
+
+	void SetLightStyle( int iStyle )
+	{
+		style = iStyle;
+	}
+
+	float	radius;
+	float	decay;
+	int		style;
+};
+
+struct pFlashInfo_t
+{
+	void SetLightBounds(float flFov, float flDistrange)
+	{
+		fov		= flFov;
+		range	= flDistrange;
+	}
+
+	void SetLightHoldTime(float flHoldTime)
+	{
+		holdtime = flHoldTime;
+	}
+
+	void SetConstantLinearQuadratic(float flConstant, float flLinear, float flQuadratic)
+	{
+		constant	= flConstant;
+		linear		= flLinear;
+		quadratic	= flQuadratic;
+	}
+
+	float	fov;
+	float	range;
+
+	float	holdtime;
+
+	float	constant;
+	float	linear;
+	float	quadratic;
+};
+
+struct MuzzleFlashInfo_t
+{
+	MuzzleFlashInfo_t()
+	{
+		dlight = new dFlashInfo_t;
+		plight = new pFlashInfo_t;
+	}
+
+	~MuzzleFlashInfo_t()
+	{
+		delete dlight;
+		delete plight;
+	}
+
+	void SetColor(float red, float green, float blue, float ex)
+	{
+		r = red;
+		g = green;
+		b = blue;
+		exponent = ex;
+	}
+
+	void SetColor(float red, float green, float blue)
+	{
+		r = red;
+		g = green;
+		b = blue;
+	}
+
+	void SetLifetime(float flTime)
+	{
+		lifetime = flTime;
+	}
+
+	float	r;
+	float	g;
+	float	b;
+	float	exponent;
+
+	float	lifetime;
+
+	dFlashInfo_t *dlight;
+	pFlashInfo_t *plight;
+};
 
 class CAttachmentData
 {
@@ -162,9 +260,6 @@ public:
 	virtual void FireEvent( const Vector& origin, const QAngle& angles, int event, const char *options );
 	virtual void FireObsoleteEvent( const Vector& origin, const QAngle& angles, int event, const char *options );
 	virtual const char* ModifyEventParticles( const char* token ) { return token; }
-
-	// Parses and distributes muzzle flash events
-	virtual bool DispatchMuzzleEffect( const char *options, bool isFirstPerson );
 
 	// virtual	void AllocateMaterials( void );
 	// virtual	void FreeMaterials( void );
@@ -409,13 +504,16 @@ public:
 	// Purpose: My physics object has been updated, react or extract data
 	virtual void					VPhysicsUpdate( IPhysicsObject *pPhysics );
 
+	// Parses and distributes muzzle flash events
+	virtual bool DispatchMuzzleEffect( const char *options, bool isFirstPerson, MuzzleFlashInfo_t *result );
+
+	// This is called to do the actual muzzle flash effect.
+	virtual void ProcessMuzzleFlashEvent( MuzzleFlashInfo_t *info );
+
 	void DisableMuzzleFlash();		// Turn off the muzzle flash (ie: signal that we handled the server's event).
 	virtual void DoMuzzleFlash();	// Force a muzzle flash event. Note: this only QUEUES an event, so
 									// ProcessMuzzleFlashEvent will get called later.
 	bool ShouldMuzzleFlash() const;	// Is the muzzle flash event on?
-
-	// This is called to do the actual muzzle flash effect.
-	virtual void ProcessMuzzleFlashEvent();
 	
 	// Update client side animations
 	static void UpdateClientSideAnimations();
@@ -496,18 +594,6 @@ protected:
 	CIKContext						*m_pIk;
 
 	int								m_iEyeAttachment;
-	int								m_iMuzzleFlashColor[4];
-	float							m_flMuzzleFlashTime;
-	
-	// Dlight params
-	int 							m_iMuzzleFlashRadius;
-	float							m_flMuzzleFlashDecay;
-	
-	// ProjTextures params
-	int								m_flMuzzleFlashFov;
-	int								m_flMuzzleFlashRange;
-	float							m_flMuzzleFlashCLQ[3];
-	float							m_flMuzzleFlashHoldTime;
 
 	// Animation playback framerate
 	float							m_flPlaybackRate;

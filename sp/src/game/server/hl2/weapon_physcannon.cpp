@@ -91,6 +91,9 @@ extern ConVar hl2_walkspeed;
 #define	MEGACANNON_MODEL "models/weapons/v_superphyscannon.mdl"
 #define	MEGACANNON_SKIN	1
 
+#define MEGACANNON_PUNT_SCALE 0.35f
+#define PHYSCANNON_PUNT_SCALE 0.35f
+
 // -------------------------------------------------------------------------
 //  Physcannon trace filter to handle special cases
 // -------------------------------------------------------------------------
@@ -1776,8 +1779,12 @@ void CWeaponPhysCannon::PuntNonVPhysics( CBaseEntity *pEntity, const Vector &for
 
 	if ( pEntity->MyNPCPointer() )
 	{
-		float flScale = IsMegaPhysCannon() ? 2.0f : 1.0f;
-		pEntity->MyNPCPointer()->NPCVelocityImpulse( forward, flScale );
+		CBasePlayer *pOwner = ToBasePlayer( GetOwner() );
+		if ( pOwner != NULL )
+		{
+			float flScale = IsMegaPhysCannon() ? MEGACANNON_PUNT_SCALE : PHYSCANNON_PUNT_SCALE;
+			pEntity->MyNPCPointer()->NPCVelocityImpulse( pOwner->EyeDirection2D(), flScale );
+		}
 	}
 	
 	//Explosion effect
@@ -1853,8 +1860,12 @@ void CWeaponPhysCannon::PuntVPhysics( CBaseEntity *pEntity, const Vector &vecFor
 
 	if ( pEntity->MyNPCPointer() )
 	{
-		float flScale = IsMegaPhysCannon() ? 2.0f : 1.0f;
-		pEntity->MyNPCPointer()->NPCVelocityImpulse( forward, flScale );
+		CBasePlayer *pOwner = ToBasePlayer( GetOwner() );
+		if ( pOwner != NULL )
+		{
+			float flScale = IsMegaPhysCannon() ? MEGACANNON_PUNT_SCALE : PHYSCANNON_PUNT_SCALE;
+			pEntity->MyNPCPointer()->NPCVelocityImpulse( pOwner->EyeDirection2D(), flScale );
+		}
 	}
 
 	CBasePlayer *pOwner = ToBasePlayer( GetOwner() );
@@ -2265,8 +2276,8 @@ void CWeaponPhysCannon::PrimaryAttack( void )
 					ApplyMultiDamage();
 					PuntNonVPhysics( pEntity, forward, tr );
 
-					float flScale = IsMegaPhysCannon() ? 2.0f : 1.0f;
-					pCombine->NPCVelocityImpulse( forward, flScale );
+					float flScale = IsMegaPhysCannon() ? MEGACANNON_PUNT_SCALE : PHYSCANNON_PUNT_SCALE;
+					pCombine->NPCVelocityImpulse( pOwner->EyeDirection2D(), flScale );
 
 					return;
 				}
@@ -2437,8 +2448,8 @@ bool CWeaponPhysCannon::AttachObject( CBaseEntity *pObject, const Vector &vPosit
 				pObject->DispatchTraceAttack(info, forward, &tr);
 				ApplyMultiDamage();
 
-				float flScale = IsMegaPhysCannon() ? 2.0f : 1.0f;
-				pCombine->NPCVelocityImpulse( forward, -flScale );
+				float flScale = IsMegaPhysCannon() ? MEGACANNON_PUNT_SCALE : PHYSCANNON_PUNT_SCALE;
+				pCombine->NPCVelocityImpulse( pOwner->EyeDirection2D(), -flScale * 2.0f );
 
 				// Disable for 0.5 seconds
 				m_flElementDebounce =		gpGlobals->curtime + 0.5f;

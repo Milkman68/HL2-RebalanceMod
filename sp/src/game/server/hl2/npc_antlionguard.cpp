@@ -49,6 +49,8 @@ ConVar	sk_antlionguard_dmg_shove( "sk_antlionguard_dmg_shove", "0" );
 ConVar	sk_antlionguard_dmg_scale_buckshot( "sk_antlionguard_dmg_scale_buckshot", "0.5" );
 ConVar	sk_antlionguard_dmg_scale_bullet( "sk_antlionguard_dmg_scale_bullet", "0.25" );
 
+extern ConVar hl2r_new_screenshake_effects;
+
 //#if HL2_EPISODIC
 // When enabled, add code to have the antlion bleed profusely as it is badly injured.
 #define ANTLIONGUARD_BLOOD_EFFECTS 2
@@ -1907,7 +1909,12 @@ void CNPC_AntlionGuard::HandleAnimEvent( animevent_t *pEvent )
 #else 
 			EmitSound("NPC_AntlionGuard.StepLight", pEvent->eventtime );
 #endif // HL2_EPISODIC
+
 		}
+
+		if ( hl2r_new_screenshake_effects.GetBool() )
+			UTIL_ScreenShake( GetAbsOrigin(), 1.0f, 80.0f, 0.5f, 500.0f, SHAKE_START );
+
 		return;
 	}
 
@@ -1929,6 +1936,10 @@ void CNPC_AntlionGuard::HandleAnimEvent( animevent_t *pEvent )
 			EmitSound( "NPC_AntlionGuard.StepHeavy", pEvent->eventtime );
 #endif // HL2_EPISODIC
 		}
+
+		if ( hl2r_new_screenshake_effects.GetBool() )
+			UTIL_ScreenShake( GetAbsOrigin(), 2.0f, 80.0f, 0.5f, 500.0f, SHAKE_START );
+
 		return;
 	}
 	
@@ -1974,6 +1985,10 @@ void CNPC_AntlionGuard::HandleAnimEvent( animevent_t *pEvent )
 		ENVELOPE_CONTROLLER.SoundChangeVolume( m_pGrowlIdleSound, 0.0f, 0.1f );
 		
 		m_flBreathTime = gpGlobals->curtime + duration - 0.2f;
+
+		if ( hl2r_new_screenshake_effects.GetBool() )
+			UTIL_ScreenShake( GetAbsOrigin(), 7.5f, 80.0f, 0.5f, 750.0f, SHAKE_START );
+
 		return;
 	}
 	
@@ -1991,6 +2006,10 @@ void CNPC_AntlionGuard::HandleAnimEvent( animevent_t *pEvent )
 		m_flBreathTime = gpGlobals->curtime + duration - 0.2f;
 
 		EmitSound( "NPC_AntlionGuard.Roar" );
+
+		if ( hl2r_new_screenshake_effects.GetBool() )
+			UTIL_ScreenShake( GetAbsOrigin(), 7.5f, 80.0f, 2.5f, 1000.0f, SHAKE_START );
+
 		return;
 	}
 

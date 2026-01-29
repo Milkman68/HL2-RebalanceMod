@@ -27,6 +27,7 @@ extern ConVar sk_plr_num_shotgun_pellets;
 extern ConVar sk_plr_num_shotgun_pellets_double;
 extern ConVar sk_npc_num_shotgun_pellets;
 extern ConVar hl2r_bullet_tracer_freq;
+extern ConVar hl2r_new_screenshake_effects;
 
 // HL1 Values
 #define VECTOR_CONE_SHOTGUN	Vector( 0.08716, 0.04362, 0.00  )// 10 degrees by 5 degrees
@@ -498,6 +499,9 @@ void CWeaponShotgun::PrimaryAttack( void )
 	QAngle viewPunch = QAngle( -5, random->RandomFloat( -0.6, 0.6 ), 0 );
 	pPlayer->ViewPunch( viewPunch );
 
+	if ( hl2r_new_screenshake_effects.GetBool() )
+		UTIL_ScreenShake( pPlayer->GetAbsOrigin(), 2.0f * viewPunch.Length(), 150.0, 0.25, 128, SHAKE_START );
+
 	CSoundEnt::InsertSound( SOUND_COMBAT, GetAbsOrigin(), SOUNDENT_VOLUME_SHOTGUN, 0.2, GetOwner() );
 
 	if (!m_iClip1 && pPlayer->GetAmmoCount(m_iPrimaryAmmoType) <= 0)
@@ -574,6 +578,9 @@ void CWeaponShotgun::BurstThink( void )
 	//Disorient the player
 	QAngle viewPunch = QAngle( -4, random->RandomFloat( -2, 2 ), 0 );
 	pPlayer->ViewPunch( viewPunch );
+
+	if ( hl2r_new_screenshake_effects.GetBool() )
+		UTIL_ScreenShake( pPlayer->GetAbsOrigin(), 2.0f * viewPunch.Length(), 150.0, 0.25, 128, SHAKE_START );
 
 	pPlayer->SetMuzzleFlashTime( gpGlobals->curtime + 1.0 );
 

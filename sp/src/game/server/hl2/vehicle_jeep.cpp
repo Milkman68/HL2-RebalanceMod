@@ -79,6 +79,7 @@ ConVar	g_jeepexitspeed( "g_jeepexitspeed", "100", FCVAR_CHEAT );
 
 extern ConVar autoaim_max_dist;
 extern ConVar sv_vehicle_autoaim_scale;
+extern ConVar hl2r_new_screenshake_effects;
 
 
 //=============================================================================
@@ -920,6 +921,10 @@ void CPropJeep::FireCannon( void )
 	// NVNT apply a punch on fire
 	HapticPunch(m_hPlayer,0,0,hap_jeep_cannon_mag.GetFloat());
 #endif
+
+	if ( hl2r_new_screenshake_effects.GetBool() )
+		UTIL_ScreenShake( m_hPlayer->GetAbsOrigin(), 1.0f, 150.0, 0.25, 128, SHAKE_START );
+
 	FireBulletsInfo_t info( 1, m_vecGunOrigin, aimDir, VECTOR_CONE_1DEGREES, MAX_TRACE_LENGTH, m_nAmmoType );
 
 	info.m_nFlags = FIRE_BULLETS_ALLOW_WATER_SURFACE_IMPACTS;
@@ -959,9 +964,16 @@ void CPropJeep::FireChargedCannon( void )
 	
 	RemoveAmmo( sk_jeep_gauss_drain.GetFloat() );
 
+	float flChargeAmount = ( gpGlobals->curtime - m_flCannonChargeStartTime ) / sk_jeep_gauss_charge_time.GetFloat();
+
 	if( m_hPlayer )
 	{
 		m_hPlayer->RumbleEffect( RUMBLE_357, 0, RUMBLE_FLAG_RESTART );
+
+		float flShakeAmount = RemapValClamped(flChargeAmount, 0.0f, 1.0f, 2.0f, 5.0f);
+
+		if ( hl2r_new_screenshake_effects.GetBool() )
+			UTIL_ScreenShake( m_hPlayer->GetAbsOrigin(), flShakeAmount, 150.0, 0.5, 128, SHAKE_START );
 	}
 
 	//Find the direction the gun is pointing in
@@ -977,7 +989,7 @@ void CPropJeep::FireChargedCannon( void )
 	ClearMultiDamage();
 
 	//Find how much damage to do
-	float flChargeAmount = ( gpGlobals->curtime - m_flCannonChargeStartTime ) / sk_jeep_gauss_charge_time.GetFloat();
+//	float flChargeAmount = ( gpGlobals->curtime - m_flCannonChargeStartTime ) / sk_jeep_gauss_charge_time.GetFloat();
 
 	//Clamp this
 	if ( flChargeAmount > 1.0f )
@@ -1057,6 +1069,16 @@ void CPropJeep::FireChargedCannon( void )
 	{
 		RadiusDamage( CTakeDamageInfo( this, this, flDamage, DMG_SHOCK ), tr.endpos, 200.0f, CLASS_NONE, NULL );
 	}
+
+	// HACK: This is already implemented in baseentity_shared.cpp but since the jeep manually creates
+	// a bullet to fire charged shots it needs to be implemented here aswell ):
+	float flDamageForce = GetAmmoDef()->DamageForce(m_nAmmoType) / 600;
+
+	float flAmplitudeMultiplier = RemapValClamped(flDamageForce, 1.0f, 20.0f, 1.0f, 7.0f);
+	float flRadiusMultiplier = RemapValClamped(flDamageForce, 1.0f, 20.0f, 1.0f, 2.0f);
+
+	if ( hl2r_new_screenshake_effects.GetBool() )
+		UTIL_ScreenShake( tr.endpos, 1.5 * flAmplitudeMultiplier, 150.0, 0.25, 192 * flRadiusMultiplier, SHAKE_START, true );
 }
 
 //-----------------------------------------------------------------------------
@@ -1107,9 +1129,7 @@ void CPropJeep::ChargeCannon( void )
 		float rumble = flChargeAmount * 0.5f;
 
 		if( m_hPlayer )
-		{
 			m_hPlayer->RumbleEffect( RUMBLE_FLAT_LEFT, (int)(rumble * 100), RUMBLE_FLAG_UPDATE_SCALE );
-		}
 	}
 
 	//TODO: Add muzzle effect?

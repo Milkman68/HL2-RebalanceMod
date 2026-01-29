@@ -18,6 +18,7 @@
 #include "tier0/memdbgon.h"
 
 ConVar	g_debug_basescanner( "g_debug_basescanner", "0", FCVAR_CHEAT );
+extern ConVar hl2r_new_screenshake_effects;
 
 BEGIN_DATADESC( CNPC_BaseScanner )
 	DEFINE_EMBEDDED( m_KilledInfo ),
@@ -560,6 +561,9 @@ void CNPC_BaseScanner::Gib( void )
 
 	// Cover the gib spawn
 	ExplosionCreate( WorldSpaceCenter(), GetAbsAngles(), this, 64, 64, false );
+
+	if ( hl2r_new_screenshake_effects.GetBool() )
+		UTIL_ScreenShake( GetAbsOrigin(), 20, 150.0, 0.5, 300, SHAKE_START );
 
 	// Turn off any smoke trail
 	if ( m_pSmokeTrail )

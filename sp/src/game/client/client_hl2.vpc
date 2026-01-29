@@ -118,45 +118,49 @@ $Project "Client (HL2)"
 		
 		$Folder	"HL2R"
 		{
-			$Folder	"vgui_controls"
+			$Folder	"vgui"
 			{
-				$File	"hl2r\vgui_controls\DisclaimerBox.cpp"
-				$File	"hl2r\vgui_controls\DisclaimerBox.h"
-				$File	"hl2r\vgui_controls\SelectableColumnHeader.cpp"
-				$File	"hl2r\vgui_controls\SelectableColumnHeader.h"
-				$File	"hl2r\vgui_controls\GameSwitchQueryBox.cpp"
-				$File	"hl2r\vgui_controls\GameSwitchQueryBox.h"
-			}
-
-			$File	"hl2r\hl2r_options.cpp"
-			$File	"hl2r\hl2r_options.h"
-			$File	"hl2r\hl2r_baseoptions.h"
-			$File	"hl2r\hl2r_campaign_panel.cpp"
-			$File	"hl2r\hl2r_campaign_panel.h"
-
-			$File	"$SRCDIR\game\shared\hl2r\hl2r_campaign_manager.cpp"		\
-					"$SRCDIR\game\shared\hl2r\hl2r_utils.cpp"
-			{
-				$Configuration
+				$Folder	"vgui_controls"
 				{
-					$Compiler
+					$File	"hl2r\vgui_controls\DisclaimerBox.cpp"
+					$File	"hl2r\vgui_controls\DisclaimerBox.h"
+					$File	"hl2r\vgui_controls\SelectableColumnHeader.cpp"
+					$File	"hl2r\vgui_controls\SelectableColumnHeader.h"
+					$File	"hl2r\vgui_controls\GameSwitchQueryBox.cpp"
+					$File	"hl2r\vgui_controls\GameSwitchQueryBox.h"
+				}
+
+				$File	"hl2r\hl2r_options.cpp"
+				$File	"hl2r\hl2r_options.h"
+				$File	"hl2r\hl2r_baseoptions.h"
+				$File	"hl2r\hl2r_campaign_panel.cpp"
+				$File	"hl2r\hl2r_campaign_panel.h"
+
+				$File	"$SRCDIR\game\shared\hl2r\hl2r_campaign_manager.cpp"		\
+						"$SRCDIR\game\shared\hl2r\hl2r_utils.cpp"
+				{
+					$Configuration
 					{
-						$Create/UsePrecompiledHeader	"Not Using Precompiled Headers"
+						$Compiler
+						{
+							$Create/UsePrecompiledHeader	"Not Using Precompiled Headers"
+						}
 					}
 				}
+
+				$File	"$SRCDIR\game\shared\hl2r\hl2r_campaign_manager.h"
+				$File	"$SRCDIR\game\shared\hl2r\hl2r_utils.h"
+
+				$File	"hl2r\hl2r_gamelogo.cpp"
+				$File	"hl2r\hl2r_gamelogo.h"
+				$File	"hl2r\hl2r_game_manager.cpp"
+				$File	"hl2r\hl2r_game_manager.h"
+				$File	"hl2r\hl2r_shared_manager.cpp"
+				$File	"hl2r\hl2r_shared_manager.h"
 			}
 
-			$File	"$SRCDIR\game\shared\hl2r\hl2r_campaign_manager.h"
-			$File	"$SRCDIR\game\shared\hl2r\hl2r_utils.h"
-
-			$File	"hl2r\hl2r_gamelogo.cpp"
-			$File	"hl2r\hl2r_gamelogo.h"
-			$File	"hl2r\hl2r_game_manager.cpp"
-			$File	"hl2r\hl2r_game_manager.h"
-			$File	"hl2r\hl2r_shared_manager.cpp"
-			$File	"hl2r\hl2r_shared_manager.h"
-
 			$File	"hl2\c_npc_turret_floor.cpp"
+			$File	"hl2\c_weapon_rpg.cpp"
 		}
 	}
 }

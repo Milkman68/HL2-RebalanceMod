@@ -27,6 +27,8 @@ ConVar    sk_npc_dmg_crowbar ( "sk_npc_dmg_crowbar","0");
 ConVar    sk_crowbar_refire	 ( "sk_crowbar_refire_time","0.4");
 ConVar    sk_crowbar_range	 ( "sk_crowbar_range","75");
 
+extern ConVar hl2r_new_screenshake_effects;
+
 //-----------------------------------------------------------------------------
 // CWeaponCrowbar
 //-----------------------------------------------------------------------------
@@ -98,6 +100,9 @@ void CWeaponCrowbar::AddViewKick( void )
 	punchAng.z = 0.0f;
 	
 	pPlayer->ViewPunch( punchAng ); 
+
+	if ( hl2r_new_screenshake_effects.GetBool() )
+		UTIL_ScreenShake( pPlayer->GetAbsOrigin(), 3, 150.0, 0.25, 128, SHAKE_START );
 }
 
 

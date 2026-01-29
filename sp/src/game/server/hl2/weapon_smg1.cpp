@@ -22,6 +22,8 @@
 #include "tier0/memdbgon.h"
 
 extern ConVar   sk_plr_dmg_smg1_grenade;	
+extern ConVar hl2r_new_screenshake_effects;
+extern ConVar hl2r_new_viewpunch_effects;
 
 ConVar sk_smg1_grenade_speed( "sk_smg1_grenade_speed", "1000.0" );
 
@@ -324,6 +326,11 @@ void CWeaponSMG1::AddViewKick( void )
 		return;
 
 	DoMachineGunKick( pPlayer, MAX_VERTICAL_KICK, m_fFireDuration, SLIDE_LIMIT );
+
+	float flShakeScale = RemapValClamped( m_fFireDuration, 0.0f, 15.0f, 1.0f, 15.0f );
+
+	if ( hl2r_new_screenshake_effects.GetBool() )
+		UTIL_ScreenShake( pPlayer->GetAbsOrigin(), 0.75 * flShakeScale, 150.0, 0.25, 128, SHAKE_START );
 }
 
 //-----------------------------------------------------------------------------
@@ -336,6 +343,11 @@ void CWeaponSMG1::SecondaryAttack( void )
 	
 	if ( pPlayer == NULL )
 		return;
+
+	QAngle viewPunch = QAngle( -5, random->RandomFloat(-2.0, 2.0), 0 );
+
+	if ( hl2r_new_viewpunch_effects.GetBool() )
+		pPlayer->ViewPunch( viewPunch );
 
 	//Must have ammo
 	if ( ( pPlayer->GetAmmoCount( m_iSecondaryAmmoType ) <= 0 ) || ( pPlayer->GetWaterLevel() == 3 ) )

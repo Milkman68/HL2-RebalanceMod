@@ -48,6 +48,7 @@
 #include "tier0/memdbgon.h"
 
 extern Vector PointOnLineNearestPoint(const Vector& vStartPos, const Vector& vEndPos, const Vector& vPoint);
+extern ConVar hl2r_new_screenshake_effects;
 
 ConVar mortar_visualize("mortar_visualize", "0" );
 ConVar sk_emplacement_ammo("sk_emplacement_ammo", "1");
@@ -1197,6 +1198,9 @@ void CFuncTank::ControllerPostFrame( void )
 	}
 	
 	Fire( bulletCount, WorldBarrelPosition(), forward, pPlayer, false );
+
+	if ( hl2r_new_screenshake_effects.GetBool() )
+		UTIL_ScreenShake( pPlayer->GetAbsOrigin(), 1, 150.0, 0.25, 128, SHAKE_START );
 	
 	float DrainAmmount = bulletCount * AMMO_DRAIN_AMMOUNT * 15.0f/
 	SimpleSplineRemapVal( m_fireRate, 15.0f, 60.0f, 15.0f, 35.0f ); // Don't ask why.

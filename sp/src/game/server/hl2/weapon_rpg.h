@@ -99,6 +99,7 @@ private:
 	bool					m_bCreateDangerSounds;
 
 	DECLARE_DATADESC();
+	DECLARE_SERVERCLASS();
 };
 
 

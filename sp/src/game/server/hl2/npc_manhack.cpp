@@ -3209,7 +3209,7 @@ void CNPC_Manhack::StopBurst( bool bInterruptSchedule /*= false*/ )
 
 	// Stop our burst timers
 	m_flNextBurstTime = gpGlobals->curtime + sk_manhack_charge_interval.GetFloat(); //FIXME: Skill level based
-	m_flBurstDuration = gpGlobals->curtime + sk_manhack_charge_Duration.GetFloat();
+	m_flBurstDuration = gpGlobals->curtime - 0.1f;
 
 	if ( bInterruptSchedule )
 	{

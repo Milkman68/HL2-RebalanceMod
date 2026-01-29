@@ -226,7 +226,8 @@ void C_NPC_Manhack::Simulate( void )
 		dl->die = gpGlobals->curtime + 0.1;
 		dl->style = 6;
 	}
-	else
+	// Commenting this out cause making idle manhack emit d'lights can max out the d'light limit QUICK.
+/*	else
 	{
 		dlight_t *dl = effects->CL_AllocDlight ( index );
 		dl->origin = GetAbsOrigin();
@@ -238,6 +239,6 @@ void C_NPC_Manhack::Simulate( void )
 		dl->decay = dl->radius / 0.1;
 		dl->die = gpGlobals->curtime + 0.1;
 		dl->style = 5;
-	}
+	}*/
 		
 }

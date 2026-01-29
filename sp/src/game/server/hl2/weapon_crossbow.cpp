@@ -43,6 +43,7 @@ extern ConVar sk_plr_dmg_crossbow_charged;
 extern ConVar sk_plr_dmg_crossbow_max_charge;
 
 extern ConVar sk_npc_dmg_crossbow;
+extern ConVar hl2r_new_screenshake_effects;
 
 //ConVar sk_npc_head_crossbow("sk_npc_head_crossbow", "3" );
 
@@ -56,7 +57,7 @@ void TE_StickyBolt( IRecipientFilter& filter, float delay,	Vector vecDirection, 
 #define	BOLT_SKIN_NORMAL	0
 #define BOLT_SKIN_GLOW		1
 
-#define CHARGE_TIME 1.0f
+#define CHARGE_TIME 1.5f
 
 //-----------------------------------------------------------------------------
 // Crossbow Bolt
@@ -814,7 +815,7 @@ void CWeaponCrossbow::FireBolt( void )
 
 	m_iClip1--;
 	
-	QAngle viewPunch = QAngle( -2, 0, 0 );
+	QAngle viewPunch = QAngle( -3, random->RandomFloat(-0.5, 0.5), 0 );
 	pOwner->ViewPunch( viewPunch );
 
 	WeaponSound( SINGLE );
@@ -950,6 +951,12 @@ void CWeaponCrossbow::DoLoadEffect( void )
 
 	if ( pOwner == NULL )
 		return;
+
+	QAngle viewPunch = QAngle( -0.25, 0, 0 );
+	pOwner->ViewPunch( viewPunch );
+
+	if ( hl2r_new_screenshake_effects.GetBool() )
+		UTIL_ScreenShake( pOwner->GetAbsOrigin(), 5, 150.0, 0.5, 128, SHAKE_START );
 
 	CBaseViewModel *pViewModel = pOwner->GetViewModel();
 

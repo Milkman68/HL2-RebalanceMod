@@ -66,6 +66,8 @@ int g_iGunshipEffectIndex = -1;
 #define SF_GUNSHIP_NO_GROUND_ATTACK		( 1 << 12 )	
 #define SF_GUNSHIP_USE_CHOPPER_MODEL	( 1 << 13 )
 
+extern ConVar hl2r_new_screenshake_effects;
+
 ConVar sk_gunship_burst_size("sk_gunship_burst_size", "15" );
 ConVar sk_gunship_burst_min("sk_gunship_burst_min", "800" );
 ConVar sk_gunship_burst_dist("sk_gunship_burst_dist", "768" );
@@ -2455,6 +2457,9 @@ void CNPC_CombineGunship::SelfDestruct( void )
 		vecDelta = RandomVector( -200,200 );
 		ExplosionCreate( vecOrigin + vecDelta, QAngle( -90, 0, 0 ), this, 10, 10, false );
 	}
+
+	if ( hl2r_new_screenshake_effects.GetBool() )
+		UTIL_ScreenShake( GetAbsOrigin(), 25.0f, 150.0, 1.0, 4000, SHAKE_START, true );
 
 	AR2Explosion *pExplosion = AR2Explosion::CreateAR2Explosion( vecOrigin );
 	if ( pExplosion )

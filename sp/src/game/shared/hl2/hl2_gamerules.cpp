@@ -92,6 +92,8 @@ ConVar	hl2r_ammo_labels( "hl2r_ammo_labels", "0", FCVAR_REPLICATED | FCVAR_ARCHI
 ConVar	hl2r_togglezoom( "hl2r_togglezoom", "1", FCVAR_REPLICATED | FCVAR_ARCHIVE);
 ConVar	hl2r_projected_muzzleflash( "hl2r_projected_muzzleflash", "0", FCVAR_REPLICATED | FCVAR_ARCHIVE);
 ConVar	hl2r_bullet_tracer_freq( "hl2r_bullet_tracer_freq", "1", FCVAR_REPLICATED | FCVAR_ARCHIVE);
+ConVar	hl2r_new_screenshake_effects( "hl2r_new_screenshake_effects", "1", FCVAR_REPLICATED | FCVAR_ARCHIVE);
+ConVar	hl2r_new_viewpunch_effects( "hl2r_new_viewpunch_effects", "1", FCVAR_REPLICATED | FCVAR_ARCHIVE);
 
 // Defined here now so it can be accessed by the options menu.
 ConVar	hud_quickinfo( "hud_quickinfo", "1", FCVAR_REPLICATED | FCVAR_ARCHIVE );

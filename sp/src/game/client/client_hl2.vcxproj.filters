@@ -34,8 +34,11 @@
     <Filter Include="Source Files\HL2R">
       <UniqueIdentifier>{DE940DE2-9200-5C7D-F9E1-B7A2E33718E2}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\HL2R\vgui_controls">
-      <UniqueIdentifier>{555E49F2-3DE1-F9C4-CE2C-AD48DAC48BF3}</UniqueIdentifier>
+    <Filter Include="Source Files\HL2R\vgui">
+      <UniqueIdentifier>{1B3D8775-BF52-DDE4-1BBD-1148F39737BC}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\HL2R\vgui\vgui_controls">
+      <UniqueIdentifier>{A217595E-C388-9CFA-F904-67E0BDD8FFA3}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source Files\Precompiled Header">
       <UniqueIdentifier>{A7D26A13-21F4-C6B5-5922-8A4FB05AF07D}</UniqueIdentifier>
@@ -1872,37 +1875,37 @@
       <Filter>Source Files\HL2 DLL</Filter>
     </ClInclude>
     <ClInclude Include="hl2r\hl2r_baseoptions.h">
-      <Filter>Source Files\HL2R</Filter>
+      <Filter>Source Files\HL2R\vgui</Filter>
     </ClInclude>
     <ClInclude Include="..\..\game\shared\hl2r\hl2r_campaign_manager.h">
-      <Filter>Source Files\HL2R</Filter>
+      <Filter>Source Files\HL2R\vgui</Filter>
     </ClInclude>
     <ClInclude Include="hl2r\hl2r_campaign_panel.h">
-      <Filter>Source Files\HL2R</Filter>
+      <Filter>Source Files\HL2R\vgui</Filter>
     </ClInclude>
     <ClInclude Include="hl2r\hl2r_game_manager.h">
-      <Filter>Source Files\HL2R</Filter>
+      <Filter>Source Files\HL2R\vgui</Filter>
     </ClInclude>
     <ClInclude Include="hl2r\hl2r_gamelogo.h">
-      <Filter>Source Files\HL2R</Filter>
+      <Filter>Source Files\HL2R\vgui</Filter>
     </ClInclude>
     <ClInclude Include="hl2r\hl2r_options.h">
-      <Filter>Source Files\HL2R</Filter>
+      <Filter>Source Files\HL2R\vgui</Filter>
     </ClInclude>
     <ClInclude Include="hl2r\hl2r_shared_manager.h">
-      <Filter>Source Files\HL2R</Filter>
+      <Filter>Source Files\HL2R\vgui</Filter>
     </ClInclude>
     <ClInclude Include="..\..\game\shared\hl2r\hl2r_utils.h">
-      <Filter>Source Files\HL2R</Filter>
+      <Filter>Source Files\HL2R\vgui</Filter>
     </ClInclude>
     <ClInclude Include="hl2r\vgui_controls\DisclaimerBox.h">
-      <Filter>Source Files\HL2R\vgui_controls</Filter>
+      <Filter>Source Files\HL2R\vgui\vgui_controls</Filter>
     </ClInclude>
     <ClInclude Include="hl2r\vgui_controls\GameSwitchQueryBox.h">
-      <Filter>Source Files\HL2R\vgui_controls</Filter>
+      <Filter>Source Files\HL2R\vgui\vgui_controls</Filter>
     </ClInclude>
     <ClInclude Include="hl2r\vgui_controls\SelectableColumnHeader.h">
-      <Filter>Source Files\HL2R\vgui_controls</Filter>
+      <Filter>Source Files\HL2R\vgui\vgui_controls</Filter>
     </ClInclude>
     <ClInclude Include="sixense\in_sixense.h">
       <Filter>Source Files\Sixense</Filter>
@@ -3199,35 +3202,38 @@
     <ClCompile Include="hl2\c_npc_turret_floor.cpp">
       <Filter>Source Files\HL2R</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\game\shared\hl2r\hl2r_campaign_manager.cpp">
+    <ClCompile Include="hl2\c_weapon_rpg.cpp">
       <Filter>Source Files\HL2R</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\game\shared\hl2r\hl2r_campaign_manager.cpp">
+      <Filter>Source Files\HL2R\vgui</Filter>
     </ClCompile>
     <ClCompile Include="hl2r\hl2r_campaign_panel.cpp">
-      <Filter>Source Files\HL2R</Filter>
+      <Filter>Source Files\HL2R\vgui</Filter>
     </ClCompile>
     <ClCompile Include="hl2r\hl2r_game_manager.cpp">
-      <Filter>Source Files\HL2R</Filter>
+      <Filter>Source Files\HL2R\vgui</Filter>
     </ClCompile>
     <ClCompile Include="hl2r\hl2r_gamelogo.cpp">
-      <Filter>Source Files\HL2R</Filter>
+      <Filter>Source Files\HL2R\vgui</Filter>
     </ClCompile>
     <ClCompile Include="hl2r\hl2r_options.cpp">
-      <Filter>Source Files\HL2R</Filter>
+      <Filter>Source Files\HL2R\vgui</Filter>
     </ClCompile>
     <ClCompile Include="hl2r\hl2r_shared_manager.cpp">
-      <Filter>Source Files\HL2R</Filter>
+      <Filter>Source Files\HL2R\vgui</Filter>
     </ClCompile>
     <ClCompile Include="..\..\game\shared\hl2r\hl2r_utils.cpp">
-      <Filter>Source Files\HL2R</Filter>
+      <Filter>Source Files\HL2R\vgui</Filter>
     </ClCompile>
     <ClCompile Include="hl2r\vgui_controls\DisclaimerBox.cpp">
-      <Filter>Source Files\HL2R\vgui_controls</Filter>
+      <Filter>Source Files\HL2R\vgui\vgui_controls</Filter>
     </ClCompile>
     <ClCompile Include="hl2r\vgui_controls\GameSwitchQueryBox.cpp">
-      <Filter>Source Files\HL2R\vgui_controls</Filter>
+      <Filter>Source Files\HL2R\vgui\vgui_controls</Filter>
     </ClCompile>
     <ClCompile Include="hl2r\vgui_controls\SelectableColumnHeader.cpp">
-      <Filter>Source Files\HL2R\vgui_controls</Filter>
+      <Filter>Source Files\HL2R\vgui\vgui_controls</Filter>
     </ClCompile>
     <ClCompile Include="stdafx.cpp">
       <Filter>Source Files\Precompiled Header</Filter>

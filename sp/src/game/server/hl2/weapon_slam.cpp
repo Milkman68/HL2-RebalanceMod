@@ -28,6 +28,8 @@ ConVar sk_slam_radius( "sk_slam_radius","0");
 
 ConVar slam_use_reload_toggle( "slam_use_reload_toggle","0");
 
+extern ConVar hl2r_new_viewpunch_effects;
+
 BEGIN_DATADESC( CWeapon_SLAM )
 
 	DEFINE_FIELD( m_tSlamState, FIELD_INTEGER ),
@@ -336,6 +338,7 @@ bool CWeapon_SLAM::TripmineAttach( void )
 	
 	m_flAttachGraceTime = 0.0;
 	m_bAttachTripmine = false;
+
 	return false;
 }
 
@@ -450,6 +453,10 @@ void CWeapon_SLAM::SatchelThrow( void )
 
 	// Play throw sound
 	EmitSound( "Weapon_SLAM.SatchelThrow" );
+
+	QAngle viewPunch = QAngle( -2, random->RandomFloat( -1, 1 ), 0 );
+	if (hl2r_new_viewpunch_effects.GetBool())
+		pPlayer->ViewPunch(viewPunch);
 }
 
 //-----------------------------------------------------------------------------

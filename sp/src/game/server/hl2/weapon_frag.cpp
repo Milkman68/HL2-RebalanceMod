@@ -37,6 +37,7 @@ ConVar sk_plr_grenade_cook_grace_period("sk_plr_grenade_cook_grace_period", "1.0
 
 extern ConVar hl2r_reduced_assists;
 extern ConVar r_mirrored;
+extern ConVar hl2r_new_viewpunch_effects;
 
 //-----------------------------------------------------------------------------
 // Fragmentation grenades
@@ -372,6 +373,12 @@ void CWeaponFrag::ItemPostFrame( void )
 				if( !(pOwner->m_nButtons & IN_ATTACK) )
 				{
 					SendWeaponAnim( ACT_VM_THROW );
+
+					QAngle viewPunch = QAngle( -2, random->RandomFloat( -1, 1 ), 0 );
+
+					if ( hl2r_new_viewpunch_effects.GetBool() )
+						pOwner->ViewPunch( viewPunch );
+
 					m_fDrawbackFinished = false;
 				}
 				break;
@@ -384,11 +391,19 @@ void CWeaponFrag::ItemPostFrame( void )
 					{
 						//Send the weapon animation
 						SendWeaponAnim( ACT_VM_SECONDARYATTACK );
+						QAngle viewPunch = QAngle( -1, random->RandomFloat( -1, 1 ), 0 );
+						
+						if ( hl2r_new_viewpunch_effects.GetBool() )
+							pOwner->ViewPunch( viewPunch );
 					}
 					else
 					{
 						//Send the weapon animation
 						SendWeaponAnim( ACT_VM_HAULBACK );
+						QAngle viewPunch = QAngle( -1, random->RandomFloat( -1, 1 ), 0 );
+						
+						if ( hl2r_new_viewpunch_effects.GetBool() )
+							pOwner->ViewPunch( viewPunch );
 					}
 
 					m_fDrawbackFinished = false;

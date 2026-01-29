@@ -25,6 +25,7 @@
 
 extern ConVar r_mirrored;
 extern ConVar sk_max_bugbait;
+extern ConVar hl2r_new_viewpunch_effects;
 
 ConVar sk_plr_bugbait_throw_speed("sk_plr_bugbait_throw_speed", 0);
 
@@ -272,6 +273,11 @@ void CWeaponBugBait::SecondaryAttack( void )
 	{
 		m_iSecondaryAttacks++;
 		gamestats->Event_WeaponFired( pOwner, false, GetClassname() );
+
+		QAngle viewPunch = QAngle( -0.5, random->RandomFloat( -0.5, 0.5 ), 0 );
+
+		if (hl2r_new_viewpunch_effects.GetBool())
+			pOwner->ViewPunch(viewPunch);
 	}
 }
 
@@ -308,6 +314,10 @@ void CWeaponBugBait::ThrowGrenade( CBasePlayer *pPlayer )
 	}
 
 	m_bRedraw = true;
+
+	QAngle viewPunch = QAngle( -0.5, random->RandomFloat( -0.5, 0.5 ), 0 );
+	if (hl2r_new_viewpunch_effects.GetBool())
+		pPlayer->ViewPunch(viewPunch);
 }
 
 //-----------------------------------------------------------------------------

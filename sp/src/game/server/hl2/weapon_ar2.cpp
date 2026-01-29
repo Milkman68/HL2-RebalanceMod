@@ -41,6 +41,7 @@ ConVar sk_weapon_ar2_alt_fire_mass( "sk_weapon_ar2_alt_fire_mass", "150" );
 ConVar sk_plr_weapon_ar2_alt_fire_speed( "sk_plr_weapon_ar2_alt_fire_speed", "1000" );
 ConVar sk_npc_weapon_ar2_alt_fire_speed( "sk_npc_weapon_ar2_alt_fire_speed", "1000" );
 
+extern ConVar hl2r_new_screenshake_effects;
 
 //=========================================================
 //=========================================================
@@ -154,9 +155,17 @@ void CWeaponAR2::ItemPostFrame( void )
 	m_iFireMode = sk_weapon_ar2_burst_fire.GetBool() ? FIREMODE_3RNDBURST : FIREMODE_FULLAUTO;
 	
 	// See if we need to fire off our secondary round
-	if ( m_bShotDelayed && gpGlobals->curtime > m_flDelayedFire )
+	if ( m_bShotDelayed )
 	{
-		DelayedAttack();
+		if( gpGlobals->curtime > m_flDelayedFire )
+			DelayedAttack();
+
+		CBasePlayer *pOwner = ToBasePlayer( GetOwner() );
+		if ( pOwner)
+		{
+			if ( hl2r_new_screenshake_effects.GetBool() )
+				UTIL_ScreenShake( pOwner->GetAbsOrigin(), 1.0f, 150.0, 0.25, 128, SHAKE_START );
+		}
 	}
 
 	// Update our pose parameter for the vents
@@ -500,6 +509,11 @@ void CWeaponAR2::AddViewKick( void )
 		return;
 	
 	DoMachineGunKick( pPlayer, MAX_VERTICAL_KICK, m_fFireDuration + 1.0f, SLIDE_LIMIT );
+
+	float flShakeScale = RemapValClamped( m_fFireDuration, 0.0f, 15.0f, 2.0f, 10.0f );
+
+	if ( hl2r_new_screenshake_effects.GetBool() )
+		UTIL_ScreenShake( pPlayer->GetAbsOrigin(), flShakeScale, 150.0, 0.25, 128, SHAKE_START );
 }
 
 //-----------------------------------------------------------------------------

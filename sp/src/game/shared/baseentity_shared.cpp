@@ -19,6 +19,7 @@
 #include "debugoverlay_shared.h"
 #include "coordsize.h"
 #include "vphysics/performance.h"
+#include "ammodef.h"
 
 #ifdef CLIENT_DLL
 	#include "c_te_effect_dispatch.h"
@@ -97,6 +98,7 @@ bool CheckEmitReasonablePhysicsSpew()
 	return true;
 }
 
+extern ConVar hl2r_new_screenshake_effects;
 
 //-----------------------------------------------------------------------------
 // Purpose: Spawn some blood particles
@@ -1903,7 +1905,18 @@ void CBaseEntity::FireBullets( const FireBulletsInfo_t &info )
 				{
 					flCumulativeDamage += dmgInfo.GetDamage();
 				}
+				
+				float flDamageForce = GetAmmoDef()->DamageForce(info.m_iAmmoType) / 600;
 
+				float flAmplitudeMultiplier = RemapValClamped(flDamageForce, 1.0f, 20.0f, 1.0f, 7.0f);
+				float flRadiusMultiplier = RemapValClamped(flDamageForce, 1.0f, 20.0f, 1.0f, 2.0f);
+
+				if ( !tr.m_pEnt->IsPlayer() )
+				{
+					if ( hl2r_new_screenshake_effects.GetBool() )
+						UTIL_ScreenShake( tr.endpos, 1.5 * flAmplitudeMultiplier, 150.0, 0.25, 192 * flRadiusMultiplier, SHAKE_START, true );
+				}
+					
 				if ( bStartedInWater || !bHitWater || (info.m_nFlags & FIRE_BULLETS_ALLOW_WATER_SURFACE_IMPACTS) )
 				{
 					if ( bDoServerEffects == true )

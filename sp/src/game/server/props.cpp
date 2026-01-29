@@ -55,6 +55,7 @@
 #define NUM_SUPPLY_CRATE_HUD_HINTS		3
 
 extern CBaseEntity *FindPickerEntity( CBasePlayer *pPlayer );
+extern ConVar hl2r_new_screenshake_effects;
 
 
 ConVar g_debug_doors( "g_debug_doors", "0" );
@@ -1699,6 +1700,9 @@ void CBreakableProp::Break( CBaseEntity *pBreaker, const CTakeDamageInfo &info )
 				SF_ENVEXPLOSION_NOSPARKS | SF_ENVEXPLOSION_NODLIGHTS | SF_ENVEXPLOSION_NOSMOKE | SF_ENVEXPLOSION_SURFACEONLY | SF_ENVEXPLOSION_NOSOUND,
 				0.0f, this );
 			EmitSound("PropaneTank.Burst");
+
+			if ( hl2r_new_screenshake_effects.GetBool() )
+				UTIL_ScreenShake( GetAbsOrigin(), 10, 150.0, 0.5, 750, SHAKE_START );
 		}
 		else
 		{
@@ -1706,6 +1710,9 @@ void CBreakableProp::Break( CBaseEntity *pBreaker, const CTakeDamageInfo &info )
 			ExplosionCreate( WorldSpaceCenter(), angles, pAttacker, m_explodeDamage * flScale, m_explodeRadius * flScale,
 				SF_ENVEXPLOSION_NOSPARKS | SF_ENVEXPLOSION_NODLIGHTS | SF_ENVEXPLOSION_NOSMOKE | SF_ENVEXPLOSION_SURFACEONLY,
 				0.0f, this );
+
+			if ( hl2r_new_screenshake_effects.GetBool() )
+				UTIL_ScreenShake( GetAbsOrigin(), 20, 150.0, 0.5, 750, SHAKE_START );
 		}
 
 		bExploded = true;
@@ -1782,7 +1789,10 @@ void CBreakableProp::Break( CBaseEntity *pBreaker, const CTakeDamageInfo &info )
 		if ( bExploded == false )
 		{
 			ExplosionCreate( origin, angles, pAttacker, 1, m_explodeRadius, 
-				SF_ENVEXPLOSION_NOSPARKS | SF_ENVEXPLOSION_NODLIGHTS | SF_ENVEXPLOSION_NOSMOKE, 0.0f, this );			
+				SF_ENVEXPLOSION_NOSPARKS | SF_ENVEXPLOSION_NODLIGHTS | SF_ENVEXPLOSION_NOSMOKE, 0.0f, this );		
+
+			if ( hl2r_new_screenshake_effects.GetBool() )
+				UTIL_ScreenShake( GetAbsOrigin(), 20, 150.0, 0.5, 750, SHAKE_START );
 		}
 
 		// Find and ignite all NPC's within the radius

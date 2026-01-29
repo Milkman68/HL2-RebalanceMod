@@ -23,6 +23,7 @@ ConVar sk_npc_hopper_detonate_range("sk_npc_hopper_detonate_range", "120" );
 ConVar sk_npc_hopper_explode_dmg("sk_npc_hopper_explode_dmg", "150" );
 
 extern ConVar hl2r_reduced_assists;
+extern ConVar hl2r_new_screenshake_effects;
 
 enum
 {
@@ -1106,6 +1107,10 @@ void CBounceBomb::ExplodeThink()
 	{
 		ExplosionCreate( GetAbsOrigin(), GetAbsAngles(), (pThrower) ? pThrower : this, sk_npc_hopper_explode_dmg.GetFloat(), BOUNCEBOMB_EXPLODE_RADIUS, true);
 	}
+
+	if ( hl2r_new_screenshake_effects.GetBool() )
+		UTIL_ScreenShake( GetAbsOrigin(), 20, 150.0, 0.5, 500, SHAKE_START );
+
 	UTIL_Remove( this );
 }
 
@@ -1127,6 +1132,9 @@ void CBounceBomb::OpenHooks( bool bSilent )
 	}
 
 	SetPoseParameter( m_iAllHooks, BOUNCEBOMB_HOOK_RANGE );
+
+	if ( hl2r_new_screenshake_effects.GetBool() )
+		UTIL_ScreenShake( GetAbsOrigin(), 2.5f, 150.0, 0.25, 500, SHAKE_START );
 
 #ifdef _XBOX 
 	RemoveEffects( EF_NOSHADOW );

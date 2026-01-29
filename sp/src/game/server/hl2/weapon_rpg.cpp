@@ -45,6 +45,7 @@ extern ConVar sk_plr_dmg_rpg_round;
 extern ConVar sk_npc_dmg_rpg_round;
 ConVar rpg_missle_use_custom_detonators( "rpg_missle_use_custom_detonators", "1" );
 ConVar sk_rpg_missile_speed("sk_rpg_missile_speed", "1500");
+extern ConVar hl2r_new_screenshake_effects;
 
 #define APC_MISSILE_DAMAGE	sk_apc_missile_damage.GetFloat()
 
@@ -120,6 +121,9 @@ BEGIN_DATADESC( CMissile )
 
 END_DATADESC()
 LINK_ENTITY_TO_CLASS( rpg_missile, CMissile );
+
+IMPLEMENT_SERVERCLASS_ST( CMissile, DT_Missile )
+END_SEND_TABLE()
 
 class CWeaponRPG;
 
@@ -357,7 +361,7 @@ void CMissile::DoExplosion( void )
 		SF_ENVEXPLOSION_NOSPARKS | SF_ENVEXPLOSION_NOSMOKE, 0.0f, this);
 
 	// Shake the screen
-	UTIL_ScreenShake( GetAbsOrigin(), 25.0, 150.0, 1.0, 750, SHAKE_START );
+	UTIL_ScreenShake( GetAbsOrigin(), 25.0, 150.0, 0.5, 750, SHAKE_START );
 }
 
 
@@ -1666,6 +1670,12 @@ void CWeaponRPG::PrimaryAttack( void )
 	gamestats->Event_WeaponFired( pOwner, true, GetClassname() );
 
 	CSoundEnt::InsertSound( SOUND_COMBAT, GetAbsOrigin(), 1000, 0.2, GetOwner(), SOUNDENT_CHANNEL_WEAPON );
+
+	QAngle viewPunch = QAngle( -2, random->RandomFloat( -1, 1 ), 0 );
+	pOwner->ViewPunch( viewPunch );
+
+	if ( hl2r_new_screenshake_effects.GetBool() )
+		UTIL_ScreenShake( pOwner->GetAbsOrigin(), 5.0 * viewPunch.Length(), 150.0, 0.5, 128, SHAKE_START );
 
 	// Check to see if we should trigger any RPG firing triggers
 	int iCount = g_hWeaponFireTriggers.Count();

@@ -37,6 +37,7 @@
 #include "prop_combine_ball.h"
 #include "smoke_trail.h"
 #include "BasePropDoor.h"
+#include "ammodef.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -49,11 +50,6 @@ extern ConVar sk_combine_altfire_cooldown;
 
 extern ConVar sk_combine_turnspeed_mult;
 extern ConVar sk_combine_speed_mult;
-
-#define COMBINE_SKIN_DEFAULT		0
-#define COMBINE_SKIN_SHOTGUNNER		1
-#define COMBINE_SKIN_GRENADIER		2
-
 
 #define COMBINE_GRENADE_THROW_SPEED 850
 #define COMBINE_GRENADE_TOSS_SPEED 170
@@ -1179,18 +1175,30 @@ void CNPC_Combine::StartTask( const Task_t *pTask )
 			break;
 		}
 	case TASK_RELOAD:
-	{
-		CWeaponRPG *pRPG = dynamic_cast<CWeaponRPG*>(GetActiveWeapon());
-		if ( !pRPG )
 		{
-			// Can happen with moveandshoot reloading.
-			if ( GetActiveWeapon() && GetActiveWeapon()->m_iClip1 >= GetActiveWeapon()->GetMaxClip1() )
-				break;
-		}
+			// Don't play the reload anim if our weapon is already full. Can happen with the the moveandshoot system reloading the weapon.
+			if ( GetActiveWeapon() )
+			{
+				if ( GetActiveWeapon()->UsesClipsForAmmo1() )
+				{
+					if (GetActiveWeapon()->m_iClip1 >= GetActiveWeapon()->GetMaxClip1() )
+						break;
+				}
+				else
+				{
+					if (GetActiveWeapon()->m_iClip1 >= GetAmmoDef()->MaxCarry(GetActiveWeapon()->GetPrimaryAmmoType(CBaseCombatWeapon::INDEX_CARRY)) )
+						break;
+				}
+			}
 	
-		ResetIdealActivity( GetReloadActivity( NULL ) );
-		break;
-	}
+			ResetIdealActivity( GetReloadActivity( NULL ) );
+			break;
+		}
+	case TASK_COMBINE_RPG_AUGER:
+		{
+			SetWait( 15.0 ); // maximum time auger before giving up
+			break;
+		}
 
 	default: 
 		BaseClass:: StartTask( pTask );
@@ -1363,6 +1371,70 @@ void CNPC_Combine::RunTask( const Task_t *pTask )
 			}
 			break;
 		}
+	case TASK_COMBINE_RPG_AUGER:
+			{
+				// Keep augering until the RPG has been destroyed
+				CWeaponRPG *pRPG = dynamic_cast<CWeaponRPG*>(GetActiveWeapon());
+				if ( !pRPG )
+				{
+					TaskFail( FAIL_ITEM_NO_FIND );
+					return;
+				}
+
+				// Has the RPG detonated?
+				if ( !pRPG->GetMissile() )
+				{
+					pRPG->StopGuiding();
+					TaskComplete();
+					return;
+				}
+
+				Vector vecLaserPos = pRPG->GetNPCLaserPosition();
+
+				// Abort if we've lost our enemy
+				if (!GetEnemy())
+				{
+					pRPG->StopGuiding();
+					TaskFail(FAIL_NO_ENEMY);
+					return;
+				}
+
+				// Is our enemy occluded?
+				if (HasCondition(COND_ENEMY_OCCLUDED))
+				{
+					// Turn off the laserdot, but don't stop augering
+					pRPG->StopGuiding();
+					return;
+				}
+				else if (pRPG->IsGuiding() == false)
+				{
+					pRPG->StartGuiding();
+				}
+
+				Vector vecEnemyPos = GetEnemy()->BodyTarget(GetAbsOrigin(), false);
+
+				// Pull the laserdot towards the target
+				Vector vecToTarget = (vecEnemyPos - vecLaserPos);
+				float distToMove = VectorNormalize(vecToTarget);
+				if (distToMove > 90)
+					distToMove = 90;
+				vecLaserPos += vecToTarget * distToMove;
+
+				if (IsWaitFinished())
+				{
+					pRPG->StopGuiding();
+					TaskFail(FAIL_NO_SHOOT);
+					return;
+				}
+
+				// Add imprecision to avoid obvious robotic perfection stationary targets
+				float imprecision = 18 * sin(gpGlobals->curtime);
+				vecLaserPos.x += imprecision;
+				vecLaserPos.y += imprecision;
+				vecLaserPos.z += imprecision;
+				pRPG->UpdateNPCLaserPosition(vecLaserPos);
+			}
+			break;
 
 	default:
 		{
@@ -4046,6 +4118,7 @@ DECLARE_TASK( TASK_COMBINE_SET_STANDING )
 DECLARE_TASK( TASK_COMBINE_BEGIN_FLANK )
 DECLARE_TASK( TASK_PLAY_GRENADE_SEQUENCE )
 DECLARE_TASK( TASK_PLAY_COVER_SEQUENCE )
+DECLARE_TASK( TASK_COMBINE_RPG_AUGER )
 
 //Activities
 DECLARE_ACTIVITY( ACT_COMBINE_THROW_GRENADE )
@@ -4557,7 +4630,8 @@ DEFINE_SCHEDULE
  //"		TASK_COMBINE_SIGNAL_RPG			0"
  "		TASK_ANNOUNCE_ATTACK			1"	// 1 = primary attack
  "		TASK_RANGE_ATTACK1				0"
- "		TASK_WAIT_FACE_ENEMY			1.5"
+ "		TASK_COMBINE_RPG_AUGER			0"
+ "		TASK_WAIT_FACE_ENEMY			1.0"
  ""
  "	Interrupts"
  )

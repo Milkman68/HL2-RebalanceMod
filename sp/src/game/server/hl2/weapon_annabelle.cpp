@@ -125,7 +125,7 @@ void CWeaponAnnabelle::Operator_HandleAnimEvent( animevent_t *pEvent, CBaseComba
 			m_iClip1 = m_iClip1 - 1;
 
 			vecShootDir = npc->GetActualShootTrajectory( vecShootOrigin );
-			pOperator->FireBullets( 1, vecShootOrigin, vecShootDir, VECTOR_CONE_PRECALCULATED, MAX_TRACE_LENGTH, m_iPrimaryAmmoType, 0 );
+			pOperator->FireBullets( 1, vecShootOrigin, vecShootDir, VECTOR_CONE_PRECALCULATED, MAX_TRACE_LENGTH, m_iPrimaryAmmoType[INDEX_BASE], 0 );
 		}
 		break;
 
@@ -147,7 +147,7 @@ bool CWeaponAnnabelle::StartReload( void )
 	if ( pOwner == NULL )
 		return false;
 
-	if (pOwner->GetAmmoCount(m_iPrimaryAmmoType) <= 0)
+	if (pOwner->GetAmmoCount(m_iPrimaryAmmoType[INDEX_CARRY]) <= 0)
 		return false;
 
 	if (m_iClip1 >= GetMaxClip1())
@@ -159,7 +159,7 @@ bool CWeaponAnnabelle::StartReload( void )
 		m_bNeedPump = true;
 	}
 
-	int j = MIN(1, pOwner->GetAmmoCount(m_iPrimaryAmmoType));
+	int j = MIN(1, pOwner->GetAmmoCount(m_iPrimaryAmmoType[INDEX_CARRY]));
 
 	if (j <= 0)
 		return false;
@@ -194,13 +194,13 @@ bool CWeaponAnnabelle::Reload( void )
 	if ( pOwner == NULL )
 		return false;
 
-	if (pOwner->GetAmmoCount(m_iPrimaryAmmoType) <= 0)
+	if (pOwner->GetAmmoCount(m_iPrimaryAmmoType[INDEX_CARRY]) <= 0)
 		return false;
 
 	if (m_iClip1 >= GetMaxClip1())
 		return false;
 
-	int j = MIN(1, pOwner->GetAmmoCount(m_iPrimaryAmmoType));
+	int j = MIN(1, pOwner->GetAmmoCount(m_iPrimaryAmmoType[INDEX_CARRY]));
 
 	if (j <= 0)
 		return false;
@@ -253,12 +253,12 @@ void CWeaponAnnabelle::FillClip( void )
 		return;
 
 	// Add them to the clip
-	if ( pOwner->GetAmmoCount( m_iPrimaryAmmoType ) > 0 )
+	if ( pOwner->GetAmmoCount( m_iPrimaryAmmoType[INDEX_CARRY] ) > 0 )
 	{
 		if ( Clip1() < GetMaxClip1() )
 		{
 			m_iClip1++;
-			pOwner->RemoveAmmo( 1, m_iPrimaryAmmoType );
+			pOwner->RemoveAmmo( 1, m_iPrimaryAmmoType[INDEX_CARRY] );
 		}
 	}
 }
@@ -325,9 +325,9 @@ void CWeaponAnnabelle::ItemHolsterFrame( void )
 			return;
 
 		// Just load the clip with no animations
-		int ammoFill = MIN( (GetMaxClip1() - m_iClip1), GetOwner()->GetAmmoCount( GetPrimaryAmmoType() ) );
+		int ammoFill = MIN( (GetMaxClip1() - m_iClip1), GetOwner()->GetAmmoCount( GetPrimaryAmmoType(INDEX_CARRY) ) );
 		
-		GetOwner()->RemoveAmmo( ammoFill, GetPrimaryAmmoType() );
+		GetOwner()->RemoveAmmo( ammoFill, GetPrimaryAmmoType(INDEX_CARRY) );
 		m_iClip1 += ammoFill;
 	}
 }

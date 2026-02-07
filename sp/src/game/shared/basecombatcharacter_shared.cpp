@@ -82,7 +82,7 @@ bool CBaseCombatCharacter::Weapon_CanSwitchTo( CBaseCombatWeapon *pWeapon )
 			return false;
 	}
 
-	if ( !pWeapon->HasAnyAmmo() && !GetAmmoCount( pWeapon->m_iPrimaryAmmoType ) )
+	if ( !pWeapon->HasAnyAmmo() && !GetAmmoCount( pWeapon->GetPrimaryAmmoType(CBaseCombatWeapon::INDEX_CARRY) ) )
 		return false;
 
 	if ( !pWeapon->CanDeploy() )
@@ -96,7 +96,23 @@ bool CBaseCombatCharacter::Weapon_CanSwitchTo( CBaseCombatWeapon *pWeapon )
 
 	return true;
 }
+//-----------------------------------------------------------------------------
+// Purpose:
+//-----------------------------------------------------------------------------
+bool CBaseCombatCharacter::Weapon_CanSwapTo( CBaseCombatWeapon *pOldWeapon, CBaseCombatWeapon *pNewWeapon )
+{
+	CBasePlayer *pPlayer = (CBasePlayer *)this;
+	if ( !pPlayer )
+		return false;
 
+	if ( FClassnameIs(pOldWeapon, pNewWeapon->GetClassname()) )
+		return false;
+
+	if ( GetActiveWeapon() && pOldWeapon == GetActiveWeapon() && !GetActiveWeapon()->CanHolster() )
+		return false;
+
+	return true;
+}
 //-----------------------------------------------------------------------------
 // Purpose: 
 // Output : CBaseCombatWeapon
@@ -190,6 +206,45 @@ CBaseCombatWeapon* CBaseCombatCharacter::Weapon_OwnsThisType( const char *pszWea
 				return m_hMyWeapons[i];
 		}
 	}
+	return NULL;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Returns whether the weapon passed in would occupy a slot already occupied by the carrier
+// Input  : *pWeapon - weapon to test for
+// Output : Returns true on success, false on failure.
+//-----------------------------------------------------------------------------
+bool CBaseCombatCharacter::Weapon_SlotOccupied( CBaseCombatWeapon *pWeapon )
+{
+	if ( pWeapon == NULL )
+		return false;
+
+	//Check to see if there's a resident weapon already in this slot
+	if ( Weapon_GetSlot( pWeapon->GetSlot(), pWeapon->GetPosition(true) ) == NULL )
+		return false;
+
+	return true;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Returns the weapon (if any) in the requested slot
+// Input  : slot - which slot to poll
+//-----------------------------------------------------------------------------
+CBaseCombatWeapon *CBaseCombatCharacter::Weapon_GetSlot( int slot, int position ) const
+{
+	int	targetSlot = slot;
+
+	// Check for that slot being occupied already
+	for ( int i=0; i < MAX_WEAPONS; i++ )
+	{
+		if ( m_hMyWeapons[i].Get() != NULL )
+		{
+			// If the slots match, it's already occupied
+			if ( m_hMyWeapons[i]->GetSlot() == targetSlot && m_hMyWeapons[i]->GetPosition(true) == position )
+				return m_hMyWeapons[i];
+		}
+	}
+	
 	return NULL;
 }
 

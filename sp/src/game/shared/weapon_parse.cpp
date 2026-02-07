@@ -346,6 +346,8 @@ FileWeaponInfo_t::FileWeaponInfo_t()
 	bAutoSwitchFrom = false;
 	iFlags = 0;
 	szAmmo1[0] = 0;
+	szAmmo1_carry[0] = 0;
+	szAmmo1_damage[0] = 0;
 	szAmmo2[0] = 0;
 	memset( aShootSounds, 0, sizeof( aShootSounds ) );
 	memset( aAnimNames, 0, sizeof( aAnimNames ) );
@@ -450,10 +452,29 @@ void FileWeaponInfo_t::Parse( KeyValues *pKeyValuesData, const char *szWeaponNam
 	// Primary ammo used
 	const char *pAmmo = pKeyValuesData->GetString( "primary_ammo", "None" );
 	if ( strcmp("None", pAmmo) == 0 )
+	{
 		Q_strncpy( szAmmo1, "", sizeof( szAmmo1 ) );
+		Q_strncpy( szAmmo1_carry, "", sizeof( szAmmo1_carry ) );
+		Q_strncpy( szAmmo1_damage, "", sizeof( szAmmo1_damage ) );
+	}
 	else
+	{
 		Q_strncpy( szAmmo1, pAmmo, sizeof( szAmmo1 )  );
+		Q_strncpy( szAmmo1_carry, pAmmo, sizeof( szAmmo1_carry )  );
+		Q_strncpy( szAmmo1_damage, pAmmo, sizeof( szAmmo1_damage )  );
+	}
+
+	const char *pAmmoDamage = pKeyValuesData->GetString( "primary_ammo_dmg", "None" );
+	if ( strcmp("None", pAmmoDamage) )
+		Q_strncpy( szAmmo1_damage, pAmmoDamage, sizeof( szAmmo1_damage )  );
+
+	const char *pAmmoCarry = pKeyValuesData->GetString( "primary_ammo_carry", "None" );
+	if ( strcmp("None", pAmmoCarry) )
+		Q_strncpy( szAmmo1_carry, pAmmoCarry, sizeof( szAmmo1_carry )  );
+
 	iAmmoType = GetAmmoDef()->Index( szAmmo1 );
+	iAmmoType_carry = GetAmmoDef()->Index( szAmmo1_carry );
+	iAmmoType_damage = GetAmmoDef()->Index( szAmmo1_damage );
 	
 	// Secondary ammo used
 	pAmmo = pKeyValuesData->GetString( "secondary_ammo", "None" );

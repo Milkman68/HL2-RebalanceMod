@@ -197,6 +197,8 @@ public:
 	virtual void 			DefaultTouch( CBaseEntity *pOther );	// default weapon touch
 	virtual void			GiveTo( CBaseEntity *pOther );
 
+	virtual void 			EndTouch( CBaseEntity *pOther );
+
 	// HUD Hints
 	virtual bool			ShouldDisplayAltFireHUDHint();
 	virtual void			DisplayAltFireHudHint();	
@@ -357,7 +359,7 @@ public:
 	virtual bool			AllowsAutoSwitchFrom( void ) const;
 	virtual int				GetWeaponFlags( void ) const;
 	virtual int				GetSlot( void ) const;
-	virtual int				GetPosition( void ) const;
+	virtual int				GetPosition( bool bTruePosition = false ) const;
 	virtual char const		*GetName( void ) const;
 	virtual char const		*GetPrintName( void ) const;
 	virtual char const		*GetShootSound( int iIndex ) const;
@@ -369,7 +371,8 @@ public:
 	// derive this function if you mod uses encrypted weapon info files
 	virtual const unsigned char *GetEncryptionKey( void );
 
-	virtual int				GetPrimaryAmmoType( void )  const { return m_iPrimaryAmmoType; }
+	virtual int				GetPrimaryAmmoType( int index )  const { return m_iPrimaryAmmoType[index]; }
+
 	virtual int				GetSecondaryAmmoType( void )  const { return m_iSecondaryAmmoType; }
 	virtual int				Clip1() { return m_iClip1; }
 	virtual int				Clip2() { return m_iClip2; }
@@ -586,10 +589,17 @@ public:
 
 	int						WeaponState() const { return m_iState; }
 
+	enum primaryAmmoIndex_t
+	{
+		INDEX_BASE,
+		INDEX_CARRY,
+		INDEX_DAMAGE,
+	};
+
 	// Weapon data
 	CNetworkVar( int, m_iState );				// See WEAPON_* definition
 	string_t				m_iszName;				// Classname of this weapon.
-	CNetworkVar( int, m_iPrimaryAmmoType );		// "primary" ammo index into the ammo info array 
+	CNetworkArray( int, m_iPrimaryAmmoType, 3 );		// "primary" ammo index into the ammo info array 
 	CNetworkVar( int, m_iSecondaryAmmoType );	// "secondary" ammo index into the ammo info array
 	CNetworkVar( int, m_iClip1 );				// number of shots left in the primary weapon clip, -1 it not used
 	CNetworkVar( int, m_iClip2 );				// number of shots left in the secondary weapon clip, -1 it not used

@@ -43,6 +43,9 @@ ConVar sk_size_ammo_rpg( "sk_size_ammo_rpg", "1" );
 // Shotgun ammo
 ConVar sk_size_ammo_buckshot( "sk_size_ammo_buckshot", "20" );
 
+// Shotgun ammo
+ConVar sk_size_ammo_hmg( "sk_size_ammo_hmg", "100" );
+
 // 357 ammo
 ConVar sk_size_ammo_357( "sk_size_ammo_357", "6" );
 ConVar sk_size_ammo_357_large( "sk_size_ammo_357_large", "20" );
@@ -628,6 +631,39 @@ public:
 
 LINK_ENTITY_TO_CLASS( item_ammo_ar2_altfire, CItem_AR2AltFireRound );
 
+// ========================================================================
+//	>> CItem_HMGBox
+// ========================================================================
+class CItem_HMGBox : public CItem
+{
+public:
+	DECLARE_CLASS( CItem_HMGBox, CItem );
+
+	void Spawn( void )
+	{ 
+		Precache( );
+		SetModel( "models/items/hmg_ammobox.mdl");
+		BaseClass::Spawn( );
+	}
+	void Precache( void )
+	{
+		PrecacheModel ("models/items/hmg_ammobox.mdl");
+	}
+	bool MyTouch( CBasePlayer *pPlayer )
+	{
+		if (ITEM_GiveAmmo( pPlayer, sk_size_ammo_hmg.GetFloat(), "HMG"))
+		{
+			if ( g_pGameRules->ItemShouldRespawn( this ) == GR_ITEM_RESPAWN_NO )
+			{
+				UTIL_Remove(this);	
+			}
+			return true;
+		}
+		return false;
+	}
+};
+LINK_ENTITY_TO_CLASS(item_hmg_ammobox, CItem_HMGBox);
+
 // ==================================================================
 // Ammo crate which will supply infinite ammo of the specified type
 // ==================================================================
@@ -945,7 +981,7 @@ void CItem_AmmoCrate::HandleAnimEvent( animevent_t *pEvent )
 				if ( pWeapon )
 				{
 					pWeapon->SetAbsOrigin( m_hActivator->GetAbsOrigin() );
-					pWeapon->m_iPrimaryAmmoType = 0;
+					pWeapon->m_iPrimaryAmmoType.Set(CBaseCombatWeapon::INDEX_CARRY, 0);
 					pWeapon->m_iSecondaryAmmoType = 0;
 					pWeapon->Spawn();
 					if ( !m_hActivator->BumpWeapon( pWeapon ) )

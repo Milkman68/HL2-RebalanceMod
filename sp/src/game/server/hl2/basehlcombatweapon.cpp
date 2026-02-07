@@ -56,7 +56,7 @@ void CHLMachineGun::PrimaryAttack( void )
 		return;
 	
 	// Abort here to handle burst and auto fire modes
-	if ( (UsesClipsForAmmo1() && m_iClip1 == 0) || ( !UsesClipsForAmmo1() && !pPlayer->GetAmmoCount(m_iPrimaryAmmoType) ) )
+	if ( (UsesClipsForAmmo1() && m_iClip1 == 0) || ( !UsesClipsForAmmo1() && !pPlayer->GetAmmoCount(m_iPrimaryAmmoType[INDEX_CARRY]) ) )
 		return;
 
 	m_nShotsFired++;
@@ -94,7 +94,7 @@ void CHLMachineGun::PrimaryAttack( void )
 	info.m_vecDirShooting = pPlayer->GetAutoaimVector( AUTOAIM_SCALE_DEFAULT );
 	info.m_vecSpread = pPlayer->GetAttackSpread( this );
 	info.m_flDistance = MAX_TRACE_LENGTH;
-	info.m_iAmmoType = m_iPrimaryAmmoType;
+	info.m_iAmmoType = m_iPrimaryAmmoType[INDEX_BASE];
 	info.m_iTracerFreq = hl2r_bullet_tracer_freq.GetInt();
 	FireBullets( info );
 
@@ -103,7 +103,7 @@ void CHLMachineGun::PrimaryAttack( void )
 
 	CSoundEnt::InsertSound( SOUND_COMBAT, GetAbsOrigin(), SOUNDENT_VOLUME_MACHINEGUN, 0.2, pPlayer );
 	
-	if (!m_iClip1 && pPlayer->GetAmmoCount(m_iPrimaryAmmoType) <= 0)
+	if (!m_iClip1 && pPlayer->GetAmmoCount(m_iPrimaryAmmoType[INDEX_CARRY]) <= 0)
 	{
 		// HEV suit - indicate out of ammo condition
 		pPlayer->SetSuitUpdate("!HEV_AMO0", FALSE, 0); 
@@ -418,7 +418,7 @@ void CHLSelectFireMachineGun::BurstThink( void )
 		return;
 	
 	// Abort here to handle burst and auto fire modes
-	if ( (UsesClipsForAmmo1() && m_iClip1 == 0) || ( !UsesClipsForAmmo1() && !pPlayer->GetAmmoCount(m_iPrimaryAmmoType) ) )
+	if ( (UsesClipsForAmmo1() && m_iClip1 == 0) || ( !UsesClipsForAmmo1() && !pPlayer->GetAmmoCount(m_iPrimaryAmmoType[INDEX_CARRY]) ) )
 	{
 		m_iBurstSize = 0;
 		return;
@@ -458,7 +458,7 @@ void CHLSelectFireMachineGun::BurstThink( void )
 	info.m_vecDirShooting = pPlayer->GetAutoaimVector( AUTOAIM_SCALE_DEFAULT );
 	info.m_vecSpread = RandomVector( -vecSpread.x, vecSpread.x );;
 	info.m_flDistance = MAX_TRACE_LENGTH;
-	info.m_iAmmoType = m_iPrimaryAmmoType;
+	info.m_iAmmoType = m_iPrimaryAmmoType[INDEX_BASE];
 	info.m_iTracerFreq = hl2r_bullet_tracer_freq.GetInt();
 	FireBullets( info );
 
@@ -467,7 +467,7 @@ void CHLSelectFireMachineGun::BurstThink( void )
 
 	CSoundEnt::InsertSound( SOUND_COMBAT, GetAbsOrigin(), SOUNDENT_VOLUME_MACHINEGUN, 0.2, pPlayer );
 	
-	if (!m_iClip1 && pPlayer->GetAmmoCount(m_iPrimaryAmmoType) <= 0)
+	if (!m_iClip1 && pPlayer->GetAmmoCount(m_iPrimaryAmmoType[INDEX_CARRY]) <= 0)
 	{
 		// HEV suit - indicate out of ammo condition
 		pPlayer->SetSuitUpdate("!HEV_AMO0", FALSE, 0); 

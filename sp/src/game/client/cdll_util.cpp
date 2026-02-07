@@ -1319,3 +1319,37 @@ bool UTIL_HasLoadedAnyMap()
 
 	return g_pFullFileSystem->FileExists( szFilename, "MOD" );
 }
+
+static CUtlVector< const char * > *list = NULL;
+CUtlVector< const char * > *UTIL_GetHudlayoutFileList()
+{
+	if ( list == NULL )
+	{
+		list = new CUtlVector< const char * >;
+
+		const char *HUDLAYOUT_MANIFEST_FILE = "scripts/hudlayout_manifest.txt";
+		KeyValues *manifest = new KeyValues( HUDLAYOUT_MANIFEST_FILE );
+		if ( manifest->LoadFromFile( g_pFullFileSystem, HUDLAYOUT_MANIFEST_FILE, "GAME" ) == false )
+		{
+			manifest->deleteThis();
+			return NULL;
+		}
+
+		// Load each file defined in the text
+		for ( KeyValues *sub = manifest->GetFirstSubKey(); sub != NULL; sub = sub->GetNextKey() )
+		{
+			if ( !Q_stricmp( sub->GetName(), "file" ) )
+			{
+				int len = V_strlen( sub->GetString() );
+				char *out = new char[ len + 1 ];
+				V_memcpy( out, sub->GetString(), len );
+				out[ len ] = 0;
+
+				list->AddToTail(out);
+			}
+		}
+		manifest->deleteThis();
+	}
+
+	return list;
+}

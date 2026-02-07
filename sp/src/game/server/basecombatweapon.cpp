@@ -721,6 +721,11 @@ void CBaseCombatWeapon::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_
 		// important in a few spots in the game where the player could potentially +use pickup
 		// and then THROW AWAY a vital weapon, rendering them unable to continue the game.
 		//
+
+		CBaseCombatWeapon *pOldWeapon = pPlayer->Weapon_GetSlot( GetSlot(), GetPosition(true) );
+		if ( pPlayer->Weapon_CanSwapTo(pOldWeapon, this) )
+			return;
+
 		if ( pPlayer->BumpWeapon( this, true ) )
 		{
 			OnPickedUp( pPlayer );

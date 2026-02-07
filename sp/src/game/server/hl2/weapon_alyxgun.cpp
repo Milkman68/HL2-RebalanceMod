@@ -10,9 +10,12 @@
 #include "npcevent.h"
 #include "ai_basenpc.h"
 #include "globalstate.h"
+#include "in_buttons.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
+
+extern ConVar hl2r_new_screenshake_effects;
 
 IMPLEMENT_SERVERCLASS_ST(CWeaponAlyxGun, DT_WeaponAlyxGun)
 END_SEND_TABLE()
@@ -99,6 +102,7 @@ CWeaponAlyxGun::CWeaponAlyxGun( )
 	m_fMaxRange1		= 5000;
 
 	m_flTooCloseTimer	= TOOCLOSETIMER_OFF;
+	m_iFireMode	= FIREMODE_3RNDBURST;
 
 #ifdef HL2_EPISODIC
 	m_fMinRange1		= 60;
@@ -125,6 +129,13 @@ void CWeaponAlyxGun::Equip( CBaseCombatCharacter *pOwner )
 	BaseClass::Equip( pOwner );
 }
 
+float CWeaponAlyxGun::GetFireRate( void ) 
+{ 
+	if ( GetOwner() && GetOwner()->IsPlayer() && m_iFireMode == FIREMODE_3RNDBURST )
+		return 0.06;
+
+	return 0.1;
+}
 //-----------------------------------------------------------------------------
 // Purpose: Try to encourage Alyx not to use her weapon at point blank range,
 //			but don't prevent her from defending herself if cornered.
@@ -226,11 +237,11 @@ void CWeaponAlyxGun::FireNPCPrimaryAttack( CBaseCombatCharacter *pOperator, bool
 
 	if( hl2_episodic.GetBool() )
 	{
-		pOperator->FireBullets( 1, vecShootOrigin, vecShootDir, VECTOR_CONE_PRECALCULATED, MAX_TRACE_LENGTH, m_iPrimaryAmmoType, 1 );
+		pOperator->FireBullets( 1, vecShootOrigin, vecShootDir, VECTOR_CONE_PRECALCULATED, MAX_TRACE_LENGTH, m_iPrimaryAmmoType[INDEX_BASE], 1 );
 	}
 	else
 	{
-		pOperator->FireBullets( 1, vecShootOrigin, vecShootDir, VECTOR_CONE_PRECALCULATED, MAX_TRACE_LENGTH, m_iPrimaryAmmoType, 2 );
+		pOperator->FireBullets( 1, vecShootOrigin, vecShootDir, VECTOR_CONE_PRECALCULATED, MAX_TRACE_LENGTH, m_iPrimaryAmmoType[INDEX_BASE], 2 );
 	}
 
 	pOperator->DoMuzzleFlash();
@@ -323,4 +334,25 @@ float CWeaponAlyxGun::GetMaxRestTime( void )
 		return 3.0f;
 
 	return BaseClass::GetMaxRestTime();
+}
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CWeaponAlyxGun::AddViewKick( void )
+{
+	#define	MAX_VERTICAL_KICK	5.0f	//Degrees
+	#define	SLIDE_LIMIT			15.0f	//Seconds
+	
+	//Get the view kick
+	CBasePlayer *pPlayer = ToBasePlayer( GetOwner() );
+
+	if ( pPlayer == NULL )
+		return;
+
+	DoMachineGunKick( pPlayer, MAX_VERTICAL_KICK, m_fFireDuration, SLIDE_LIMIT );
+
+	float flShakeScale = RemapValClamped( m_fFireDuration, 0.0f, 15.0f, 1.0f, 15.0f );
+
+	if ( hl2r_new_screenshake_effects.GetBool() )
+		UTIL_ScreenShake( pPlayer->GetAbsOrigin(), 0.75 * flShakeScale, 150.0, 0.25, 128, SHAKE_START );
 }

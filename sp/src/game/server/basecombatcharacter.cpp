@@ -2197,7 +2197,6 @@ bool CBaseCombatCharacter::CalcNewWeaponProficiency( CBaseCombatWeapon *pWeapon 
 
 	return true;
 }
-
 //-----------------------------------------------------------------------------
 // Purpose:	Add new weapon to the character
 // Input  : New weapon
@@ -2229,18 +2228,18 @@ void CBaseCombatCharacter::Weapon_Equip( CBaseCombatWeapon *pWeapon )
 			// !!!HACK - Don't give any ammo with the spawn equipment RPG in d3_c17_09. This is a chapter
 			// start and the map is way to easy if you start with 3 RPG rounds. It's fine if a player conserves
 			// them and uses them here, but it's not OK to start with enough ammo to bypass the snipers completely.
-			GiveAmmo( 0, pWeapon->m_iPrimaryAmmoType); 
+			GiveAmmo( 0, pWeapon->GetPrimaryAmmoType(CBaseCombatWeapon::INDEX_CARRY)); 
 		}
 		else
 #endif // HL2_DLL
-		GiveAmmo(pWeapon->GetDefaultClip1(), pWeapon->m_iPrimaryAmmoType); 
+		GiveAmmo(pWeapon->GetDefaultClip1(), pWeapon->GetPrimaryAmmoType(CBaseCombatWeapon::INDEX_CARRY)); 
 	}
 	// If default ammo given is greater than clip
 	// size, fill clips and give extra ammo
 	else if (pWeapon->GetDefaultClip1() >  pWeapon->GetMaxClip1() )
 	{
 		pWeapon->m_iClip1 = pWeapon->GetMaxClip1();
-		GiveAmmo( (pWeapon->GetDefaultClip1() - pWeapon->GetMaxClip1()), pWeapon->m_iPrimaryAmmoType); 
+		GiveAmmo( (pWeapon->GetDefaultClip1() - pWeapon->GetMaxClip1()), pWeapon->GetPrimaryAmmoType(CBaseCombatWeapon::INDEX_CARRY)); 
 	}
 
 	// ----------------------
@@ -2321,7 +2320,7 @@ bool CBaseCombatCharacter::Weapon_EquipAmmoOnly( CBaseCombatWeapon *pWeapon )
 	{
 		if ( m_hMyWeapons[i].Get() && FClassnameIs(m_hMyWeapons[i], pWeapon->GetClassname()) )
 		{
-			float iNewClip = pWeapon->m_iClip1 * HL2GameRules()->GetAmmoQuantityScale(pWeapon->m_iPrimaryAmmoType);
+			float iNewClip = pWeapon->m_iClip1 * HL2GameRules()->GetAmmoQuantityScale(pWeapon->GetPrimaryAmmoType(CBaseCombatWeapon::INDEX_CARRY));
 			pWeapon->m_iClip1 = (int)iNewClip;
 			
 			// Make sure we don't go below 0.
@@ -2331,7 +2330,7 @@ bool CBaseCombatCharacter::Weapon_EquipAmmoOnly( CBaseCombatWeapon *pWeapon )
 			int	primaryGiven	= (pWeapon->UsesClipsForAmmo1()) ? pWeapon->m_iClip1 : pWeapon->GetPrimaryAmmoCount();
 			int secondaryGiven	= (pWeapon->UsesClipsForAmmo2()) ? pWeapon->m_iClip2 : pWeapon->GetSecondaryAmmoCount();
 
-			int takenPrimary   = GiveAmmo( primaryGiven, pWeapon->m_iPrimaryAmmoType); 
+			int takenPrimary   = GiveAmmo( primaryGiven, pWeapon->GetPrimaryAmmoType(CBaseCombatWeapon::INDEX_CARRY)); 
 			int takenSecondary = GiveAmmo( secondaryGiven, pWeapon->m_iSecondaryAmmoType); 
 			
 			if( pWeapon->UsesClipsForAmmo1() )
@@ -2362,44 +2361,55 @@ bool CBaseCombatCharacter::Weapon_EquipAmmoOnly( CBaseCombatWeapon *pWeapon )
 
 	return false;
 }
-
 //-----------------------------------------------------------------------------
-// Purpose: Returns whether the weapon passed in would occupy a slot already occupied by the carrier
-// Input  : *pWeapon - weapon to test for
-// Output : Returns true on success, false on failure.
+// Purpose:
 //-----------------------------------------------------------------------------
-bool CBaseCombatCharacter::Weapon_SlotOccupied( CBaseCombatWeapon *pWeapon )
+void CBaseCombatCharacter::Weapon_Swap( CBaseCombatWeapon *pOldWeapon, CBaseCombatWeapon *pNewWeapon ) 
 {
-	if ( pWeapon == NULL )
-		return false;
+	if ( !pOldWeapon || !pNewWeapon )
+		return;
 
-	//Check to see if there's a resident weapon already in this slot
-	if ( Weapon_GetSlot( pWeapon->GetSlot() ) == NULL )
-		return false;
+	if ( !IsPlayer() )
+		return;
 
-	return true;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: Returns the weapon (if any) in the requested slot
-// Input  : slot - which slot to poll
-//-----------------------------------------------------------------------------
-CBaseCombatWeapon *CBaseCombatCharacter::Weapon_GetSlot( int slot ) const
-{
-	int	targetSlot = slot;
-
-	// Check for that slot being occupied already
-	for ( int i=0; i < MAX_WEAPONS; i++ )
+	// Drop the old weapon
+	Vector vThrowPos = Weapon_ShootPosition() - Vector(0, 0, 12);
+	if (UTIL_PointContents(vThrowPos) & CONTENTS_SOLID)
 	{
-		if ( m_hMyWeapons[i].Get() != NULL )
+		Msg("Weapon spawning in solid!\n");
+	}
+
+	pOldWeapon->SetAbsOrigin(vThrowPos);
+
+	QAngle gunAngles;
+	VectorAngles(BodyDirection2D(), gunAngles);
+	pOldWeapon->SetAbsAngles(gunAngles);
+
+	// Nowhere in particular; just drop it
+	float throwForce = 400.0f;
+	Vector vecThrow = BodyDirection3D() * throwForce;
+
+	pOldWeapon->Drop( vecThrow );
+	Weapon_Detach( pOldWeapon );
+
+	// Add the new weapon to my weapon inventory
+	for (int i=0;i<MAX_WEAPONS;i++) 
+	{
+		if (!m_hMyWeapons[i]) 
 		{
-			// If the slots match, it's already occupied
-			if ( m_hMyWeapons[i]->GetSlot() == targetSlot )
-				return m_hMyWeapons[i];
+			m_hMyWeapons.Set( i, pNewWeapon );
+			break;
 		}
 	}
-	
-	return NULL;
+
+	pNewWeapon->Equip( this );
+
+	// Pass the lighting origin over to the weapon if we have one
+	pNewWeapon->SetLightingOriginRelative( GetLightingOriginRelative() );
+
+	WeaponProficiency_t proficiency;
+	proficiency = CalcWeaponProficiency( pNewWeapon );
+	SetCurrentWeaponProficiency( proficiency );
 }
 
 //-----------------------------------------------------------------------------
@@ -2413,7 +2423,7 @@ CBaseCombatWeapon *CBaseCombatCharacter::Weapon_GetWpnForAmmo( int iAmmoIndex )
 		if ( !weapon )
 			continue;
 
-		if ( weapon->GetPrimaryAmmoType() == iAmmoIndex )
+		if ( weapon->GetPrimaryAmmoType(CBaseCombatWeapon::INDEX_BASE) == iAmmoIndex )
 			return weapon;
 		if ( weapon->GetSecondaryAmmoType() == iAmmoIndex )
 			return weapon;

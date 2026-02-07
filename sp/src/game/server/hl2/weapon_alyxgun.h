@@ -25,6 +25,7 @@ public:
 	DECLARE_SERVERCLASS();
 	
 	void	Precache( void );
+	void	AddViewKick( void );
 
 	virtual int		GetMinBurst( void ) { return 4; }
 	virtual int		GetMaxBurst( void ) { return 7; }
@@ -33,7 +34,10 @@ public:
 
 	virtual void Equip( CBaseCombatCharacter *pOwner );
 
-	float	GetFireRate( void ) { return 0.1f; }
+	float	GetFireRate( void );
+	int		GetBurstSize( void ) { return 4; }
+	float	GetBurstCycleRate( void ) { return 0.2; }
+
 	int		CapabilitiesGet( void ) { return bits_CAP_WEAPON_RANGE_ATTACK1; }
 	int		WeaponRangeAttack1Condition( float flDot, float flDist );
 	int		WeaponRangeAttack2Condition( float flDot, float flDist );
@@ -45,11 +49,12 @@ public:
 	void Operator_ForceNPCFire( CBaseCombatCharacter  *pOperator, bool bSecondary );
 	void Operator_HandleAnimEvent( animevent_t *pEvent, CBaseCombatCharacter *pOperator );
 
-	virtual void SetPickupTouch( void )
+	// Disabling this cause you can literally still pick it up anyway using +use
+/*	virtual void SetPickupTouch( void )
 	{
 		// Alyx gun cannot be picked up
 		SetTouch(NULL);
-	}
+	}*/
 
 	float m_flTooCloseTimer;
 

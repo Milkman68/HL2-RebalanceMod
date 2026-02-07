@@ -353,7 +353,9 @@ void ClientModeShared::Init()
 
 	// Derived ClientMode class must make sure m_Viewport is instantiated
 	Assert( m_pViewport );
-	m_pViewport->LoadControlSettings( "scripts/HudLayout.res", NULL, NULL, pConditions );
+
+	for ( int i = 0; i < UTIL_GetHudlayoutFileList()->Count(); i++ )
+		m_pViewport->LoadControlSettings( UTIL_GetHudlayoutFileList()->Element(i), NULL, NULL, pConditions );
 
 #if defined( REPLAY_ENABLED )
  	m_pReplayReminderPanel = GET_HUDELEMENT( CReplayReminderPanel );

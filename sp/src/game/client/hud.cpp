@@ -425,32 +425,36 @@ void CHud::Init( void )
 	KeyValues *kv = new KeyValues( "layout" );
 	if ( kv )
 	{
-		if ( kv->LoadFromFile( filesystem, "scripts/HudLayout.res" ) )
+		CUtlVector< const char * > *list = UTIL_GetHudlayoutFileList();
+		for ( int j = 0; j < list->Count(); j++ )
 		{
-			int numelements = m_HudList.Size();
-
-			for ( int i = 0; i < numelements; i++ )
+			if ( kv->LoadFromFile( filesystem, list->Element(j) ) )
 			{
-				CHudElement *element = m_HudList[i];
+				int numelements = m_HudList.Size();
 
-				vgui::Panel *pPanel = dynamic_cast<vgui::Panel*>(element);
-				if ( !pPanel )
+				for ( int i = 0; i < numelements; i++ )
 				{
-					Msg( "Non-vgui hud element %s\n", m_HudList[i]->GetName() );
-					continue;
-				}
+					CHudElement *element = m_HudList[i];
 
-				KeyValues *key = kv->FindKey( pPanel->GetName(), false );
-				if ( !key )
-				{
-					Msg( "Hud element '%s' doesn't have an entry '%s' in scripts/HudLayout.res\n", m_HudList[i]->GetName(), pPanel->GetName() );
-				}
+					vgui::Panel *pPanel = dynamic_cast<vgui::Panel*>(element);
+					if ( !pPanel )
+					{
+						Msg( "Non-vgui hud element %s\n", m_HudList[i]->GetName() );
+						continue;
+					}
 
-				// Note:  When a panel is parented to the module root, it's "parent" is returned as NULL.
-				if ( !element->IsParentedToClientDLLRootPanel() && 
-					 !pPanel->GetParent() )
-				{
-					DevMsg( "Hud element '%s'/'%s' doesn't have a parent\n", m_HudList[i]->GetName(), pPanel->GetName() );
+					KeyValues *key = kv->FindKey( pPanel->GetName(), false );
+					if ( !key )
+					{
+						Msg( "Hud element '%s' doesn't have an entry '%s' in %s\n", m_HudList[i]->GetName(), pPanel->GetName(), list->Element(j) );
+					}
+
+					// Note:  When a panel is parented to the module root, it's "parent" is returned as NULL.
+					if ( !element->IsParentedToClientDLLRootPanel() && 
+						 !pPanel->GetParent() )
+					{
+						DevMsg( "Hud element '%s'/'%s' doesn't have a parent\n", m_HudList[i]->GetName(), pPanel->GetName() );
+					}
 				}
 			}
 		}

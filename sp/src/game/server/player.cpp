@@ -210,7 +210,7 @@ void CC_GiveCurrentAmmo( void )
 		{
 			if( pWeapon->UsesPrimaryAmmo() )
 			{
-				int ammoIndex = pWeapon->GetPrimaryAmmoType();
+				int ammoIndex = pWeapon->GetPrimaryAmmoType(CBaseCombatWeapon::INDEX_CARRY);
 
 				if( ammoIndex != -1 )
 				{
@@ -297,6 +297,7 @@ BEGIN_DATADESC( CBasePlayer )
 	DEFINE_FIELD( m_vecCameraPVSOrigin, FIELD_POSITION_VECTOR ),
 
 	DEFINE_FIELD( m_hUseEntity, FIELD_EHANDLE ),
+	DEFINE_FIELD( m_hClosestReplacementWeapon, FIELD_EHANDLE ),
 	DEFINE_FIELD( m_iTrain, FIELD_INTEGER ),
 	DEFINE_FIELD( m_iRespawnFrames, FIELD_FLOAT ),
 	DEFINE_FIELD( m_afPhysicsFlags, FIELD_INTEGER ),
@@ -6588,20 +6589,14 @@ bool CBasePlayer::BumpWeapon( CBaseCombatWeapon *pWeapon, bool bUsed )
 	if ( !IsAllowedToPickupWeapons() )
 		return false;
 	
-	CBasePlayer *pPlayer = UTIL_GetLocalPlayer();
-	if ( hl2r_manual_pickup.GetBool() && ( pPlayer && !pPlayer->IsInAVehicle() ) )
+	if ( hl2r_manual_pickup.GetBool() && gpGlobals->curtime > 5 && !bUsed )
 	{
-		// Static objects cannot be held, restort to +use presses instead.
-		IPhysicsObject *pObject = pWeapon->VPhysicsGetObject();
-		if ( ( pObject && pObject->GetGameFlags() != FVPHYSICS_PLAYER_HELD ) && !bUsed )
+		// Don't force manually picking up items if we're just starting a chapter!
+		if (gpGlobals->curtime > 5)
 		{
-			// Don't force manually picking up items if we're just starting a chapter!
-			if ( gpGlobals->curtime > 5 )
-			{
-				// Literally nobody knows that the stunstick 'can' even be picked up, just do it automatically.
-				if ( !pWeapon->ClassMatches( "weapon_stunstick" ) )
-					return false;
-			}
+			// Literally nobody knows that the stunstick 'can' even be picked up, just do it automatically.
+			if (!pWeapon->ClassMatches("weapon_stunstick"))
+				return false;
 		}
 	}
 
@@ -6652,6 +6647,26 @@ bool CBasePlayer::BumpWeapon( CBaseCombatWeapon *pWeapon, bool bUsed )
 	// -------------------------
 	else 
 	{
+		if ( Weapon_SlotOccupied(pWeapon) )
+		{
+			CBaseCombatWeapon* pOldWeapon = Weapon_GetSlot( pWeapon->GetSlot(), pWeapon->GetPosition(true) );
+			if ( Weapon_CanSwapTo(pOldWeapon, pWeapon) )
+			{
+				if ( m_hClosestReplacementWeapon.Get() )
+				{
+					float flWeaponDist = (GetAbsOrigin() - pWeapon->GetAbsOrigin()).Length();
+					if ( flWeaponDist < (GetAbsOrigin() - m_hClosestReplacementWeapon.Get()->GetAbsOrigin()).Length() )
+						m_hClosestReplacementWeapon = pWeapon;
+				}
+				else
+				{
+					m_hClosestReplacementWeapon = pWeapon;
+				}
+			}
+
+			return false;
+		}
+
 		pWeapon->CheckRespawn();
 
 		pWeapon->AddSolidFlags( FSOLID_NOT_SOLID );
@@ -6689,7 +6704,16 @@ bool CBasePlayer::BumpWeapon( CBaseCombatWeapon *pWeapon, bool bUsed )
 		return true;
 	}
 }
+//-----------------------------------------------------------------------------
+// Purpose: Player reacts to UNbumping a weapon. 
+//-----------------------------------------------------------------------------
+bool CBasePlayer::UnBumpWeapon( CBaseCombatWeapon *pWeapon )
+{
+	if ( m_hClosestReplacementWeapon.Get() == pWeapon )
+		m_hClosestReplacementWeapon = NULL;
 
+	return true;
+}
 
 bool CBasePlayer::RemovePlayerItem( CBaseCombatWeapon *pItem )
 {
@@ -7374,7 +7398,7 @@ void CBasePlayer::Weapon_Drop( CBaseCombatWeapon *pWeapon, const Vector *pvecTar
 // Purpose: 
 // Input  : weaponSlot - 
 //-----------------------------------------------------------------------------
-void CBasePlayer::Weapon_DropSlot( int weaponSlot )
+void CBasePlayer::Weapon_DropSlot( int weaponSlot, int weaponPosition )
 {
 	CBaseCombatWeapon *pWeapon;
 
@@ -7386,7 +7410,7 @@ void CBasePlayer::Weapon_DropSlot( int weaponSlot )
 		if ( pWeapon != NULL )
 		{
 			// If the slots match, it's already occupied
-			if ( pWeapon->GetSlot() == weaponSlot )
+			if ( pWeapon->GetSlot() == weaponSlot && pWeapon->GetPosition(true) == weaponPosition )
 			{
 				Weapon_Drop( pWeapon, NULL, NULL );
 			}
@@ -7416,6 +7440,32 @@ void CBasePlayer::Weapon_Equip( CBaseCombatWeapon *pWeapon )
 	{
 		Weapon_Switch( pWeapon );
 	}
+}
+
+//-----------------------------------------------------------------------------
+// Purpose:
+//-----------------------------------------------------------------------------
+void CBasePlayer::Weapon_Swap( CBaseCombatWeapon *pOldWeapon, CBaseCombatWeapon *pNewWeapon ) 
+{
+	bool bHoldingOldWeapon = pOldWeapon == GetActiveWeapon();
+	BaseClass::Weapon_Swap(pOldWeapon, pNewWeapon);
+
+	if ( bHoldingOldWeapon )
+	{
+		if ( !Weapon_Switch( pNewWeapon ) )
+		{
+			if (!SwitchToNextBestWeapon( NULL ))
+			{
+				CBaseViewModel *vm = GetViewModel();
+				if ( vm )
+				{
+					vm->AddEffects( EF_NODRAW );
+				}
+			}
+		}
+	}
+
+	ResetAutoaim( );
 }
 
 
@@ -8055,6 +8105,7 @@ void SendProxy_CropFlagsToPlayerFlagBitsLength( const SendProp *pProp, const voi
 
 		SendPropEHandle(SENDINFO(m_hVehicle)),
 		SendPropEHandle(SENDINFO(m_hUseEntity)),
+		SendPropEHandle(SENDINFO(m_hClosestReplacementWeapon)),
 		SendPropInt		(SENDINFO(m_iHealth), -1, SPROP_VARINT | SPROP_CHANGES_OFTEN ),
 		SendPropInt		(SENDINFO(m_lifeState), 3, SPROP_UNSIGNED ),
 		SendPropInt		(SENDINFO(m_iBonusProgress), 15 ),
@@ -8821,7 +8872,7 @@ bool CBasePlayer::HasAnyAmmoOfType( int nAmmoIndex )
 			continue;
 
 		// We must use clips and use this sort of ammo
-		if ( pWeapon->UsesClipsForAmmo1() && pWeapon->GetPrimaryAmmoType() == nAmmoIndex )
+		if ( pWeapon->UsesClipsForAmmo1() && pWeapon->GetPrimaryAmmoType(CBaseCombatWeapon::INDEX_CARRY) == nAmmoIndex )
 		{
 			// If we have any ammo, we're done
 			if ( pWeapon->HasPrimaryAmmo() )

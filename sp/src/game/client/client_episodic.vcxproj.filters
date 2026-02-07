@@ -3250,6 +3250,9 @@
     <ClCompile Include="hl2\c_weapon_rpg.cpp">
       <Filter>Source Files\HL2R</Filter>
     </ClCompile>
+    <ClCompile Include="hl2r\hud_weapon_swap.cpp">
+      <Filter>Source Files\HL2R</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\game\shared\hl2r\hl2r_campaign_manager.cpp">
       <Filter>Source Files\HL2R\vgui</Filter>
     </ClCompile>

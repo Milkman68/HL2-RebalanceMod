@@ -99,7 +99,11 @@ public:
 	bool					bAutoSwitchTo;							// whether this weapon should be considered for autoswitching to
 	bool					bAutoSwitchFrom;						// whether this weapon can be autoswitched away from when picking up another weapon or ammo
 	int						iFlags;									// miscellaneous weapon flags
+
 	char					szAmmo1[MAX_WEAPON_AMMO_NAME];			// "primary" ammo type
+	char					szAmmo1_carry[MAX_WEAPON_AMMO_NAME];	// "primary" ammo type
+	char					szAmmo1_damage[MAX_WEAPON_AMMO_NAME];	// "primary" ammo type
+
 	char					szAmmo2[MAX_WEAPON_AMMO_NAME];			// "secondary" ammo type
 
 	// Sound blocks
@@ -110,6 +114,9 @@ public:
 	float					fAnimSpeed[MAX_WEAPON_ANIM_STRINGS];
 
 	int						iAmmoType;
+	int						iAmmoType_carry;
+	int						iAmmoType_damage;
+
 	int						iAmmo2Type;
 	bool					m_bMeleeWeapon;		// Melee weapons can always "fire" regardless of ammo.
 

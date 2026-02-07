@@ -234,7 +234,7 @@ int CalcPlayerAttacks( bool bBulletOnly )
 		if ( pWeapon )
 		{
 			// add primary attacks if we were asked for all attacks, or only if it uses bullet ammo if we were asked to count bullet attacks
-			if ( !bBulletOnly || ( pAmmoDef->m_AmmoType[pWeapon->GetPrimaryAmmoType()].nDamageType == DMG_BULLET ) )
+			if ( !bBulletOnly || ( pAmmoDef->m_AmmoType[pWeapon->GetPrimaryAmmoType(CBaseCombatWeapon::INDEX_BASE)].nDamageType == DMG_BULLET ) )
 			{
 				iTotalAttacks += pWeapon->m_iPrimaryAttacks;
 			}

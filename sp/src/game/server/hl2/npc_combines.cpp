@@ -34,6 +34,9 @@ ConVar	sk_combine_s_kick( "sk_combine_s_kick","0");
 ConVar sk_combine_guard_health( "sk_combine_guard_health", "0");
 ConVar sk_combine_guard_kick( "sk_combine_guard_kick", "0");
 
+ConVar sk_combine_heavy_health( "sk_combine_heavy_health", "0");
+ConVar sk_combine_heavy_kick( "sk_combine_heavy_kick", "0");
+
 // Whether or not the combine guard should spawn health on death
 ConVar combine_guard_spawn_health( "combine_guard_spawn_health", "1" );
 
@@ -47,7 +50,6 @@ ConVar	sk_combine_altfire_cooldown( "sk_combine_altfire_cooldown","10");
 
 // Shield
 ConVar sk_combine_guard_shield( "sk_combine_guard_shield", "0");
-ConVar sk_combine_shield( "sk_combine_shield", "0");
 
 //Whether or not the combine should spawn health on death
 ConVar	combine_spawn_health( "combine_spawn_health", "1" );
@@ -68,7 +70,6 @@ extern Activity ACT_WALK_MARCH;
 //-----------------------------------------------------------------------------
 #define COMBINE_SKIN_DEFAULT		0
 #define COMBINE_SKIN_SHOTGUNNER		1
-#define COMBINE_SKIN_GRENADIER		2
 
 void CNPC_CombineS::Spawn( void )
 {
@@ -92,10 +93,6 @@ void CNPC_CombineS::Spawn( void )
 	{
 		bAlreadyElite = true;
 	}
-	
-	Precache();
-	SetModel( STRING( GetModelName() ) );
-	
 	HandleSpawnEquipment();
 
 	if( IsElite() )
@@ -119,20 +116,23 @@ void CNPC_CombineS::Spawn( void )
 		SetMaxHealth( sk_combine_s_health.GetFloat() );
 		SetKickDamage( sk_combine_s_kick.GetFloat() );
 
-		if ( sk_combine_shield.GetInt() > 0 )
-		{
-			SetArmorCharge(sk_combine_shield.GetInt());
-			SetUsesArmor(true);
-		}
-
 		m_nSkin = COMBINE_SKIN_DEFAULT;
 
 		if ( FStrEq(STRING(m_spawnEquipment), "weapon_shotgun") || FStrEq(STRING(m_spawnEquipment), "weapon_357") )
 			m_nSkin = COMBINE_SKIN_SHOTGUNNER;
 
-		if ( FStrEq(STRING(m_spawnEquipment), "weapon_rpg") )
-			m_nSkin = COMBINE_SKIN_GRENADIER;
+		if ( FStrEq(STRING(m_spawnEquipment), "weapon_rpg") || FStrEq(STRING(m_spawnEquipment), "weapon_hmg") )
+		{
+			SetHealth( sk_combine_heavy_health.GetFloat() );
+			SetMaxHealth( sk_combine_heavy_health.GetFloat() );
+			SetKickDamage( sk_combine_heavy_kick.GetFloat() );
+
+			SetModelName( MAKE_STRING( "models/combine_heavy_soldier.mdl" ) );
+		}
 	}
+
+	Precache();
+	SetModel( STRING( GetModelName() ) );
 
 	CapabilitiesAdd( bits_CAP_ANIMATEDFACE );
 	CapabilitiesAdd( bits_CAP_MOVE_SHOOT );

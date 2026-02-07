@@ -440,19 +440,19 @@ void CWeaponBugBait::ItemPreFrame( void )
 //-----------------------------------------------------------------------------
 void CWeaponBugBait::DrainAmmo( CBasePlayer *pOwner )
 {
-	if ( pOwner->GetAmmoCount(m_iPrimaryAmmoType) == sk_max_bugbait.GetInt() )
+	if ( pOwner->GetAmmoCount(m_iPrimaryAmmoType[INDEX_CARRY]) == sk_max_bugbait.GetInt() )
 		m_flNextAmmoTime	= gpGlobals->curtime + BUGBAIT_RECHARGE_RATE;
 
-	pOwner->RemoveAmmo( 1, m_iPrimaryAmmoType );
+	pOwner->RemoveAmmo( 1, m_iPrimaryAmmoType[INDEX_CARRY] );
 }
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
 void CWeaponBugBait::CheckRegenerateAmmo( CBasePlayer *pOwner )
 {
-	if ( m_flNextAmmoTime < gpGlobals->curtime && pOwner->GetAmmoCount(m_iPrimaryAmmoType) != sk_max_bugbait.GetInt() )
+	if ( m_flNextAmmoTime < gpGlobals->curtime && pOwner->GetAmmoCount(m_iPrimaryAmmoType[INDEX_CARRY]) != sk_max_bugbait.GetInt() )
 	{
-		pOwner->GiveAmmo(1, m_iPrimaryAmmoType, true );
+		pOwner->GiveAmmo(1, m_iPrimaryAmmoType[INDEX_CARRY], true );
 		m_flNextAmmoTime = gpGlobals->curtime + BUGBAIT_RECHARGE_RATE;
 	}
 }

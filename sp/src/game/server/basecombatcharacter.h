@@ -230,13 +230,18 @@ public:
 	bool				Weapon_Detach( CBaseCombatWeapon *pWeapon );		// Clear any pointers to the weapon.
 	virtual void		Weapon_Drop( CBaseCombatWeapon *pWeapon, const Vector *pvecTarget = NULL, const Vector *pVelocity = NULL );
 	virtual	bool		Weapon_Switch( CBaseCombatWeapon *pWeapon, int viewmodelindex = 0 );		// Switch to given weapon if has ammo (false if failed)
+
+	virtual	void		Weapon_Swap( CBaseCombatWeapon *pOldWeapon, CBaseCombatWeapon *pNewWeapon );
+	virtual	bool		Weapon_CanSwapTo( CBaseCombatWeapon *pOldWeapon, CBaseCombatWeapon *pNewWeapon );
+
 	virtual	Vector		Weapon_ShootPosition( );		// gun position at current position/orientation
 	bool				Weapon_IsOnGround( CBaseCombatWeapon *pWeapon );
 	CBaseEntity*		Weapon_FindUsable( const Vector &range );			// search for a usable weapon in this range
 	virtual	bool		Weapon_CanSwitchTo(CBaseCombatWeapon *pWeapon);
-	virtual bool		Weapon_SlotOccupied( CBaseCombatWeapon *pWeapon );
-	virtual CBaseCombatWeapon *Weapon_GetSlot( int slot ) const;
 	CBaseCombatWeapon	*Weapon_GetWpnForAmmo( int iAmmoIndex );
+
+	virtual bool		Weapon_SlotOccupied( CBaseCombatWeapon *pWeapon );
+	virtual CBaseCombatWeapon *Weapon_GetSlot( int slot, int position ) const;
 
 
 	// For weapon strip

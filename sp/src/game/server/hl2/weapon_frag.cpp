@@ -347,7 +347,7 @@ void CWeaponFrag::PrimaryAttack( void )
 //-----------------------------------------------------------------------------
 void CWeaponFrag::DecrementAmmo( CBaseCombatCharacter *pOwner )
 {
-	pOwner->RemoveAmmo( 1, m_iPrimaryAmmoType );
+	pOwner->RemoveAmmo( 1, m_iPrimaryAmmoType[INDEX_CARRY] );
 }
 
 //-----------------------------------------------------------------------------

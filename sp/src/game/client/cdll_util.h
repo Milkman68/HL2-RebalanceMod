@@ -178,4 +178,6 @@ int UTIL_GetMapKeyCount( const char *pszCustomKey );
 // Returns true if the user has loaded any maps, false otherwise.
 bool UTIL_HasLoadedAnyMap();
 
+CUtlVector< const char * > *UTIL_GetHudlayoutFileList();
+
 #endif // !UTIL_H

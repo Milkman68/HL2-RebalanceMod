@@ -73,6 +73,11 @@ public:
 	C_BaseCombatWeapon*	Weapon_OwnsThisType( const char *pszWeapon, int iSubType = 0 ) const;  // True if already owns a weapon of this class
 	virtual	bool		Weapon_Switch( C_BaseCombatWeapon *pWeapon, int viewmodelindex = 0 );
 	virtual bool		Weapon_CanSwitchTo(C_BaseCombatWeapon *pWeapon);
+
+	virtual	bool		Weapon_CanSwapTo( C_BaseCombatWeapon *pOldWeapon, C_BaseCombatWeapon *pNewWeapon );
+
+	virtual bool		Weapon_SlotOccupied( C_BaseCombatWeapon *pWeapon );
+	virtual C_BaseCombatWeapon *Weapon_GetSlot( int slot, int position ) const;
 	
 	// I can't use my current weapon anymore. Switch me to the next best weapon.
 	bool SwitchToNextBestWeapon(C_BaseCombatWeapon *pCurrent);

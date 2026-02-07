@@ -161,6 +161,7 @@ $Project "Client (HL2)"
 
 			$File	"hl2\c_npc_turret_floor.cpp"
 			$File	"hl2\c_weapon_rpg.cpp"
+			$File	"hl2r\hud_weapon_swap.cpp"
 		}
 	}
 }

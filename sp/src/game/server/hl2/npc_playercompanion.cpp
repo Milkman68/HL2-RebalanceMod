@@ -978,7 +978,7 @@ int CNPC_PlayerCompanion::TranslateSchedule( int scheduleType )
 					pWeapon = pPlayer->GetActiveWeapon();
 					if( pWeapon && pWeapon->UsesClipsForAmmo1() && 
 						pWeapon->Clip1() < ( pWeapon->GetMaxClip1() * .75 ) &&
-						pPlayer->GetAmmoCount( pWeapon->GetPrimaryAmmoType() ) )
+						pPlayer->GetAmmoCount( pWeapon->GetPrimaryAmmoType(CBaseCombatWeapon::INDEX_CARRY) ) )
 					{
 						SpeakIfAllowed( TLK_PLRELOAD );
 					}

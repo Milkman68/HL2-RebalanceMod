@@ -252,7 +252,7 @@ CHudTexture *WeaponsResource::GetAmmoIconFromWeapon( int iAmmoId )
 		if ( !weapon )
 			continue;
 
-		if ( weapon->GetPrimaryAmmoType() == iAmmoId )
+		if ( weapon->GetPrimaryAmmoType(CBaseCombatWeapon::INDEX_BASE) == iAmmoId )
 		{
 			return weapon->GetWpnData().iconAmmo;
 		}
@@ -280,7 +280,7 @@ const FileWeaponInfo_t *WeaponsResource::GetWeaponFromAmmo( int iAmmoId )
 		if ( !weapon )
 			continue;
 
-		if ( weapon->GetPrimaryAmmoType() == iAmmoId )
+		if ( weapon->GetPrimaryAmmoType(CBaseCombatWeapon::INDEX_BASE) == iAmmoId )
 		{
 			return &weapon->GetWpnData();
 		}

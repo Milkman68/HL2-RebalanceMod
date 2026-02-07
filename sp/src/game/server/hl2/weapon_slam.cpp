@@ -162,7 +162,7 @@ void CWeapon_SLAM::PrimaryAttack( void )
 		return;
 	}
 
-	if (pOwner->GetAmmoCount(m_iPrimaryAmmoType) <= 0)
+	if (pOwner->GetAmmoCount(m_iPrimaryAmmoType[INDEX_CARRY]) <= 0)
 	{
 		return;
 	}
@@ -331,7 +331,7 @@ bool CWeapon_SLAM::TripmineAttach( void )
 			if ( pEntity->VPhysicsGetObject() )
 				pMine->SetParent( pEntity );
 
-			pOwner->RemoveAmmo( 1, m_iPrimaryAmmoType );
+			pOwner->RemoveAmmo( 1, m_iPrimaryAmmoType[INDEX_CARRY] );
 			return true;
 		}
 	}
@@ -448,7 +448,7 @@ void CWeapon_SLAM::SatchelThrow( void )
 		pSatchel->m_pMyWeaponSLAM = this;
 	}
 
-	pPlayer->RemoveAmmo( 1, m_iPrimaryAmmoType );
+	pPlayer->RemoveAmmo( 1, m_iPrimaryAmmoType[INDEX_CARRY] );
 	pPlayer->SetAnimation( PLAYER_ATTACK1 );
 
 	// Play throw sound
@@ -518,7 +518,7 @@ void CWeapon_SLAM::SLAMThink( void )
 	// a wall. If we are we go into satchel_attach mode
 	CBaseCombatCharacter *pOwner  = GetOwner();
 
-	if ( (pOwner && pOwner->GetAmmoCount(m_iPrimaryAmmoType) > 0))
+	if ( (pOwner && pOwner->GetAmmoCount(m_iPrimaryAmmoType[INDEX_CARRY]) > 0))
 	{	
 
 		if ( !slam_use_reload_toggle.GetBool() )
@@ -732,7 +732,7 @@ void CWeapon_SLAM::WeaponIdle( void )
 		else if ( m_bNeedReload )
 		{	
 			// If owner had ammo draw the correct SLAM type
-			if (pOwner->GetAmmoCount(m_iPrimaryAmmoType) > 0)
+			if (pOwner->GetAmmoCount(m_iPrimaryAmmoType[INDEX_CARRY]) > 0)
 			{
 				switch( m_tSlamState)
 				{
@@ -867,7 +867,7 @@ bool CWeapon_SLAM::Deploy( void )
 	m_bNeedReload = false;
 	if (m_bDetonatorArmed)
 	{
-		if (pOwner->GetAmmoCount(m_iPrimaryAmmoType) <= 0)
+		if (pOwner->GetAmmoCount(m_iPrimaryAmmoType[INDEX_CARRY]) <= 0)
 		{
 			iActivity = ACT_SLAM_DETONATOR_DRAW;
 			m_bNeedReload = true;

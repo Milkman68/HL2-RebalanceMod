@@ -220,6 +220,12 @@ void CItem::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType
 
 	if ( pPlayer )
 	{
+		if ( hl2r_manual_pickup.GetBool() )
+		{
+			EquipItem(pPlayer, pPlayer);
+			return;
+		}
+
 		// Expand the pickup box
 		CollisionProp()->UseTriggerBounds( true, ITEM_PICKUP_BOX_BLOAT * 2 );
 		pPlayer->PickupObject( this );
@@ -356,15 +362,6 @@ bool UTIL_ItemCanBeTouchedByPlayer( CBaseEntity *pItem, CBasePlayer *pPlayer )
 	IPhysicsObject *pPhysObj = pItem->VPhysicsGetObject();
 	if ( pPhysObj != NULL )
 	{
-		if ( ( pPhysObj->GetGameFlags() != FVPHYSICS_PLAYER_HELD ) && hl2r_manual_pickup.GetBool() )
-		{
-			// Don't force manually picking up weapons if we're just starting a chapter!
-			if ( gpGlobals->curtime > 5 )
-			{
-				return false;
-			}
-		}
-	
 		// Use the physics hull's center
 		QAngle vecAngles;
 		pPhysObj->GetPosition( &vecStartPos, &vecAngles );
@@ -421,6 +418,9 @@ void CItem::ItemTouch( CBaseEntity *pOther )
 	if ( !pOther->IsPlayer() )
 		return;
 
+	if ( hl2r_manual_pickup.GetBool() && gpGlobals->curtime > 5 )
+		return;
+
 	CBasePlayer *pPlayer = (CBasePlayer *)pOther;
 
 	// Must be a valid pickup scenario (no blocking). Though this is a more expensive
@@ -429,6 +429,11 @@ void CItem::ItemTouch( CBaseEntity *pOther )
 	if ( ItemCanBeTouchedByPlayer( pPlayer ) == false )
 		return;
 
+	EquipItem(pOther, pPlayer);
+}
+
+void CItem::EquipItem( CBaseEntity *pOther, CBasePlayer *pPlayer )
+{
 	m_OnCacheInteraction.FireOutput(pOther, this);
 
 	// Can I even pick stuff up?

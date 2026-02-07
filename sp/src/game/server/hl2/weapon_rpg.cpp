@@ -1714,7 +1714,7 @@ void CWeaponRPG::PrimaryAttack( void )
 void CWeaponRPG::DecrementAmmo( CBaseCombatCharacter *pOwner )
 {
 	// Take away our primary ammo type
-	pOwner->RemoveAmmo( 1, m_iPrimaryAmmoType );
+	pOwner->RemoveAmmo( 1, m_iPrimaryAmmoType[INDEX_CARRY] );
 }
 
 //-----------------------------------------------------------------------------
@@ -2051,7 +2051,7 @@ bool CWeaponRPG::Reload()
 	if ( pOwner == NULL )
 		return false;
 
-	if ( pOwner->GetAmmoCount(m_iPrimaryAmmoType) <= 0 )
+	if ( pOwner->GetAmmoCount(m_iPrimaryAmmoType[INDEX_CARRY]) <= 0 )
 		return false;
 	
 	if ( !FClassnameIs( pOwner->GetActiveWeapon(), "weapon_rpg" ) )

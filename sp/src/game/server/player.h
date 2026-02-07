@@ -412,10 +412,11 @@ public:
 	virtual void			Weapon_Equip( CBaseCombatWeapon *pWeapon );
 	virtual	void			Weapon_Drop( CBaseCombatWeapon *pWeapon, const Vector *pvecTarget /* = NULL */, const Vector *pVelocity /* = NULL */ );
 	virtual	bool			Weapon_Switch( CBaseCombatWeapon *pWeapon, int viewmodelindex = 0 );		// Switch to given weapon if has ammo (false if failed)
+	virtual	void			Weapon_Swap( CBaseCombatWeapon *pOldWeapon, CBaseCombatWeapon *pNewWeapon );
 	virtual void			Weapon_SetLast( CBaseCombatWeapon *pWeapon );
 	virtual bool			Weapon_ShouldSetLast( CBaseCombatWeapon *pOldWeapon, CBaseCombatWeapon *pNewWeapon ) { return true; }
 	virtual bool			Weapon_ShouldSelectItem( CBaseCombatWeapon *pWeapon );
-	void					Weapon_DropSlot( int weaponSlot );
+	void					Weapon_DropSlot( int weaponSlot, int weaponPosition );
 	CBaseCombatWeapon		*Weapon_GetLast( void ) { return m_hLastWeapon.Get(); }
 
 	virtual void			OnMyWeaponFired( CBaseCombatWeapon *weapon );	// call this when this player fires a weapon to allow other systems to react
@@ -511,6 +512,7 @@ public:
 	void					AddPoints( int score, bool bAllowNegativeScore );
 	void					AddPointsToTeam( int score, bool bAllowNegativeScore );
 	virtual bool			BumpWeapon( CBaseCombatWeapon *pWeapon, bool bUsed = false );
+	virtual bool			UnBumpWeapon( CBaseCombatWeapon *pWeapon );
 	bool					RemovePlayerItem( CBaseCombatWeapon *pItem );
 	CBaseEntity				*HasNamedPlayerItem( const char *pszItemName );
 	bool 					HasWeapons( void );// do I have ANY weapons?
@@ -708,6 +710,8 @@ public:
 	void	SetMuzzleFlashTime( float flTime );
 	void	SetUseEntity( CBaseEntity *pUseEntity );
 	CBaseEntity *GetUseEntity();
+
+	CBaseEntity *GetClosestReplacementWeapon();
 
 	virtual float GetPlayerMaxSpeed();
 
@@ -916,6 +920,7 @@ protected:
 	Vector					m_vecCameraPVSOrigin;
 
 	CNetworkHandle( CBaseEntity, m_hUseEntity );			// the player is currently controlling this entity because of +USE latched, NULL if no entity
+	CNetworkHandle( CBaseEntity, m_hClosestReplacementWeapon );
 
 	int						m_iTrain;				// Train control position
 
@@ -1271,6 +1276,11 @@ inline void CBasePlayer::SetUseEntity( CBaseEntity *pUseEntity )
 inline CBaseEntity *CBasePlayer::GetUseEntity() 
 { 
 	return m_hUseEntity;
+}
+
+inline CBaseEntity *CBasePlayer::GetClosestReplacementWeapon() 
+{ 
+	return m_hClosestReplacementWeapon;
 }
 
 // Bot accessors...

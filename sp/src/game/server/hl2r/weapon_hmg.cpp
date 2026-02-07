@@ -14,6 +14,8 @@
 // memdbgon must be the last include file in a .cpp file!!!
 //#include "tier0/memdbgon.h";
 
+extern ConVar hl2r_new_screenshake_effects;
+
 class CWeaponHMG : public CHLSelectFireMachineGun
 {
 	DECLARE_DATADESC();
@@ -26,19 +28,8 @@ public:
 	
 	void	AddViewKick( void );
 	void	SecondaryAttack( void );
-
-	// Don't need these anymore.
-	/*
-	int		GetMinBurst() { return 4; }
-	int		GetMaxBurst() { return 5; }
-	float	GetMinRestTime( void ) { return 0.2f; }
-	float	GetMaxRestTime( void ) { return 0.4f; }
-
-	const WeaponProficiencyInfo_t *GetProficiencyValues();
-	*/
-
-	float		GetFireRate( void ) { return 0.08f; }
-	int			CapabilitiesGet( void ) { return bits_CAP_WEAPON_RANGE_ATTACK1; }
+	float	GetFireRate( void ) { return 0.15f; }
+	int		CapabilitiesGet( void ) { return bits_CAP_WEAPON_RANGE_ATTACK1; }
 
 
 	virtual const Vector& GetBulletSpread( void )
@@ -133,7 +124,7 @@ void CWeaponHMG::FireNPCPrimaryAttack( CBaseCombatCharacter *pOperator, Vector &
 
 	CSoundEnt::InsertSound( SOUND_COMBAT|SOUND_CONTEXT_GUNFIRE, pOperator->GetAbsOrigin(), SOUNDENT_VOLUME_MACHINEGUN, 0.2, pOperator, SOUNDENT_CHANNEL_WEAPON, pOperator->GetEnemy() );
 	pOperator->FireBullets( 1, vecShootOrigin, vecShootDir, VECTOR_CONE_PRECALCULATED,
-		MAX_TRACE_LENGTH, m_iPrimaryAmmoType, 1, entindex(), 0 );
+		MAX_TRACE_LENGTH, m_iPrimaryAmmoType[INDEX_BASE], 1, entindex(), 0 );
 
 	pOperator->DoMuzzleFlash();
 	m_iClip1 = m_iClip1 - 1;
@@ -187,7 +178,7 @@ void CWeaponHMG::Operator_HandleAnimEvent( animevent_t *pEvent, CBaseCombatChara
 void CWeaponHMG::AddViewKick( void )
 {
 	#define	MAX_VERTICAL_KICK	15.0f	//Degrees
-	#define	SLIDE_LIMIT			4.0f	//Seconds
+	#define	SLIDE_LIMIT			15.0f	//Seconds
 	
 	//Get the view kick
 	CBasePlayer *pPlayer = ToBasePlayer( GetOwner() );
@@ -196,6 +187,11 @@ void CWeaponHMG::AddViewKick( void )
 		return;
 
 	DoMachineGunKick( pPlayer, MAX_VERTICAL_KICK, m_fFireDuration + 0.15, SLIDE_LIMIT );
+
+	float flShakeScale = RemapValClamped( m_fFireDuration, 0.0f, 15.0f, 3.0f, 15.0f );
+
+	if ( hl2r_new_screenshake_effects.GetBool() )
+		UTIL_ScreenShake( pPlayer->GetAbsOrigin(), flShakeScale, 150.0, 0.25, 128, SHAKE_START );
 }
 //-----------------------------------------------------------------------------
 // Purpose: 

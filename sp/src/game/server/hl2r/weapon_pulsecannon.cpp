@@ -186,7 +186,7 @@ void CWeaponPulseCannon::PrimaryAttack( void )
 	info.m_vecDirShooting = pPlayer->GetAutoaimVector( AUTOAIM_SCALE_DEFAULT );
 	info.m_iShots = 1;
 	info.m_flDistance = MAX_TRACE_LENGTH;
-	info.m_iAmmoType = m_iPrimaryAmmoType;
+	info.m_iAmmoType = m_iPrimaryAmmoType[INDEX_BASE];
 	info.m_iTracerFreq = 1;					// No tracers.
 	info.m_vecSpread = GetBulletSpread();
 
@@ -198,13 +198,13 @@ void CWeaponPulseCannon::PrimaryAttack( void )
 	}
 	else
 	{
-		iAmmoDrain = MIN( AMMO_DRAIN_AMOUNT, pPlayer->GetAmmoCount( m_iPrimaryAmmoType ) );
-		pPlayer->RemoveAmmo( iAmmoDrain, m_iPrimaryAmmoType );
+		iAmmoDrain = MIN( AMMO_DRAIN_AMOUNT, pPlayer->GetAmmoCount( m_iPrimaryAmmoType[INDEX_CARRY] ) );
+		pPlayer->RemoveAmmo( iAmmoDrain, m_iPrimaryAmmoType[INDEX_CARRY] );
 	}
 
 	pPlayer->FireBullets( info );
 
-	if (!m_iClip1 && pPlayer->GetAmmoCount(m_iPrimaryAmmoType) <= 0)
+	if (!m_iClip1 && pPlayer->GetAmmoCount(m_iPrimaryAmmoType[INDEX_CARRY]) <= 0)
 	{
 		// HEV suit - indicate out of ammo condition
 		pPlayer->SetSuitUpdate("!HEV_AMO0", FALSE, 0); 
@@ -213,7 +213,7 @@ void CWeaponPulseCannon::PrimaryAttack( void )
 	AddViewKick();
 	CSoundEnt::InsertSound( SOUND_COMBAT, GetAbsOrigin(), SOUNDENT_VOLUME_SHOTGUN, 0.2, GetOwner() );
 
-	if (pPlayer->GetAmmoCount(m_iPrimaryAmmoType) <= 0)
+	if (pPlayer->GetAmmoCount(m_iPrimaryAmmoType[INDEX_CARRY]) <= 0)
 	{
 		// HEV suit - indicate out of ammo condition
 		pPlayer->SetSuitUpdate("!HEV_AMO0", FALSE, 0); 
@@ -289,7 +289,7 @@ void CWeaponPulseCannon::FireNPCPrimaryAttack( CBaseCombatCharacter *pOperator, 
 
 	CSoundEnt::InsertSound( SOUND_COMBAT|SOUND_CONTEXT_GUNFIRE, pOperator->GetAbsOrigin(), SOUNDENT_VOLUME_MACHINEGUN, 0.2, pOperator, SOUNDENT_CHANNEL_WEAPON, pOperator->GetEnemy() );
 	pOperator->FireBullets( 1, vecShootOrigin, vecShootDir, VECTOR_CONE_PRECALCULATED,
-		MAX_TRACE_LENGTH, m_iPrimaryAmmoType, 1, entindex(), 0 );
+		MAX_TRACE_LENGTH, m_iPrimaryAmmoType[INDEX_BASE], 1, entindex(), 0 );
 
 	pOperator->DoMuzzleFlash();
 }

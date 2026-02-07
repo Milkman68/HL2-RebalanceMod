@@ -693,7 +693,8 @@ void CBaseViewport::ReloadScheme(const char *fromFile)
 	g_pClientMode->ComputeVguiResConditions( pConditions );
 
 	// reload the .res file from disk
-	LoadControlSettings( "scripts/HudLayout.res", NULL, NULL, pConditions );
+	for ( int i = 0; i < UTIL_GetHudlayoutFileList()->Count(); i++ )
+		LoadControlSettings( UTIL_GetHudlayoutFileList()->Element(i), NULL, NULL, pConditions );
 
 	gHUD.RefreshHudTextures();
 

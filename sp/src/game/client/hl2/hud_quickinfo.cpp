@@ -306,7 +306,7 @@ void CHUDQuickInfo::Paint()
 
 	// Check our ammo for a warning
 	int	ammo = pWeapon ? pWeapon->Clip1() : 0;
-	float CurrentCarry = pWeapon ? player->GetAmmoCount(pWeapon->m_iPrimaryAmmoType) : 0.0f;
+	float CurrentCarry = pWeapon ? player->GetAmmoCount(pWeapon->GetPrimaryAmmoType(CBaseCombatWeapon::INDEX_CARRY)) : 0.0f;
 	
 	if ( ammo != m_lastAmmo || CurrentCarry != m_lastCarry || ( IsManned && m_lastMannedGunAmmo != player->m_HL2Local.m_iFuncTankAmmo ) || IsManned != m_bCurrentlyManned )
 	{
@@ -325,7 +325,7 @@ void CHUDQuickInfo::Paint()
 		}
 		else if ( pWeapon->GetMaxClip1() == 1 || !pWeapon->UsesClipsForAmmo1() )
 		{ 
-			float MaxCarry = GetAmmoDef()->MaxCarry(pWeapon->m_iPrimaryAmmoType);
+			float MaxCarry = GetAmmoDef()->MaxCarry(pWeapon->GetPrimaryAmmoType(CBaseCombatWeapon::INDEX_CARRY));
 			ammoPerc = (float) CurrentCarry / (float) MaxCarry;
 		}
 		else
@@ -406,8 +406,8 @@ void CHUDQuickInfo::Paint()
 		}
 		else if ( pWeapon->GetMaxClip1() == 1 || !pWeapon->UsesClipsForAmmo1() )
 		{
-			float CurrentCarry = player->GetAmmoCount(pWeapon->m_iPrimaryAmmoType);
-			float MaxCarry = GetAmmoDef()->MaxCarry(pWeapon->m_iPrimaryAmmoType);
+			float CurrentCarry = player->GetAmmoCount(pWeapon->GetPrimaryAmmoType(CBaseCombatWeapon::INDEX_CARRY));
+			float MaxCarry = GetAmmoDef()->MaxCarry(pWeapon->GetPrimaryAmmoType(CBaseCombatWeapon::INDEX_CARRY));
 
 			ammoPerc = 1.0f - ( (float) CurrentCarry / (float) MaxCarry );
 		}

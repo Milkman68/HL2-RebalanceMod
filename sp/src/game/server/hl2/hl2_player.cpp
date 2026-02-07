@@ -2803,7 +2803,7 @@ int CHL2_Player::GiveAmmo( int nCount, int nAmmoIndex, bool bSuppressSound)
 	{
 		CBaseCombatWeapon *pWeapon = g_pGameRules->GetNextBestWeapon(this, GetActiveWeapon());
 
-		if ( pWeapon && pWeapon->GetPrimaryAmmoType() == nAmmoIndex )
+		if ( pWeapon && pWeapon->GetPrimaryAmmoType(CBaseCombatWeapon::INDEX_CARRY) == nAmmoIndex )
 		{
 			SwitchToNextBestWeapon(GetActiveWeapon());
 		}
@@ -3023,6 +3023,26 @@ void CHL2_Player::PlayerUse ( void )
 		{
 			return;
 		}
+
+		// IMPLEMENT TIMER HERE
+		//Check for weapon pick-up
+		if (m_hClosestReplacementWeapon != NULL)
+		{
+			CBaseCombatWeapon* pWeapon = dynamic_cast<CBaseCombatWeapon*>(m_hClosestReplacementWeapon.Get());
+			CBaseCombatWeapon* pOldWeapon = Weapon_GetSlot( pWeapon->GetSlot(), pWeapon->GetPosition(true) );
+
+			if ( pWeapon != NULL && Weapon_CanSwapTo(pOldWeapon, pWeapon) )
+			{
+				Weapon_Swap( pOldWeapon, pWeapon);
+				EmitSound( "HL2Player.Use" );
+			
+				// Debounce the use key
+				m_Local.m_nOldButtons |= IN_USE;
+				m_afButtonPressed &= ~IN_USE;
+				return;
+			}
+
+		}
 	}
 
 	if( m_flTimeUseSuspended > gpGlobals->curtime )
@@ -3033,11 +3053,10 @@ void CHL2_Player::PlayerUse ( void )
 	}
 
 	CBaseEntity *pUseEntity = FindUseEntity();
-
 	bool usedSomething = false;
 
 	// Found an object
-	if ( pUseEntity )
+	if ( pUseEntity && pUseEntity != m_hClosestReplacementWeapon.Get() )
 	{
 		//!!!UNDONE: traceline here to prevent +USEing buttons through walls			
 		int caps = pUseEntity->ObjectCaps();
@@ -3273,7 +3292,7 @@ bool CHL2_Player::Weapon_CanSwitchTo( CBaseCombatWeapon *pWeapon )
 	if (pVehicle && !pPlayer->UsingStandardWeaponsInVehicle())
 		return false;
 
-	if ( !pWeapon->HasAnyAmmo() && !GetAmmoCount( pWeapon->m_iPrimaryAmmoType ) )
+	if ( !pWeapon->HasAnyAmmo() && !GetAmmoCount( pWeapon->m_iPrimaryAmmoType[CBaseCombatWeapon::INDEX_CARRY] ) )
 		return false;
 
 	if ( !pWeapon->CanDeploy() )

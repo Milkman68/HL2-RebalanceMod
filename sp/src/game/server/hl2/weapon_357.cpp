@@ -170,7 +170,7 @@ void CWeapon357::FireNPCPrimaryAttack( CBaseCombatCharacter *pOperator, Vector &
 	CSoundEnt::InsertSound( SOUND_COMBAT|SOUND_CONTEXT_GUNFIRE, pOperator->GetAbsOrigin(), SOUNDENT_VOLUME_PISTOL, 0.2, pOperator, SOUNDENT_CHANNEL_WEAPON, pOperator->GetEnemy() );
 
 	WeaponSound( SINGLE_NPC );
-	pOperator->FireBullets( 1, vecShootOrigin, vecShootDir, VECTOR_CONE_PRECALCULATED, MAX_TRACE_LENGTH, m_iPrimaryAmmoType, 1 );
+	pOperator->FireBullets( 1, vecShootOrigin, vecShootDir, VECTOR_CONE_PRECALCULATED, MAX_TRACE_LENGTH, m_iPrimaryAmmoType[INDEX_BASE], 1 );
 	pOperator->DoMuzzleFlash();
 	m_iClip1 = m_iClip1 - 1;
 }
@@ -236,7 +236,7 @@ void CWeapon357::PrimaryAttack( void )
 	Vector vecSrc		= pPlayer->Weapon_ShootPosition();
 	Vector vecAiming	= pPlayer->GetAutoaimVector( AUTOAIM_SCALE_DEFAULT );	
 
-	pPlayer->FireBullets( 1, vecSrc, vecAiming, vec3_origin, MAX_TRACE_LENGTH, m_iPrimaryAmmoType, 1 );
+	pPlayer->FireBullets( 1, vecSrc, vecAiming, vec3_origin, MAX_TRACE_LENGTH, m_iPrimaryAmmoType[INDEX_BASE], 1 );
 
 	pPlayer->SetMuzzleFlashTime( gpGlobals->curtime + 0.5 );
 
@@ -259,7 +259,7 @@ void CWeapon357::PrimaryAttack( void )
 
 	CSoundEnt::InsertSound( SOUND_COMBAT, GetAbsOrigin(), 600, 0.2, GetOwner() );
 
-	if ( !m_iClip1 && pPlayer->GetAmmoCount( m_iPrimaryAmmoType ) <= 0 )
+	if ( !m_iClip1 && pPlayer->GetAmmoCount( m_iPrimaryAmmoType[INDEX_CARRY] ) <= 0 )
 	{
 		// HEV suit - indicate out of ammo condition
 		pPlayer->SetSuitUpdate( "!HEV_AMO0", FALSE, 0 ); 

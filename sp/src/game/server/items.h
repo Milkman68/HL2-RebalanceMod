@@ -54,6 +54,7 @@ public:
 	virtual void ItemTouch( CBaseEntity *pOther );
 	virtual void Materialize( void );
 	virtual bool MyTouch( CBasePlayer *pPlayer ) { return false; };
+	virtual void EquipItem( CBaseEntity *pOther, CBasePlayer *pPlayer );
 
 	// Become touchable when we are at rest
 	virtual void OnEntityEvent( EntityEvent_t event, void *pEventData );

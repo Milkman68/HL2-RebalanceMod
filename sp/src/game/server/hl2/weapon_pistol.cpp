@@ -194,7 +194,7 @@ void CWeaponPistol::Operator_HandleAnimEvent( animevent_t *pEvent, CBaseCombatCh
 			CSoundEnt::InsertSound( SOUND_COMBAT|SOUND_CONTEXT_GUNFIRE, pOperator->GetAbsOrigin(), SOUNDENT_VOLUME_PISTOL, 0.2, pOperator, SOUNDENT_CHANNEL_WEAPON, pOperator->GetEnemy() );
 
 			WeaponSound( SINGLE_NPC );
-			pOperator->FireBullets( 1, vecShootOrigin, vecShootDir, VECTOR_CONE_PRECALCULATED, MAX_TRACE_LENGTH, m_iPrimaryAmmoType, 1 );
+			pOperator->FireBullets( 1, vecShootOrigin, vecShootDir, VECTOR_CONE_PRECALCULATED, MAX_TRACE_LENGTH, m_iPrimaryAmmoType[INDEX_BASE], 1 );
 			pOperator->DoMuzzleFlash();
 			m_iClip1 = m_iClip1 - 1;
 		}
@@ -285,7 +285,7 @@ void CWeaponPistol::SecondaryAttack( void )
 	info.m_vecDirShooting = pOwner->GetAutoaimVector( AUTOAIM_SCALE_DEFAULT ); 
 	info.m_iShots	= 1;
 	info.m_flDistance = MAX_TRACE_LENGTH;
-	info.m_iAmmoType = m_iPrimaryAmmoType;
+	info.m_iAmmoType = m_iPrimaryAmmoType[INDEX_BASE];
 	info.m_iTracerFreq = hl2r_bullet_tracer_freq.GetInt();
 	info.m_vecSpread = pOwner->GetAttackSpread( this );
 
@@ -297,7 +297,7 @@ void CWeaponPistol::SecondaryAttack( void )
 	// Fire the bullets
 	pOwner->FireBullets( info );
 
-	if (!m_iClip1 && pOwner->GetAmmoCount(m_iPrimaryAmmoType) <= 0)
+	if (!m_iClip1 && pOwner->GetAmmoCount(m_iPrimaryAmmoType[INDEX_CARRY]) <= 0)
 	{
 		// HEV suit - indicate out of ammo condition
 		pOwner->SetSuitUpdate("!HEV_AMO0", FALSE, 0); 

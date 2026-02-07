@@ -299,6 +299,7 @@ public:
 	bool				IsPoisoned( void ) { return m_Local.m_bPoisoned; }
 
 	C_BaseEntity				*GetUseEntity();
+	C_BaseEntity				*GetClosestReplacementWeapon();
 
 	// Vehicles...
 	IClientVehicle			*GetVehicle();
@@ -498,6 +499,8 @@ private:
 	C_BasePlayer& operator=( const C_BasePlayer& src );
 	C_BasePlayer( const C_BasePlayer & ); // not defined, not accessible
 
+	EHANDLE			m_hClosestReplacementWeapon;
+
 	// Vehicle stuff.
 	EHANDLE			m_hVehicle;
 	EHANDLE			m_hOldVehicle;
@@ -663,6 +666,11 @@ inline C_BasePlayer *ToBasePlayer( C_BaseEntity *pEntity )
 inline C_BaseEntity *C_BasePlayer::GetUseEntity() 
 { 
 	return m_hUseEntity;
+}
+
+inline C_BaseEntity *C_BasePlayer::GetClosestReplacementWeapon() 
+{ 
+	return m_hClosestReplacementWeapon;
 }
 
 

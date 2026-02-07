@@ -136,11 +136,11 @@ void CHudAmmo::UpdatePlayerAmmo( C_BaseHLPlayer *player )
 	SetPaintEnabled(true);
 	SetPaintBackgroundEnabled(true);
 	
-	wchar_t *tempString = g_pVGuiLocalize->Find( gWR.GetAmmoLabelFromID( wpn->GetPrimaryAmmoType() ) );
+	wchar_t *tempString = g_pVGuiLocalize->Find( gWR.GetAmmoLabelFromID( wpn->GetPrimaryAmmoType(C_BaseCombatWeapon::INDEX_CARRY) ) );
 	SetLabelText( tempString );
 
 	// Get our icons for the ammo types
-	m_iconPrimaryAmmo = gWR.GetAmmoIconFromWeapon( wpn->GetPrimaryAmmoType() );
+	m_iconPrimaryAmmo = gWR.GetAmmoIconFromWeapon( wpn->GetPrimaryAmmoType(C_BaseCombatWeapon::INDEX_CARRY) );
 
 	// get the ammo in our clip
 	int ammo1 = wpn->Clip1();
@@ -148,13 +148,13 @@ void CHudAmmo::UpdatePlayerAmmo( C_BaseHLPlayer *player )
 	if (ammo1 < 0)
 	{
 		// we don't use clip ammo, just use the total ammo count
-		ammo1 = player->GetAmmoCount(wpn->GetPrimaryAmmoType());
+		ammo1 = player->GetAmmoCount(wpn->GetPrimaryAmmoType(C_BaseCombatWeapon::INDEX_CARRY));
 		ammo2 = 0;
 	}
 	else
 	{
 		// we use clip ammo, so the second ammo is the total ammo
-		ammo2 = player->GetAmmoCount(wpn->GetPrimaryAmmoType());
+		ammo2 = player->GetAmmoCount(wpn->GetPrimaryAmmoType(C_BaseCombatWeapon::INDEX_CARRY));
 	}
 
 	hudlcd->SetGlobalStat( "(ammo_primary)", VarArgs( "%d", ammo1 ) );

@@ -825,7 +825,7 @@ void CWeaponCrossbow::FireBolt( void )
 
 	SendWeaponAnim( ACT_VM_PRIMARYATTACK );
 
-	if ( !m_iClip1 && pOwner->GetAmmoCount( m_iPrimaryAmmoType ) <= 0 )
+	if ( !m_iClip1 && pOwner->GetAmmoCount( m_iPrimaryAmmoType[INDEX_CARRY] ) <= 0 )
 	{
 		// HEV suit - indicate out of ammo condition
 		pOwner->SetSuitUpdate("!HEV_AMO0", FALSE, 0);

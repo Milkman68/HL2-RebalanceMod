@@ -87,7 +87,9 @@ CBaseCombatWeapon::CBaseCombatWeapon()
 	m_iState = m_iOldState = WEAPON_NOT_CARRIED;
 	m_iClip1 = -1;
 	m_iClip2 = -1;
-	m_iPrimaryAmmoType = -1;
+	m_iPrimaryAmmoType.Set(INDEX_BASE, -1);
+	m_iPrimaryAmmoType.Set(INDEX_CARRY, -1);
+	m_iPrimaryAmmoType.Set(INDEX_DAMAGE, -1);
 	m_iSecondaryAmmoType = -1;
 #endif
 
@@ -239,7 +241,10 @@ void CBaseCombatWeapon::Precache( void )
 	Assert( Q_strlen( GetClassname() ) > 0 );
 	// Msg( "Client got %s\n", GetClassname() );
 #endif
-	m_iPrimaryAmmoType = m_iSecondaryAmmoType = -1;
+	m_iPrimaryAmmoType.Set(INDEX_BASE, -1);
+	m_iPrimaryAmmoType.Set(INDEX_CARRY, -1);
+	m_iPrimaryAmmoType.Set(INDEX_DAMAGE, -1);
+	m_iSecondaryAmmoType = -1;
 
 	// Add this weapon to the weapon registry, and get our index into it
 	// Get weapon data from script file
@@ -248,20 +253,14 @@ void CBaseCombatWeapon::Precache( void )
 		// Get the ammo indexes for the ammo's specified in the data file
 		if ( GetWpnData().szAmmo1[0] )
 		{
-			m_iPrimaryAmmoType = GetAmmoDef()->Index( GetWpnData().szAmmo1 );
-			if (m_iPrimaryAmmoType == -1)
+			m_iPrimaryAmmoType.Set(INDEX_BASE, GetAmmoDef()->Index( GetWpnData().szAmmo1 ) );
+			m_iPrimaryAmmoType.Set(INDEX_CARRY, GetAmmoDef()->Index( GetWpnData().szAmmo1_carry ) );
+			m_iPrimaryAmmoType.Set(INDEX_DAMAGE, GetAmmoDef()->Index( GetWpnData().szAmmo1_damage ) );
+
+			if (m_iPrimaryAmmoType[INDEX_BASE] == -1)
 			{
 				Msg("ERROR: Weapon (%s) using undefined primary ammo type (%s)\n",GetClassname(), GetWpnData().szAmmo1);
 			}
- #if defined ( TF_DLL ) || defined ( TF_CLIENT_DLL )
-			// Ammo override
-			int iModUseMetalOverride = 0;
-			CALL_ATTRIB_HOOK_INT( iModUseMetalOverride, mod_use_metal_ammo_type );
-			if ( iModUseMetalOverride )
-			{
-				m_iPrimaryAmmoType = (int)TF_AMMO_METAL;
-			}
-#endif
  		}
 		if ( GetWpnData().szAmmo2[0] )
 		{
@@ -451,11 +450,13 @@ int CBaseCombatWeapon::GetSlot( void ) const
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-int CBaseCombatWeapon::GetPosition( void ) const
+int CBaseCombatWeapon::GetPosition( bool bTruePosition ) const
 {
  	CBasePlayer *pPlayer = ToBasePlayer( GetOwner() );
-	
 	if ( !pPlayer )
+		return GetWpnData().iPosition;
+
+	if ( bTruePosition )
 		return GetWpnData().iPosition;
  	
 	int position = 0;
@@ -635,7 +636,7 @@ bool CBaseCombatWeapon::CanBeSelected( void )
 bool CBaseCombatWeapon::HasAmmo( void )
 {
 	// Weapons with no ammo types can always be selected
-	if ( m_iPrimaryAmmoType == -1 && m_iSecondaryAmmoType == -1  )
+	if ( m_iPrimaryAmmoType[INDEX_CARRY] == -1 && m_iSecondaryAmmoType == -1  )
 		return true;
 	if ( GetWeaponFlags() & ITEM_FLAG_SELECTONEMPTY )
 		return true;
@@ -643,7 +644,7 @@ bool CBaseCombatWeapon::HasAmmo( void )
 	CBasePlayer *player = ToBasePlayer( GetOwner() );
 	if ( !player )
 		return false;
-	return ( m_iClip1 > 0 || player->GetAmmoCount( m_iPrimaryAmmoType ) || m_iClip2 > 0 || player->GetAmmoCount( m_iSecondaryAmmoType ) );
+	return ( m_iClip1 > 0 || player->GetAmmoCount( m_iPrimaryAmmoType[INDEX_CARRY] ) || m_iClip2 > 0 || player->GetAmmoCount( m_iSecondaryAmmoType ) );
 }
 
 //-----------------------------------------------------------------------------
@@ -888,14 +889,31 @@ void CBaseCombatWeapon::DefaultTouch( CBaseEntity *pOther )
 		m_OnCacheInteraction.FireOutput( pOther, this );
 	}
 
-	if( HasSpawnFlags(SF_WEAPON_NO_PLAYER_PICKUP) )
-		return;
+//	if( HasSpawnFlags(SF_WEAPON_NO_PLAYER_PICKUP) )
+//		return;
 
 	if (pPlayer->BumpWeapon(this))
 	{
 		OnPickedUp( pPlayer );
 	}
 #endif
+}
+
+void CBaseCombatWeapon::EndTouch( CBaseEntity *pOther )
+{
+#if !defined( CLIENT_DLL )
+	CBasePlayer *pPlayer = ToBasePlayer(pOther);
+	if ( !pPlayer )
+	{
+		BaseClass::EndTouch(pOther);
+		return;
+	}
+
+	if (pOther == pPlayer)
+		pPlayer->UnBumpWeapon(this);
+#endif
+
+	BaseClass::EndTouch(pOther);
 }
 
 //---------------------------------------------------------
@@ -961,7 +979,7 @@ bool CBaseCombatWeapon::ShouldDisplayReloadHUDHint()
 		// I'm owned by a player, I use clips, I have less then a full clip loaded. Now, does the player have more ammo?
 		if ( pOwner )
 		{
-			if ( pOwner->GetAmmoCount( m_iPrimaryAmmoType ) > 0 ) 
+			if ( pOwner->GetAmmoCount( m_iPrimaryAmmoType[INDEX_CARRY] ) > 0 ) 
 				return true;
 		}
 	}
@@ -1285,7 +1303,7 @@ bool CBaseCombatWeapon::HasPrimaryAmmo( void )
 	CBaseCombatCharacter		*pOwner = GetOwner();
 	if ( pOwner )
 	{
-		if ( pOwner->GetAmmoCount( m_iPrimaryAmmoType ) > 0 ) 
+		if ( pOwner->GetAmmoCount( m_iPrimaryAmmoType[INDEX_CARRY] ) > 0 ) 
 			return true;
 	}
 	else
@@ -1327,7 +1345,7 @@ bool CBaseCombatWeapon::HasSecondaryAmmo( void )
 //-----------------------------------------------------------------------------
 bool CBaseCombatWeapon::UsesPrimaryAmmo( void )
 {
-	if ( m_iPrimaryAmmoType < 0 )
+	if ( m_iPrimaryAmmoType[INDEX_CARRY] < 0 )
 		return false;
 	return true;
 }
@@ -1451,8 +1469,8 @@ bool CBaseCombatWeapon::DefaultDeploy( char *szViewModel, char *szWeaponModel, i
 	
 	if ( pOwner )
 	{
-		if ( pOwner->GetAmmoCount(m_iPrimaryAmmoType) > GetAmmoDef()->MaxCarry(m_iPrimaryAmmoType) )
-			pOwner->SetAmmoCount( GetAmmoDef()->MaxCarry(m_iPrimaryAmmoType), m_iPrimaryAmmoType );
+		if ( pOwner->GetAmmoCount(m_iPrimaryAmmoType[INDEX_CARRY]) > GetAmmoDef()->MaxCarry(m_iPrimaryAmmoType[INDEX_CARRY]) )
+			pOwner->SetAmmoCount( GetAmmoDef()->MaxCarry(m_iPrimaryAmmoType[INDEX_CARRY]), m_iPrimaryAmmoType[INDEX_CARRY] );
 		
 		if ( pOwner->GetAmmoCount(m_iSecondaryAmmoType) > GetAmmoDef()->MaxCarry(m_iSecondaryAmmoType) )
 			pOwner->SetAmmoCount( GetAmmoDef()->MaxCarry(m_iSecondaryAmmoType), m_iSecondaryAmmoType );
@@ -1789,7 +1807,7 @@ void CBaseCombatWeapon::ItemPostFrame( void )
 	{
 		// Clip empty? Or out of ammo on a no-clip weapon?
 		if ( !IsMeleeWeapon() &&  
-			(( UsesClipsForAmmo1() && m_iClip1 <= 0) || ( !UsesClipsForAmmo1() && pOwner->GetAmmoCount(m_iPrimaryAmmoType)<=0 )) )
+			(( UsesClipsForAmmo1() && m_iClip1 <= 0) || ( !UsesClipsForAmmo1() && pOwner->GetAmmoCount(m_iPrimaryAmmoType[INDEX_CARRY])<=0 )) )
 		{
 			HandleFireOnEmpty();
 		}
@@ -2035,7 +2053,7 @@ bool CBaseCombatWeapon::DefaultReload( int iClipSize1, int iClipSize2, int iActi
 		return false;
 
 	// If I don't have any spare ammo, I can't reload
-	if ( pOwner->GetAmmoCount(m_iPrimaryAmmoType) <= 0 )
+	if ( pOwner->GetAmmoCount(m_iPrimaryAmmoType[INDEX_CARRY]) <= 0 )
 		return false;
 
 	bool bReload = false;
@@ -2044,7 +2062,7 @@ bool CBaseCombatWeapon::DefaultReload( int iClipSize1, int iClipSize2, int iActi
 	if ( UsesClipsForAmmo1() )
 	{
 		// need to reload primary clip?
-		int primary	= MIN(iClipSize1 - m_iClip1, pOwner->GetAmmoCount(m_iPrimaryAmmoType));
+		int primary	= MIN(iClipSize1 - m_iClip1, pOwner->GetAmmoCount(m_iPrimaryAmmoType[INDEX_CARRY]));
 		if ( primary != 0 )
 		{
 			bReload = true;
@@ -2178,7 +2196,7 @@ void CBaseCombatWeapon::CheckReload( void )
 			}
 
 			// If out of ammo end reload
-			if (pOwner->GetAmmoCount(m_iPrimaryAmmoType) <=0)
+			if (pOwner->GetAmmoCount(m_iPrimaryAmmoType[INDEX_CARRY]) <=0)
 			{
 				FinishReload();
 				return;
@@ -2188,7 +2206,7 @@ void CBaseCombatWeapon::CheckReload( void )
 			{
 				// Add them to the clip
 				m_iClip1 += 1;
-				pOwner->RemoveAmmo( 1, m_iPrimaryAmmoType );
+				pOwner->RemoveAmmo( 1, m_iPrimaryAmmoType[INDEX_CARRY] );
 
 				Reload();
 				return;
@@ -2229,23 +2247,23 @@ void CBaseCombatWeapon::FinishReload( void )
 		{
 			if ( hl2r_realistic_reload.GetBool() )
 			{
-				int primary = min( GetMaxClip1() - m_iClip1, pOwner->GetAmmoCount( m_iPrimaryAmmoType ) );	
-				if ( pOwner->GetAmmoCount( m_iPrimaryAmmoType ) >= GetMaxClip1() )
+				int primary = min( GetMaxClip1() - m_iClip1, pOwner->GetAmmoCount( m_iPrimaryAmmoType[INDEX_CARRY] ) );	
+				if ( pOwner->GetAmmoCount( m_iPrimaryAmmoType[INDEX_CARRY] ) >= GetMaxClip1() )
 				{
 					m_iClip1 = !m_bReloadsSingly ? GetMaxClip1() : m_iClip1 + primary;
-					pOwner->RemoveAmmo( !m_bReloadsSingly ? GetMaxClip1() : primary, m_iPrimaryAmmoType );
+					pOwner->RemoveAmmo( !m_bReloadsSingly ? GetMaxClip1() : primary, m_iPrimaryAmmoType[INDEX_CARRY] );
 				}
 				else
 				{
-					m_iClip1 = pOwner->GetAmmoCount( m_iPrimaryAmmoType );
-					pOwner->RemoveAmmo( GetMaxClip1(), m_iPrimaryAmmoType );
+					m_iClip1 = pOwner->GetAmmoCount( m_iPrimaryAmmoType[INDEX_CARRY] );
+					pOwner->RemoveAmmo( GetMaxClip1(), m_iPrimaryAmmoType[INDEX_CARRY] );
 				}
 			}
 			else
 			{
-				int primary	= MIN( GetMaxClip1() - m_iClip1, pOwner->GetAmmoCount(m_iPrimaryAmmoType));	
+				int primary	= MIN( GetMaxClip1() - m_iClip1, pOwner->GetAmmoCount(m_iPrimaryAmmoType[INDEX_CARRY]));	
 				m_iClip1 += primary;
-				pOwner->RemoveAmmo( primary, m_iPrimaryAmmoType);
+				pOwner->RemoveAmmo( primary, m_iPrimaryAmmoType[INDEX_CARRY]);
 			}
 		}
 
@@ -2381,12 +2399,12 @@ void CBaseCombatWeapon::PrimaryAttack( void )
 	}
 	else
 	{
-		info.m_iShots = MIN( info.m_iShots, pPlayer->GetAmmoCount( m_iPrimaryAmmoType ) );
-		pPlayer->RemoveAmmo( info.m_iShots, m_iPrimaryAmmoType );
+		info.m_iShots = MIN( info.m_iShots, pPlayer->GetAmmoCount( m_iPrimaryAmmoType[INDEX_CARRY] ) );
+		pPlayer->RemoveAmmo( info.m_iShots, m_iPrimaryAmmoType[INDEX_CARRY] );
 	}
 
 	info.m_flDistance = MAX_TRACE_LENGTH;
-	info.m_iAmmoType = m_iPrimaryAmmoType;
+	info.m_iAmmoType = m_iPrimaryAmmoType[INDEX_BASE];
 	info.m_iTracerFreq = hl2r_bullet_tracer_freq.GetInt();
 
 #if !defined( CLIENT_DLL )
@@ -2399,7 +2417,7 @@ void CBaseCombatWeapon::PrimaryAttack( void )
 
 	pPlayer->FireBullets( info );
 
-	if (!m_iClip1 && pPlayer->GetAmmoCount(m_iPrimaryAmmoType) <= 0)
+	if (!m_iClip1 && pPlayer->GetAmmoCount(m_iPrimaryAmmoType[INDEX_CARRY]) <= 0)
 	{
 		// HEV suit - indicate out of ammo condition
 		pPlayer->SetSuitUpdate("!HEV_AMO0", FALSE, 0); 
@@ -2897,7 +2915,7 @@ BEGIN_NETWORK_TABLE_NOBASE( CBaseCombatWeapon, DT_LocalWeaponData )
 #if !defined( CLIENT_DLL )
 	SendPropIntWithMinusOneFlag( SENDINFO(m_iClip1 ), 8 ),
 	SendPropIntWithMinusOneFlag( SENDINFO(m_iClip2 ), 8 ),
-	SendPropInt( SENDINFO(m_iPrimaryAmmoType ), 8 ),
+	SendPropArray3( SENDINFO_ARRAY3(m_iPrimaryAmmoType), SendPropInt( SENDINFO_ARRAY(m_iPrimaryAmmoType), -1, SPROP_VARINT | SPROP_UNSIGNED ) ),
 	SendPropInt( SENDINFO(m_iSecondaryAmmoType ), 8 ),
 
 	SendPropInt( SENDINFO( m_nViewModelIndex ), VIEWMODEL_INDEX_BITS, SPROP_UNSIGNED ),
@@ -2911,7 +2929,7 @@ BEGIN_NETWORK_TABLE_NOBASE( CBaseCombatWeapon, DT_LocalWeaponData )
 #else
 	RecvPropIntWithMinusOneFlag( RECVINFO(m_iClip1 )),
 	RecvPropIntWithMinusOneFlag( RECVINFO(m_iClip2 )),
-	RecvPropInt( RECVINFO(m_iPrimaryAmmoType )),
+	RecvPropArray3		( RECVINFO_ARRAY(m_iPrimaryAmmoType), RecvPropInt( RECVINFO(m_iPrimaryAmmoType[0])) ),
 	RecvPropInt( RECVINFO(m_iSecondaryAmmoType )),
 
 	RecvPropInt( RECVINFO( m_nViewModelIndex ) ),

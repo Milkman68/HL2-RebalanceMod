@@ -108,6 +108,7 @@ ConVar hunter_cheap_explosions( "hunter_cheap_explosions", "1" );
 ConVar sk_hunter_bullet_damage_scale( "sk_hunter_bullet_damage_scale", "0.6" );
 ConVar sk_hunter_charge_damage_scale( "sk_hunter_charge_damage_scale", "2.0" );
 ConVar sk_hunter_buckshot_damage_scale( "sk_hunter_buckshot_damage_scale", "0.5" );
+ConVar sk_hunter_357_damage_scale( "sk_hunter_357_damage_scale", "1.0" );
 ConVar sk_hunter_vehicle_damage_scale( "sk_hunter_vehicle_damage_scale", "2.2" );
 ConVar sk_hunter_dmg_from_striderbuster( "sk_hunter_dmg_from_striderbuster", "150" );
 ConVar sk_hunter_citizen_damage_scale( "sk_hunter_citizen_damage_scale", "0.3" );
@@ -157,6 +158,8 @@ ConVar g_debug_hunter_charge( "g_debug_hunter_charge", "0" );
 ConVar hunter_stand_still( "hunter_stand_still", "0" ); // used for debugging, keeps them rooted in place
 
 ConVar hunter_siege_frequency( "hunter_siege_frequency", "12" );
+
+extern ConVar hl2r_new_screenshake_effects;
 
 #define HUNTER_FOV_DOT					0.0		// 180 degree field of view
 #define HUNTER_CHARGE_MIN				256
@@ -5362,7 +5365,7 @@ void CNPC_Hunter::TraceAttack( const CTakeDamageInfo &inputInfo, const Vector &v
 			// since players regard that weapon as one of the game's truly powerful weapons.
 			if( info.GetAmmoType() == GetAmmoDef()->Index("357") )
 			{
-				flScale = 1.16f;
+				flScale = sk_hunter_357_damage_scale.GetFloat();;
 			}
 			else
 			{
@@ -6040,8 +6043,8 @@ void CNPC_Hunter::GetShootDir( Vector &vecDir, const Vector &vecSrc, CBaseEntity
 	Vector vecDelta = pTargetEntity->GetAbsOrigin() - GetAbsOrigin();
 	float flDist = vecDelta.Length();
 
-//	if ( !bStriderBuster )
-//	{
+	if ( !bStriderBuster )
+	{
 		// If we're not firing at a strider buster, miss in an entertaining way for the 
 		// first three shots of each volley.
 		if ( ( nShotNum < 3 ) && ( flDist > 200 ) )
@@ -6084,9 +6087,9 @@ void CNPC_Hunter::GetShootDir( Vector &vecDir, const Vector &vecSrc, CBaseEntity
 			Vector vecDelta = vecTarget - pTargetEntity->GetAbsOrigin();
 			vecTarget = m_vecEnemyLastSeen + vecDelta;
 		}
-//	}
-//	else
-//	{
+	}
+	else
+	{
 		// If we're firing at a striderbuster, lead it.
 		float flSpeed = hunter_flechette_speed.GetFloat();
 		if ( !flSpeed )
@@ -6098,7 +6101,7 @@ void CNPC_Hunter::GetShootDir( Vector &vecDir, const Vector &vecSrc, CBaseEntity
 
 		float flDeltaTime = flDist / flSpeed;
 		vecTarget = vecTarget + flDeltaTime * pTargetEntity->GetSmoothedVelocity();
-//	}
+	}
 
 	vecDir = vecTarget - vecSrc;
 	VectorNormalize( vecDir );
@@ -6283,6 +6286,11 @@ Vector CNPC_Hunter::LeftFootHit( float eventtime )
 
 	FootFX( footPosition );
 
+	float flShakeMultiplier = GetActivity() == ACT_HUNTER_CHARGE_RUN ? 1.5f : 1.0f;
+
+	if ( hl2r_new_screenshake_effects.GetBool() )
+		UTIL_ScreenShake( GetAbsOrigin(), 4.0f * flShakeMultiplier, 80.0f, 0.25f, 600.0f, SHAKE_START );
+
 	return footPosition;
 }
 
@@ -6298,6 +6306,11 @@ Vector CNPC_Hunter::RightFootHit( float eventtime )
 	EmitSound( filter, entindex(), "NPC_Hunter.Footstep", &footPosition, eventtime );
 	FootFX( footPosition );
 
+	float flShakeMultiplier = GetActivity() == ACT_HUNTER_CHARGE_RUN ? 1.5f : 1.0f;
+
+	if ( hl2r_new_screenshake_effects.GetBool() )
+		UTIL_ScreenShake( GetAbsOrigin(), 4.0f * flShakeMultiplier, 80.0f, 0.25f, 600.0f, SHAKE_START );
+
 	return footPosition;
 }
 
@@ -6312,6 +6325,11 @@ Vector CNPC_Hunter::BackFootHit( float eventtime )
 	CPASAttenuationFilter filter( this );
 	EmitSound( filter, entindex(), "NPC_Hunter.BackFootstep", &footPosition, eventtime );
 	FootFX( footPosition );
+
+	float flShakeMultiplier = GetActivity() == ACT_HUNTER_CHARGE_RUN ? 1.5f : 1.0f;
+
+	if ( hl2r_new_screenshake_effects.GetBool() )
+		UTIL_ScreenShake( GetAbsOrigin(), 4.0f * flShakeMultiplier, 80.0f, 0.25f, 600.0f, SHAKE_START );
 
 	return footPosition;
 }

@@ -3624,7 +3624,7 @@ bool C_BaseAnimating::DispatchMuzzleEffect( const char *options, bool isFirstPer
 			
 			weaponType = MUZZLEFLASH_COMBINE;
 		}
-		else if ( Q_stricmp( token, "SMG1" ) == 0 )
+		else if ( Q_stricmp( token, "SMG1" ) == 0 || Q_stricmp( token, "HMG" ) == 0 )
 		{
 			pFlash->SetColor( 255, 135, 60 );
 			pFlash->SetLifetime( 0.05 );

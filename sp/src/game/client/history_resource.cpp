@@ -24,6 +24,7 @@ extern ConVar hl2r_ammo_labels;
 DECLARE_HUDELEMENT( CHudHistoryResource );
 DECLARE_HUD_MESSAGE( CHudHistoryResource, ItemPickup );
 DECLARE_HUD_MESSAGE( CHudHistoryResource, AmmoDenied );
+DECLARE_HUD_MESSAGE( CHudHistoryResource, AmmoUnused );
 
 //-----------------------------------------------------------------------------
 // Purpose: Constructor
@@ -35,6 +36,7 @@ CHudHistoryResource::CHudHistoryResource( const char *pElementName ) :
 	SetParent( pParent );
 	m_bDoNotDraw = true;
 	m_wcsAmmoFullMsg[0] = 0;
+	m_wcsAmmoUnusedMsg[0] = 0;
 	m_bNeedsDraw = false;
 	SetHiddenBits( HIDEHUD_MISCSTATUS );
 }
@@ -53,6 +55,12 @@ void CHudHistoryResource::ApplySchemeSettings( IScheme *pScheme )
 	{
 		wcsncpy(m_wcsAmmoFullMsg, wcs, sizeof(m_wcsAmmoFullMsg) / sizeof(wchar_t));
 	}
+
+	wcs = g_pVGuiLocalize->Find("#hl2_AmmoUnused");
+	if (wcs)
+	{
+		wcsncpy(m_wcsAmmoUnusedMsg, wcs, sizeof(m_wcsAmmoUnusedMsg) / sizeof(wchar_t));
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -62,6 +70,7 @@ void CHudHistoryResource::Init( void )
 {
 	HOOK_HUD_MESSAGE( CHudHistoryResource, ItemPickup );
 	HOOK_HUD_MESSAGE( CHudHistoryResource, AmmoDenied );
+	HOOK_HUD_MESSAGE( CHudHistoryResource, AmmoUnused );
 
 	Reset();
 }
@@ -131,7 +140,7 @@ void CHudHistoryResource::AddToHistory( int iType, int iId, int iCount )
 		// clear out any ammo pickup denied icons, since we can obviously pickup again
 		for ( int i = 0; i < m_PickupHistory.Count(); i++ )
 		{
-			if ( m_PickupHistory[i].type == HISTSLOT_AMMODENIED && m_PickupHistory[i].iId == iId )
+			if ( (m_PickupHistory[i].type == HISTSLOT_AMMODENIED || m_PickupHistory[i].type == HISTSLOT_AMMOUNUSED) && m_PickupHistory[i].iId == iId )
 			{
 				// kill the old entry
 				m_PickupHistory[i].DisplayTime = 0.0f;
@@ -186,7 +195,7 @@ void CHudHistoryResource::AddIconToHistory( int iType, int iId, C_BaseCombatWeap
 	// default to just writing to the first slot
 	HIST_ITEM *freeslot = &m_PickupHistory[m_iCurrentHistorySlot];
 
-	if ( iType == HISTSLOT_AMMODENIED && freeslot->DisplayTime )
+	if ( (iType == HISTSLOT_AMMODENIED || iType == HISTSLOT_AMMOUNUSED) && freeslot->DisplayTime )
 	{
 		// don't override existing pickup icons with denied icons
 		return;
@@ -198,7 +207,7 @@ void CHudHistoryResource::AddIconToHistory( int iType, int iId, C_BaseCombatWeap
 	freeslot->m_hWeapon  = weapon;
 	freeslot->iCount = iCount;
 
-	if (iType == HISTSLOT_AMMODENIED)
+	if (iType == HISTSLOT_AMMODENIED || iType == HISTSLOT_AMMOUNUSED)
 	{
 		freeslot->DisplayTime = gpGlobals->curtime + (hud_drawhistory_time.GetFloat() / 2.0f);
 	}
@@ -255,6 +264,39 @@ void CHudHistoryResource::MsgFunc_AmmoDenied( bf_read &msg )
 
 	// add into the list
 	AddToHistory( HISTSLOT_AMMODENIED, iAmmo, 0 );
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: ammo unused message
+//-----------------------------------------------------------------------------
+void CHudHistoryResource::MsgFunc_AmmoUnused( bf_read &msg )
+{
+	int iAmmo = msg.ReadShort();
+
+	// see if there are any existing ammo items of that type
+	for ( int i = 0; i < m_PickupHistory.Count(); i++ )
+	{
+		if ( m_PickupHistory[i].type == HISTSLOT_AMMO && m_PickupHistory[i].iId == iAmmo )
+		{
+			// it's already in the list as a pickup, ignore
+			return;
+		}
+	}
+
+	// see if there are any denied ammo icons, if so refresh their timer
+	for ( int i = 0; i < m_PickupHistory.Count(); i++ )
+	{
+		if ( m_PickupHistory[i].type == HISTSLOT_AMMOUNUSED && m_PickupHistory[i].iId == iAmmo )
+		{
+			// it's already in the list, refresh
+			m_PickupHistory[i].DisplayTime = gpGlobals->curtime + (hud_drawhistory_time.GetFloat() / 2.0f);
+			m_bNeedsDraw = true;
+			return;
+		}
+	}
+
+	// add into the list
+	AddToHistory( HISTSLOT_AMMOUNUSED, iAmmo, 0 );
 }
 
 //-----------------------------------------------------------------------------
@@ -326,6 +368,7 @@ void CHudHistoryResource::Paint( void )
 			clr[3] = MIN( scale, 255 );
 
 			bool bUseAmmoFullMsg = false;
+			bool bUseAmmoUnusedMsg = false;
 
 			// get the icon and number to draw
 			const CHudTexture *itemIcon = NULL;
@@ -364,11 +407,23 @@ void CHudHistoryResource::Paint( void )
 					iAmount = m_PickupHistory[i].iCount;
 				}
 				break;
+
 			case HISTSLOT_AMMODENIED:
 				{
 					itemIcon = gWR.GetAmmoIconFromWeapon( m_PickupHistory[i].iId );
 					iAmount = 0;
 					bUseAmmoFullMsg = true;
+					// display as red
+					clr = gHUD.m_clrCaution;	
+					clr[3] = MIN( scale, 255 );
+				}
+				break;
+
+			case HISTSLOT_AMMOUNUSED:
+				{
+					itemIcon = gWR.GetAmmoIconFromWeapon_Cached( m_PickupHistory[i].iId );
+					iAmount = 0;
+					bUseAmmoUnusedMsg = true;
 					// display as red
 					clr = gHUD.m_clrCaution;	
 					clr[3] = MIN( scale, 255 );
@@ -417,7 +472,7 @@ void CHudHistoryResource::Paint( void )
 			}
 
 			int ypos = tall - (m_flHistoryGap * (i + 1));
-			int xpos = wide - itemIcon->Width() - m_flIconInset;
+			int xpos = wide - itemIcon->Width() - (m_flIconInset * 1.2f);
 
 #ifndef HL2MP
 			// Adjust for a half-height icon
@@ -470,6 +525,16 @@ void CHudHistoryResource::Paint( void )
 				vgui::surface()->DrawSetTextColor( clr );
 				vgui::surface()->DrawSetTextPos( wide - m_flTextInset, ypos );
 				vgui::surface()->DrawUnicodeString( m_wcsAmmoFullMsg );
+			}
+			else if ( bUseAmmoUnusedMsg )
+			{
+				// offset the number to sit properly next to the icon
+				ypos -= ( surface()->GetFontTall( m_hTextFont ) - itemIcon->Height() ) / 2;
+
+				vgui::surface()->DrawSetTextFont( m_hTextFont );
+				vgui::surface()->DrawSetTextColor( clr );
+				vgui::surface()->DrawSetTextPos( wide - m_flTextInset, ypos );
+				vgui::surface()->DrawUnicodeString( m_wcsAmmoUnusedMsg );
 			}
 		}
 	}

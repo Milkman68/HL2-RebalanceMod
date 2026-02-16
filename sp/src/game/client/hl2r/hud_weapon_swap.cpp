@@ -278,8 +278,17 @@ void CHUDWeaponSwap::UpdateWeaponIcons( void )
 	m_pNewWeaponTexture = pNewWeapon->GetWpnData().iconSmall;
 	m_pOldWeaponTexture = pOldWeapon->GetWpnData().iconSmall;
 
-	bNewWeaponEmpty = !pNewWeapon->HasAnyAmmo();
-	bOldWeaponEmpty = !pOldWeapon->HasAnyAmmo();
+	bool bHasPrimaryAmmoForWeapon = player->GetAmmoCount(pNewWeapon->GetPrimaryAmmoType(CBaseCombatWeapon::INDEX_CARRY));
+	bool bHasSecondaryAmmoForWeapon = player->GetAmmoCount(pNewWeapon->GetSecondaryAmmoCount());
+
+	// Check ammo for new weapon
+	bNewWeaponEmpty = !pNewWeapon->HasAnyAmmo() && !bHasPrimaryAmmoForWeapon && !bHasSecondaryAmmoForWeapon;
+
+	bHasPrimaryAmmoForWeapon = player->GetAmmoCount(pOldWeapon->GetPrimaryAmmoType(CBaseCombatWeapon::INDEX_CARRY));
+	bHasSecondaryAmmoForWeapon = player->GetAmmoCount(pOldWeapon->GetSecondaryAmmoCount());
+
+	// Check ammo for old weapon
+	bOldWeaponEmpty = !pOldWeapon->HasAnyAmmo() && bHasPrimaryAmmoForWeapon && bHasSecondaryAmmoForWeapon;
 
 	V_strcpy(m_szNewWeaponPrintName, pNewWeapon->GetWpnData().szPrintName );
 	V_strcpy(m_szOldWeaponPrintName, pOldWeapon->GetWpnData().szPrintName );

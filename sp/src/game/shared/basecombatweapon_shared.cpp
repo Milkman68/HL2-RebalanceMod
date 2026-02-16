@@ -302,6 +302,10 @@ void CBaseCombatWeapon::Precache( void )
 		Warning( "Error reading weapon data file for: %s\n", GetClassname() );
 	//	Remove( );	//don't remove, this gets released soon!
 	}
+
+#if !defined( CLIENT_DLL )
+	m_SwappedAmmunitionStorage.Init(this);
+#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -746,6 +750,9 @@ void CBaseCombatWeapon::Drop( const Vector &vecVelocity )
 			return;
 		}
 	}
+
+	if ( pOwner && pOwner->IsPlayer() )
+		m_bWasSwappedByPlayer = true;
 #endif
 }
 
@@ -1067,6 +1074,14 @@ void CBaseCombatWeapon::Equip( CBaseCombatCharacter *pOwner )
 	if ( pOwner->IsPlayer() )
 	{
 		SetModel( GetViewModel() );
+
+#if !defined( CLIENT_DLL )
+
+		// We picked up a swapped weapon that was the sole container of an ammo type.
+		// Return the stored ammo back.
+		if ( m_SwappedAmmunitionStorage.HasStoredAmmo() )
+			m_SwappedAmmunitionStorage.GiveAmmo_Equip(pOwner);
+#endif
 	}
 	else
 	{
@@ -1334,6 +1349,12 @@ bool CBaseCombatWeapon::HasSecondaryAmmo( void )
 	if ( pOwner )
 	{
 		if ( pOwner->GetAmmoCount( m_iSecondaryAmmoType ) > 0 ) 
+			return true;
+	}
+	else
+	{
+		// No owner, so return how much secondary ammo I have along with me.
+		if( GetSecondaryAmmoCount() > 0 )
 			return true;
 	}
 
@@ -2695,6 +2716,7 @@ BEGIN_PREDICTION_DATA( CBaseCombatWeapon )
 	DEFINE_FIELD( m_bInReload, FIELD_BOOLEAN ),
 	DEFINE_FIELD( m_bFireOnEmpty, FIELD_BOOLEAN ),
 	DEFINE_FIELD( m_bFiringWholeClip, FIELD_BOOLEAN ),
+	DEFINE_FIELD( m_bWasSwappedByPlayer, FIELD_BOOLEAN ),
 	DEFINE_FIELD( m_flNextEmptySoundTime, FIELD_FLOAT ),
 	DEFINE_FIELD( m_Activity, FIELD_INTEGER ),
 	DEFINE_FIELD( m_fFireDuration, FIELD_FLOAT ),
@@ -2737,6 +2759,7 @@ BEGIN_DATADESC( CBaseCombatWeapon )
 
 	DEFINE_FIELD( m_bInReload, FIELD_BOOLEAN ),
 	DEFINE_FIELD( m_bFireOnEmpty, FIELD_BOOLEAN ),
+	DEFINE_FIELD( m_bWasSwappedByPlayer, FIELD_BOOLEAN ),
 	DEFINE_FIELD( m_hOwner, FIELD_EHANDLE ),
 
 	DEFINE_FIELD( m_iState, FIELD_INTEGER ),

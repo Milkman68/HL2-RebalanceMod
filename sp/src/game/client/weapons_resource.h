@@ -36,9 +36,25 @@ public:
 
 	// Ammo Handling
 	CHudTexture					*GetAmmoIconFromWeapon( int iAmmoId );
+	CHudTexture					*GetAmmoIconFromWeapon_Cached( int iAmmoId );
+
 	const FileWeaponInfo_t		*GetWeaponFromAmmo( int iAmmoId );
 	char const					*GetAmmoLabelFromID( int iAmmoId );
 	float						GetAmmoDrawOffesetFromID( int iAmmoId );
+
+private:
+	void						CacheWeaponAmmoIcon(int iAmmoType, CHudTexture *pIcon);
+	struct cachedIcon_t
+	{
+		int ammotype;
+		CHudTexture *icon;
+		cachedIcon_t::cachedIcon_t( int iAmmoype, CHudTexture *pIcon )
+		{
+			ammotype = iAmmoype;
+			icon = pIcon;
+		}
+	};
+	CUtlVector<cachedIcon_t *> m_cachedIcons;
 };
 
 extern WeaponsResource gWR;

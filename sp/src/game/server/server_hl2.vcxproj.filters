@@ -3286,6 +3286,9 @@
     <ClCompile Include="hl2r\weapon_pulsecannon.cpp">
       <Filter>Source Files\HL2 DLL\HL2R</Filter>
     </ClCompile>
+    <ClCompile Include="hl2r\weapon_smg2.cpp">
+      <Filter>Source Files\HL2 DLL\HL2R</Filter>
+    </ClCompile>
     <ClCompile Include="hl2\grenade_beam.cpp">
       <Filter>Source Files\HL2 DLL\Unused</Filter>
     </ClCompile>

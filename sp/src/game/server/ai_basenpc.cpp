@@ -12806,7 +12806,7 @@ float CAI_BaseNPC::GetCoverPositionScore( const Vector &vecThreat, const Vector 
 		if( tr.fraction != 1.0 )
 		{
 			float flEnemyToThis = ( GetAbsOrigin() - vecThreat ).Length();
-			flNodeScore += ( flIdealDist - fabsf(flEnemyToThis - flIdealDist) ) / flIdealDist;
+			flNodeScore += fabsf(flEnemyToThis - flIdealDist) / flIdealDist;
 		}
 	}
 	
@@ -12866,9 +12866,20 @@ float CAI_BaseNPC::GetLOSPositionScore( const Vector &vecThreat, const Vector &v
 	}
 
 	// Do an extra trace to check if this position gives the enemy waist-high cover over us.
-	AI_TraceLOS( vecPos + GetViewOffset(), vecThreat + Vector(0, 0, 16), this, &tr, &filter );
+	AI_TraceLOS( vecPos + EyeOffset(ACT_IDLE), vecThreat + Vector(0, 0, 16), this, &tr, &filter );
 	if ( tr.fraction != 1.0 )
 		flNodeScore -= 0.5;
+
+	// Prefer nodes that can see our current position.
+	AI_TraceLOS(GetAbsOrigin() + EyeOffset(ACT_IDLE), vecPos + EyeOffset(ACT_IDLE), this, &tr, &filter);
+
+	// Value these nodes less the more we're more out of position and more the
+	// more we're at a comfortable range.
+	if (tr.fraction == 1.0)
+	{
+		float flEnemyToThis = (GetAbsOrigin() - vecThreat).Length();
+		flNodeScore -= fabsf(flEnemyToThis - flIdealDist) / flIdealDist;
+	}
 
 	return flNodeScore;
 }

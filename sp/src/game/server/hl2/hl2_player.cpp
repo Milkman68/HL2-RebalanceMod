@@ -2457,19 +2457,29 @@ int	CHL2_Player::OnTakeDamage( const CTakeDamageInfo &info )
 
 	gamestats->Event_PlayerDamage( this, info );
 
+	CBasePlayer *pPlayer = (CBasePlayer *)this;
+#if !defined( CLIENT_DLL )
+	IServerVehicle *pVehicle = pPlayer->GetVehicle();
+#else
+	IClientVehicle *pVehicle = pPlayer->GetVehicle();
 	// Player flinching!
-	float flPunch = -2;
 
-	if ( info.GetAttacker()->MyNPCPointer() != NULL )
+#endif
+
+	if ( !pVehicle )
 	{
-		float flDamageScale = MIN( RemapValClamped( info.GetDamage(), 0.0f, 25.0f, 0.0f, 5.0f ), 2.0f ); 
-		float flZoomScale = 1.0f - (( GetDefaultFOV() - GetFOV() ) * 0.01f);
+		float flPunch = -2;
+		if ( info.GetAttacker()->MyNPCPointer() != NULL )
+		{
+			float flDamageScale = MIN( RemapValClamped( info.GetDamage(), 0.0f, 25.0f, 0.0f, 5.0f ), 2.0f ); 
+			float flZoomScale = 1.0f - (( GetDefaultFOV() - GetFOV() ) * 0.01f);
 
-		flPunch = -hl2_flinch_scale.GetFloat() * flDamageScale * flZoomScale; 
+			flPunch = -hl2_flinch_scale.GetFloat() * flDamageScale * flZoomScale; 
+		}
+
+		m_Local.m_vecPunchAngle.SetX( flPunch );
+		m_Local.m_vecPunchAngle.SetY( random->RandomFloat( -flPunch, flPunch ) / 10 );
 	}
-
-	m_Local.m_vecPunchAngle.SetX( flPunch );
-	m_Local.m_vecPunchAngle.SetY( random->RandomFloat( -flPunch, flPunch ) / 10 );
 
 	return BaseClass::OnTakeDamage( playerDamage );
 }
@@ -2783,33 +2793,45 @@ int CHL2_Player::GiveAmmo( int nCount, int nAmmoIndex, bool bSuppressSound)
 		bCheckAutoSwitch = true;
 	}
 
-	int nAdd = BaseClass::GiveAmmo(nCount, nAmmoIndex, bSuppressSound);
-
-	if ( nCount > 0 && nAdd == 0 )
+	if ( Weapon_GetWpnForAmmo(nAmmoIndex) != NULL )
 	{
-		// we've been denied the pickup, display a hud icon to show that
-		CSingleUserRecipientFilter user( this );
-		user.MakeReliable();
-		UserMessageBegin( user, "AmmoDenied" );
-			WRITE_SHORT( nAmmoIndex );
-		MessageEnd();
-	}
+		int nAdd = BaseClass::GiveAmmo(nCount, nAmmoIndex, bSuppressSound);
 
-	//
-	// If I was dry on ammo for my best weapon and justed picked up ammo for it,
-	// autoswitch to my best weapon now.
-	//
-	if (bCheckAutoSwitch)
-	{
-		CBaseCombatWeapon *pWeapon = g_pGameRules->GetNextBestWeapon(this, GetActiveWeapon());
-
-		if ( pWeapon && pWeapon->GetPrimaryAmmoType(CBaseCombatWeapon::INDEX_CARRY) == nAmmoIndex )
+		if ( nCount > 0 && nAdd == 0 )
 		{
-			SwitchToNextBestWeapon(GetActiveWeapon());
+			// we've been denied the pickup, display a hud icon to show that
+			CSingleUserRecipientFilter user( this );
+			user.MakeReliable();
+			UserMessageBegin( user, "AmmoDenied" );
+				WRITE_SHORT( nAmmoIndex );
+			MessageEnd();
 		}
+
+		//
+		// If I was dry on ammo for my best weapon and justed picked up ammo for it,
+		// autoswitch to my best weapon now.
+		//
+		if (bCheckAutoSwitch)
+		{
+			CBaseCombatWeapon *pWeapon = g_pGameRules->GetNextBestWeapon(this, GetActiveWeapon());
+
+			if ( pWeapon && pWeapon->GetPrimaryAmmoType(CBaseCombatWeapon::INDEX_CARRY) == nAmmoIndex )
+			{
+				SwitchToNextBestWeapon(GetActiveWeapon());
+			}
+		}
+
+		return nAdd;
 	}
 
-	return nAdd;
+	// we don't have any use for this ammotype, display a hud icon to show that
+	CSingleUserRecipientFilter user( this );
+	user.MakeReliable();
+	UserMessageBegin( user, "AmmoUnused" );
+		WRITE_SHORT( nAmmoIndex );
+	MessageEnd();
+
+	return 0;
 }
 
 //-----------------------------------------------------------------------------

@@ -2316,48 +2316,73 @@ void CBaseCombatCharacter::Weapon_Equip( CBaseCombatWeapon *pWeapon )
 bool CBaseCombatCharacter::Weapon_EquipAmmoOnly( CBaseCombatWeapon *pWeapon )
 {
 	// Check for duplicates
-	for (int i=0;i<MAX_WEAPONS;i++) 
-	{
-		if ( m_hMyWeapons[i].Get() && FClassnameIs(m_hMyWeapons[i], pWeapon->GetClassname()) )
+//	for (int i=0;i<MAX_WEAPONS;i++) 
+//	{
+		bool bUsesPrimaryAmmoType = Weapon_GetWpnForAmmo(pWeapon->GetPrimaryAmmoType(CBaseCombatWeapon::INDEX_CARRY)) != NULL;
+		bool bUsesSecondaryAmmoType = Weapon_GetWpnForAmmo(pWeapon->GetSecondaryAmmoType()) != NULL;
+
+		if ( bUsesPrimaryAmmoType || bUsesSecondaryAmmoType )
 		{
-			float iNewClip = pWeapon->m_iClip1 * HL2GameRules()->GetAmmoQuantityScale(pWeapon->GetPrimaryAmmoType(CBaseCombatWeapon::INDEX_CARRY));
-			pWeapon->m_iClip1 = (int)iNewClip;
+			if ( pWeapon->m_bWasSwappedByPlayer )
+			{
+				// If this weapon has stored ammo, take ammo from the storage pool first before moving
+				// to taking from the clip.
+				if ( pWeapon->m_SwappedAmmunitionStorage.HasStoredAmmo() )
+					pWeapon->m_SwappedAmmunitionStorage.GiveAmmo_Equip_AmmoOnly(this);
+			}
+		/*	else
+			{
+				// This is here so the player doesn't lose ammo upon picking up a swapped weapon.
+				float iNewClip = pWeapon->m_iClip1 * HL2GameRules()->GetAmmoQuantityScale(pWeapon->GetPrimaryAmmoType(CBaseCombatWeapon::INDEX_CARRY));
+				pWeapon->m_iClip1 = (int)iNewClip;
 			
-			// Make sure we don't go below 0.
-			pWeapon->m_iClip1 = MAX( pWeapon->m_iClip1, 1 );
+				// Make sure we don't go below 0.
+				pWeapon->m_iClip1 = MAX( pWeapon->m_iClip1, 1 );
+			}*/
+
+		//	bool bTookPrimaryAmmo = false;
+		//	bool bTookSecondaryAmmo = false;
 			
 			// Just give the ammo from the clip
-			int	primaryGiven	= (pWeapon->UsesClipsForAmmo1()) ? pWeapon->m_iClip1 : pWeapon->GetPrimaryAmmoCount();
-			int secondaryGiven	= (pWeapon->UsesClipsForAmmo2()) ? pWeapon->m_iClip2 : pWeapon->GetSecondaryAmmoCount();
+			if ( bUsesPrimaryAmmoType )
+			{
+				int	primaryGiven	= (pWeapon->UsesClipsForAmmo1()) ? pWeapon->m_iClip1 : pWeapon->GetPrimaryAmmoCount();
+				int takenPrimary   = GiveAmmo( primaryGiven, pWeapon->GetPrimaryAmmoType(CBaseCombatWeapon::INDEX_CARRY)); 
+				if( pWeapon->UsesClipsForAmmo1() )
+				{
+					pWeapon->m_iClip1 -= takenPrimary;
+				}
+				else
+				{
+					pWeapon->SetPrimaryAmmoCount( pWeapon->GetPrimaryAmmoCount() - takenPrimary );
+				}
 
-			int takenPrimary   = GiveAmmo( primaryGiven, pWeapon->GetPrimaryAmmoType(CBaseCombatWeapon::INDEX_CARRY)); 
-			int takenSecondary = GiveAmmo( secondaryGiven, pWeapon->m_iSecondaryAmmoType); 
-			
-			if( pWeapon->UsesClipsForAmmo1() )
-			{
-				pWeapon->m_iClip1 -= takenPrimary;
-			}
-			else
-			{
-				pWeapon->SetPrimaryAmmoCount( pWeapon->GetPrimaryAmmoCount() - takenPrimary );
+		//		bTookPrimaryAmmo = takenPrimary > 0;
 			}
 
-			if( pWeapon->UsesClipsForAmmo2() )
+			if ( bUsesSecondaryAmmoType )
 			{
-				pWeapon->m_iClip2 -= takenSecondary;
+				int secondaryGiven	= (pWeapon->UsesClipsForAmmo2()) ? pWeapon->m_iClip2 : pWeapon->GetSecondaryAmmoCount();
+				int takenSecondary = GiveAmmo( secondaryGiven, pWeapon->m_iSecondaryAmmoType); 
+				if( pWeapon->UsesClipsForAmmo2() )
+				{
+					pWeapon->m_iClip2 -= takenSecondary;
+				}
+				else
+				{
+					pWeapon->SetSecondaryAmmoCount( pWeapon->GetSecondaryAmmoCount() - takenSecondary );
+				}
+
+		//		bTookSecondaryAmmo = takenSecondary > 0;
 			}
-			else
-			{
-				pWeapon->SetSecondaryAmmoCount( pWeapon->GetSecondaryAmmoCount() - takenSecondary );
-			}
-			
+
 			//Only succeed if we've taken ammo from the weapon
-			if ( takenPrimary > 0 || takenSecondary > 0 )
+		//	if ( bTookPrimaryAmmo || bTookSecondaryAmmo )
 				return true;
 			
 			return false;
 		}
-	}
+	//}
 
 	return false;
 }
@@ -2392,6 +2417,44 @@ void CBaseCombatCharacter::Weapon_Swap( CBaseCombatWeapon *pOldWeapon, CBaseComb
 	pOldWeapon->Drop( vecThrow );
 	Weapon_Detach( pOldWeapon );
 
+	int iOldweaponPrimaryAmmotype = pOldWeapon->GetPrimaryAmmoType(CBaseCombatWeapon::INDEX_CARRY);
+	int iOldweaponSecondaryAmmotype = pOldWeapon->GetSecondaryAmmoType();
+
+	if ( !Weapon_GetWpnForAmmo( iOldweaponPrimaryAmmotype ) || !Weapon_GetWpnForAmmo( iOldweaponSecondaryAmmotype ) )
+	{
+		pOldWeapon->m_SwappedAmmunitionStorage.StoreAmmoFromOwner(this);
+	}
+	else
+	{
+		if ( pOldWeapon->UsesClipsForAmmo1() )
+		{
+			int iOwnerAmmoCount = GetAmmoCount(iOldweaponPrimaryAmmotype);
+			int iMaxAmmo = GetAmmoDef()->MaxCarry(iOldweaponPrimaryAmmotype);
+			int iMaxAmmoDiff = iMaxAmmo - iOwnerAmmoCount;
+
+			int iRemoveFromClip = MIN(pOldWeapon->Clip1(), iMaxAmmoDiff);
+			if ( iRemoveFromClip > 0 )
+			{
+				pOldWeapon->m_iClip1 -= iRemoveFromClip;
+				GiveAmmo(iRemoveFromClip, iOldweaponPrimaryAmmotype);
+			}
+		}
+
+		if ( pOldWeapon->UsesClipsForAmmo2() )
+		{
+			int iOwnerAmmoCount = GetAmmoCount(iOldweaponSecondaryAmmotype);
+			int iMaxAmmo = GetAmmoDef()->MaxCarry(iOldweaponSecondaryAmmotype);
+			int iMaxAmmoDiff = iMaxAmmo - iOwnerAmmoCount;
+
+			int iRemoveFromClip = MIN(pOldWeapon->Clip2(), iMaxAmmoDiff);
+			if ( iRemoveFromClip > 0 )
+			{
+				pOldWeapon->m_iClip2 -= iRemoveFromClip;
+				GiveAmmo(iRemoveFromClip, iOldweaponSecondaryAmmotype);
+			}
+		}
+	}
+
 	// Add the new weapon to my weapon inventory
 	for (int i=0;i<MAX_WEAPONS;i++) 
 	{
@@ -2423,8 +2486,9 @@ CBaseCombatWeapon *CBaseCombatCharacter::Weapon_GetWpnForAmmo( int iAmmoIndex )
 		if ( !weapon )
 			continue;
 
-		if ( weapon->GetPrimaryAmmoType(CBaseCombatWeapon::INDEX_BASE) == iAmmoIndex )
+		if ( weapon->GetPrimaryAmmoType(CBaseCombatWeapon::INDEX_CARRY) == iAmmoIndex )
 			return weapon;
+
 		if ( weapon->GetSecondaryAmmoType() == iAmmoIndex )
 			return weapon;
 	}

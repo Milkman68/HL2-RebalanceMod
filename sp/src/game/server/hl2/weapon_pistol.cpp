@@ -90,10 +90,6 @@ public:
 
 	virtual float GetFireRate( void ) 
 	{
-		if( GetOwner() && GetOwner()->IsNPC() && !FClassnameIs( GetOwner(), "npc_combine_s" ) )
-		{
-			return 0.4;
-		}
 		return 0.17f; 
 	}
 

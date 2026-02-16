@@ -29,10 +29,6 @@ extern ConVar sk_npc_num_shotgun_pellets;
 extern ConVar hl2r_bullet_tracer_freq;
 extern ConVar hl2r_new_screenshake_effects;
 
-// HL1 Values
-#define VECTOR_CONE_SHOTGUN	Vector( 0.08716, 0.04362, 0.00  )// 10 degrees by 5 degrees
-#define VECTOR_CONE_DOUBLESHOTGUN Vector( 0.17365, 0.04362, 0.00 ) // 20 degrees by 5 degrees
-
 class CWeaponShotgun : public CBaseHLCombatWeapon
 {
 	DECLARE_DATADESC();
@@ -66,15 +62,8 @@ public:
 			// to be at least as deadly as she would be with her pistol to stay interesting (sjb)
 			return vitalAllyCone;
 		}
-		// if ( GetOwner() && pPlayer && m_bAltFiring)
-		// {
-			// cone = VECTOR_CONE_8DEGREES;
-		// }
-		// else
-		// {
-			cone = VECTOR_CONE_5DEGREES;	
-//		}
 
+		cone = VECTOR_CONE_7DEGREES;	
 		return cone;
 	}
 
@@ -83,6 +72,7 @@ public:
 
 	virtual float			GetMinRestTime();
 	virtual float			GetMaxRestTime();
+
 
 	virtual float			GetFireRate( void );
 
@@ -500,7 +490,7 @@ void CWeaponShotgun::PrimaryAttack( void )
 	pPlayer->ViewPunch( viewPunch );
 
 	if ( hl2r_new_screenshake_effects.GetBool() )
-		UTIL_ScreenShake( pPlayer->GetAbsOrigin(), 2.0f * viewPunch.Length(), 150.0, 0.25, 128, SHAKE_START );
+		UTIL_ScreenShake( pPlayer->GetAbsOrigin(), 3.0f * viewPunch.Length(), 150.0, 0.25, 128, SHAKE_START );
 
 	CSoundEnt::InsertSound( SOUND_COMBAT, GetAbsOrigin(), SOUNDENT_VOLUME_SHOTGUN, 0.2, GetOwner() );
 
@@ -580,7 +570,7 @@ void CWeaponShotgun::BurstThink( void )
 	pPlayer->ViewPunch( viewPunch );
 
 	if ( hl2r_new_screenshake_effects.GetBool() )
-		UTIL_ScreenShake( pPlayer->GetAbsOrigin(), 2.0f * viewPunch.Length(), 150.0, 0.25, 128, SHAKE_START );
+		UTIL_ScreenShake( pPlayer->GetAbsOrigin(), 3.0f * viewPunch.Length(), 150.0, 0.25, 128, SHAKE_START );
 
 	pPlayer->SetMuzzleFlashTime( gpGlobals->curtime + 1.0 );
 

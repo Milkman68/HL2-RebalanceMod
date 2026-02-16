@@ -43,12 +43,6 @@ public:
 	void	Operator_HandleAnimEvent( animevent_t *pEvent, CBaseCombatCharacter *pOperator );
 
 	float	GetFireRate( void );
-	
-	// Burst fire
-	int		GetBurstSize( void );
-	
-	// The amount of delay we want to have between bursts.
-	float 	GetBurstCycleRate( void ){ return 0.3f; }
 //	float	GetFireDurationDecayMult ( void ) { return 100; }
 	
 	// NPC
@@ -68,15 +62,8 @@ public:
 
 	virtual const Vector& GetBulletSpread( void )
 	{
-		// Handle NPCs first
-		static Vector npcCone;
-		npcCone = VECTOR_CONE_3DEGREES;
-		
-		if ( GetOwner() && GetOwner()->IsNPC() )
-			return npcCone;
-			
 		static Vector cone;
-		cone = VECTOR_CONE_1DEGREES;
+		cone = VECTOR_CONE_3DEGREES;
 		return cone;
 	}
 

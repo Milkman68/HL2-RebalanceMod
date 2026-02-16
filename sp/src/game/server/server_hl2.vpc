@@ -261,6 +261,7 @@ $Project "Server (HL2)"
 			$Folder	"HL2R"
 			{
 				$File	"hl2r\weapon_hmg.cpp"
+				$File	"hl2r\weapon_smg2.cpp"
 				$File	"hl2r\weapon_pulsecannon.cpp"
 				$File	"hl2r\weapon_combinesniper.cpp"
 

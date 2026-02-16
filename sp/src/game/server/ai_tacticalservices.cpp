@@ -666,10 +666,7 @@ int CAI_TacticalServices::FindLosNode( const Vector &vThreatPos, const Vector &v
 							// If there's no desired dist, use the first node given to us (This is default behavior)
 							if ( flDesiredDist > 0.0f )
 							{
-							//	NDebugOverlay::Box( nodeOrigin, Vector(5, 5, 5), -Vector(5, 5, 5), 255,0,0, true, 10 );
-								
 								float flNewScore = GetOuter()->GetLOSPositionScore( vThreatPos, vThreatEyePos, nodeOrigin, flAccumulatedDist, flDesiredDist );
-									
 								if ( flNewScore > flScore )
 								{
 									flScore = flNewScore;
@@ -743,10 +740,10 @@ int CAI_TacticalServices::FindLosNode( const Vector &vThreatPos, const Vector &v
 	
 	if ( iIdealNode != NULL )
 	{
-	/*	Vector nodeOrigin = GetNetwork()->GetNode(iIdealNode)->GetPosition(GetHullType());
-		NDebugOverlay::Box( nodeOrigin, GetOuter()->GetHullMins(), GetOuter()->GetHullMaxs(), 0,255,0, true, 10 );
+		Vector nodeOrigin = GetNetwork()->GetNode(iIdealNode)->GetPosition(GetHullType());
+	//	NDebugOverlay::Box( nodeOrigin, GetOuter()->GetHullMins(), GetOuter()->GetHullMaxs(), 0,0,255, true, 10 );
 	
-		DevMsg("Score is: %f\n", flScore );*/
+	//	DevMsg("Score is: %f\n", flScore );
 	
 		bool bThreatReachable = GetOuter()->GetPathDistanceToPoint( GetAbsOrigin(), vThreatPos ) != NULL;
 		if ( !bThreatReachable || flScore > 0.25 || flDesiredDist <= 0.0f )

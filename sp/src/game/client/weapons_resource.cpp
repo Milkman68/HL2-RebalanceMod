@@ -219,6 +219,7 @@ void WeaponsResource::LoadWeaponSprites( WEAPON_FILE_INFO_HANDLE hWeaponFileInfo
 			{
 				pWeaponInfo->iconAmmo->Precache();
 				pHudHR->SetHistoryGap( pWeaponInfo->iconAmmo->Height() );
+				CacheWeaponAmmoIcon( pWeaponInfo->iAmmoType, pWeaponInfo->iconAmmo);
 			}
 		}
 
@@ -230,13 +231,30 @@ void WeaponsResource::LoadWeaponSprites( WEAPON_FILE_INFO_HANDLE hWeaponFileInfo
 			{
 				pWeaponInfo->iconAmmo2->Precache();
 				pHudHR->SetHistoryGap( pWeaponInfo->iconAmmo2->Height() );
+				CacheWeaponAmmoIcon( pWeaponInfo->iAmmo2Type, pWeaponInfo->iconAmmo2);
 			}
 		}
 	}
 
 	FreeHudTextureList( tempList );
 }
+//-----------------------------------------------------------------------------
+// Purpose:
+//-----------------------------------------------------------------------------
+void WeaponsResource::CacheWeaponAmmoIcon(int iAmmoType, CHudTexture *pIcon)
+{
+	if ( m_cachedIcons.Count() )
+	{
+		for ( int i = 0; i < m_cachedIcons.Count(); i++ )
+		{
+			if ( m_cachedIcons[i]->ammotype == iAmmoType )
+				return;
+		}
+	}
 
+	cachedIcon_t *icon = new cachedIcon_t(iAmmoType, pIcon);
+	m_cachedIcons.AddToTail(icon);
+}
 //-----------------------------------------------------------------------------
 // Purpose: Helper function to return a Ammo pointer from id
 //-----------------------------------------------------------------------------
@@ -252,13 +270,34 @@ CHudTexture *WeaponsResource::GetAmmoIconFromWeapon( int iAmmoId )
 		if ( !weapon )
 			continue;
 
-		if ( weapon->GetPrimaryAmmoType(CBaseCombatWeapon::INDEX_BASE) == iAmmoId )
+		if ( weapon->GetPrimaryAmmoType(CBaseCombatWeapon::INDEX_CARRY) == iAmmoId )
 		{
 			return weapon->GetWpnData().iconAmmo;
 		}
 		else if ( weapon->GetSecondaryAmmoType() == iAmmoId )
 		{
 			return weapon->GetWpnData().iconAmmo2;
+		}
+	}
+
+	return NULL;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Helper function to return a Ammo pointer from id
+//-----------------------------------------------------------------------------
+CHudTexture *WeaponsResource::GetAmmoIconFromWeapon_Cached( int iAmmoId )
+{
+	C_BasePlayer *player = C_BasePlayer::GetLocalPlayer();
+	if ( !player )
+		return NULL;
+
+	if ( m_cachedIcons.Count() )
+	{
+		for ( int i = 0; i < m_cachedIcons.Count(); i++ )
+		{
+			if ( m_cachedIcons[i]->ammotype == iAmmoId )
+				return m_cachedIcons[i]->icon;
 		}
 	}
 
@@ -280,7 +319,7 @@ const FileWeaponInfo_t *WeaponsResource::GetWeaponFromAmmo( int iAmmoId )
 		if ( !weapon )
 			continue;
 
-		if ( weapon->GetPrimaryAmmoType(CBaseCombatWeapon::INDEX_BASE) == iAmmoId )
+		if ( weapon->GetPrimaryAmmoType(CBaseCombatWeapon::INDEX_CARRY) == iAmmoId )
 		{
 			return &weapon->GetWpnData();
 		}
@@ -333,6 +372,12 @@ char const *WeaponsResource::GetAmmoLabelFromID( int iAmmoId )
 
 	if ( iAmmoId == GetAmmoDef()->Index("bugbait") )
 		label = "#Valve_Hud_AMMO_bugbait";
+
+	if ( iAmmoId == GetAmmoDef()->Index("hmg") )
+		label = "#Valve_Hud_AMMO_hmg";
+
+	if ( iAmmoId == GetAmmoDef()->Index("smg2") )
+		label = "#Valve_Hud_AMMO_smg2";
 	
 	return label;
 }

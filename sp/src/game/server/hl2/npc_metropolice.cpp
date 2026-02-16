@@ -4562,7 +4562,7 @@ int CNPC_MetroPolice::TranslateSchedule( int scheduleType )
 			return SCHED_METROPOLICE_DRAW_PISTOL;
 		}
 
-		if( Weapon_OwnsThisType( "weapon_smg1" ) )
+		if( Weapon_OwnsThisType( "weapon_smg1" ) || Weapon_OwnsThisType( "weapon_smg2" ) )
 		{
 			if ( IsEnemyInAnAirboat() )
 			{
@@ -4604,8 +4604,18 @@ int CNPC_MetroPolice::TranslateSchedule( int scheduleType )
 		break;
 		
 	case SCHED_TAKE_COVER_FROM_ENEMY:
-		return TranslateSchedule( SCHED_METROPOLICE_TAKE_COVER_FROM_ENEMY ); 
-		
+		{
+			if ( !HasBaton() )
+			{
+				return TranslateSchedule( SCHED_METROPOLICE_TAKE_COVER_FROM_ENEMY ); 
+			}
+			else
+			{
+				return TranslateSchedule( SCHED_METROPOLICE_COMBAT_FAIL ); 
+			}
+		}
+		break;
+
 	case SCHED_METROPOLICE_TAKECOVER_FAILED:
 		{
 			if ( HasCondition( COND_CAN_RANGE_ATTACK1 ) && CanOccupyAttackSlot() )

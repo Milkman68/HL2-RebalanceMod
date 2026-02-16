@@ -21,6 +21,7 @@ enum
 	HISTSLOT_WEAP,
 	HISTSLOT_ITEM,
 	HISTSLOT_AMMODENIED,
+	HISTSLOT_AMMOUNUSED,
 };
 
 namespace vgui
@@ -73,6 +74,7 @@ public:
 	void	AddToHistory( C_BaseCombatWeapon *weapon );
 	void	MsgFunc_ItemPickup( bf_read &msg );
 	void	MsgFunc_AmmoDenied( bf_read &msg );
+	void	MsgFunc_AmmoUnused( bf_read &msg );
 	
 	void	CheckClearHistory( void );
 	void	SetHistoryGap( int iNewHistoryGap );
@@ -84,6 +86,7 @@ private:
 	int		m_iCurrentHistorySlot;
 	bool	m_bDoNotDraw;
 	wchar_t m_wcsAmmoFullMsg[16];
+	wchar_t m_wcsAmmoUnusedMsg[24];
 	bool	m_bNeedsDraw;
 
 	CPanelAnimationVarAliasType( float, m_flHistoryGap, "history_gap", "42", "proportional_float" );

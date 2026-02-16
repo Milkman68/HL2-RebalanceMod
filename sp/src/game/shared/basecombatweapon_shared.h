@@ -18,6 +18,7 @@
 #include "baseviewmodel_shared.h"
 #include "weapon_proficiency.h"
 #include "utlmap.h"
+#include "ammodef.h"
 
 #if defined( CLIENT_DLL )
 #define CBaseCombatWeapon C_BaseCombatWeapon
@@ -185,6 +186,7 @@ public:
 	virtual void			Equip( CBaseCombatCharacter *pOwner );
 	virtual void			Drop( const Vector &vecVelocity );
 
+	// Stores 
 	virtual	int				UpdateClientData( CBasePlayer *pPlayer );
 
 	virtual bool			IsAllowedToSwitch( void );
@@ -560,6 +562,110 @@ public:
 	bool					m_bInReload;			// Are we in the middle of a reload;
 	bool					m_bFireOnEmpty;			// True when the gun is empty and the player is still holding down the attack key(s)
 	bool					m_bFiringWholeClip;		// Are we in the middle of firing the whole clip;
+
+	// Stuff related to weapon swapping.
+	bool					m_bWasSwappedByPlayer;
+#if !defined( CLIENT_DLL )
+	struct AmmoStorage_t 
+	{
+	private:
+		int		primarytype;
+		int		secondarytype;
+
+		int		primaryamount;
+		int		secondaryamount;
+
+		CBaseCombatWeapon *m_pWeapon;
+	public:
+		void Init(CBaseCombatWeapon *pWeapon)
+		{
+			m_pWeapon = pWeapon;
+
+			primarytype = m_pWeapon->GetPrimaryAmmoType(INDEX_CARRY);
+			secondarytype = m_pWeapon->GetSecondaryAmmoType();
+
+			primaryamount = -1;
+			secondaryamount = -1;
+		}
+
+		// Ran when a weapon is dropped via swapping.
+		void StoreAmmoFromOwner( CBaseCombatCharacter *pOwner )
+		{
+			 bool bStorePrimary		= !pOwner->Weapon_GetWpnForAmmo( primarytype );
+			 bool bStoreSecondary	= !pOwner->Weapon_GetWpnForAmmo( secondarytype );
+
+			if ( bStorePrimary )
+			{
+				int iOwnerAmmoCount = pOwner->GetAmmoCount(primarytype);
+
+				if ( !m_pWeapon->UsesClipsForAmmo1() )
+					m_pWeapon->SetPrimaryAmmoCount(iOwnerAmmoCount);
+
+				primaryamount = iOwnerAmmoCount;
+				pOwner->RemoveAmmo( iOwnerAmmoCount, primarytype );
+			}
+
+			if ( bStoreSecondary )
+			{
+				int iOwnerAmmoCount = pOwner->GetAmmoCount(secondarytype);
+
+				if ( !m_pWeapon->UsesClipsForAmmo2() )
+					m_pWeapon->SetSecondaryAmmoCount(iOwnerAmmoCount);
+
+				secondaryamount = iOwnerAmmoCount;
+				pOwner->RemoveAmmo( iOwnerAmmoCount, secondarytype );
+			}
+		}
+
+		void GiveAmmo_Equip( CBaseCombatCharacter *pReciever )
+		{
+			if ( primaryamount > 0 )
+			{
+				pReciever->GiveAmmo(primaryamount, primarytype);
+				primaryamount = 0;
+			}
+
+			if ( secondaryamount > 0 )
+			{
+				pReciever->GiveAmmo(secondaryamount, secondarytype);
+				secondaryamount = 0;
+			}
+		}
+
+		void GiveAmmo_Equip_AmmoOnly( CBaseCombatCharacter *pReciever )
+		{
+			if ( primaryamount > 0 )
+			{
+				if ( m_pWeapon->UsesClipsForAmmo1() )
+				{
+					primaryamount -= pReciever->GiveAmmo(primaryamount, primarytype);
+				}
+				else
+				{
+					primaryamount = 0;
+				}
+			}
+
+			if ( secondaryamount > 0 )
+			{
+				if ( m_pWeapon->UsesClipsForAmmo2() )
+				{
+					secondaryamount -= pReciever->GiveAmmo(secondaryamount, secondarytype);
+				}
+				else
+				{
+					secondaryamount = 0;
+				}
+			}
+		}
+
+		bool HasStoredAmmo()
+		{
+			return primaryamount > 0 || secondaryamount > 0;
+		}
+	};
+	AmmoStorage_t			m_SwappedAmmunitionStorage;
+#endif
 	// Weapon art
 	CNetworkVar( int, m_iViewModelIndex );
 	CNetworkVar( int, m_iWorldModelIndex );

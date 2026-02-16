@@ -93,6 +93,10 @@ void CNPC_CombineS::Spawn( void )
 	{
 		bAlreadyElite = true;
 	}
+
+	Precache();
+	SetModel( STRING( GetModelName() ) );
+
 	HandleSpawnEquipment();
 
 	if( IsElite() )
@@ -126,13 +130,8 @@ void CNPC_CombineS::Spawn( void )
 			SetHealth( sk_combine_heavy_health.GetFloat() );
 			SetMaxHealth( sk_combine_heavy_health.GetFloat() );
 			SetKickDamage( sk_combine_heavy_kick.GetFloat() );
-
-			SetModelName( MAKE_STRING( "models/combine_heavy_soldier.mdl" ) );
 		}
 	}
-
-	Precache();
-	SetModel( STRING( GetModelName() ) );
 
 	CapabilitiesAdd( bits_CAP_ANIMATEDFACE );
 	CapabilitiesAdd( bits_CAP_MOVE_SHOOT );
@@ -173,6 +172,11 @@ void CNPC_CombineS::Precache()
 	else
 	{
 		m_fIsGuard = false;
+	}
+
+	if ( FStrEq(STRING(m_spawnEquipment), "weapon_rpg") || FStrEq(STRING(m_spawnEquipment), "weapon_hmg") )
+	{
+		SetModelName( MAKE_STRING( "models/combine_heavy_soldier.mdl" ) );
 	}
 
 	if( !GetModelName() )
@@ -583,7 +587,18 @@ void CNPC_CombineS::HandleSpawnEquipment( void )
 				// Use these as introductory maps
 				if ( FStrEq(STRING(gpGlobals->mapname), "d2_coast_12") || FStrEq(STRING(gpGlobals->mapname), "d2_prison_01") ) 
 				{
-					m_spawnEquipment = MAKE_STRING( "weapon_pistol" );
+					if ( random->RandomInt( 0, 100 ) < 80 )
+					{
+						m_spawnEquipment = MAKE_STRING( "weapon_pistol" );
+					}
+					else
+					{
+						m_spawnEquipment = MAKE_STRING( "weapon_smg2" );
+					}
+				}
+				else
+				{
+					m_spawnEquipment = MAKE_STRING( "weapon_smg2" );
 				}
 			}	
 		}

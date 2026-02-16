@@ -38,6 +38,7 @@ STUB_WEAPON_CLASS( weapon_crowbar, WeaponCrowbar, C_BaseHLBludgeonWeapon );
 STUB_WEAPON_CLASS( weapon_hmg, WeaponHMG, C_HLSelectFireMachineGun );
 STUB_WEAPON_CLASS( weapon_pulsecannon, WeaponPulseCannon, C_BaseHLCombatWeapon );
 STUB_WEAPON_CLASS( weapon_combinesniper, WeaponCombineSniper, C_BaseHLCombatWeapon );
+STUB_WEAPON_CLASS( weapon_smg2, WeaponSMG2, C_BaseHLCombatWeapon );
 #ifdef HL2_EPISODIC
 STUB_WEAPON_CLASS( weapon_hopwire, WeaponHopwire, C_BaseHLCombatWeapon );
 //STUB_WEAPON_CLASS( weapon_proto1, WeaponProto1, C_BaseHLCombatWeapon );

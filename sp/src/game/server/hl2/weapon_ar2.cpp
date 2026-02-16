@@ -31,9 +31,6 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-ConVar sk_weapon_ar2_burst_fire( "sk_weapon_ar2_burst_fire", "0" );
-ConVar sk_weapon_ar2_burst_fire_count( "sk_weapon_ar2_burst_fire_count", "0" );
-
 ConVar sk_weapon_ar2_alt_fire_radius( "sk_weapon_ar2_alt_fire_radius", "10" );
 ConVar sk_weapon_ar2_alt_fire_duration( "sk_weapon_ar2_alt_fire_duration", "2" );
 ConVar sk_weapon_ar2_alt_fire_mass( "sk_weapon_ar2_alt_fire_mass", "150" );
@@ -137,23 +134,13 @@ void CWeaponAR2::Precache( void )
 //-----------------------------------------------------------------------------
 float CWeaponAR2::GetFireRate( void )
 {
-/* 	if( GetOwner() && GetOwner()->IsNPC() )
-	{
-		return 0.14;
-	} */
-	return sk_weapon_ar2_burst_fire.GetBool() ? 0.025 : 0.125;
-}
-int	CWeaponAR2::GetBurstSize( void )
-{
-	return 3;
+	return 0.1;
 }
 //-----------------------------------------------------------------------------
 // Purpose: Handle grenade detonate in-air (even when no ammo is left)
 //-----------------------------------------------------------------------------
 void CWeaponAR2::ItemPostFrame( void )
 {
-	m_iFireMode = sk_weapon_ar2_burst_fire.GetBool() ? FIREMODE_3RNDBURST : FIREMODE_FULLAUTO;
-	
 	// See if we need to fire off our secondary round
 	if ( m_bShotDelayed )
 	{

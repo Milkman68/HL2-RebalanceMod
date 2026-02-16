@@ -6631,7 +6631,7 @@ bool CBasePlayer::BumpWeapon( CBaseCombatWeapon *pWeapon, bool bUsed )
 		if( Weapon_EquipAmmoOnly( pWeapon ) )
 		{
 			// Only remove me if I have no ammo left
-			if ( pWeapon->HasPrimaryAmmo() )
+			if ( pWeapon->HasAnyAmmo() )
 				return false;
 
 			UTIL_Remove( pWeapon );
@@ -6663,6 +6663,9 @@ bool CBasePlayer::BumpWeapon( CBaseCombatWeapon *pWeapon, bool bUsed )
 					m_hClosestReplacementWeapon = pWeapon;
 				}
 			}
+
+			if ( Weapon_GetWpnForAmmo(pWeapon->GetPrimaryAmmoType(CBaseCombatWeapon::INDEX_CARRY)) || Weapon_GetWpnForAmmo(pWeapon->GetSecondaryAmmoType()) )
+				Weapon_EquipAmmoOnly( pWeapon );
 
 			return false;
 		}

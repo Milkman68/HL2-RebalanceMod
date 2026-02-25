@@ -1370,10 +1370,10 @@ void CBaseEntity::ResolveFlyCollisionBounce( trace_t &trace, Vector &vecVelocity
 #endif//HL1_DLL
 
 	// Get the impact surface's elasticity.
-	float flSurfaceElasticity;
-	physprops->GetPhysicsProperties( trace.surface.surfaceProps, NULL, NULL, NULL, &flSurfaceElasticity );
+//	float flSurfaceElasticity;
+//	physprops->GetPhysicsProperties( trace.surface.surfaceProps, NULL, NULL, NULL, &flSurfaceElasticity );
 	
-	float flTotalElasticity = GetElasticity() * flSurfaceElasticity;
+	float flTotalElasticity = GetElasticity() * 0.25/* * flSurfaceElasticity*/;
 	if ( flMinTotalElasticity > 0.9f )
 	{
 		flMinTotalElasticity = 0.9f;
@@ -1390,7 +1390,7 @@ void CBaseEntity::ResolveFlyCollisionBounce( trace_t &trace, Vector &vecVelocity
 	float flSpeedSqr = DotProduct( vecVelocity, vecVelocity );
 
 	// Stop if on ground.
-	if ( trace.plane.normal.z > 0.7f )			// Floor
+	/*if ( trace.plane.normal.z > 0.7f )			// Floor
 	{
 		// Verify that we have an entity.
 		CBaseEntity *pEntity = trace.m_pEnt;
@@ -1431,11 +1431,11 @@ void CBaseEntity::ResolveFlyCollisionBounce( trace_t &trace, Vector &vecVelocity
 			PhysicsPushEntity( vecVelocity, &trace );
 		}
 	}
-	else
+	else*/
 	{
 		// If we get *too* slow, we'll stick without ever coming to rest because
 		// we'll get pushed down by gravity faster than we can escape from the wall.
-		if ( flSpeedSqr < ( 30 * 30 ) )
+		if ( flSpeedSqr < /*( 30 * 30 )*/ ( 10 * 10 ) )
 		{
 			// Reset velocities.
 			SetAbsVelocity( vec3_origin );

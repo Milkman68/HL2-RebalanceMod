@@ -462,7 +462,7 @@ void CWeaponPistol::AddViewKick( void )
 	pPlayer->ViewPunch( viewPunch );
 
 	float limit = PISTOL_ACCURACY_MAXIMUM_PENALTY_TIME;
-	float flShakeMult = RemapVal( m_flAccuracyPenalty, 0.0f, limit, 0.0f, 1.0f);
+	float flShakeMult = RemapVal( m_flAccuracyPenalty, 0.0f, limit, 0.2f, 1.0f);
 
 	if ( hl2r_new_screenshake_effects.GetBool() )
 		UTIL_ScreenShake( pPlayer->GetAbsOrigin(), 6.0f * flShakeMult, 150.0, 0.25, 128, SHAKE_START );

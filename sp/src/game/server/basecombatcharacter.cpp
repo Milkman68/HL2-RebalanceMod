@@ -2417,43 +2417,9 @@ void CBaseCombatCharacter::Weapon_Swap( CBaseCombatWeapon *pOldWeapon, CBaseComb
 	pOldWeapon->Drop( vecThrow );
 	Weapon_Detach( pOldWeapon );
 
-	int iOldweaponPrimaryAmmotype = pOldWeapon->GetPrimaryAmmoType(CBaseCombatWeapon::INDEX_CARRY);
-	int iOldweaponSecondaryAmmotype = pOldWeapon->GetSecondaryAmmoType();
-
-	if ( !Weapon_GetWpnForAmmo( iOldweaponPrimaryAmmotype ) || !Weapon_GetWpnForAmmo( iOldweaponSecondaryAmmotype ) )
-	{
-		pOldWeapon->m_SwappedAmmunitionStorage.StoreAmmoFromOwner(this);
-	}
-	else
-	{
-		if ( pOldWeapon->UsesClipsForAmmo1() )
-		{
-			int iOwnerAmmoCount = GetAmmoCount(iOldweaponPrimaryAmmotype);
-			int iMaxAmmo = GetAmmoDef()->MaxCarry(iOldweaponPrimaryAmmotype);
-			int iMaxAmmoDiff = iMaxAmmo - iOwnerAmmoCount;
-
-			int iRemoveFromClip = MIN(pOldWeapon->Clip1(), iMaxAmmoDiff);
-			if ( iRemoveFromClip > 0 )
-			{
-				pOldWeapon->m_iClip1 -= iRemoveFromClip;
-				GiveAmmo(iRemoveFromClip, iOldweaponPrimaryAmmotype);
-			}
-		}
-
-		if ( pOldWeapon->UsesClipsForAmmo2() )
-		{
-			int iOwnerAmmoCount = GetAmmoCount(iOldweaponSecondaryAmmotype);
-			int iMaxAmmo = GetAmmoDef()->MaxCarry(iOldweaponSecondaryAmmotype);
-			int iMaxAmmoDiff = iMaxAmmo - iOwnerAmmoCount;
-
-			int iRemoveFromClip = MIN(pOldWeapon->Clip2(), iMaxAmmoDiff);
-			if ( iRemoveFromClip > 0 )
-			{
-				pOldWeapon->m_iClip2 -= iRemoveFromClip;
-				GiveAmmo(iRemoveFromClip, iOldweaponSecondaryAmmotype);
-			}
-		}
-	}
+	bool bStorePrimary = false; bool bStoreSecondary = false;
+	pOldWeapon->m_SwappedAmmunitionStorage.ShouldStoreAmmo(this, pNewWeapon, bStorePrimary, bStoreSecondary);
+	pOldWeapon->m_SwappedAmmunitionStorage.StoreReserveAmmoFromOwner(this, bStorePrimary, bStoreSecondary);
 
 	// Add the new weapon to my weapon inventory
 	for (int i=0;i<MAX_WEAPONS;i++) 
@@ -2473,6 +2439,48 @@ void CBaseCombatCharacter::Weapon_Swap( CBaseCombatWeapon *pOldWeapon, CBaseComb
 	WeaponProficiency_t proficiency;
 	proficiency = CalcWeaponProficiency( pNewWeapon );
 	SetCurrentWeaponProficiency( proficiency );
+
+	if ( !bStorePrimary && pOldWeapon->UsesClipsForAmmo1() )
+	{
+		int iOldweaponPrimaryAmmotype = pOldWeapon->GetPrimaryAmmoType(CBaseCombatWeapon::INDEX_CARRY);
+
+		int iOwnerAmmoCount = GetAmmoCount(iOldweaponPrimaryAmmotype);
+		int iMaxAmmo = GetAmmoDef()->MaxCarry(iOldweaponPrimaryAmmotype);
+		int iMaxAmmoDiff = iMaxAmmo - iOwnerAmmoCount;
+
+		int iRemoveFromClip = MIN(pOldWeapon->Clip1(), iMaxAmmoDiff);
+		if (iRemoveFromClip > 0)
+		{
+			pOldWeapon->m_iClip1 -= iRemoveFromClip;
+			GiveAmmo(iRemoveFromClip, iOldweaponPrimaryAmmotype);
+		}
+	}
+
+	if ( !bStoreSecondary && pOldWeapon->UsesClipsForAmmo1() )
+	{
+		int iOldweaponSecondaryAmmotype = pOldWeapon->GetSecondaryAmmoType();
+
+		int iOwnerAmmoCount = GetAmmoCount(iOldweaponSecondaryAmmotype);
+		int iMaxAmmo = GetAmmoDef()->MaxCarry(iOldweaponSecondaryAmmotype);
+		int iMaxAmmoDiff = iMaxAmmo - iOwnerAmmoCount;
+
+		int iRemoveFromClip = MIN(pOldWeapon->Clip2(), iMaxAmmoDiff);
+		if (iRemoveFromClip > 0)
+		{
+			pOldWeapon->m_iClip2 -= iRemoveFromClip;
+			GiveAmmo(iRemoveFromClip, iOldweaponSecondaryAmmotype);
+		}
+	}
+
+	if ( !pNewWeapon->m_bWasSwappedByPlayer && pNewWeapon->GetMaxClip1() == -1 )
+	{
+		GiveAmmo(pNewWeapon->GetDefaultClip1(), pNewWeapon->GetPrimaryAmmoType(CBaseCombatWeapon::INDEX_CARRY)); 
+	}
+
+	if ( !pNewWeapon->m_bWasSwappedByPlayer && pNewWeapon->GetMaxClip2() == -1 )
+	{
+		GiveAmmo(pNewWeapon->GetDefaultClip2(), pNewWeapon->GetSecondaryAmmoType());
+	}
 }
 
 //-----------------------------------------------------------------------------

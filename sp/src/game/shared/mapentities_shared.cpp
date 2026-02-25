@@ -7,6 +7,7 @@
 
 #include "cbase.h"
 #include "mapentities_shared.h"
+#include "filesystem.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -336,4 +337,325 @@ bool CEntityMapData::SetValue( const char *keyName, char *NewValue, int nKeyInst
 	}
 
 	return false;
+}
+
+//-----------------------------------------------------------------------------
+//
+//-----------------------------------------------------------------------------
+static char m_szTargetKey[256];
+bool ParseConditional( char *pToken, char *pOperator, char *pRight)
+{
+
+	pToken = strtok(NULL, " ");
+
+	// Go to the next token to get the operator
+	Q_strcpy(pOperator, pToken);
+
+	pToken = strtok(NULL, " ");
+
+	// Go to the next token to get the right side
+	Q_strcpy(pRight, pToken);
+
+	return true;
+}
+
+bool ParseConditional( char *pToken, char *pLeft, char *pOperator, char *pRight)
+{
+	pToken = strtok(NULL, " ");
+
+	// Go to the next token to get the left side
+	Q_strcpy(pLeft, pToken);
+
+	pToken = strtok(NULL, " ");
+
+	// Go to the next token to get the operator
+	Q_strcpy(pOperator, pToken);
+
+	pToken = strtok(NULL, " ");
+
+	// Go to the next token to get the right side
+	Q_strcpy(pRight, pToken);
+
+	return true;
+}
+
+bool EvaluateConditional( const char *pLeft, const char *pOperator, const char *pRight)
+{
+	// Partially equal
+	if ( !Q_stricmp(pOperator, "=") )
+		return V_stristr( pLeft, pRight ) != 0;
+
+	// Fully equal
+	if ( !Q_stricmp(pOperator, "==") )
+		return !(Q_stricmp( pLeft, pRight ));
+
+	// Not partially equal
+	if ( !Q_stricmp(pOperator, "!=") )
+		return V_stristr( pLeft, pRight ) == 0;
+
+	// Not fully equal
+	if ( !Q_stricmp(pOperator, "!==") )
+		return Q_stricmp( pLeft, pRight ) != 0;
+
+	// Lesser than
+	if ( !Q_stricmp(pOperator, "<") )
+		return atof(pLeft) < atof(pRight);
+
+	// Lesser than or equal to
+	if ( !Q_stricmp(pOperator, "<=") )
+		return atof(pLeft) <= atof(pRight);
+
+	// Greater than
+	if ( !Q_stricmp(pOperator, ">") )
+		return atof(pLeft) > atof(pRight);
+
+	// Greater than or equal to
+	if ( !Q_stricmp(pOperator, ">=") )
+		return atof(pLeft) >= atof(pRight);
+
+	return -1;
+}
+
+bool GetKeyConditional(char *pszToken)
+{
+	if (!Q_stricmp(pszToken, "mapname"))
+		return true;
+
+	if (!Q_stricmp(pszToken, "key_get"))
+		return true;
+
+	if (V_stristr(pszToken, "rnd_chance"))
+		return true;
+
+	return false;
+}
+
+bool EvaluateKeyConditional(char *pszToken, CEntityMapData *pEntData)
+{
+	if (!Q_stricmp(pszToken, "mapname"))
+	{
+		char szOperator[4]; char szRight[256];
+		ParseConditional(pszToken, szOperator, szRight);
+#ifdef CLIENT_DLL
+		return EvaluateConditional(engine->GetLevelName(), szOperator, szRight);
+#else
+		return EvaluateConditional(STRING(gpGlobals->mapname), szOperator, szRight);
+#endif
+	}
+
+	if (!Q_stricmp(pszToken, "key_get"))
+	{
+		char szLeft[256]; char szOperator[4]; char szRight[256];
+		ParseConditional(pszToken, szLeft, szOperator, szRight);
+
+		char szActualKeyValue[MAPKEY_MAXLENGTH];
+		if (pEntData->ExtractValue(szLeft, szActualKeyValue))
+		{
+			return EvaluateConditional(szActualKeyValue, szOperator, szRight);
+		}
+	}
+
+	if (V_stristr(pszToken, "rnd_chance"))
+	{
+		if (random->RandomInt(0, 100) <= atof(pszToken))
+			return true;
+	}
+
+	return false;
+}
+
+enum eConnectorType
+{
+	CONNECTOR_AND = 0,
+	CONNECTOR_OR,
+};
+
+struct ConditionsBlock_t
+{
+	CUtlVector<bool> conditions;	// Conditions within this block
+	CUtlVector<eConnectorType> connectors;
+
+	bool AllConditionsTrue()
+	{
+		bool bRetAnd = true;
+		bool bRetOr = false;
+
+		for (int i = 0; i < conditions.Count(); i++)
+		{
+			int iConnectorIndex = i - 1;
+			if ( iConnectorIndex == -1 )
+			{
+				if ( !conditions[i] )
+					bRetAnd = false;
+			}
+			else if ( connectors[iConnectorIndex] == CONNECTOR_AND )
+			{
+				// If a single AND is false then all are false.
+				if ( !conditions[i] )
+					bRetAnd = false;
+			}
+			else if ( connectors[iConnectorIndex] == CONNECTOR_OR )
+			{	
+				// If a single OR is true then all are true.
+				if ( conditions[i] )
+					bRetOr = true;
+			}
+		}
+
+		return bRetAnd || bRetOr;
+	}
+};
+
+#define MAX_DEPTH 10
+ConVar hl2r_entedit_debug( "hl2r_entedit_debug", "0" );
+
+bool ParseKeyHeader(KeyValues *pVarKey, CEntityMapData *pEntData)
+{
+	// Iterate through all tokens in our key header
+	ConditionsBlock_t headerConditions[MAX_DEPTH];
+	int iDepth = 0;
+	int iMaxDepth = 0;
+
+	char szHeader[256];
+	Q_strcpy( szHeader, pVarKey->GetName() );
+	for ( char *pszToken = strtok( szHeader, " " ); pszToken != NULL; pszToken = strtok( NULL, " " ))
+	{
+		if (!Q_stricmp(pszToken, "("))
+		{
+			iDepth++;
+			iMaxDepth++;
+
+			continue;
+		}
+
+		if (!Q_stricmp(pszToken, ")"))
+		{
+			iDepth--;
+			headerConditions[iDepth].conditions.AddToTail( headerConditions[iDepth+1].AllConditionsTrue() );
+			continue;
+		}
+
+		if (!Q_stricmp(pszToken, "&&"))
+		{
+			headerConditions[iDepth].connectors.AddToTail(CONNECTOR_AND);
+			continue;
+		}
+
+		if (!Q_stricmp(pszToken, "||"))
+		{
+			headerConditions[iDepth].connectors.AddToTail(CONNECTOR_OR);
+			continue;
+		}
+
+		if (!Q_stricmp(pszToken, "key_replace"))
+		{
+			// Go to the next token to get our target value
+			pszToken = strtok(NULL, " ");
+			Q_strcpy(m_szTargetKey, pszToken);
+
+			continue;
+		}
+
+		if ( GetKeyConditional(pszToken) )
+		{
+			headerConditions[iDepth].conditions.AddToTail(EvaluateKeyConditional(pszToken, pEntData));
+			continue;
+		}
+
+		Error("Warning! Entedit header token [%s] not a valid keword!\n", pszToken);
+	}
+
+	if ( iDepth != 0 )
+	{
+		Error("Warning! Entedit header [%s] has open parenthesis!\n", pVarKey->GetName());
+	}
+	
+	if ( hl2r_entedit_debug.GetBool() )
+	{
+		DevMsg("Key is: %s\n", pVarKey->GetName());
+		for (int i = iMaxDepth; i >= 0; i-- )
+		{
+			DevMsg("Key block [%i] is:	", i);
+			for (int j = 0; j < headerConditions[i].conditions.Count(); j++ )
+			{
+				if ( headerConditions[i].conditions[j] )
+				{
+					DevMsg("TRUE ");
+				}
+				else
+				{
+					DevMsg("FALSE ");
+				}
+
+				if ( j+1 != headerConditions[i].conditions.Count() )
+				{
+					if ( headerConditions[i].connectors[j] == CONNECTOR_AND )
+					{
+						DevMsg("&& ");
+					}
+					else if ( headerConditions[i].connectors[j] == CONNECTOR_OR )
+					{
+						DevMsg("|| ");
+					}
+				}
+			}
+			DevMsg("\n");
+		}
+		DevMsg("\n");
+	}
+
+	if ( headerConditions[0].conditions.Count() && !headerConditions[0].AllConditionsTrue() )
+		return false;
+
+	return true;
+}
+
+void ParseKey(KeyValues *pVarKey, CEntityMapData *pEntData)
+{
+	char szActualKeyName[MAPKEY_MAXLENGTH];
+	if ( !pEntData->ExtractValue(m_szTargetKey, szActualKeyName) )
+		return;
+
+	char szTargetKeyName[MAPKEY_MAXLENGTH];
+	Q_strcpy(szTargetKeyName, pVarKey->GetName());
+
+	if ( Q_stricmp(szActualKeyName, szTargetKeyName) )
+		return;
+
+	char szTargetKeyValue[MAPKEY_MAXLENGTH];
+	Q_strcpy(szTargetKeyValue, pVarKey->GetString());
+
+	pEntData->SetValue( m_szTargetKey, szTargetKeyValue );
+}
+
+void Parse(KeyValues *pData, CEntityMapData *pEntData)
+{
+	for ( KeyValues *sub = pData->GetFirstSubKey(); sub; sub = sub->GetNextKey() )
+	{
+		// If we contain a string, we're not a header.
+		if ( !Q_stricmp( sub->GetString(), "") )
+		{
+			if ( ParseKeyHeader(sub, pEntData) )
+				Parse(sub, pEntData);
+		}
+		else
+		{
+			ParseKey(sub, pEntData);
+		}
+	}
+}
+
+bool MapEntity_ModifyEntityData( CEntityMapData *pEntData ) 
+{
+#if 1
+	KeyValues *m_pEntEditFile = new KeyValues( "entedit.txt" );
+	m_pEntEditFile->LoadFromFile( filesystem, "scripts/entedit.txt", "GAME" );
+	if ( m_pEntEditFile == NULL )
+		return true;
+
+	Parse(m_pEntEditFile, pEntData);
+
+	m_pEntEditFile->deleteThis();
+#endif
+	return true;
 }

@@ -61,8 +61,8 @@ void CGrenadeAR2::Spawn( void )
 	SetCollisionGroup( COLLISION_GROUP_PROJECTILE );
 
 	SetModel( "models/Weapons/ar2_grenade.mdl");
-	UTIL_SetSize(this, Vector(-3, -3, -3), Vector(3, 3, 3));
-//	UTIL_SetSize(this, Vector(0, 0, 0), Vector(0, 0, 0));
+//	UTIL_SetSize(this, Vector(-3, -3, -3), Vector(3, 3, 3));
+	UTIL_SetSize(this, Vector(0, 0, 0), Vector(0, 0, 0));
 
 	SetUse( &CGrenadeAR2::DetonateUse );
 	SetTouch( &CGrenadeAR2::GrenadeAR2Touch );
@@ -80,11 +80,13 @@ void CGrenadeAR2::Spawn( void )
 
 	m_DmgRadius		= sk_smg1_grenade_radius.GetFloat();
 	m_takedamage	= DAMAGE_YES;
-	m_bIsLive		= true;
+//	m_bIsLive		= true;
 	m_iHealth		= 1;
 
+	m_flDetonateTime = -1.0f;
+
 	SetGravity( UTIL_ScaleForGravity( 400 ) );	// use a lower gravity for grenades to make them easier to see
-	SetFriction( 0.8 );
+	SetFriction( 0.0 );
 	SetSequence( 0 );
 
 	m_fDangerRadius = 100;
@@ -131,7 +133,7 @@ void CGrenadeAR2::GrenadeAR2Think( void )
 	if (!m_bIsLive)
 	{
 		// Go live after a short delay
-		if (m_fSpawnTime + MAX_AR2_NO_COLLIDE_TIME < gpGlobals->curtime)
+		if (m_fSpawnTime + m_flDetonateTime < gpGlobals->curtime)
 		{
 			m_bIsLive  = true;
 		}
@@ -141,8 +143,7 @@ void CGrenadeAR2::GrenadeAR2Think( void )
 	// the floor already when I went solid so blow up
 	if (m_bIsLive)
 	{
-		if (GetAbsVelocity().Length() == 0.0 ||
-			GetGroundEntity() != NULL )
+		if ( (m_flDetonateTime > 0 && m_bIsLive) || GetAbsVelocity().Length() == 0.0 || GetGroundEntity() != NULL )
 		{
 			Detonate();
 		}
@@ -175,7 +176,7 @@ void CGrenadeAR2::GrenadeAR2Touch( CBaseEntity *pOther )
 	{
 		Detonate();
 	}
-	else
+/*	else
 	{
 		// If I'm not live, only blow up if I'm hitting an chacter that
 		// is not the owner of the weapon
@@ -185,7 +186,7 @@ void CGrenadeAR2::GrenadeAR2Touch( CBaseEntity *pOther )
 			m_bIsLive = true;
 			Detonate();
 		}
-	}
+	}*/
 }
 
 void CGrenadeAR2::Detonate(void)

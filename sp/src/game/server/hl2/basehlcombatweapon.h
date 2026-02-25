@@ -84,7 +84,7 @@ public:
 
 	virtual int		GetBurstSize( void ) { return 3; };
 
-	void			BurstThink( void );
+	virtual void	BurstThink( void );
 
 	virtual void	PrimaryAttack( void );
 	virtual void	SecondaryAttack( void );

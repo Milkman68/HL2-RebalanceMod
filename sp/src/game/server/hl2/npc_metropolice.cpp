@@ -3510,7 +3510,7 @@ int CNPC_MetroPolice::SelectCombatSchedule()
 	if ( nResult != SCHED_NONE )
 		return nResult;
 
-	if( !m_fWeaponDrawn && !Weapon_OwnsThisType( "weapon_smg1" ) )
+	if( !m_fWeaponDrawn && !Weapon_OwnsThisType( "weapon_smg1" ) && !Weapon_OwnsThisType( "weapon_smg2" ) )
 	{
 		return SCHED_METROPOLICE_DRAW_PISTOL;
 	}
@@ -4414,7 +4414,7 @@ int CNPC_MetroPolice::SelectSchedule( void )
 			break;
 
 		case NPC_STATE_COMBAT:
-			if (!IsEnemyInAnAirboat() || !Weapon_OwnsThisType( "weapon_smg1" ) )
+			if (!IsEnemyInAnAirboat() || !Weapon_OwnsThisType( "weapon_smg1" ) || !Weapon_OwnsThisType( "weapon_smg2" ) )
 			{
 				int nResult = SelectCombatSchedule();
 				if ( nResult != SCHED_NONE )
@@ -4557,7 +4557,7 @@ int CNPC_MetroPolice::TranslateSchedule( int scheduleType )
 			return TranslateSchedule( SCHED_METROPOLICE_HIDE_AND_RELOAD );
 		}
 
-		if( !m_fWeaponDrawn && !Weapon_OwnsThisType( "weapon_smg1" ))
+		if( !m_fWeaponDrawn && !Weapon_OwnsThisType( "weapon_smg1" ) && !Weapon_OwnsThisType( "weapon_smg2" ))
 		{
 			return SCHED_METROPOLICE_DRAW_PISTOL;
 		}

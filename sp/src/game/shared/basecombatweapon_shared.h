@@ -566,7 +566,7 @@ public:
 	// Stuff related to weapon swapping.
 	bool					m_bWasSwappedByPlayer;
 #if !defined( CLIENT_DLL )
-	struct AmmoStorage_t 
+	struct ReserveAmmoStorage_t 
 	{
 	private:
 		int		primarytype;
@@ -589,11 +589,21 @@ public:
 		}
 
 		// Ran when a weapon is dropped via swapping.
-		void StoreAmmoFromOwner( CBaseCombatCharacter *pOwner )
+		void ShouldStoreAmmo( CBaseCombatCharacter *pOwner, CBaseCombatWeapon *pNewWeapon, bool &bStorePrimary, bool &bStoreSecondary )
 		{
-			 bool bStorePrimary		= !pOwner->Weapon_GetWpnForAmmo( primarytype );
-			 bool bStoreSecondary	= !pOwner->Weapon_GetWpnForAmmo( secondarytype );
+			bool bNewWeaponUsesPrimary = pNewWeapon->GetPrimaryAmmoType(CBaseCombatWeapon::INDEX_CARRY) == primarytype;
+			bool bNewWeaponUsesSecondary = pNewWeapon->GetSecondaryAmmoType() == secondarytype;
 
+			bool bExistingWeaponUsesPrimary = pOwner->Weapon_GetWpnForAmmo( primarytype ) != NULL;
+			bool bExistingWeaponUsesSecondary = pOwner->Weapon_GetWpnForAmmo( secondarytype ) != NULL;
+
+			bStorePrimary	= !bNewWeaponUsesPrimary && !bExistingWeaponUsesPrimary;
+			bStoreSecondary	= !bNewWeaponUsesSecondary && !bExistingWeaponUsesSecondary;
+		}
+
+		// Ran when a weapon is dropped via swapping.
+		void StoreReserveAmmoFromOwner( CBaseCombatCharacter *pOwner, bool bStorePrimary, bool bStoreSecondary )
+		{
 			if ( bStorePrimary )
 			{
 				int iOwnerAmmoCount = pOwner->GetAmmoCount(primarytype);
@@ -640,10 +650,6 @@ public:
 				{
 					primaryamount -= pReciever->GiveAmmo(primaryamount, primarytype);
 				}
-				else
-				{
-					primaryamount = 0;
-				}
 			}
 
 			if ( secondaryamount > 0 )
@@ -651,10 +657,6 @@ public:
 				if ( m_pWeapon->UsesClipsForAmmo2() )
 				{
 					secondaryamount -= pReciever->GiveAmmo(secondaryamount, secondarytype);
-				}
-				else
-				{
-					secondaryamount = 0;
 				}
 			}
 		}
@@ -664,7 +666,7 @@ public:
 			return primaryamount > 0 || secondaryamount > 0;
 		}
 	};
-	AmmoStorage_t			m_SwappedAmmunitionStorage;
+	ReserveAmmoStorage_t			m_SwappedAmmunitionStorage;
 #endif
 	// Weapon art
 	CNetworkVar( int, m_iViewModelIndex );

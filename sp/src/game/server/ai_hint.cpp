@@ -595,7 +595,9 @@ CAI_Hint* CAI_HintManager::CreateHint( HintNodeData *pNodeData, const char *pMap
 		// First, parse the mapdata chunk we were passed
 		if ( pMapData )
 		{
-			CEntityMapData entData( (char*)pMapData );
+			CEntityMapData entData( (char*)pMapData, 9999999 );
+			MapEntity_ModifyEntityData(&entData);
+
 			pHint->ParseMapData( &entData );
 
 			// Restore the desired classname (parsing the mapdata stomps it)

@@ -28,13 +28,13 @@ public:
 	
 	void	AddViewKick( void );
 	void	SecondaryAttack( void );
-	float	GetFireRate( void ) { return 0.06f; }
+	float	GetFireRate( void ) { return 0.08f; }
 	int		CapabilitiesGet( void ) { return bits_CAP_WEAPON_RANGE_ATTACK1; }
 
 
 	virtual const Vector& GetBulletSpread( void )
 	{
-		static const Vector cone = VECTOR_CONE_9DEGREES / 2; // 4.5
+		static const Vector cone = VECTOR_CONE_1DEGREES;
 		return cone;
 	}
 	
@@ -113,6 +113,8 @@ CWeaponSMG2::CWeaponSMG2( )
 {
 	m_fMinRange1		= 0;
 	m_fMaxRange1		= 1000;
+
+	m_bAltFiresUnderwater = true;
 }
 //-----------------------------------------------------------------------------
 // Purpose: 

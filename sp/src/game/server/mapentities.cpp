@@ -18,6 +18,7 @@
 #include "datacache/imdlcache.h"
 #include "world.h"
 #include "toolframework/iserverenginetools.h"
+#include "filesystem.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -525,6 +526,8 @@ void MapEntity_PrecacheEntity( const char *pEntData, int &nStringSize )
 		Error( "classname missing from entity!\n" );
 	}
 
+	MapEntity_ModifyEntityData(&entData);
+
 	// Construct via the LINK_ENTITY_TO_CLASS factory.
 	CBaseEntity *pEntity = CreateEntityByName(className);
 
@@ -547,7 +550,7 @@ void MapEntity_PrecacheEntity( const char *pEntData, int &nStringSize )
 //-----------------------------------------------------------------------------
 const char *MapEntity_ParseEntity(CBaseEntity *&pEntity, const char *pEntData, IMapEntityFilter *pFilter)
 {
-	CEntityMapData entData( (char*)pEntData );
+	CEntityMapData entData( (char*)pEntData, 9999999 ); // HACK
 	char className[MAPKEY_MAXLENGTH];
 	
 	if (!entData.ExtractValue("classname", className))
@@ -555,9 +558,12 @@ const char *MapEntity_ParseEntity(CBaseEntity *&pEntity, const char *pEntData, I
 		Error( "classname missing from entity!\n" );
 	}
 
+	MapEntity_ModifyEntityData(&entData);
+
 	pEntity = NULL;
 	if ( !pFilter || pFilter->ShouldCreateEntity( className ) )
 	{
+
 		//
 		// Construct via the LINK_ENTITY_TO_CLASS factory.
 		//
@@ -597,5 +603,3 @@ const char *MapEntity_ParseEntity(CBaseEntity *&pEntity, const char *pEntData, I
 	//
 	return entData.CurrentBufferPosition();
 }
-
-

@@ -497,7 +497,7 @@ void CWeaponAR2::AddViewKick( void )
 	
 	DoMachineGunKick( pPlayer, MAX_VERTICAL_KICK, m_fFireDuration + 1.0f, SLIDE_LIMIT );
 
-	float flShakeScale = RemapValClamped( m_fFireDuration, 0.0f, 15.0f, 2.0f, 10.0f );
+	float flShakeScale = RemapValClamped( m_fFireDuration, 0.0f, 15.0f, 4.0f, 10.0f );
 
 	if ( hl2r_new_screenshake_effects.GetBool() )
 		UTIL_ScreenShake( pPlayer->GetAbsOrigin(), flShakeScale, 150.0, 0.25, 128, SHAKE_START );

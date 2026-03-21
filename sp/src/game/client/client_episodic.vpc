@@ -174,7 +174,9 @@ $Project "Client (Episodic)"
 			}
 
 			$File	"hl2\c_npc_turret_floor.cpp"
+			$File	"hl2\c_combine_mine.cpp"
 			$File	"hl2\c_weapon_rpg.cpp"
+			$File	"hl2r\c_weapon_sniperrifle.cpp"
 			$File	"hl2r\hud_weapon_swap.cpp"
 		}
 	}

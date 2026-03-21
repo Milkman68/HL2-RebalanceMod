@@ -2466,7 +2466,7 @@ int	CHL2_Player::OnTakeDamage( const CTakeDamageInfo &info )
 
 #endif
 
-	if ( !pVehicle )
+	if ( !(GetFlags() & FL_GODMODE) && !pVehicle )
 	{
 		float flPunch = -2;
 		if ( info.GetAttacker()->MyNPCPointer() != NULL )

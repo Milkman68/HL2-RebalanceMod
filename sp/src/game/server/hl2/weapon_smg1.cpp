@@ -53,7 +53,7 @@ public:
 	bool	Reload( void );
 
 	float	GetFireRate( void ) 
-	{ return 0.05f; }	// 13.3hz
+	{ return 0.06f; }	// 13.3hz
 	int		CapabilitiesGet( void ) { return bits_CAP_WEAPON_RANGE_ATTACK1; }
 	int 	WeaponRangeAttack2Condition( float flDot, float flDist );
 	Activity	GetPrimaryAttackActivity( void );

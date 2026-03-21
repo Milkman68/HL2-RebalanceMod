@@ -3277,19 +3277,19 @@
     <ClCompile Include="..\..\game\shared\hl2r\hl2r_utils.cpp">
       <Filter>Source Files\HL2 DLL\HL2R</Filter>
     </ClCompile>
-    <ClCompile Include="hl2r\weapon_combinesniper.cpp">
+    <ClCompile Include="hl2r\weapon_ar1.cpp">
+      <Filter>Source Files\HL2 DLL\HL2R</Filter>
+    </ClCompile>
+    <ClCompile Include="hl2r\weapon_cshotgun.cpp">
       <Filter>Source Files\HL2 DLL\HL2R</Filter>
     </ClCompile>
     <ClCompile Include="hl2r\weapon_hmg.cpp">
       <Filter>Source Files\HL2 DLL\HL2R</Filter>
     </ClCompile>
-    <ClCompile Include="hl2r\weapon_oicw.cpp">
-      <Filter>Source Files\HL2 DLL\HL2R</Filter>
-    </ClCompile>
-    <ClCompile Include="hl2r\weapon_pulsecannon.cpp">
-      <Filter>Source Files\HL2 DLL\HL2R</Filter>
-    </ClCompile>
     <ClCompile Include="hl2r\weapon_smg2.cpp">
+      <Filter>Source Files\HL2 DLL\HL2R</Filter>
+    </ClCompile>
+    <ClCompile Include="hl2r\weapon_sniperrifle.cpp">
       <Filter>Source Files\HL2 DLL\HL2R</Filter>
     </ClCompile>
     <ClCompile Include="hl2\grenade_beam.cpp">

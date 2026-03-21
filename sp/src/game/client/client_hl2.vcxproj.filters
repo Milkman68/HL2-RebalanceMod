@@ -3199,10 +3199,16 @@
     <ClCompile Include="hl2\vgui_rootpanel_hl2.cpp">
       <Filter>Source Files\HL2 DLL</Filter>
     </ClCompile>
+    <ClCompile Include="hl2\c_combine_mine.cpp">
+      <Filter>Source Files\HL2R</Filter>
+    </ClCompile>
     <ClCompile Include="hl2\c_npc_turret_floor.cpp">
       <Filter>Source Files\HL2R</Filter>
     </ClCompile>
     <ClCompile Include="hl2\c_weapon_rpg.cpp">
+      <Filter>Source Files\HL2R</Filter>
+    </ClCompile>
+    <ClCompile Include="hl2r\c_weapon_sniperrifle.cpp">
       <Filter>Source Files\HL2R</Filter>
     </ClCompile>
     <ClCompile Include="hl2r\hud_weapon_swap.cpp">

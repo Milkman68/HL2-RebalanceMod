@@ -42,8 +42,10 @@ public:
 	void	Operator_ForceNPCFire( CBaseCombatCharacter  *pOperator, bool bSecondary );
 	void	Operator_HandleAnimEvent( animevent_t *pEvent, CBaseCombatCharacter *pOperator );
 
+	float 	GetBurstCycleRate( void ){ return 0.3; }
+	int		GetBurstSize( void ){ return 3.0; }
 	float	GetFireRate( void );
-//	float	GetFireDurationDecayMult ( void ) { return 100; }
+	float	GetFireDurationDecayMult ( void ) { return 100; }
 	
 	// NPC
 	int		GetMinBurst( void ) { return 3; }
@@ -60,12 +62,7 @@ public:
 	
 	void	DoImpactEffect( trace_t &tr, int nDamageType );
 
-	virtual const Vector& GetBulletSpread( void )
-	{
-		static Vector cone;
-		cone = VECTOR_CONE_3DEGREES;
-		return cone;
-	}
+	virtual const Vector& GetBulletSpread( void );
 
 //	const WeaponProficiencyInfo_t *GetProficiencyValues();
 

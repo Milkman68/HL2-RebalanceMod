@@ -10,8 +10,8 @@
 #define	LASER_BEAM_SPRITE	"effects/laser1.vmt"
 
 #define	LASER_BEAM_RANGE		512
-#define	LASER_BEAM_BRIGHTNESS	50
-#define	LASER_BEAM_WIDTH		5.0f
+#define	LASER_BEAM_BRIGHTNESS	150
+#define	LASER_BEAM_WIDTH		1.0f
 
 //#define	LASER_DOT_SCALE		5.0f
 
@@ -177,7 +177,7 @@ void C_TurretFloor::UpdateLaserBeam( Vector start, Vector end, float r, float g,
 		return;
 
 	dlight_t *dl = effects->CL_AllocDlight ( index );
-	dl->origin = start + (vecDir * MIN(48, flDist));
+	dl->origin = start + (vecDir * MIN(16, flDist));
 	dl->color.r = r * a;
 	dl->color.g = g * a;
 	dl->color.b = b * a;

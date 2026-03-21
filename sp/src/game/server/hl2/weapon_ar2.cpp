@@ -34,6 +34,7 @@
 ConVar sk_weapon_ar2_alt_fire_radius( "sk_weapon_ar2_alt_fire_radius", "10" );
 ConVar sk_weapon_ar2_alt_fire_duration( "sk_weapon_ar2_alt_fire_duration", "2" );
 ConVar sk_weapon_ar2_alt_fire_mass( "sk_weapon_ar2_alt_fire_mass", "150" );
+ConVar sk_weapon_ar2_burst_fire( "sk_weapon_ar2_burst_fire", "1" );
 
 ConVar sk_plr_weapon_ar2_alt_fire_speed( "sk_plr_weapon_ar2_alt_fire_speed", "1000" );
 ConVar sk_npc_weapon_ar2_alt_fire_speed( "sk_npc_weapon_ar2_alt_fire_speed", "1000" );
@@ -130,17 +131,32 @@ void CWeaponAR2::Precache( void )
 	UTIL_PrecacheOther( "env_entity_dissolver" );
 }
 //-----------------------------------------------------------------------------
-// Purpose: BurstFire
+// Purpose:
 //-----------------------------------------------------------------------------
-float CWeaponAR2::GetFireRate( void )
+float CWeaponAR2::GetFireRate( void ) 
+{ 
+	return sk_weapon_ar2_burst_fire.GetBool() ? 0.04f : 0.1f; 
+}
+//-----------------------------------------------------------------------------
+// Purpose:
+//-----------------------------------------------------------------------------
+const Vector& CWeaponAR2::GetBulletSpread( void )
 {
-	return 0.1;
+	static Vector cone;
+	cone = VECTOR_CONE_3DEGREES;
+
+	if ( sk_weapon_ar2_burst_fire.GetBool() )
+		cone = VECTOR_CONE_1DEGREES;
+
+	return cone;
 }
 //-----------------------------------------------------------------------------
 // Purpose: Handle grenade detonate in-air (even when no ammo is left)
 //-----------------------------------------------------------------------------
 void CWeaponAR2::ItemPostFrame( void )
 {
+	m_iFireMode = sk_weapon_ar2_burst_fire.GetBool() ? FIREMODE_3RNDBURST : FIREMODE_FULLAUTO;
+
 	// See if we need to fire off our secondary round
 	if ( m_bShotDelayed )
 	{

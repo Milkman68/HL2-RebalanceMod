@@ -25,16 +25,16 @@ extern ConVar   sk_plr_dmg_smg1_grenade;
 extern ConVar hl2r_new_screenshake_effects;
 extern ConVar hl2r_new_viewpunch_effects;
 
-ConVar sk_oicw_grenade_speed( "sk_oicw_grenade_speed", "1000.0" );
-ConVar sk_oicw_grenade_timer( "sk_oicw_grenade_timer", "0.5" );
+ConVar sk_ar1_grenade_speed( "sk_ar1_grenade_speed", "1000.0" );
+ConVar sk_ar1_grenade_timer( "sk_ar1_grenade_timer", "0.5" );
 
-class CWeaponOICW : public CHLSelectFireMachineGun
+class CWeaponAR1 : public CHLSelectFireMachineGun
 {
 	DECLARE_DATADESC();
 public:
-	DECLARE_CLASS( CWeaponOICW, CHLSelectFireMachineGun );
+	DECLARE_CLASS( CWeaponAR1, CHLSelectFireMachineGun );
 
-	CWeaponOICW();
+	CWeaponAR1();
 
 	DECLARE_SERVERCLASS();
 	
@@ -49,7 +49,7 @@ public:
 
 	float 	GetBurstCycleRate( void ){ return 0.3; }
 	int		GetBurstSize( void ){ return 3.0; }
-	float	GetFireRate( void ) { return 0.025f; }	// 13.3hz
+	float	GetFireRate( void ) { return 0.04f; }	// 13.3hz
 
 	virtual void Equip( CBaseCombatCharacter *pOwner );
 	bool	Reload( void );
@@ -59,7 +59,7 @@ public:
 
 	virtual const Vector& GetBulletSpread( void )
 	{
-		static const Vector cone = VECTOR_CONE_3DEGREES;
+		static const Vector cone = VECTOR_CONE_2DEGREES;
 		return cone;
 	}
 
@@ -77,29 +77,28 @@ protected:
 	float	m_flNextGrenadeCheck;
 };
 
-IMPLEMENT_SERVERCLASS_ST(CWeaponOICW, DT_WeaponOICW)
+IMPLEMENT_SERVERCLASS_ST(CWeaponAR1, DT_WeaponAR1)
 END_SEND_TABLE()
 
-LINK_ENTITY_TO_CLASS( weapon_oicw, CWeaponOICW );
-PRECACHE_WEAPON_REGISTER(weapon_oicw);
+LINK_ENTITY_TO_CLASS( weapon_ar1, CWeaponAR1 );
+PRECACHE_WEAPON_REGISTER(weapon_ar1);
 
-BEGIN_DATADESC( CWeaponOICW )
+BEGIN_DATADESC( CWeaponAR1 )
 
 	DEFINE_FIELD( m_vecTossVelocity, FIELD_VECTOR ),
 	DEFINE_FIELD( m_flNextGrenadeCheck, FIELD_TIME ),
 
 END_DATADESC()
 
-acttable_t	CWeaponOICW::m_acttable[] = 
+acttable_t	CWeaponAR1::m_acttable[] = 
 {
-	{ ACT_RANGE_ATTACK1,			ACT_RANGE_ATTACK_SMG1,			true },
-	{ ACT_RELOAD,					ACT_RELOAD_SMG1,				true },
-	{ ACT_IDLE,						ACT_IDLE_SMG1,					true },
-	{ ACT_IDLE_ANGRY,				ACT_IDLE_ANGRY_SMG1,			true },
+	{ ACT_RANGE_ATTACK1,			ACT_RANGE_ATTACK_AR2,			true },
+	{ ACT_RELOAD,					ACT_RELOAD_SMG1,				true },		// FIXME: hook to AR2 unique
+	{ ACT_IDLE,						ACT_IDLE_SMG1,					true },		// FIXME: hook to AR2 unique
+	{ ACT_IDLE_ANGRY,				ACT_IDLE_ANGRY_SMG1,			true },		// FIXME: hook to AR2 unique
 
 	{ ACT_WALK,						ACT_WALK_RIFLE,					true },
-	{ ACT_WALK_AIM,					ACT_WALK_AIM_RIFLE,				true  },
-	
+
 // Readiness activities (not aiming)
 	{ ACT_IDLE_RELAXED,				ACT_IDLE_SMG1_RELAXED,			false },//never aims
 	{ ACT_IDLE_STIMULATED,			ACT_IDLE_SMG1_STIMULATED,		false },
@@ -134,18 +133,19 @@ acttable_t	CWeaponOICW::m_acttable[] =
 	{ ACT_RUN_AIM,					ACT_RUN_AIM_RIFLE,				true },
 	{ ACT_RUN_CROUCH,				ACT_RUN_CROUCH_RIFLE,			true },
 	{ ACT_RUN_CROUCH_AIM,			ACT_RUN_CROUCH_AIM_RIFLE,		true },
-	{ ACT_GESTURE_RANGE_ATTACK1,	ACT_GESTURE_RANGE_ATTACK_SMG1,	true },
-	{ ACT_RANGE_ATTACK1_LOW,		ACT_RANGE_ATTACK_SMG1_LOW,		true },
-	{ ACT_COVER_LOW,				ACT_COVER_SMG1_LOW,				false },
-	{ ACT_RANGE_AIM_LOW,			ACT_RANGE_AIM_SMG1_LOW,			false },
+	{ ACT_GESTURE_RANGE_ATTACK1,	ACT_GESTURE_RANGE_ATTACK_AR2,	false },
+	{ ACT_COVER_LOW,				ACT_COVER_SMG1_LOW,				false },		// FIXME: hook to AR2 unique
+	{ ACT_RANGE_AIM_LOW,			ACT_RANGE_AIM_AR2_LOW,			false },
+	{ ACT_RANGE_ATTACK1_LOW,		ACT_RANGE_ATTACK_SMG1_LOW,		true },		// FIXME: hook to AR2 unique
 	{ ACT_RELOAD_LOW,				ACT_RELOAD_SMG1_LOW,			false },
 	{ ACT_GESTURE_RELOAD,			ACT_GESTURE_RELOAD_SMG1,		true },
+//	{ ACT_RANGE_ATTACK2, ACT_RANGE_ATTACK_AR2_GRENADE, true },
 };
 
-IMPLEMENT_ACTTABLE(CWeaponOICW);
+IMPLEMENT_ACTTABLE(CWeaponAR1);
 
 //=========================================================
-CWeaponOICW::CWeaponOICW( )
+CWeaponAR1::CWeaponAR1( )
 {
 	m_fMinRange1		= 0;
 	m_fMaxRange1		= 1000;
@@ -157,7 +157,7 @@ CWeaponOICW::CWeaponOICW( )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CWeaponOICW::Precache( void )
+void CWeaponAR1::Precache( void )
 {
 	UTIL_PrecacheOther("grenade_ar2");
 	BaseClass::Precache();
@@ -166,7 +166,7 @@ void CWeaponOICW::Precache( void )
 //-----------------------------------------------------------------------------
 // Purpose: Give this weapon longer range when wielded by an ally NPC.
 //-----------------------------------------------------------------------------
-void CWeaponOICW::Equip( CBaseCombatCharacter *pOwner )
+void CWeaponAR1::Equip( CBaseCombatCharacter *pOwner )
 {
 	if( pOwner->Classify() == CLASS_PLAYER_ALLY )
 	{
@@ -183,7 +183,7 @@ void CWeaponOICW::Equip( CBaseCombatCharacter *pOwner )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CWeaponOICW::FireNPCPrimaryAttack( CBaseCombatCharacter *pOperator, Vector &vecShootOrigin, Vector &vecShootDir )
+void CWeaponAR1::FireNPCPrimaryAttack( CBaseCombatCharacter *pOperator, Vector &vecShootOrigin, Vector &vecShootDir )
 {
 	// FIXME: use the returned number of bullets to account for >10hz firerate
 	WeaponSoundRealtime( SINGLE_NPC );
@@ -199,7 +199,7 @@ void CWeaponOICW::FireNPCPrimaryAttack( CBaseCombatCharacter *pOperator, Vector 
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CWeaponOICW::Operator_ForceNPCFire( CBaseCombatCharacter *pOperator, bool bSecondary )
+void CWeaponAR1::Operator_ForceNPCFire( CBaseCombatCharacter *pOperator, bool bSecondary )
 {
 	// Ensure we have enough rounds in the clip
 	m_iClip1++;
@@ -214,7 +214,7 @@ void CWeaponOICW::Operator_ForceNPCFire( CBaseCombatCharacter *pOperator, bool b
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CWeaponOICW::Operator_HandleAnimEvent( animevent_t *pEvent, CBaseCombatCharacter *pOperator )
+void CWeaponAR1::Operator_HandleAnimEvent( animevent_t *pEvent, CBaseCombatCharacter *pOperator )
 {
 	switch( pEvent->event )
 	{
@@ -273,7 +273,7 @@ void CWeaponOICW::Operator_HandleAnimEvent( animevent_t *pEvent, CBaseCombatChar
 // Purpose: 
 // Output : Activity
 //-----------------------------------------------------------------------------
-Activity CWeaponOICW::GetPrimaryAttackActivity( void )
+Activity CWeaponAR1::GetPrimaryAttackActivity( void )
 {
 	if ( m_nShotsFired < 2 )
 		return ACT_VM_PRIMARYATTACK;
@@ -289,7 +289,7 @@ Activity CWeaponOICW::GetPrimaryAttackActivity( void )
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-bool CWeaponOICW::Reload( void )
+bool CWeaponAR1::Reload( void )
 {
 	bool fRet;
 	float fCacheTime = m_flNextSecondaryAttack;
@@ -311,7 +311,7 @@ bool CWeaponOICW::Reload( void )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CWeaponOICW::AddViewKick( void )
+void CWeaponAR1::AddViewKick( void )
 {
 	#define	MAX_VERTICAL_KICK	0.75f	//Degrees
 	#define	SLIDE_LIMIT			10.0f	//Seconds
@@ -333,7 +333,7 @@ void CWeaponOICW::AddViewKick( void )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CWeaponOICW::SecondaryAttack( void )
+void CWeaponAR1::SecondaryAttack( void )
 {
 	// Only the player fires this way so we can cast
 	CBasePlayer *pPlayer = ToBasePlayer( GetOwner() );
@@ -367,14 +367,14 @@ void CWeaponOICW::SecondaryAttack( void )
 	Vector	vecThrow;
 	// Don't autoaim on grenade tosses
 	AngleVectors( pPlayer->EyeAngles() + pPlayer->GetPunchAngle(), &vecThrow );
-	VectorScale( vecThrow, sk_oicw_grenade_speed.GetFloat(), vecThrow );
+	VectorScale( vecThrow, sk_ar1_grenade_speed.GetFloat(), vecThrow );
 	
 	//Create the grenade
 	QAngle angles;
 	VectorAngles( vecThrow, angles );
 	CGrenadeAR2 *pGrenade = (CGrenadeAR2*)Create( "grenade_ar2", vecSrc, angles, pPlayer );
 	pGrenade->SetAbsVelocity( vecThrow );
-	pGrenade->m_flDetonateTime = sk_oicw_grenade_timer.GetFloat();	// Makes the grenade explode on a delay.
+	pGrenade->m_flDetonateTime = sk_ar1_grenade_timer.GetFloat();	// Makes the grenade explode on a delay.
 
 	pGrenade->SetLocalAngularVelocity( RandomAngle( -400, 400 ) );
 	pGrenade->SetMoveType( MOVETYPE_FLYGRAVITY, MOVECOLLIDE_FLY_BOUNCE ); 
@@ -412,7 +412,7 @@ void CWeaponOICW::SecondaryAttack( void )
 //			flDist - 
 // Output : int
 //-----------------------------------------------------------------------------
-int CWeaponOICW::WeaponRangeAttack2Condition( float flDot, float flDist )
+int CWeaponAR1::WeaponRangeAttack2Condition( float flDot, float flDist )
 {
 	CAI_BaseNPC *npcOwner = GetOwner()->MyNPCPointer();
 	CBaseEntity *pEnemy = npcOwner->GetEnemy();
@@ -428,7 +428,7 @@ int CWeaponOICW::WeaponRangeAttack2Condition( float flDot, float flDist )
 	// ---------------------------------------------------------------------
 	// Check that throw is legal and clear
 	// ---------------------------------------------------------------------
-	Vector vecToss = VecCheckThrow( this, npcOwner->GetLocalOrigin() + Vector(0,0,60), vecTarget, sk_oicw_grenade_speed.GetFloat(), 0.5 );
+	Vector vecToss = VecCheckThrow( this, npcOwner->GetLocalOrigin() + Vector(0,0,60), vecTarget, sk_ar1_grenade_speed.GetFloat(), 0.5 );
 	if ( vecToss != vec3_origin )
 	{
 		m_vecTossVelocity = vecToss;
@@ -441,7 +441,7 @@ int CWeaponOICW::WeaponRangeAttack2Condition( float flDot, float flDist )
 }
 
 //-----------------------------------------------------------------------------
-const WeaponProficiencyInfo_t *CWeaponOICW::GetProficiencyValues()
+const WeaponProficiencyInfo_t *CWeaponAR1::GetProficiencyValues()
 {
 	static WeaponProficiencyInfo_t proficiencyTable[] =
 	{

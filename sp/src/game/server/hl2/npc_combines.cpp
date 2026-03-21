@@ -481,19 +481,8 @@ bool CNPC_CombineS::IsHeavyDamage( const CTakeDamageInfo &info )
 {
 	if ( m_nRecentDamage > RECENT_DAMAGE_THRESHOLD && m_flRecentDamageTime != FLT_MAX )
 	{
-		if ( random->RandomInt(0,1) == 1 )
-		{
-			// This doesn't feel clean, as most responses go in the ai file, but its convinient so its going here.
-			GetSentences()->Speak( "COMBINE_TAUNT", SENTENCE_PRIORITY_HIGH, SENTENCE_CRITERIA_NORMAL ); 
-
-			m_nRecentDamage = 0;
-			m_flRecentDamageTime = 0;
-		}
-		else
-		{
-			m_flRecentDamageTime = FLT_MAX;
-			return true;
-		}
+		m_flRecentDamageTime = FLT_MAX;
+		return true;
 	}
 	
 	return false;
@@ -593,12 +582,12 @@ void CNPC_CombineS::HandleSpawnEquipment( void )
 					}
 					else
 					{
-						m_spawnEquipment = MAKE_STRING( "weapon_smg2" );
+						m_spawnEquipment = MAKE_STRING( "weapon_smg1" );
 					}
 				}
 				else
 				{
-					m_spawnEquipment = MAKE_STRING( "weapon_smg2" );
+					m_spawnEquipment = MAKE_STRING( "weapon_smg1" );
 				}
 			}	
 		}

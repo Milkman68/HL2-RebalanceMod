@@ -104,6 +104,8 @@ BEGIN_DATADESC( CBounceBomb )
 	DEFINE_FIELD( m_flTimeGrabbed, FIELD_TIME ),
 	DEFINE_FIELD( m_iMineState, FIELD_INTEGER ),
 
+	DEFINE_FIELD( m_flLightColor, FIELD_INTEGER ),
+
 	// Physics Influence
 	DEFINE_FIELD( m_hPhysicsAttacker, FIELD_EHANDLE ),
 	DEFINE_FIELD( m_flLastPhysicsInfluenceTime, FIELD_TIME ),
@@ -114,6 +116,10 @@ BEGIN_DATADESC( CBounceBomb )
 	DEFINE_INPUTFUNC( FIELD_VOID, "Disarm", InputDisarm ),
 
 END_DATADESC()
+
+IMPLEMENT_SERVERCLASS_ST( CBounceBomb, DT_BounceBomb )
+	SendPropArray(SendPropFloat( SENDINFO_ARRAY(m_flLightColor), 32, SPROP_NOSCALE), m_flLightColor),
+END_SEND_TABLE()
 
 string_t CBounceBomb::gm_iszFloorTurretClassname;
 string_t CBounceBomb::gm_iszGroundTurretClassname;
@@ -718,6 +724,10 @@ int CBounceBomb::OnTakeDamage( const CTakeDamageInfo &info )
 //---------------------------------------------------------
 void CBounceBomb::UpdateLight( bool bTurnOn, unsigned int r, unsigned int g, unsigned int b, unsigned int a )
 {
+	m_flLightColor.Set(0, r);
+	m_flLightColor.Set(1, g);
+	m_flLightColor.Set(2, b);
+
 	if( bTurnOn )
 	{
 		Assert( a > 0 );

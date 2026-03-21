@@ -379,8 +379,8 @@ char const *WeaponsResource::GetAmmoLabelFromID( int iAmmoId )
 	if ( iAmmoId == GetAmmoDef()->Index("smg2") )
 		label = "#Valve_Hud_AMMO_smg2";
 
-	if ( iAmmoId == GetAmmoDef()->Index("oicw") )
-		label = "#Valve_Hud_AMMO_oicw";
+	if ( iAmmoId == GetAmmoDef()->Index("ar1") )
+		label = "#Valve_Hud_AMMO_ar1";
 	
 	return label;
 }

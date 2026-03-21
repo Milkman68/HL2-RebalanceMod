@@ -295,9 +295,9 @@ $Project "Server (Episodic)"
 			{
 				$File	"hl2r\weapon_hmg.cpp"
 				$File	"hl2r\weapon_smg2.cpp"
-				$File	"hl2r\weapon_oicw.cpp"
-				$File	"hl2r\weapon_pulsecannon.cpp"
-				$File	"hl2r\weapon_combinesniper.cpp"
+				$File	"hl2r\weapon_ar1.cpp"
+				$File	"hl2r\weapon_cshotgun.cpp"
+				$File	"hl2r\weapon_sniperrifle.cpp"
 
 				$File	"$SRCDIR\game\shared\hl2r\hl2r_campaign_manager.cpp"		\
 						"$SRCDIR\game\shared\hl2r\hl2r_utils.cpp"

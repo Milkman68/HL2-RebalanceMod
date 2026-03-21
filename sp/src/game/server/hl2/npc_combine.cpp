@@ -1339,7 +1339,7 @@ void CNPC_Combine::RunTask( const Task_t *pTask )
 			{
 			//	if ( IsActivityFinished() )
 			//	{
-					if ( HasCondition( COND_ENEMY_OCCLUDED ) && !CanSuppressEnemy() )
+					if ( HasCondition( COND_ENEMY_OCCLUDED )/* && !CanSuppressEnemy()*/ )
 					{
 						TaskComplete();
 					}
@@ -1596,21 +1596,14 @@ void CNPC_Combine::BuildScheduleTestBits( void )
 	
  	if ( GetEnemy() != NULL && ( IsRunningApproachEnemySchedule() && !IsElite() ) )
 	{
-		if( HasCondition(COND_CAN_RANGE_ATTACK1) && m_flTimeSawEnemyAgain != -1 )
+		if( HasCondition(COND_CAN_RANGE_ATTACK1) /*&& m_flTimeSawEnemyAgain != -1*/ )
 		{
-			if( (gpGlobals->curtime - m_flTimeSawEnemyAgain) >= 0.25f )
+		//	if( (gpGlobals->curtime - m_flTimeSawEnemyAgain) >= 0.25f )
 				SetCustomInterruptCondition( COND_CAN_RANGE_ATTACK1 );
 		}
 	}
 	 
-	if ( HasStrategySlotRange( SQUAD_SLOT_ATTACK1, SQUAD_SLOT_ATTACK2 ) || IsRunningApproachEnemySchedule() )
-	{
-		SetCustomInterruptCondition( COND_COMBINE_ATTACK_SLOT_TAKEN );
-	}
-	else
-	{
-		ClearCustomInterruptCondition( COND_COMBINE_ATTACK_SLOT_TAKEN );
-	}
+	SetCustomInterruptCondition( COND_COMBINE_ATTACK_SLOT_TAKEN );
 }
 //-----------------------------------------------------------------------------
 // Purpose: Translate base class activities into combot activites
@@ -2480,6 +2473,9 @@ int CNPC_Combine::TranslateSchedule( int scheduleType )
 			if ( ShouldChargePlayer() )
 				return SCHED_RELOAD;
 
+			if ( !HasCondition(COND_SEE_ENEMY) )
+				return SCHED_RELOAD;
+
 			return SCHED_COMBINE_HIDE_AND_RELOAD;
 		}
 		break;
@@ -2523,11 +2519,11 @@ int CNPC_Combine::TranslateSchedule( int scheduleType )
 					}
 				}
 			}
-			else
+/*			else
 			{
 				// always assume standing
 				Stand();
-			}
+			}*/
 			
 			CWeaponRPG *pRPG = dynamic_cast<CWeaponRPG*>(GetActiveWeapon());
 			if ( pRPG )
@@ -4344,6 +4340,7 @@ DEFINE_SCHEDULE
  "		TASK_REMEMBER				MEMORY:INCOVER"
  "		TASK_RELOAD					0"
  "		TASK_FACE_ENEMY				0"
+ "		TASK_COMBINE_SET_STANDING		0"
  "		TASK_SET_SCHEDULE			SCHEDULE:SCHED_COMBINE_WAIT_IN_COVER"
  ""
  "	Interrupts"
@@ -4422,6 +4419,7 @@ DEFINE_SCHEDULE
  "		TASK_COMBINE_SET_STANDING	0"
  "		TASK_SET_ACTIVITY			ACTIVITY:ACT_IDLE"
  "		TASK_FACE_ENEMY				0"
+ "		TASK_COMBINE_SET_STANDING		0"
  "		TASK_SET_SCHEDULE			SCHEDULE:SCHED_COMBINE_OVERWATCH"
  ""
  "	Interrupts"
@@ -4466,8 +4464,6 @@ DEFINE_SCHEDULE
 
  "	Tasks"
  "		TASK_STOP_MOVING				0"
- "		TASK_COMBINE_SET_STANDING		0"
- "		TASK_PLAY_COVER_SEQUENCE		0"
  "		TASK_WAIT_FACE_ENEMY			3"
  ""
  "	Interrupts"
@@ -4498,6 +4494,7 @@ DEFINE_SCHEDULE
  "		TASK_WAIT_FOR_MOVEMENT		0"
  "		TASK_REMEMBER				MEMORY:INCOVER"
  "		TASK_FACE_ENEMY				0"
+ "		TASK_COMBINE_SET_STANDING		0"
  "		TASK_SET_SCHEDULE			SCHEDULE:SCHED_COMBINE_WAIT_IN_COVER"
  ""
  "	Interrupts"
@@ -4534,6 +4531,7 @@ DEFINE_SCHEDULE
  "		TASK_WAIT_FOR_MOVEMENT		0"
  "		TASK_REMEMBER				MEMORY:INCOVER"
  "		TASK_FACE_ENEMY				0"
+ "		TASK_COMBINE_SET_STANDING	0"
  "		TASK_SET_SCHEDULE			SCHEDULE:SCHED_COMBINE_WAIT_IN_COVER"
  ""
  "	Interrupts"
@@ -4593,7 +4591,7 @@ DEFINE_SCHEDULE
  "		TASK_STOP_MOVING				0"
  "		TASK_FACE_ENEMY					0"
  "		TASK_ANNOUNCE_ATTACK			1"	// 1 = primary attack
- "		TASK_WAIT_RANDOM				0.3"
+ //"		TASK_WAIT_RANDOM				0.3"
  "		TASK_RANGE_ATTACK1				0"
  "		TASK_COMBINE_IGNORE_ATTACKS		0.5"
  ""

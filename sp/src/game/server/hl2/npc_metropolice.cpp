@@ -5870,7 +5870,7 @@ bool CNPC_MetroPolice::CanSuppressEnemy( void )
 	if ( !GetActiveWeapon() )
 		return false;
 
-	float flSuppressTime = 1.0f;
+	float flSuppressTime = 0.65f;
 
 	// While the enemy is not visible, continue shooting for a set duration based on how far away they are.
 	float flEnemyDist = (GetAbsOrigin() - GetEnemy()->GetAbsOrigin()).Length();

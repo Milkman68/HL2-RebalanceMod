@@ -77,7 +77,7 @@ public:
 			return npcCone;
 			
 		static Vector cone;
-		cone = VECTOR_CONE_05DEGREES;
+		cone = VECTOR_CONE_1DEGREES;
 		return cone;
 	}
 	

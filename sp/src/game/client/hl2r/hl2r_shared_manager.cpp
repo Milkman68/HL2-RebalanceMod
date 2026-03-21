@@ -35,11 +35,11 @@ CSharedManager::CSharedManager()
 }
 
 
-#define NUM_Shared_FOLDERS 2
+#define NUM_Shared_FOLDERS /*2*/ 1
 const char *szSharedFolders[NUM_Shared_FOLDERS] =
 {
-	"maps\\graphs",
-	"save",
+//	"maps\\graphs",
+	"save"
 };
 //-----------------------------------------------------------------------------
 // Purpose: A more robust version of the TransferGameFiles function that 

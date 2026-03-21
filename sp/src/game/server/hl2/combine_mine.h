@@ -28,6 +28,7 @@ class CSoundPatch;
 class CBounceBomb : public CBaseAnimating, public CDefaultPlayerPickupVPhysics
 {
 	DECLARE_CLASS( CBounceBomb, CBaseAnimating );
+	DECLARE_SERVERCLASS();
 
 public:
 	CBounceBomb() { m_pWarnSound = NULL; m_bPlacedByPlayer = false; }
@@ -121,6 +122,9 @@ private:
 
 	COutputEvent	m_OnPulledUp;
 	void InputDisarm( inputdata_t &inputdata );
+
+public:
+	CNetworkArray( float, m_flLightColor, 3 ); // [0 = R] [1 = G] [2 = B]
 };
 
 

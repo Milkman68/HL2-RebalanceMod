@@ -195,13 +195,13 @@ ConVar	sk_plr_dmg_smg2			( "sk_plr_dmg_smg2","0", FCVAR_REPLICATED);
 ConVar	sk_npc_dmg_smg2			( "sk_npc_dmg_smg2","0", FCVAR_REPLICATED);
 ConVar	sk_max_smg2				( "sk_max_smg2","0", FCVAR_REPLICATED);
 
-ConVar	sk_plr_dmg_oicw			( "sk_plr_dmg_oicw","0", FCVAR_REPLICATED);
-ConVar	sk_npc_dmg_oicw			( "sk_npc_dmg_oicw","0", FCVAR_REPLICATED);
-ConVar	sk_max_oicw				( "sk_max_oicw","0", FCVAR_REPLICATED);
+ConVar	sk_plr_dmg_ar1			( "sk_plr_dmg_ar1","0", FCVAR_REPLICATED);
+ConVar	sk_npc_dmg_ar1			( "sk_npc_dmg_ar1","0", FCVAR_REPLICATED);
+ConVar	sk_max_ar1				( "sk_max_ar1","0", FCVAR_REPLICATED);
 
-ConVar	sk_plr_dmg_pulsecannon	( "sk_plr_dmg_pulsecannon","0", FCVAR_REPLICATED);
-ConVar	sk_npc_dmg_pulsecannon	( "sk_npc_dmg_pulsecannon","0", FCVAR_REPLICATED);
-ConVar	sk_max_pulsecannon		( "sk_max_pulsecannon","0", FCVAR_REPLICATED);
+ConVar	sk_plr_dmg_cshotgun	( "sk_plr_dmg_cshotgun","0", FCVAR_REPLICATED);
+ConVar	sk_npc_dmg_cshotgun	( "sk_npc_dmg_cshotgun","0", FCVAR_REPLICATED);
+ConVar	sk_max_cshotgun		( "sk_max_cshotgun","0", FCVAR_REPLICATED);
 
 ConVar	sk_npc_dmg_turret			( "sk_npc_dmg_turret","0", FCVAR_REPLICATED);
 ConVar	sk_npc_dmg_turret_to_plr	( "sk_npc_dmg_turret_to_plr","0", FCVAR_REPLICATED);
@@ -266,9 +266,9 @@ ConVar	sk_ally_proficiency_smg1( "sk_ally_proficiency_smg1",	"0 0 0 0 average 0 
 ConVar	sk_enemy_proficiency_smg2( "sk_enemy_proficiency_smg2",	"0 0 0 0 average 0 0 0 0 average 0 0 0 0 average", FCVAR_REPLICATED);
 ConVar	sk_ally_proficiency_smg2( "sk_ally_proficiency_smg2",	"0 0 0 0 average 0 0 0 0 average", FCVAR_REPLICATED);
 
-// OICW
-//ConVar	sk_enemy_proficiency_oicw( "sk_enemy_proficiency_oicw",	"0 0 0 0 average 0 0 0 0 average 0 0 0 0 average", FCVAR_REPLICATED);
-//ConVar	sk_ally_proficiency_oicw( "sk_ally_proficiency_oicw",	"0 0 0 0 average 0 0 0 0 average", FCVAR_REPLICATED);
+// ar1
+ConVar	sk_enemy_proficiency_ar1( "sk_enemy_proficiency_ar1",	"0 0 0 0 average 0 0 0 0 average 0 0 0 0 average", FCVAR_REPLICATED);
+ConVar	sk_ally_proficiency_ar1( "sk_ally_proficiency_ar1",	"0 0 0 0 average 0 0 0 0 average", FCVAR_REPLICATED);
 
 // Pistol
 ConVar	sk_enemy_proficiency_pistol( "sk_enemy_proficiency_pistol",	"0 0 0 0 average 0 0 0 0 average 0 0 0 0 average", FCVAR_REPLICATED);
@@ -286,9 +286,9 @@ ConVar	sk_ally_proficiency_shotgun( "sk_ally_proficiency_shotgun",		"0 0 0 0 ave
 ConVar	sk_enemy_proficiency_hmg( "sk_enemy_proficiency_hmg",	"0 0 0 0 average 0 0 0 0 average 0 0 0 0 average", FCVAR_REPLICATED);
 ConVar	sk_ally_proficiency_hmg( "sk_ally_proficiency_hmg",		"0 0 0 0 average 0 0 0 0 average", FCVAR_REPLICATED);
 
-// Combine Cannon
-ConVar	sk_enemy_proficiency_pulsecannon( "sk_enemy_proficiency_pulsecannon",	"0 0 0 0 average 0 0 0 0 average 0 0 0 0 average", FCVAR_REPLICATED);
-ConVar	sk_ally_proficiency_pulsecannon( "sk_ally_proficiency_pulsecannon",		"0 0 0 0 average 0 0 0 0 average", FCVAR_REPLICATED);
+// Combine Shotgun
+ConVar	sk_enemy_proficiency_cshotgun( "sk_enemy_proficiency_cshotgun",	"0 0 0 0 average 0 0 0 0 average 0 0 0 0 average", FCVAR_REPLICATED);
+ConVar	sk_ally_proficiency_cshotgun( "sk_ally_proficiency_cshotgun",		"0 0 0 0 average 0 0 0 0 average", FCVAR_REPLICATED);
 
 // AlyxGun
 ConVar	sk_ally_proficiency_alyxgun( "sk_ally_proficiency_alyxgun","0 0 0 0 average", FCVAR_REPLICATED);
@@ -1916,12 +1916,12 @@ CAmmoDef *GetAmmoDef()
 		def.AddAmmoType("AlyxGun",			DMG_BULLET,					TRACER_LINE,			"sk_plr_dmg_alyxgun",		"sk_npc_dmg_alyxgun",		"sk_max_alyxgun",		BULLET_IMPULSE(200, 1225), 0 );
 		def.AddAmmoType("Pistol",			DMG_BULLET,					TRACER_LINE_AND_WHIZ,	"sk_plr_dmg_pistol",		"sk_npc_dmg_pistol",		"sk_max_pistol",		BULLET_IMPULSE(200, 1225), 0 );
 		def.AddAmmoType("SMG2",				DMG_BULLET,					TRACER_LINE_AND_WHIZ,	"sk_plr_dmg_smg2",			"sk_npc_dmg_smg2",			"sk_max_smg2",			BULLET_IMPULSE(200, 1225), 0 );
-		def.AddAmmoType("OICW",				DMG_BULLET,					TRACER_LINE_AND_WHIZ,	"sk_plr_dmg_oicw",			"sk_npc_dmg_oicw",			"sk_max_oicw",			BULLET_IMPULSE(200, 1225), 0 );
+		def.AddAmmoType("AR1",				DMG_BULLET,					TRACER_LINE_AND_WHIZ,	"sk_plr_dmg_ar1",			"sk_npc_dmg_ar1",			"sk_max_ar1",			BULLET_IMPULSE(200, 1225), 0 );
 		def.AddAmmoType("SMG1",				DMG_BULLET,					TRACER_LINE_AND_WHIZ,	"sk_plr_dmg_smg1",			"sk_npc_dmg_smg1",			"sk_max_smg1",			BULLET_IMPULSE(200, 1225), 0 );
 		def.AddAmmoType("357",				DMG_BULLET,					TRACER_LINE_AND_WHIZ,	"sk_plr_dmg_357",			"sk_npc_dmg_357",			"sk_max_357",			BULLET_IMPULSE(800, 5000), 0 );
 		def.AddAmmoType("XBowBolt",			DMG_BULLET,					TRACER_LINE,			"sk_plr_dmg_crossbow",		"sk_npc_dmg_crossbow",		"sk_max_crossbow",		BULLET_IMPULSE(800, 8000), 0 );
 		def.AddAmmoType("HMG",				DMG_BULLET,					TRACER_LINE_AND_WHIZ,	"sk_plr_dmg_hmg",			"sk_npc_dmg_hmg",			"sk_max_hmg",			BULLET_IMPULSE(400, 1200), 0 );
-		def.AddAmmoType("PulseCannon",		DMG_BULLET,					TRACER_NONE,			"sk_plr_dmg_pulsecannon",	"sk_npc_dmg_pulsecannon",	"sk_max_pulsecannon",	10 * 750 * 12,			   0 );
+		def.AddAmmoType("CShotGun",			DMG_BULLET,					TRACER_LINE_AND_WHIZ,	"sk_plr_dmg_cshotgun",		"sk_npc_dmg_cshotgun",		"sk_max_cshotgun",		BULLET_IMPULSE(400, 1200), 0 );
 
 		def.AddAmmoType("Buckshot",			DMG_BULLET | DMG_BUCKSHOT,	TRACER_LINE,			"sk_plr_dmg_buckshot",		"sk_npc_dmg_buckshot",		"sk_max_buckshot",		BULLET_IMPULSE(400, 1200), 0 );
 		def.AddAmmoType("RPG_Round",		DMG_BURN,					TRACER_NONE,			"sk_plr_dmg_rpg_round",		"sk_npc_dmg_rpg_round",		"sk_max_rpg_round",		0, 0 );

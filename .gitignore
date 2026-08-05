@@ -67,3 +67,5 @@ sp/src/UpgradeLog.htm
 *.json
 sp/src/.vs/games/v17/.wsuo
 *.pdb
+*.vpc_crc
+*.filters

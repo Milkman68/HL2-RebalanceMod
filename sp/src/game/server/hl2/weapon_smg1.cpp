@@ -40,12 +40,12 @@ public:
 	void	Precache( void );
 	void	AddViewKick( void );
 	void	SecondaryAttack( void );
-
+#ifndef USE_NEW_PROFICIENCY_SYSTEM
 	int		GetMinBurst() { return 4; }
 	int		GetMaxBurst() { return 5; }
 	float	GetMinRestTime( void ) { return 0.2f; }
 	float	GetMaxRestTime( void ) { return 0.4f; }
-
+#endif
 	//float 	GetBurstCycleRate( void ){ return 0.055; }
 	//int		GetBurstSize( void ){ return 3.0; }
 
@@ -63,8 +63,9 @@ public:
 		static const Vector cone = VECTOR_CONE_7DEGREES / 2; // 3.5
 		return cone;
 	}
-
+#ifndef USE_NEW_PROFICIENCY_SYSTEM
 	const WeaponProficiencyInfo_t *GetProficiencyValues();
+#endif
 
 	void FireNPCPrimaryAttack( CBaseCombatCharacter *pOperator, Vector &vecShootOrigin, Vector &vecShootDir );
 	void Operator_ForceNPCFire( CBaseCombatCharacter  *pOperator, bool bSecondary );
@@ -443,6 +444,7 @@ int CWeaponSMG1::WeaponRangeAttack2Condition( float flDot, float flDist )
 }
 
 //-----------------------------------------------------------------------------
+#ifndef USE_NEW_PROFICIENCY_SYSTEM
 const WeaponProficiencyInfo_t *CWeaponSMG1::GetProficiencyValues()
 {
 	static WeaponProficiencyInfo_t proficiencyTable[] =
@@ -458,3 +460,4 @@ const WeaponProficiencyInfo_t *CWeaponSMG1::GetProficiencyValues()
 
 	return proficiencyTable;
 }
+#endif

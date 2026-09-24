@@ -1908,7 +1908,7 @@ void CBaseEntity::FireBullets( const FireBulletsInfo_t &info )
 				
 				float flDamageForce = GetAmmoDef()->DamageForce(info.m_iAmmoType) / 600;
 
-				float flAmplitudeMultiplier = RemapValClamped(flDamageForce, 1.0f, 20.0f, 1.0f, 7.0f);
+				float flAmplitudeMultiplier = RemapValClamped(flDamageForce, 1.0f, 15.0f, 1.0f, 7.0f);
 				float flRadiusMultiplier = RemapValClamped(flDamageForce, 1.0f, 20.0f, 1.0f, 2.0f);
 
 				if ( !tr.m_pEnt->IsPlayer() )

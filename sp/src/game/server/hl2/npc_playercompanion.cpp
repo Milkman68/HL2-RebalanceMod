@@ -2329,6 +2329,7 @@ Vector CNPC_PlayerCompanion::GetActualShootPosition( const Vector &shootOrigin )
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
+#ifndef USE_NEW_PROFICIENCY_SYSTEM
 WeaponProficiency_t CNPC_PlayerCompanion::CalcWeaponProficiency( CBaseCombatWeapon *pWeapon )
 {
 	if( FClassnameIs( pWeapon, "weapon_ar2" ) )
@@ -2338,7 +2339,7 @@ WeaponProficiency_t CNPC_PlayerCompanion::CalcWeaponProficiency( CBaseCombatWeap
 
 	return WEAPON_PROFICIENCY_PERFECT;
 }
-
+#endif
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 bool CNPC_PlayerCompanion::Weapon_CanUse( CBaseCombatWeapon *pWeapon )

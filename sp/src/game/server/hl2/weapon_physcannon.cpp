@@ -2271,6 +2271,8 @@ void CWeaponPhysCannon::PrimaryAttack( void )
 				if ( pCombine && pCombine->UsesArmor() && !pCombine->ArmorBroken() )
 				{
 					CTakeDamageInfo info( pOwner, pOwner, 10000.0, DMG_PHYSGUN );
+					info.SetDamagePosition(tr.endpos);
+
 					pEntity->DispatchTraceAttack( info, forward, &tr );
 
 					ApplyMultiDamage();
@@ -2445,6 +2447,8 @@ bool CWeaponPhysCannon::AttachObject( CBaseEntity *pObject, const Vector &vPosit
 				pOwner->EyeVectors( &forward );
 
 				CTakeDamageInfo info(pOwner, pOwner, 10000.0, DMG_PHYSGUN);
+				info.SetDamagePosition(tr.endpos);
+
 				pObject->DispatchTraceAttack(info, forward, &tr);
 				ApplyMultiDamage();
 

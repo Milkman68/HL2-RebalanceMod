@@ -294,8 +294,8 @@ $Project "Server (Episodic)"
 			$Folder	"HL2R"
 			{
 				$File	"hl2r\weapon_hmg.cpp"
-				$File	"hl2r\weapon_smg2.cpp"
 				$File	"hl2r\weapon_ar1.cpp"
+				$File	"hl2r\weapon_oicw.cpp"
 				$File	"hl2r\weapon_cshotgun.cpp"
 				$File	"hl2r\weapon_sniperrifle.cpp"
 

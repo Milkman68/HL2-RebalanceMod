@@ -56,8 +56,10 @@ public:
 	void Pump( void );
 	void DryFire( void );
 	virtual float GetFireRate( void ) { return 1.0; };
+#ifndef USE_NEW_PROFICIENCY_SYSTEM
 	virtual float			GetMinRestTime() { return 1.0; }
 	virtual float			GetMaxRestTime() { return 1.5; }
+#endif
 
 	void Operator_HandleAnimEvent( animevent_t *pEvent, CBaseCombatCharacter *pOperator );
 

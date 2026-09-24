@@ -46,12 +46,12 @@ public:
 	float	WeaponAutoAimScale()	{ return 0.6f; }
 	
 	int		CapabilitiesGet( void ) { return bits_CAP_WEAPON_RANGE_ATTACK1; }
-	
+#ifndef USE_NEW_PROFICIENCY_SYSTEM
 	virtual int		GetMinBurst(){ return 1;}
 	virtual int		GetMaxBurst(){ return 1;}
 	virtual float	GetMinRestTime(){ return 0.75; };
 	virtual float	GetMaxRestTime(){ return 1.25; };
-	
+#endif
 	virtual float 	GetFireRate(){ return 0.75; }
 	
 	void FireNPCPrimaryAttack( CBaseCombatCharacter *pOperator, Vector &vecShootOrigin, Vector &vecShootDir );

@@ -119,8 +119,9 @@ public:
 
 	// from cbasecombatcharacter
 	void				InitVCollision( const Vector &vecAbsOrigin, const Vector &vecAbsVelocity );
+#ifndef USE_NEW_PROFICIENCY_SYSTEM
 	WeaponProficiency_t CalcWeaponProficiency( CBaseCombatWeapon *pWeapon );
-
+#endif
 	Class_T				Classify ( void );
 
 	// from CBasePlayer

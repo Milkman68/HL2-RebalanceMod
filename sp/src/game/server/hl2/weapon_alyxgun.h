@@ -27,8 +27,10 @@ public:
 	void	Precache( void );
 	void	AddViewKick( void );
 
+#ifndef USE_NEW_PROFICIENCY_SYSTEM
 	virtual int		GetMinBurst( void ) { return 4; }
 	virtual int		GetMaxBurst( void ) { return 7; }
+#endif
 	virtual float	GetMinRestTime( void );
 	virtual float	GetMaxRestTime( void );
 

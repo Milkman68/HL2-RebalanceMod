@@ -293,17 +293,38 @@ public:
 	// Bullet launch information
 	virtual int				GetBulletType( void );
 	virtual const Vector&	GetBulletSpread( void );
+
+#ifndef USE_NEW_PROFICIENCY_SYSTEM
 	virtual Vector			GetBulletSpread( WeaponProficiency_t proficiency )		{ return GetBulletSpread(); }
 	virtual float			GetSpreadBias( WeaponProficiency_t proficiency )			{ return 1.0; }
+#else
+	virtual float			GetSpreadBias( void )			{ return 1.0; }
+#endif
+
 	virtual float			GetFireRate( void );
+
+#ifndef USE_NEW_PROFICIENCY_SYSTEM
 	virtual int				GetMinBurst() { return 1; }
 	virtual int				GetMaxBurst() { return 1; }
 	virtual float			GetMinRestTime() { return 0.3; }
 	virtual float			GetMaxRestTime() { return 0.6; }
+#else
+	virtual int				GetMinBurst()		{ return (int)GetProficiencyValue(PROF_MIN_SHOT_COUNT,				1); }
+	virtual int				GetMaxBurst()		{ return (int)GetProficiencyValue(PROF_MAX_SHOT_COUNT,				1); }
+	virtual float			GetMinRestTime()	{ return GetProficiencyValue(PROF_MIN_BURST_TIME,					0.3); }
+	virtual float			GetMaxRestTime()	{ return GetProficiencyValue(PROF_MAX_BURST_TIME,					0.6); }
+
+	virtual float			GetNpcFireRate()	{ return GetFireRate() * GetProficiencyValue(PROF_FIRERATE_SCALE,	1.0); }
+	virtual Vector			GetNpcSpread()		{ return GetBulletSpread() * GetProficiencyValue(PROF_SPREAD_SCALE, 1.0); }
+	virtual float			GetNpcBias()		{ return GetProficiencyValue(PROF_SPREAD_BIAS,						1.0); }
+#endif
+
 	virtual int				GetRandomBurst() { return random->RandomInt( GetMinBurst(), GetMaxBurst() ); }
 	virtual void			WeaponSound( WeaponSound_t sound_type, float soundtime = 0.0f );
 	virtual void			StopWeaponSound( WeaponSound_t sound_type );
+#ifndef USE_NEW_PROFICIENCY_SYSTEM
 	virtual const WeaponProficiencyInfo_t *GetProficiencyValues();
+#endif
 
 	// Autoaim
 	virtual float			GetMaxAutoAimDeflection() { return 0.99f; }
@@ -369,6 +390,10 @@ public:
 	virtual bool			UsesClipsForAmmo1( void ) const;
 	virtual bool			UsesClipsForAmmo2( void ) const;
 	bool					IsMeleeWeapon() const;
+
+#ifdef USE_NEW_PROFICIENCY_SYSTEM
+	float					GetProficiencyValue(ProficiencyValues_t index, float flDefaultValue);
+#endif
 
 	// derive this function if you mod uses encrypted weapon info files
 	virtual const unsigned char *GetEncryptionKey( void );

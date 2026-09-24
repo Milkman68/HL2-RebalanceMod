@@ -12,6 +12,7 @@
 #endif
 
 #include "shareddefs.h"
+#include "weapon_proficiency.h"
 
 class IFileSystem;
 
@@ -112,6 +113,11 @@ public:
 	// Animations blocks
 	char					aAnimNames[MAX_WEAPON_ANIM_STRINGS][MAX_WEAPON_STRING];	
 	float					fAnimSpeed[MAX_WEAPON_ANIM_STRINGS];
+
+	// Shotregulator block
+#ifdef	USE_NEW_PROFICIENCY_SYSTEM
+	ProficiencyTable_t		*m_ProficiencyValues;
+#endif
 
 	int						iAmmoType;
 	int						iAmmoType_carry;

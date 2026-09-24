@@ -58,8 +58,9 @@ public:
 
 	void PainSound( const CTakeDamageInfo &info );
 	void DeathSound( const CTakeDamageInfo &info );
-	
+#ifndef USE_NEW_PROFICIENCY_SYSTEM
 	WeaponProficiency_t CalcWeaponProficiency( CBaseCombatWeapon *pWeapon );
+#endif
 	Vector GetActualShootPosition( const Vector &shootOrigin );
 	Vector GetActualShootTrajectory( const Vector &shootOrigin );
 
@@ -75,6 +76,8 @@ public:
 
 	bool IsJumpLegal( const Vector &startPos, const Vector &apex, const Vector &endPos ) const;
 	int SelectFailSchedule( int failedSchedule, int failedTask, AI_TaskFailureCode_t taskFailCode );
+
+	virtual int	GetProficiencyTier(void) { return PROFICIENCY_TIER_2; };
 
 	DECLARE_DATADESC();
 
@@ -305,11 +308,12 @@ void CNPC_Monk::DeathSound( const CTakeDamageInfo &info )
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
+#ifndef USE_NEW_PROFICIENCY_SYSTEM
 WeaponProficiency_t CNPC_Monk::CalcWeaponProficiency( CBaseCombatWeapon *pWeapon )
 {
 	return WEAPON_PROFICIENCY_PERFECT;
 }
-
+#endif
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 Vector CNPC_Monk::GetActualShootPosition( const Vector &shootOrigin )

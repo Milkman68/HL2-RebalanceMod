@@ -96,7 +96,9 @@ BEGIN_DATADESC( CBaseCombatCharacter )
 	DEFINE_FIELD( m_LastHitGroup, FIELD_INTEGER ),
 	DEFINE_FIELD( m_flDamageAccumulator, FIELD_FLOAT ),
 	DEFINE_INPUT( m_impactEnergyScale, FIELD_FLOAT, "physdamagescale" ),
+#ifndef USE_NEW_PROFICIENCY_SYSTEM
 	DEFINE_FIELD( m_CurrentWeaponProficiency, FIELD_INTEGER),
+#endif
 
 	DEFINE_UTLVECTOR( m_Relationship,	FIELD_EMBEDDED),
 
@@ -2063,141 +2065,6 @@ void CBaseCombatCharacter::SetLightingOriginRelative( CBaseEntity *pLightingOrig
 	}
 }
 //-----------------------------------------------------------------------------
-// Purpose:
-//-----------------------------------------------------------------------------
-#define PROFICENCY_LIST_SIZE 5
-enum eProficencyList
-{
-	MIN_BURST_SIZE = 0,
-	MAX_BURST_SIZE,
-	MIN_REST_TIME,
-	MAX_REST_TIME,
-	ACCURACY
-};
-
-bool CBaseCombatCharacter::CalcNewWeaponProficiency( CBaseCombatWeapon *pWeapon )
-{
-	m_iWeaponBurstSizeMin = -1;
-	m_iWeaponBurstSizeMax = -1;
-
-	m_flWeaponBurstRestTimeMin = -1;
-	m_flWeaponBurstRestTimeMax = -1;
-
-	char szClassType[16];
-	V_strcpy_safe(szClassType, "neutral");
-
-	if (GetDefaultRelationshipDisposition(CLASS_PLAYER) == D_LI)
-		V_strcpy_safe(szClassType, "ally");
-
-	if (GetDefaultRelationshipDisposition(CLASS_PLAYER) == D_HT)
-		V_strcpy_safe(szClassType, "enemy");
-
-	// There shouldn't be any cases where a weapon-wielding npc isn't either a direct ally or enemy of the player.
-	if (!Q_stricmp(szClassType, "neutral"))
-		return false;
-
-	char output[24];
-	V_strcpy_safe(output, pWeapon->GetName());
-
-	char substr[24];
-	V_StrSubst(output, "weapon_", "", substr, 24 );
-
-	// Get the convar that holds all our proficency values for our specific type, weapon, and tier.
-	char szProficencyConVarName[64];
-	Q_snprintf(szProficencyConVarName, 64, "sk_%s_proficiency_%s", szClassType, substr );
-
-	ConVarRef var(szProficencyConVarName);
- 	if ( !var.IsValid() )
-	{
-		DevWarning( "Warning! Proficency ConVar: [%s] Does not exist!\n", szProficencyConVarName );
-		return false;
-	}
-
-	char szProficencyValues[128];
-	V_strcpy_safe(szProficencyValues, var.GetString() );
-
-	// Tokenize our convar string to get all the values we need.
-	int index = 0;
-	int tier = 0;
-
-	char *pszToken = strtok( szProficencyValues, " \t");
-	while ( pszToken != NULL )
-	{
-		if ( tier == GetNewProficiencyTier() )
-		{
-			int offsetindex = index - (tier * PROFICENCY_LIST_SIZE);
-			if ( offsetindex == MIN_BURST_SIZE )
-			{
-				m_iWeaponBurstSizeMin = atoi( pszToken );
-			}
-			else if ( offsetindex == MAX_BURST_SIZE )
-			{
-				m_iWeaponBurstSizeMax = atoi( pszToken );
-			}
-			else if( offsetindex == MIN_REST_TIME )
-			{
-				m_flWeaponBurstRestTimeMin = atof( pszToken );
-			}
-			else if( offsetindex == MAX_REST_TIME )
-			{
-				m_flWeaponBurstRestTimeMax = atof( pszToken );
-			}
-			else if( offsetindex == ACCURACY )
-			{
-				if ( !Q_stricmp(pszToken, "poor" ) )
-					SetCurrentWeaponProficiency(WEAPON_PROFICIENCY_POOR);
-
-				if ( !Q_stricmp(pszToken, "average" ) )
-					SetCurrentWeaponProficiency(WEAPON_PROFICIENCY_AVERAGE);
-
-				if ( !Q_stricmp(pszToken, "good" ) )
-					SetCurrentWeaponProficiency(WEAPON_PROFICIENCY_GOOD);
-
-				if ( !Q_stricmp(pszToken, "very_good" ) )
-					SetCurrentWeaponProficiency(WEAPON_PROFICIENCY_VERY_GOOD);
-
-				if ( !Q_stricmp(pszToken, "perfect" ) )
-					SetCurrentWeaponProficiency(WEAPON_PROFICIENCY_PERFECT);
-
-				break;
-			}
-			else
-			{
-				DevWarning( "Warning! Proficency ConVar: [%s] Has too many members!\n", szProficencyConVarName );
-				break;
-			}
-		}
-		else
-		{
-			// Increase the tier index every iteration of a proficency list.
-			if ( index > 0 && (index + 1) % PROFICENCY_LIST_SIZE == 0 )
-				tier++;
-		}
-
-		index++;
-		pszToken = strtok( NULL, " \t" );
-	}
-
-	if ( tier != GetNewProficiencyTier() )
-		DevWarning( "Warning! Proficency ConVar: [%s] has no suitable %s list for tier [%i]\n", szProficencyConVarName, szClassType, tier );
-
-	if ( m_iWeaponBurstSizeMin < 0.0f )
-		DevWarning( "Warning! Proficency ConVar: [%s] has no value for m_iWeaponBurstSizeMin\n", szProficencyConVarName );
-	
-	if ( m_iWeaponBurstSizeMax < 0.0f )
-		DevWarning( "Warning! Proficency ConVar: [%s] has no value for m_iWeaponBurstSizeMax\n", szProficencyConVarName );
-
-	if ( m_flWeaponBurstRestTimeMin < 0.0f )
-		DevWarning( "Warning! Proficency ConVar: [%s] has no value for m_flWeaponBurstRestTimeMin\n", szProficencyConVarName );
-
-	if ( m_flWeaponBurstRestTimeMax < 0.0f )
-		DevWarning( "Warning! Proficency ConVar: [%s] has no value for m_flWeaponBurstRestTimeMax\n", szProficencyConVarName );
-
-	// Don't have a warning set up for accuracy because that's already handled in Weapon_Equip.
-
-	return true;
-}
-//-----------------------------------------------------------------------------
 // Purpose:	Add new weapon to the character
 // Input  : New weapon
 //-----------------------------------------------------------------------------
@@ -2289,9 +2156,9 @@ void CBaseCombatCharacter::Weapon_Equip( CBaseCombatWeapon *pWeapon )
 
 	// Pass the lighting origin over to the weapon if we have one
 	pWeapon->SetLightingOriginRelative( GetLightingOriginRelative() );
-
+#ifndef USE_NEW_PROFICIENCY_SYSTEM
 	// Set weapon burst params and stuff.
-	if( !IsPlayer() && UsesNewProficiencySystem() )
+	if( !IsPlayer() )
 	{
 		CalcNewWeaponProficiency(pWeapon);
 	}
@@ -2302,11 +2169,11 @@ void CBaseCombatCharacter::Weapon_Equip( CBaseCombatWeapon *pWeapon )
 
 		SetCurrentWeaponProficiency( proficiency );
 	}
-
 	if( weapon_showproficiency.GetBool() != 0 )
 	{
 		Msg("%s equipped with %s, proficiency is %s\n", GetClassname(), pWeapon->GetClassname(), GetWeaponProficiencyName( GetCurrentWeaponProficiency() ) );
 	}
+#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -2435,11 +2302,11 @@ void CBaseCombatCharacter::Weapon_Swap( CBaseCombatWeapon *pOldWeapon, CBaseComb
 
 	// Pass the lighting origin over to the weapon if we have one
 	pNewWeapon->SetLightingOriginRelative( GetLightingOriginRelative() );
-
+#ifndef USE_NEW_PROFICIENCY_SYSTEM
 	WeaponProficiency_t proficiency;
 	proficiency = CalcWeaponProficiency( pNewWeapon );
 	SetCurrentWeaponProficiency( proficiency );
-
+#endif
 	if ( !bStorePrimary && pOldWeapon->UsesClipsForAmmo1() )
 	{
 		int iOldweaponPrimaryAmmotype = pOldWeapon->GetPrimaryAmmoType(CBaseCombatWeapon::INDEX_CARRY);
@@ -3447,18 +3314,40 @@ void CBaseCombatCharacter::SetActiveWeapon( CBaseCombatWeapon *pNewWeapon )
 // the weapon, and the status of the target. Use this information to determine
 // how accurately to shoot at the target.
 //-----------------------------------------------------------------------------
-Vector CBaseCombatCharacter::GetAttackSpread( CBaseCombatWeapon *pWeapon, CBaseEntity *pTarget )
+Vector CBaseCombatCharacter::GetAttackSpread(CBaseCombatWeapon* pWeapon, CBaseEntity* pTarget)
 {
-	if ( pWeapon )
+	if (pWeapon)
+#ifndef USE_NEW_PROFICIENCY_SYSTEM
 		return pWeapon->GetBulletSpread(GetCurrentWeaponProficiency());
+#else
+	if (pWeapon)
+	{
+		if ( !IsPlayer() )
+			return pWeapon->GetNpcSpread();
+
+		return pWeapon->GetBulletSpread();
+	}
+#endif
+
 	return VECTOR_CONE_15DEGREES;
 }
 
 //-----------------------------------------------------------------------------
-float CBaseCombatCharacter::GetSpreadBias( CBaseCombatWeapon *pWeapon, CBaseEntity *pTarget )
+float CBaseCombatCharacter::GetSpreadBias(CBaseCombatWeapon* pWeapon, CBaseEntity* pTarget)
 {
-	if ( pWeapon )
+#ifndef USE_NEW_PROFICIENCY_SYSTEM
+	if (pWeapon)
 		return pWeapon->GetSpreadBias(GetCurrentWeaponProficiency());
+#else
+	if (pWeapon)
+	{
+		if ( !IsPlayer() )
+			return pWeapon->GetNpcBias();
+
+		return pWeapon->GetSpreadBias();
+	}
+#endif
+
 	return 1.0;
 }
 
@@ -3492,11 +3381,12 @@ bool CBaseCombatCharacter::IsGlowEffectActive( void )
 //-----------------------------------------------------------------------------
 // Assume everyone is average with every weapon. Override this to make exceptions.
 //-----------------------------------------------------------------------------
+#ifndef USE_NEW_PROFICIENCY_SYSTEM
 WeaponProficiency_t CBaseCombatCharacter::CalcWeaponProficiency( CBaseCombatWeapon *pWeapon )
 {
 	return WEAPON_PROFICIENCY_AVERAGE;
 }
-
+#endif
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------

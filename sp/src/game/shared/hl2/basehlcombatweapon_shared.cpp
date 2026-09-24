@@ -353,7 +353,7 @@ void CBaseHLCombatWeapon::AddViewmodelBob( CBaseViewModel *viewmodel, Vector &or
 
 	VectorMA( origin, g_lateralBob * 0.8f, right, origin );
 }
-
+#ifndef USE_NEW_PROFICIENCY_SYSTEM
 //-----------------------------------------------------------------------------
 Vector CBaseHLCombatWeapon::GetBulletSpread( WeaponProficiency_t proficiency )
 {
@@ -371,7 +371,7 @@ const WeaponProficiencyInfo_t *CBaseHLCombatWeapon::GetProficiencyValues()
 {
 	return NULL;
 }
-
+#endif
 #else
 
 // Server stubs
@@ -390,7 +390,7 @@ void CBaseHLCombatWeapon::AddViewmodelBob( CBaseViewModel *viewmodel, Vector &or
 {
 }
 
-
+#ifndef USE_NEW_PROFICIENCY_SYSTEM
 //-----------------------------------------------------------------------------
 Vector CBaseHLCombatWeapon::GetBulletSpread( WeaponProficiency_t proficiency )
 {
@@ -431,5 +431,6 @@ const WeaponProficiencyInfo_t *CBaseHLCombatWeapon::GetDefaultProficiencyValues(
 
 	return g_BaseWeaponProficiencyTable;
 }
+#endif
 
 #endif

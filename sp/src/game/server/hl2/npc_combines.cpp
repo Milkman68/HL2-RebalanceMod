@@ -109,10 +109,7 @@ void CNPC_CombineS::Spawn( void )
 		SetKickDamage( sk_combine_guard_kick.GetFloat() );
 
 		if ( sk_combine_guard_shield.GetInt() > 0 )
-		{
 			SetArmorCharge(sk_combine_guard_shield.GetInt());
-			SetUsesArmor(true);
-		}
 	}
 	else
 	{

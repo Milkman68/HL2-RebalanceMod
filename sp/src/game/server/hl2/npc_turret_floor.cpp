@@ -2007,6 +2007,7 @@ float CNPC_FloorTurret::GetAttackDamageScale( CBaseEntity *pVictim )
 //-----------------------------------------------------------------------------
 Vector CNPC_FloorTurret::GetAttackSpread( CBaseCombatWeapon *pWeapon, CBaseEntity *pTarget ) 
 {
+#ifndef USE_NEW_PROFICIENCY_SYSTEM
 	WeaponProficiency_t weaponProficiency = WEAPON_PROFICIENCY_AVERAGE;
 
 	// Switch our weapon proficiency based upon our target
@@ -2025,6 +2026,9 @@ Vector CNPC_FloorTurret::GetAttackSpread( CBaseCombatWeapon *pWeapon, CBaseEntit
 	}
 
 	return VECTOR_CONE_6DEGREES * ((CBaseHLCombatWeapon::GetDefaultProficiencyValues())[ weaponProficiency ].spreadscale);
+#else
+	return VECTOR_CONE_6DEGREES;
+#endif
 }
 
 //------------------------------------------------------------------------------

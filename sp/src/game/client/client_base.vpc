@@ -494,6 +494,7 @@ $Project
 		$File	"warp_overlay.cpp"
 		$File	"WaterLODMaterialProxy.cpp"
 		$File	"$SRCDIR\game\shared\weapon_parse.cpp"
+		$File	"$SRCDIR\game\shared\weapon_proficiency.cpp"
 		$File	"weapon_selection.cpp"
 		$File	"weapons_resource.cpp"
 		$File	"WorldDimsProxy.cpp"

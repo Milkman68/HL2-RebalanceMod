@@ -6992,21 +6992,9 @@ void CAI_BaseNPC::OnUpdateShotRegulator( )
 	if ( !pWeapon )
 		return;
 
-	// Default values
-	if ( UsesNewProficiencySystem() )
-	{
-		CalcNewWeaponProficiency(pWeapon);
-
-		m_ShotRegulator.SetBurstInterval( pWeapon->GetFireRate(), pWeapon->GetFireRate() );
-		m_ShotRegulator.SetBurstShotCountRange( m_iWeaponBurstSizeMin, m_iWeaponBurstSizeMax );
-		m_ShotRegulator.SetRestInterval( m_flWeaponBurstRestTimeMin, m_flWeaponBurstRestTimeMax );
-	}
-	else
-	{
-		m_ShotRegulator.SetBurstInterval( pWeapon->GetFireRate(), pWeapon->GetFireRate() );
-		m_ShotRegulator.SetBurstShotCountRange( pWeapon->GetMinBurst(), pWeapon->GetMaxBurst() );
-		m_ShotRegulator.SetRestInterval( pWeapon->GetMinRestTime(), pWeapon->GetMaxRestTime() );
-	}
+	m_ShotRegulator.SetBurstInterval( pWeapon->GetNpcFireRate(), pWeapon->GetNpcFireRate() );
+	m_ShotRegulator.SetBurstShotCountRange( pWeapon->GetMinBurst(), pWeapon->GetMaxBurst() );
+	m_ShotRegulator.SetRestInterval( pWeapon->GetMinRestTime(), pWeapon->GetMaxRestTime() );
 
 	// Let the behavior have a whack at it.
 	if ( GetRunningBehavior() )
@@ -12930,7 +12918,7 @@ bool CAI_BaseNPC::IsLOSLinkUsable( const Vector &vecStart, const Vector &vecEnd,
 	}
 
 	// Avoid nodes in the enemy's viewcode.
-	CBaseCombatCharacter *pEnemyCombatCharacter = GetEnemyCombatCharacterPointer();
+/*	CBaseCombatCharacter *pEnemyCombatCharacter = GetEnemyCombatCharacterPointer();
 	if ( pEnemyCombatCharacter )
 	{
 		Vector nodeorigin = ( vecThreatEyePos - vecEnd );
@@ -12962,7 +12950,7 @@ bool CAI_BaseNPC::IsLOSLinkUsable( const Vector &vecStart, const Vector &vecEnd,
 				return false;
 			}
 		}
-	}
+	}*/
 
 	return true;
 }

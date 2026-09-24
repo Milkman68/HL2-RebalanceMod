@@ -45,12 +45,13 @@ public:
 	virtual void	AddViewmodelBob( CBaseViewModel *viewmodel, Vector &origin, QAngle &angles );
 	virtual	float	CalcViewmodelBob( void );
 
+#ifndef USE_NEW_PROFICIENCY_SYSTEM
 	virtual Vector	GetBulletSpread( WeaponProficiency_t proficiency );
 	virtual float	GetSpreadBias( WeaponProficiency_t proficiency );
 
 	virtual const	WeaponProficiencyInfo_t *GetProficiencyValues();
 	static const	WeaponProficiencyInfo_t *GetDefaultProficiencyValues();
-
+#endif
 	virtual void	ItemHolsterFrame( void );
 
 	int				m_iPrimaryAttacks;		// # of primary attacks performed with this weapon

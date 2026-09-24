@@ -197,10 +197,12 @@ public:
 
 	virtual void Drop( const Vector &vecVelocity );
 
+#ifndef USE_NEW_PROFICIENCY_SYSTEM
 	int		GetMinBurst() { return 1; }
 	int		GetMaxBurst() { return 1; }
 	float	GetMinRestTime() { return 4.0; }
 	float	GetMaxRestTime() { return 4.0; }
+#endif
 
 	bool	WeaponLOSCondition( const Vector &ownerPos, const Vector &targetPos, bool bSetConditions );
 	int		WeaponRangeAttack1Condition( float flDot, float flDist );

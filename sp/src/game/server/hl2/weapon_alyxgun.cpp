@@ -321,8 +321,13 @@ const Vector& CWeaponAlyxGun::GetBulletSpread( void )
 //-----------------------------------------------------------------------------
 float CWeaponAlyxGun::GetMinRestTime( void )
 {
+#ifndef USE_NEW_PROFICIENCY_SYSTEM
 	if ( IsAlyxInInjuredMode() )
 		return 1.5f;
+#else
+	if (IsAlyxInInjuredMode())
+		return BaseClass::GetMaxRestTime() * 1.5f;
+#endif
 
 	return BaseClass::GetMinRestTime();
 }
@@ -330,8 +335,13 @@ float CWeaponAlyxGun::GetMinRestTime( void )
 //-----------------------------------------------------------------------------
 float CWeaponAlyxGun::GetMaxRestTime( void )
 {
+#ifndef USE_NEW_PROFICIENCY_SYSTEM
 	if ( IsAlyxInInjuredMode() )
 		return 3.0f;
+#else
+	if (IsAlyxInInjuredMode())
+		return BaseClass::GetMaxRestTime() * 3.0f;
+#endif
 
 	return BaseClass::GetMaxRestTime();
 }

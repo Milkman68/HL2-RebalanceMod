@@ -85,12 +85,10 @@ public:
 	bool			IsElite() { return m_fIsElite; }
 	bool			IsPrisonGuard() { return m_fIsGuard; }
 
-	void			SetUsesArmor( bool bState ) { m_bUsesArmor = bState; }
-	bool			UsesArmor( void ) { return m_bUsesArmor; }
-
+	bool			UsesArmor( void ) { return m_flArmor >= 0; }
 	float			GetArmorCharge( void ) { return m_flArmor; }
 	void			SetArmorCharge( float flcharge ) { m_flArmor = flcharge; }
-	bool			ArmorBroken( void ) { return m_flArmor <= 0; }
+	bool			ArmorBroken( void ) { return m_flArmor == 0; }
 
 	void			DelayAltFireAttack( float flDelay );
 	void			DelaySquadAltFireAttack( float flDelay );
@@ -124,7 +122,9 @@ public:
 	void			OnEndMoveAndShoot();
 
 	// Combat
+#ifndef USE_NEW_PROFICIENCY_SYSTEM
 	WeaponProficiency_t CalcWeaponProficiency( CBaseCombatWeapon *pWeapon );
+#endif
 	bool			HasShotgun();
 	bool			ActiveWeaponIsFullyLoaded();
 

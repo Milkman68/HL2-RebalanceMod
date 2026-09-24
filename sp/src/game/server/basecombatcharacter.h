@@ -355,10 +355,12 @@ public:
 	bool				RemoveWeapon( CBaseCombatWeapon *pWeapon );
 	virtual void		RemoveAllWeapons();
 
+#ifndef USE_NEW_PROFICIENCY_SYSTEM
 	// Old proficiency system (still used for players and misc npc's)
 	WeaponProficiency_t GetCurrentWeaponProficiency() { return m_CurrentWeaponProficiency; }
 	void				SetCurrentWeaponProficiency( WeaponProficiency_t iProficiency ) { m_CurrentWeaponProficiency = iProficiency; }
 	virtual WeaponProficiency_t CalcWeaponProficiency( CBaseCombatWeapon *pWeapon );
+#endif
 
 	enum
 	{
@@ -368,16 +370,8 @@ public:
 	};
 
 	// New proficiency system
-	virtual bool		UsesNewProficiencySystem( void ) { return false; };
-	virtual int			GetNewProficiencyTier( void ) { return PROFICIENCY_TIER_1; };
-	bool				CalcNewWeaponProficiency( CBaseCombatWeapon *pWeapon );
-
-public:
-	int m_iWeaponBurstSizeMin;
-	int m_iWeaponBurstSizeMax;
-
-	float m_flWeaponBurstRestTimeMin;
-	float m_flWeaponBurstRestTimeMax;
+	virtual int			GetProficiencyTier( void ) { return PROFICIENCY_TIER_1; };
+	virtual int			IsPlayerEnemy( void ) { return GetDefaultRelationshipDisposition(CLASS_PLAYER) == D_HT; };
 
 public:
 
@@ -530,8 +524,9 @@ private:
 	
 	// Weapon proficiency gets calculated each time an NPC changes his weapon, and then
 	// cached off as the CurrentWeaponProficiency.
+#ifndef USE_NEW_PROFICIENCY_SYSTEM
 	WeaponProficiency_t m_CurrentWeaponProficiency;
-
+#endif
 	// ---------------
 	//  Relationships
 	// ---------------

@@ -125,8 +125,7 @@ public:
 	bool			QuerySeeEntity( CBaseEntity *pEntity, bool bOnlyHateOrFearIfNPC = false );
 	bool			ShouldIgnoreSound( CSound * );
 
-	virtual	bool	UsesNewProficiencySystem( void ) { return true; }
-	virtual int		GetNewProficiencyTier( void ) { return m_iTier; };
+	virtual int		GetProficiencyTier( void ) { return m_iTier; };
 	
 	int 			SelectSchedule();
 
@@ -254,7 +253,9 @@ public:
 	void			DecalTrace( trace_t *pTrace, char const *decalName );
 	bool 			FCanCheckAttacks();
 	Vector 			GetActualShootPosition( const Vector &shootOrigin );
+#ifndef USE_NEW_PROFICIENCY_SYSTEM
 	WeaponProficiency_t CalcWeaponProficiency( CBaseCombatWeapon *pWeapon );
+#endif
 	bool			ShouldLookForBetterWeapon();
 	bool			Weapon_CanUse( CBaseCombatWeapon *pWeapon );
 	void			Weapon_Equip( CBaseCombatWeapon *pWeapon );

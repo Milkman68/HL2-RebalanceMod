@@ -3547,10 +3547,10 @@ Vector CHL2_Player::EyeDirection3D( void )
 bool CHL2_Player::Weapon_Switch( CBaseCombatWeapon *pWeapon, int viewmodelindex )
 {
 	MDLCACHE_CRITICAL_SECTION();
-
+#ifndef USE_NEW_PROFICIENCY_SYSTEM
 	// Recalculate proficiency!
 	SetCurrentWeaponProficiency( CalcWeaponProficiency( pWeapon ) );
-
+#endif
 	// Come out of suit zoom mode
 	if ( IsZooming() )
 	{
@@ -3560,7 +3560,7 @@ bool CHL2_Player::Weapon_Switch( CBaseCombatWeapon *pWeapon, int viewmodelindex 
 	return BaseClass::Weapon_Switch( pWeapon, viewmodelindex );
 }
 
-
+#ifndef USE_NEW_PROFICIENCY_SYSTEM
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 WeaponProficiency_t CHL2_Player::CalcWeaponProficiency( CBaseCombatWeapon *pWeapon )
@@ -3576,7 +3576,7 @@ WeaponProficiency_t CHL2_Player::CalcWeaponProficiency( CBaseCombatWeapon *pWeap
 
 	return proficiency;
 }
-
+#endif
 //-----------------------------------------------------------------------------
 // Purpose: override how single player rays hit the player
 //-----------------------------------------------------------------------------

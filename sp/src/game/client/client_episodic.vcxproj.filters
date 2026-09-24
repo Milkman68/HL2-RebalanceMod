@@ -2959,6 +2959,9 @@
     <ClCompile Include="..\..\game\shared\weapon_parse_default.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\game\shared\weapon_proficiency.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="weapon_selection.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

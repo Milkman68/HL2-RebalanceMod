@@ -647,7 +647,7 @@ void Parse(KeyValues *pData, CEntityMapData *pEntData)
 
 bool MapEntity_ModifyEntityData( CEntityMapData *pEntData ) 
 {
-#if 1
+#if 0
 	KeyValues *m_pEntEditFile = new KeyValues( "entedit.txt" );
 	m_pEntEditFile->LoadFromFile( filesystem, "scripts/entedit.txt", "GAME" );
 	if ( m_pEntEditFile == NULL )

@@ -30,8 +30,7 @@ public:
 	bool	ShouldLookForBetterWeapon() { return false; }
 	bool	IsReadinessCapable() { return false; }
 
-	virtual	bool		UsesNewProficiencySystem( void ) { return true; }
-	virtual int			GetNewProficiencyTier( void ) { return 1; };
+	virtual int			GetProficiencyTier( void ) { return PROFICIENCY_TIER_2; };
 
 	void	DeathSound( const CTakeDamageInfo &info );
 

@@ -5456,9 +5456,10 @@ void CNPC_MetroPolice::BuildScheduleTestBits( void )
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
+#ifndef USE_NEW_PROFICIENCY_SYSTEM
 WeaponProficiency_t CNPC_MetroPolice::CalcWeaponProficiency( CBaseCombatWeapon *pWeapon )
 {
-/*	if( FClassnameIs( pWeapon, "weapon_pistol" ) )
+	if( FClassnameIs( pWeapon, "weapon_pistol" ) )
 	{
 		return WEAPON_PROFICIENCY_AVERAGE;
 	}
@@ -5472,10 +5473,10 @@ WeaponProficiency_t CNPC_MetroPolice::CalcWeaponProficiency( CBaseCombatWeapon *
 	{
 		return WEAPON_PROFICIENCY_GOOD;
 	}
-	*/
+	
 	return BaseClass::CalcWeaponProficiency( pWeapon );
 }
-
+#endif
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------

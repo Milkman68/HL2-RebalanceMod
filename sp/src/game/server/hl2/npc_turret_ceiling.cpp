@@ -143,7 +143,11 @@ public:
 
 	Vector	GetAttackSpread( CBaseCombatWeapon *pWeapon, CBaseEntity *pTarget ) 
 	{
+#ifndef USE_NEW_PROFICIENCY_SYSTEM
 		return VECTOR_CONE_5DEGREES * ((CBaseHLCombatWeapon::GetDefaultProficiencyValues())[ WEAPON_PROFICIENCY_PERFECT ].spreadscale);
+#else
+		return VECTOR_CONE_5DEGREES;
+#endif
 	}
 
 protected:

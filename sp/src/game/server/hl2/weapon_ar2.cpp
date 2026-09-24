@@ -135,7 +135,7 @@ void CWeaponAR2::Precache( void )
 //-----------------------------------------------------------------------------
 float CWeaponAR2::GetFireRate( void ) 
 { 
-	return sk_weapon_ar2_burst_fire.GetBool() ? 0.04f : 0.1f; 
+	return 0.09f; 
 }
 //-----------------------------------------------------------------------------
 // Purpose:
@@ -520,7 +520,8 @@ void CWeaponAR2::AddViewKick( void )
 }
 
 //-----------------------------------------------------------------------------
-/* const WeaponProficiencyInfo_t *CWeaponAR2::GetProficiencyValues()
+#ifndef USE_NEW_PROFICIENCY_SYSTEM
+const WeaponProficiencyInfo_t *CWeaponAR2::GetProficiencyValues()
 {
 	static WeaponProficiencyInfo_t proficiencyTable[] =
 	{
@@ -535,4 +536,4 @@ void CWeaponAR2::AddViewKick( void )
 
 	return proficiencyTable;
 }
- */
+#endif

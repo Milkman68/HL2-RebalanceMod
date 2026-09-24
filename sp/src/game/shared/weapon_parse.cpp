@@ -318,8 +318,235 @@ bool ReadWeaponDataFromFileForSlot( IFileSystem* filesystem, const char *szWeapo
 
 	return true;
 }
+#ifdef	USE_NEW_PROFICIENCY_SYSTEM
 
+//-----------------------------------------------------------------------------
+// Stuff for Npc spread:
+//-----------------------------------------------------------------------------
+enum NpcSpreadPresets_t
+{
+	NPCSPREAD_POOR,
+	NPCSPREAD_MEDIOCRE,
+	NPCSPREAD_AVERAGE,
+	NPCSPREAD_GOOD,
+	NPCSPREAD_VERY_GOOD,
+	NPCSPREAD_PERFECT
+};
 
+struct NpcSpreadInfo_t
+{
+	float	spreadscale;
+	float	bias;
+};
+
+static NpcSpreadInfo_t g_NpcSpreadInfo[NPCSPREAD_PERFECT + 1] =
+{
+	{ 3.0f,		0.75f	}, //	[poor]
+	{ 2.0f,		0.75f	}, //	[mediocre]
+	{ 1.75f,	0.8f	}, //	[average]
+	{ 1.5f,		0.8f	}, //	[good]
+	{ 1.25f,	0.8f	}, //	[very_good]
+	{ 1.0f,		1.0f	}, //	[perfect]
+};
+
+static const char* g_NpcSpreadNames[] =
+{
+	"poor",
+	"mediocre",
+	"average",
+	"good",
+	"very_good",
+	"perfect"
+};
+
+NpcSpreadInfo_t GetNpcSpreadInfo(const char* name)
+{
+	COMPILE_TIME_ASSERT(ARRAYSIZE(g_NpcSpreadNames) == NPCSPREAD_PERFECT + 1); // Hey, update that there table!
+
+	for (int i = 0; i < NPCSPREAD_PERFECT+1; i++)
+	{
+		if (!Q_stricmp(name, g_NpcSpreadNames[i]))
+			return g_NpcSpreadInfo[i];
+	}
+
+	Warning("Attempted to get npc spread type (%s) but it does not exist!\n", name);
+	return { 0.0, 0.0 };
+}
+
+//-----------------------------------------------------------------------------
+// Example of a standard shotregulator block:
+//-----------------------------------------------------------------------------
+/*
+		"firerate_scale"		"1.0			1.0				1.0"		// How much to scale the weapon's firerate
+		"shot_count"			"3	 4			4	5			5	6"		// Min-max amount of shots in a burst
+		"burst_time"			"0.5 0.6		0.3	0.4			0.2	0.3"	// Min-max time between bursts
+		"spread_scale"			"average		good			very_good"	// How much to scale the weapon's spread.
+
+		"enemies"
+		{
+			"tier_1" // Metrocops
+			{
+				"spread_scale"	"poor			average			good"
+			}
+			"tier_2" // Combine Soldiers
+			{
+			}
+			"tier_3" // Combine Elites
+			{
+				"spread_scale"	"good			very_good		perfect"
+			}
+		}
+		"companions"
+		{
+			"tier_1" // Citizens
+			{
+				"spread_scale"	"poor			average			good"
+			}
+			"tier_2" // Essential Allies
+			{
+				"spread_scale"	"good			very_good		perfect"
+			}
+		}
+*/
+
+bool ParseHeader(ProficiencyTableIndex_t* index, KeyValues* pHeader);
+void ParseKey(ProficiencyTable_t* table, ProficiencyTableIndex_t* index, KeyValues* pKey);
+void ParseKeySection(ProficiencyTable_t* table, ProficiencyTableIndex_t* index, char* pToken, const char* pKeyName, int iSection);
+
+void ParseShotregulatorBlock(ProficiencyTable_t *table, ProficiencyTableIndex_t *index, KeyValues *pData )
+{
+	// Iterate through all keys in this header
+	for (KeyValues* sub = pData->GetFirstSubKey(); sub; sub = sub->GetNextKey())
+	{
+		// If this key doesn't contain a string, it's a header.
+		if (!Q_stricmp(sub->GetString(), ""))
+		{
+			ProficiencyTableIndex_t *newindex = new ProficiencyTableIndex_t;
+			newindex->Copy(index);
+
+			if ( !ParseHeader(index, sub) )
+				Error("Shotregulator header name [%s] is an invalid value!", sub->GetName() );
+
+			ParseShotregulatorBlock(table, index, sub);
+			delete newindex;
+		}
+		else
+		{
+			ParseKey(table, index, sub);
+		}
+	}
+}
+
+bool ParseHeader(ProficiencyTableIndex_t *index, KeyValues *pHeader)
+{
+	char szHeaderName[64];
+	V_strcpy_safe(szHeaderName, pHeader->GetName());
+
+	if (!Q_stricmp(szHeaderName, "enemies"))
+	{
+		index->npctype = PROF_NPC_TYPE_ENEMY;
+		return true;
+	}
+
+	if (!Q_stricmp(szHeaderName, "companions"))
+	{
+		index->npctype = PROF_NPC_TYPE_ALLY;
+		return true;
+	}
+
+	if (V_stristr(szHeaderName, "tier_"))
+	{
+		char szTierNum[64];
+		V_StrSubst(szHeaderName, "tier_", "", szTierNum, 64);
+		int iTier = V_atoi(szTierNum);
+
+		if (iTier < 1 || iTier > PROF_MAX_TIER)
+		{
+			Error("Shotregulator tier_ is set to an invalid value!");
+			return false;
+		}
+
+		index->tier = iTier;
+		return true;
+	}
+
+	return false;
+}
+
+void ParseKey(ProficiencyTable_t *table, ProficiencyTableIndex_t *index, KeyValues *pKey)
+{
+	char szKeyName[64];
+	V_strcpy_safe(szKeyName, pKey->GetName());
+
+	char szKeyString[128];
+	V_strcpy_safe(szKeyString, pKey->GetString());
+
+	int section = SKILL_EASY;
+	for (char* pszToken = strtok(szKeyString, " \t"); pszToken != NULL; pszToken = strtok(NULL, " \t"))
+	{
+		if (section > SKILL_HARD)
+			Error("Shotregulator key has too many sections!");
+
+		ParseKeySection(table, index, pszToken, szKeyName, section);
+		section++;
+	}
+}
+
+void ParseKeySection( ProficiencyTable_t *table, ProficiencyTableIndex_t *index, char *pToken, const char *pKeyName, int iSection )
+{
+	index->difficulty = iSection;
+
+	if ( !Q_stricmp(pKeyName, "firerate_scale" ) )
+	{
+		index->valuetype = PROF_FIRERATE_SCALE;
+		table->SetValue(index, V_atof(pToken));
+		return;
+	}
+
+	if ( !Q_stricmp(pKeyName, "shot_count" ) )
+	{
+		// Convert the shotregulator valuetype to a proficiency valuetype
+		index->valuetype = PROF_MIN_SHOT_COUNT;
+		table->SetValue(index, V_atof(pToken));
+
+		pToken = strtok(NULL, " \t");
+
+		index->valuetype = PROF_MAX_SHOT_COUNT;
+		table->SetValue(index, V_atof(pToken));
+		return;
+	}
+
+	if ( !Q_stricmp(pKeyName, "burst_time" ) )
+	{
+		// Convert the shotregulator valuetype to a proficiency valuetype
+		index->valuetype = PROF_MIN_BURST_TIME;
+		table->SetValue(index, V_atof(pToken));
+
+		pToken = strtok(NULL, " \t");
+
+		index->valuetype = PROF_MAX_BURST_TIME;
+		table->SetValue(index, V_atof(pToken));
+		return;
+	}
+
+	if ( !Q_stricmp(pKeyName, "spread_scale" ) )
+	{
+		// Convert the shotregulator valuetype to a proficiency valuetype
+		index->valuetype = PROF_SPREAD_SCALE;
+		float spreadscale = GetNpcSpreadInfo(pToken).spreadscale;
+
+		table->SetValue(index, spreadscale);
+
+		index->valuetype = PROF_SPREAD_BIAS;
+
+		float spreadbias = GetNpcSpreadInfo(pToken).bias;
+		table->SetValue(index, spreadbias);
+		return;
+	}
+
+	Error("Shotregulator key [%s] is an unknown keyvalue!", pKeyName);
+}
+#endif
 //-----------------------------------------------------------------------------
 // FileWeaponInfo_t implementation.
 //-----------------------------------------------------------------------------
@@ -366,11 +593,15 @@ FileWeaponInfo_t::FileWeaponInfo_t()
 	bShowUsageHint = false;
 	m_bAllowFlipping = true;
 	m_bBuiltRightHanded = true;
+
+	m_ProficiencyValues = NULL;
 }
 
 #ifdef CLIENT_DLL
 extern ConVar hud_fastswitch;
 #endif
+
+extern ConVar hl2r_debug_weapon_proficiency;
 
 void FileWeaponInfo_t::Parse( KeyValues *pKeyValuesData, const char *szWeaponName )
 {
@@ -518,6 +749,43 @@ void FileWeaponInfo_t::Parse( KeyValues *pKeyValuesData, const char *szWeaponNam
 			pTemp = pTemp->GetNextKey();
 		}
 	}
+	
+#ifdef	USE_NEW_PROFICIENCY_SYSTEM
+	KeyValues *pShotRegulatorBlock = pKeyValuesData->FindKey( "ShotRegulator" );
+	if (pShotRegulatorBlock)
+	{
+		// Create a new table for this weapon.
+		m_ProficiencyValues = new ProficiencyTable_t;
+
+		// Set all indecies in the valuetype array to -1
+		for (int i = 0; i < PROF_LAST_VALUE; i++ )
+		{
+			ProficiencyTableIndex_t *initIndex = new ProficiencyTableIndex_t;
+			initIndex->Initialize();
+
+			initIndex->valuetype = i;
+
+			m_ProficiencyValues->SetValue(initIndex, -1);
+
+			delete initIndex;
+		}
+
+		// Parse the shotregulator block:
+		ProficiencyTableIndex_t *initIndex = new ProficiencyTableIndex_t;
+		initIndex->Initialize();
+
+		ParseShotregulatorBlock( m_ProficiencyValues, initIndex, pShotRegulatorBlock);
+
+
+	//	if (hl2r_debug_weapon_proficiency.GetBool())
+	//	{
+	//		DevMsg("Shotregulator information for weapon [%s]\n", szPrintName);
+	//		m_ProficiencyValues->Debug();
+	//	}
+
+		delete initIndex;
+	}
+#endif
 }			
 		
 

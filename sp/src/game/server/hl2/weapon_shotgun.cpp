@@ -63,16 +63,16 @@ public:
 			return vitalAllyCone;
 		}
 
-		cone = VECTOR_CONE_7DEGREES;	
+		cone = VECTOR_CONE_9DEGREES;	
 		return cone;
 	}
-
+#ifndef USE_NEW_PROFICIENCY_SYSTEM
 	virtual int				GetMinBurst() { return 1; }
 	virtual int				GetMaxBurst() { return 3; }
 
 	virtual float			GetMinRestTime();
 	virtual float			GetMaxRestTime();
-
+#endif
 
 	virtual float			GetFireRate( void );
 
@@ -244,6 +244,7 @@ void CWeaponShotgun::Operator_HandleAnimEvent( animevent_t *pEvent, CBaseCombatC
 //			we are going to fix the combine's rate of shotgun fire in episodic.
 //			This change will not affect Alyx using a shotgun in EP1. (sjb)
 //-----------------------------------------------------------------------------
+#ifndef USE_NEW_PROFICIENCY_SYSTEM
 float CWeaponShotgun::GetMinRestTime()
 {
 	if( GetOwner() && GetOwner()->Classify() == CLASS_COMBINE )
@@ -253,7 +254,6 @@ float CWeaponShotgun::GetMinRestTime()
 	
 	return BaseClass::GetMinRestTime();
 }
-
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 float CWeaponShotgun::GetMaxRestTime()
@@ -265,6 +265,7 @@ float CWeaponShotgun::GetMaxRestTime()
 
 	return BaseClass::GetMaxRestTime();
 }
+#endif
 
 //-----------------------------------------------------------------------------
 // Purpose: Time between successive shots in a burst. Also returned for EP2
@@ -475,7 +476,7 @@ void CWeaponShotgun::PrimaryAttack( void )
 	pPlayer->SetAnimation( PLAYER_ATTACK1 );
 
 	// Don't fire again until fire animation has completed
-	m_flNextPrimaryAttack = gpGlobals->curtime + SequenceDuration() - 0.025;
+	m_flNextPrimaryAttack = gpGlobals->curtime + SequenceDuration();
 	m_iClip1 -= 1;
 
 	Vector	vecSrc		= pPlayer->Weapon_ShootPosition( );

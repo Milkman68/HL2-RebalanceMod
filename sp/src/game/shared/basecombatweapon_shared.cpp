@@ -803,7 +803,37 @@ void CBaseCombatWeapon::OnPickedUp( CBaseCombatCharacter *pNewOwner )
 	SetRemoveable( false );
 #endif
 }
+#ifdef USE_NEW_PROFICIENCY_SYSTEM
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+extern ConVar hl2r_debug_weapon_proficiency;
+float CBaseCombatWeapon::GetProficiencyValue(ProficiencyValues_t value, float flDefaultValue = 1.0f )
+{
+	// Make sure we have a proficiency table in out wpndata
+	if( GetWpnData().m_ProficiencyValues == NULL )
+		return flDefaultValue
+;
+	// Do we have an npc-owner?
+	CBaseCombatCharacter *pOwner = GetOwner()->MyCombatCharacterPointer();
+	if ( pOwner == NULL )
+		return flDefaultValue;
 
+	if (hl2r_debug_weapon_proficiency.GetBool())
+		DevMsg("Getting Proficiency value for weapon: [%s]\n", GetPrintName() );
+
+#ifdef CLIENT_DLL
+	int iType = PROF_NPC_TYPE_ENEMY;
+	int iTier = PROF_NPC_TIER_1;
+#else
+	int iType = pOwner->IsPlayerEnemy() ? PROF_NPC_TYPE_ENEMY : PROF_NPC_TYPE_ALLY;
+	int iTier = pOwner->GetProficiencyTier();
+#endif
+
+	ConVarRef skill("skill");
+	return GetWpnData().m_ProficiencyValues->GetValue( {value, iTier, skill.GetInt(), iType} );
+}
+#endif
 //-----------------------------------------------------------------------------
 // Purpose: 
 // Input  : &vecTracerSrc - 
@@ -1937,6 +1967,7 @@ const Vector& CBaseCombatWeapon::GetBulletSpread( void )
 }
 
 //-----------------------------------------------------------------------------
+#ifndef USE_NEW_PROFICIENCY_SYSTEM
 const WeaponProficiencyInfo_t *CBaseCombatWeapon::GetProficiencyValues()
 {
 	static WeaponProficiencyInfo_t defaultWeaponProficiencyTable[] =
@@ -1951,7 +1982,7 @@ const WeaponProficiencyInfo_t *CBaseCombatWeapon::GetProficiencyValues()
 	COMPILE_TIME_ASSERT( ARRAYSIZE(defaultWeaponProficiencyTable) == WEAPON_PROFICIENCY_PERFECT + 1);
 	return defaultWeaponProficiencyTable;
 }
-
+#endif
 //-----------------------------------------------------------------------------
 // Purpose: Base class default for getting firerate
 // Input  :

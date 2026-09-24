@@ -1,9 +1,3 @@
-//========= Copyright Valve Corporation, All rights reserved. ============//
-//
-// Purpose: 
-//
-//=============================================================================//
-
 #include "cbase.h"
 #include "basehlcombatweapon.h"
 #include "npcevent.h"
@@ -12,21 +6,15 @@
 #include "player.h"
 #include "game.h"
 #include "in_buttons.h"
-#include "grenade_ar2.h"
 #include "ai_memory.h"
 #include "soundent.h"
 #include "rumble_shared.h"
 #include "gamestats.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
-#include "tier0/memdbgon.h"
+//#include "tier0/memdbgon.h";
 
-extern ConVar   sk_plr_dmg_smg1_grenade;	
 extern ConVar hl2r_new_screenshake_effects;
-extern ConVar hl2r_new_viewpunch_effects;
-
-ConVar sk_ar1_grenade_speed( "sk_ar1_grenade_speed", "1000.0" );
-ConVar sk_ar1_grenade_timer( "sk_ar1_grenade_timer", "0.5" );
 
 class CWeaponAR1 : public CHLSelectFireMachineGun
 {
@@ -38,43 +26,32 @@ public:
 
 	DECLARE_SERVERCLASS();
 	
-	void	Precache( void );
+	void	BurstThink( void );
 	void	AddViewKick( void );
 	void	SecondaryAttack( void );
 
-	int		GetMinBurst() { return 4; }
-	int		GetMaxBurst() { return 5; }
-	float	GetMinRestTime( void ) { return 0.2f; }
-	float	GetMaxRestTime( void ) { return 0.4f; }
+	float	GetFireRate( void ) { return 0.07f; }
+	float 	GetBurstCycleRate(void) { return 0.0f; }
+	int		GetBurstSize(void) { return 2; }
 
-	float 	GetBurstCycleRate( void ){ return 0.3; }
-	int		GetBurstSize( void ){ return 3.0; }
-	float	GetFireRate( void ) { return 0.04f; }	// 13.3hz
-
-	virtual void Equip( CBaseCombatCharacter *pOwner );
-	bool	Reload( void );
 	int		CapabilitiesGet( void ) { return bits_CAP_WEAPON_RANGE_ATTACK1; }
-	int 	WeaponRangeAttack2Condition( float flDot, float flDist );
-	Activity	GetPrimaryAttackActivity( void );
+	const char* GetTracerType(void) { return "AR2Tracer"; }
+
 
 	virtual const Vector& GetBulletSpread( void )
 	{
-		static const Vector cone = VECTOR_CONE_2DEGREES;
+		static const Vector cone = VECTOR_CONE_3DEGREES;
 		return cone;
 	}
-
-	const WeaponProficiencyInfo_t *GetProficiencyValues();
-
+	
 	void FireNPCPrimaryAttack( CBaseCombatCharacter *pOperator, Vector &vecShootOrigin, Vector &vecShootDir );
 	void Operator_ForceNPCFire( CBaseCombatCharacter  *pOperator, bool bSecondary );
 	void Operator_HandleAnimEvent( animevent_t *pEvent, CBaseCombatCharacter *pOperator );
 
 	DECLARE_ACTTABLE();
 
-protected:
-
-	Vector	m_vecTossVelocity;
-	float	m_flNextGrenadeCheck;
+private:
+	int	m_iShotCount;
 };
 
 IMPLEMENT_SERVERCLASS_ST(CWeaponAR1, DT_WeaponAR1)
@@ -84,21 +61,18 @@ LINK_ENTITY_TO_CLASS( weapon_ar1, CWeaponAR1 );
 PRECACHE_WEAPON_REGISTER(weapon_ar1);
 
 BEGIN_DATADESC( CWeaponAR1 )
-
-	DEFINE_FIELD( m_vecTossVelocity, FIELD_VECTOR ),
-	DEFINE_FIELD( m_flNextGrenadeCheck, FIELD_TIME ),
-
 END_DATADESC()
 
 acttable_t	CWeaponAR1::m_acttable[] = 
 {
-	{ ACT_RANGE_ATTACK1,			ACT_RANGE_ATTACK_AR2,			true },
-	{ ACT_RELOAD,					ACT_RELOAD_SMG1,				true },		// FIXME: hook to AR2 unique
-	{ ACT_IDLE,						ACT_IDLE_SMG1,					true },		// FIXME: hook to AR2 unique
-	{ ACT_IDLE_ANGRY,				ACT_IDLE_ANGRY_SMG1,			true },		// FIXME: hook to AR2 unique
+	{ ACT_RANGE_ATTACK1,			ACT_RANGE_ATTACK_SMG1,			true },
+	{ ACT_RELOAD,					ACT_RELOAD_SMG1,				true },
+	{ ACT_IDLE,						ACT_IDLE_SMG1,					true },
+	{ ACT_IDLE_ANGRY,				ACT_IDLE_ANGRY_SMG1,			true },
 
 	{ ACT_WALK,						ACT_WALK_RIFLE,					true },
-
+	{ ACT_WALK_AIM,					ACT_WALK_AIM_RIFLE,				true  },
+	
 // Readiness activities (not aiming)
 	{ ACT_IDLE_RELAXED,				ACT_IDLE_SMG1_RELAXED,			false },//never aims
 	{ ACT_IDLE_STIMULATED,			ACT_IDLE_SMG1_STIMULATED,		false },
@@ -133,13 +107,12 @@ acttable_t	CWeaponAR1::m_acttable[] =
 	{ ACT_RUN_AIM,					ACT_RUN_AIM_RIFLE,				true },
 	{ ACT_RUN_CROUCH,				ACT_RUN_CROUCH_RIFLE,			true },
 	{ ACT_RUN_CROUCH_AIM,			ACT_RUN_CROUCH_AIM_RIFLE,		true },
-	{ ACT_GESTURE_RANGE_ATTACK1,	ACT_GESTURE_RANGE_ATTACK_AR2,	false },
-	{ ACT_COVER_LOW,				ACT_COVER_SMG1_LOW,				false },		// FIXME: hook to AR2 unique
-	{ ACT_RANGE_AIM_LOW,			ACT_RANGE_AIM_AR2_LOW,			false },
-	{ ACT_RANGE_ATTACK1_LOW,		ACT_RANGE_ATTACK_SMG1_LOW,		true },		// FIXME: hook to AR2 unique
+	{ ACT_GESTURE_RANGE_ATTACK1,	ACT_GESTURE_RANGE_ATTACK_SMG1,	true },
+	{ ACT_RANGE_ATTACK1_LOW,		ACT_RANGE_ATTACK_SMG1_LOW,		true },
+	{ ACT_COVER_LOW,				ACT_COVER_SMG1_LOW,				false },
+	{ ACT_RANGE_AIM_LOW,			ACT_RANGE_AIM_SMG1_LOW,			false },
 	{ ACT_RELOAD_LOW,				ACT_RELOAD_SMG1_LOW,			false },
 	{ ACT_GESTURE_RELOAD,			ACT_GESTURE_RELOAD_SMG1,		true },
-//	{ ACT_RANGE_ATTACK2, ACT_RANGE_ATTACK_AR2_GRENADE, true },
 };
 
 IMPLEMENT_ACTTABLE(CWeaponAR1);
@@ -149,37 +122,10 @@ CWeaponAR1::CWeaponAR1( )
 {
 	m_fMinRange1		= 0;
 	m_fMaxRange1		= 1000;
-	
-	m_iFireMode = FIREMODE_3RNDBURST;
-	m_bAltFiresUnderwater = false;
+	m_iFireMode			= FIREMODE_3RNDBURST;
+
+	m_bAltFiresUnderwater = true;
 }
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
-void CWeaponAR1::Precache( void )
-{
-	UTIL_PrecacheOther("grenade_ar2");
-	BaseClass::Precache();
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: Give this weapon longer range when wielded by an ally NPC.
-//-----------------------------------------------------------------------------
-void CWeaponAR1::Equip( CBaseCombatCharacter *pOwner )
-{
-	if( pOwner->Classify() == CLASS_PLAYER_ALLY )
-	{
-		m_fMaxRange1 = 3000;
-	}
-	else
-	{
-		m_fMaxRange1 = 1000;
-	}
-
-	BaseClass::Equip( pOwner );
-}
-
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
@@ -193,7 +139,10 @@ void CWeaponAR1::FireNPCPrimaryAttack( CBaseCombatCharacter *pOperator, Vector &
 		MAX_TRACE_LENGTH, m_iPrimaryAmmoType[INDEX_BASE], 1, entindex(), 0 );
 
 	pOperator->DoMuzzleFlash();
-	m_iClip1 = m_iClip1 - 1;
+	m_iShotCount++;
+
+	if (m_iShotCount % 2)
+		m_iClip1 -= 1;
 }
 
 //-----------------------------------------------------------------------------
@@ -218,7 +167,7 @@ void CWeaponAR1::Operator_HandleAnimEvent( animevent_t *pEvent, CBaseCombatChara
 {
 	switch( pEvent->event )
 	{
-	case EVENT_WEAPON_SMG1:
+	case EVENT_WEAPON_PISTOL_FIRE:
 		{
 			Vector vecShootOrigin, vecShootDir;
 			QAngle angDiscard;
@@ -236,223 +185,131 @@ void CWeaponAR1::Operator_HandleAnimEvent( animevent_t *pEvent, CBaseCombatChara
 			FireNPCPrimaryAttack( pOperator, vecShootOrigin, vecShootDir );
 		}
 		break;
-
-	case EVENT_WEAPON_AR2_ALTFIRE:
-	{
-		CAI_BaseNPC *npc = pOperator->MyNPCPointer();
-
-		Vector vecShootOrigin, vecShootDir;
-		vecShootOrigin = pOperator->Weapon_ShootPosition();
-
-		Vector vecThrow = m_vecTossVelocity;
-
-		//If on the rare case the vector is 0 0 0, cancel for avoid launching the grenade without speed
-		//This should be on WeaponRangeAttack2Condition(), but for some unknown reason return CASE_NONE
-		//doesn't stop the launch
-		if (vecThrow == Vector(0, 0, 0)){
-			break;
-		}
-
-		CGrenadeAR2 *pGrenade = (CGrenadeAR2*)Create("grenade_ar2", vecShootOrigin, vec3_angle, npc);
-		pGrenade->SetAbsVelocity( vecThrow );
-		pGrenade->SetLocalAngularVelocity(RandomAngle(-400, 400)); //tumble in air
-		pGrenade->SetMoveType(MOVETYPE_FLYGRAVITY, MOVECOLLIDE_FLY_BOUNCE);
-		pGrenade->SetThrower(GetOwner());
-		pGrenade->SetGravity(0.5); // lower gravity since grenade is aerodynamic and engine doesn't know it.
-		pGrenade->SetDamage(sk_plr_dmg_smg1_grenade.GetFloat());
-	}
-	break;
-
-	default:
-		BaseClass::Operator_HandleAnimEvent( pEvent, pOperator );
-		break;
-	}
+	};
 }
-
+extern ConVar hl2r_bullet_tracer_freq;
 //-----------------------------------------------------------------------------
 // Purpose: 
-// Output : Activity
 //-----------------------------------------------------------------------------
-Activity CWeaponAR1::GetPrimaryAttackActivity( void )
+//-----------------------------------------------------------------------------
+// Purpose: 
+//
+//
+//-----------------------------------------------------------------------------
+void CWeaponAR1::BurstThink( void )
 {
-	if ( m_nShotsFired < 2 )
-		return ACT_VM_PRIMARYATTACK;
-
-	if ( m_nShotsFired < 3 )
-		return ACT_VM_RECOIL1;
+	// Only the player fires this way so we can cast
+	CBasePlayer *pPlayer = ToBasePlayer( GetOwner() );
+	if (!pPlayer)
+		return;
 	
-	if ( m_nShotsFired < 4 )
-		return ACT_VM_RECOIL2;
-
-	return ACT_VM_RECOIL3;
-}
-
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-bool CWeaponAR1::Reload( void )
-{
-	bool fRet;
-	float fCacheTime = m_flNextSecondaryAttack;
-
-	fRet = DefaultReload( GetMaxClip1(), GetMaxClip2(), ACT_VM_RELOAD );
-	if ( fRet )
+	// Abort here to handle burst and auto fire modes
+	if ( (UsesClipsForAmmo1() && m_iClip1 == 0) || ( !UsesClipsForAmmo1() && !pPlayer->GetAmmoCount(m_iPrimaryAmmoType[INDEX_CARRY]) ) )
 	{
-		// Undo whatever the reload process has done to our secondary
-		// attack timer. We allow you to interrupt reloading to fire
-		// a grenade.
-		m_flNextSecondaryAttack = GetOwner()->m_flNextAttack = fCacheTime;
-
-		WeaponSound( RELOAD );
+		m_iBurstSize = 0;
+		return;
 	}
 
-	return fRet;
-}
+	m_nShotsFired++;
 
+	pPlayer->DoMuzzleFlash();
+
+	// To make the firing framerate independent, we may have to fire more than one bullet here on low-framerate systems, 
+	// especially if the weapon we're firing has a really fast rate of fire.
+	int iBulletsToFire = 0;
+	float fireRate = GetFireRate();
+	float nextshottime = gpGlobals->curtime;
+
+	// MUST call sound before removing a round from the clip of a CHLMachineGun
+	while ( nextshottime <= gpGlobals->curtime )
+	{
+		WeaponSound(SINGLE, nextshottime);
+		nextshottime = nextshottime + fireRate;
+
+		iBulletsToFire++;
+		m_iShotCount++;
+
+		if ( m_iShotCount % 2 )	
+			m_iClip1--;
+
+		if ( m_iClip1 <= 0 )
+			break;
+	}
+
+	m_flNextPrimaryAttack = m_flNextPrimaryAttack + fireRate;
+
+	m_iPrimaryAttacks++;
+	gamestats->Event_WeaponFired( pPlayer, true, GetClassname() );
+	
+	Vector vecSpread = pPlayer->GetAttackSpread( this );
+
+	// Fire the bullets
+	FireBulletsInfo_t info;
+	info.m_iShots = iBulletsToFire;
+	info.m_vecSrc = pPlayer->Weapon_ShootPosition( );
+	info.m_vecDirShooting = pPlayer->GetAutoaimVector( AUTOAIM_SCALE_DEFAULT );
+	info.m_vecSpread = RandomVector( -vecSpread.x, vecSpread.x );;
+	info.m_flDistance = MAX_TRACE_LENGTH;
+	info.m_iAmmoType = m_iPrimaryAmmoType[INDEX_BASE];
+	info.m_iTracerFreq = hl2r_bullet_tracer_freq.GetInt();
+	FireBullets( info );
+
+	//Factor in the view kick
+	AddViewKick();
+
+	CSoundEnt::InsertSound( SOUND_COMBAT, GetAbsOrigin(), SOUNDENT_VOLUME_MACHINEGUN, 0.2, pPlayer );
+	
+	if (!m_iClip1 && pPlayer->GetAmmoCount(m_iPrimaryAmmoType[INDEX_CARRY]) <= 0)
+	{
+		// HEV suit - indicate out of ammo condition
+		pPlayer->SetSuitUpdate("!HEV_AMO0", FALSE, 0); 
+	}
+
+	SendWeaponAnim( GetPrimaryAttackActivity() );
+	pPlayer->SetAnimation( PLAYER_ATTACK1 );
+
+	// Register a muzzleflash for the AI
+	pPlayer->SetMuzzleFlashTime( gpGlobals->curtime + 0.5 );
+
+	m_iBurstSize--;
+
+	if( m_iBurstSize == 0 )
+	{
+		// The burst is over!
+		SetThink(NULL);
+
+		// idle immediately to stop the firing animation
+		SetWeaponIdleTime( gpGlobals->curtime );
+		return;
+	}
+
+	SetNextThink( gpGlobals->curtime + GetFireRate() );
+}
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
 void CWeaponAR1::AddViewKick( void )
 {
-	#define	MAX_VERTICAL_KICK	0.75f	//Degrees
-	#define	SLIDE_LIMIT			10.0f	//Seconds
+	#define	MAX_VERTICAL_KICK	15.0f	//Degrees
+	#define	SLIDE_LIMIT			15.0f	//Seconds
 	
 	//Get the view kick
 	CBasePlayer *pPlayer = ToBasePlayer( GetOwner() );
 
-	if (!pPlayer)
+	if ( pPlayer == NULL )
 		return;
-	
-	DoMachineGunKick( pPlayer, MAX_VERTICAL_KICK, m_fFireDuration + 1.0f, SLIDE_LIMIT );
 
-	float flShakeScale = RemapValClamped( m_fFireDuration, 0.0f, 15.0f, 5.0f, 10.0f );
+	DoMachineGunKick( pPlayer, MAX_VERTICAL_KICK, m_fFireDuration, SLIDE_LIMIT );
+
+	float flShakeScale = RemapValClamped( m_fFireDuration, 0.0f, 15.0f, 3.0f, 15.0f );
 
 	if ( hl2r_new_screenshake_effects.GetBool() )
-		UTIL_ScreenShake( pPlayer->GetAbsOrigin(), flShakeScale, 150.0, 0.25, 128, SHAKE_START );
+		UTIL_ScreenShake( pPlayer->GetAbsOrigin(), flShakeScale*0.75, 150.0, 0.25, 128, SHAKE_START );
 }
-
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
 void CWeaponAR1::SecondaryAttack( void )
 {
-	// Only the player fires this way so we can cast
-	CBasePlayer *pPlayer = ToBasePlayer( GetOwner() );
-	
-	if ( pPlayer == NULL )
-		return;
 
-	QAngle viewPunch = QAngle( -5, random->RandomFloat(-2.0, 2.0), 0 );
-
-	if ( hl2r_new_viewpunch_effects.GetBool() )
-		pPlayer->ViewPunch( viewPunch );
-
-	//Must have ammo
-	if ( ( pPlayer->GetAmmoCount( m_iSecondaryAmmoType ) <= 0 ) || ( pPlayer->GetWaterLevel() == 3 ) )
-	{
-		SendWeaponAnim( ACT_VM_DRYFIRE );
-		BaseClass::WeaponSound( EMPTY );
-		m_flNextSecondaryAttack = gpGlobals->curtime + 0.5f;
-		return;
-	}
-
-	if( m_bInReload )
-		m_bInReload = false;
-
-	// MUST call sound before removing a round from the clip of a CMachineGun
-	BaseClass::WeaponSound( WPN_DOUBLE );
-
-	pPlayer->RumbleEffect( RUMBLE_357, 0, RUMBLE_FLAGS_NONE );
-
-	Vector vecSrc = pPlayer->Weapon_ShootPosition();
-	Vector	vecThrow;
-	// Don't autoaim on grenade tosses
-	AngleVectors( pPlayer->EyeAngles() + pPlayer->GetPunchAngle(), &vecThrow );
-	VectorScale( vecThrow, sk_ar1_grenade_speed.GetFloat(), vecThrow );
-	
-	//Create the grenade
-	QAngle angles;
-	VectorAngles( vecThrow, angles );
-	CGrenadeAR2 *pGrenade = (CGrenadeAR2*)Create( "grenade_ar2", vecSrc, angles, pPlayer );
-	pGrenade->SetAbsVelocity( vecThrow );
-	pGrenade->m_flDetonateTime = sk_ar1_grenade_timer.GetFloat();	// Makes the grenade explode on a delay.
-
-	pGrenade->SetLocalAngularVelocity( RandomAngle( -400, 400 ) );
-	pGrenade->SetMoveType( MOVETYPE_FLYGRAVITY, MOVECOLLIDE_FLY_BOUNCE ); 
-	pGrenade->SetThrower( GetOwner() );
-	pGrenade->SetDamage( sk_plr_dmg_smg1_grenade.GetFloat() );
-
-	SendWeaponAnim( ACT_VM_SECONDARYATTACK );
-
-	CSoundEnt::InsertSound( SOUND_COMBAT, GetAbsOrigin(), 1000, 0.2, GetOwner(), SOUNDENT_CHANNEL_WEAPON );
-
-	// player "shoot" animation
-	pPlayer->SetAnimation( PLAYER_ATTACK1 );
-
-	// Decrease ammo
-	pPlayer->RemoveAmmo( 1, m_iSecondaryAmmoType );
-
-	// Can shoot again immediately
-	m_flNextPrimaryAttack = gpGlobals->curtime + 0.5f;
-
-	// Can blow up after a short delay (so have time to release mouse button)
-	m_flNextSecondaryAttack = gpGlobals->curtime + 1.0f;
-
-	// Register a muzzleflash for the AI.
-	pPlayer->SetMuzzleFlashTime( gpGlobals->curtime + 0.5 );	
-
-	m_iSecondaryAttacks++;
-	gamestats->Event_WeaponFired( pPlayer, false, GetClassname() );
-}
-
-#define	COMBINE_MIN_GRENADE_CLEAR_DIST 512
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : flDot - 
-//			flDist - 
-// Output : int
-//-----------------------------------------------------------------------------
-int CWeaponAR1::WeaponRangeAttack2Condition( float flDot, float flDist )
-{
-	CAI_BaseNPC *npcOwner = GetOwner()->MyNPCPointer();
-	CBaseEntity *pEnemy = npcOwner->GetEnemy();
-
-	if (!pEnemy)
-		return COND_NONE;
-	// --------------------------------------
-	//  Get target vector
-	// --------------------------------------
-	// toss it to where you last saw them
-	Vector vecTarget = npcOwner->GetEnemyLKP() + pEnemy->GetViewOffset();
-
-	// ---------------------------------------------------------------------
-	// Check that throw is legal and clear
-	// ---------------------------------------------------------------------
-	Vector vecToss = VecCheckThrow( this, npcOwner->GetLocalOrigin() + Vector(0,0,60), vecTarget, sk_ar1_grenade_speed.GetFloat(), 0.5 );
-	if ( vecToss != vec3_origin )
-	{
-		m_vecTossVelocity = vecToss;
-		return COND_CAN_RANGE_ATTACK2;
-	}
-	else
-	{
-		return COND_NONE;
-	}
-}
-
-//-----------------------------------------------------------------------------
-const WeaponProficiencyInfo_t *CWeaponAR1::GetProficiencyValues()
-{
-	static WeaponProficiencyInfo_t proficiencyTable[] =
-	{
-		{ 7.0,		0.75	},
-		{ 5.00,		0.75	},
-		{ 6.0/3.0,  0.75	},
-		{ 5.0/3.0,	0.75	},
-		{ 1.00,		1.0		},
-	};
-
-	COMPILE_TIME_ASSERT( ARRAYSIZE(proficiencyTable) == WEAPON_PROFICIENCY_PERFECT + 1);
-
-	return proficiencyTable;
 }

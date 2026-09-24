@@ -42,16 +42,18 @@ public:
 	void	Operator_ForceNPCFire( CBaseCombatCharacter  *pOperator, bool bSecondary );
 	void	Operator_HandleAnimEvent( animevent_t *pEvent, CBaseCombatCharacter *pOperator );
 
-	float 	GetBurstCycleRate( void ){ return 0.3; }
+	float 	GetBurstCycleRate( void ){ return 0.1; }
 	int		GetBurstSize( void ){ return 3.0; }
 	float	GetFireRate( void );
 	float	GetFireDurationDecayMult ( void ) { return 100; }
 	
 	// NPC
+#ifndef USE_NEW_PROFICIENCY_SYSTEM
 	int		GetMinBurst( void ) { return 3; }
 	int		GetMaxBurst( void ) { return 3; }
 	float	GetMinRestTime( void ) { return 0.4f; }
 	float	GetMaxRestTime( void ) { return 0.7f; }
+#endif
 
 	bool	CanHolster( void );
 	bool	Reload( void );
@@ -64,7 +66,9 @@ public:
 
 	virtual const Vector& GetBulletSpread( void );
 
-//	const WeaponProficiencyInfo_t *GetProficiencyValues();
+#ifndef USE_NEW_PROFICIENCY_SYSTEM
+	const WeaponProficiencyInfo_t *GetProficiencyValues();
+#endif
 
 protected:
 

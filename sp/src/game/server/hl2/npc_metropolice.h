@@ -163,16 +163,15 @@ private:
 
 	virtual bool		UseAttackSquadSlots()	{ return true; }
 
-	virtual	bool		UsesNewProficiencySystem( void ) { return true; }
-	virtual int			GetNewProficiencyTier( void ) { return m_iTier; };
+	virtual int			GetProficiencyTier( void ) { return m_iTier; };
 
 	virtual Activity	GetDoorOpenActivity( void );
 	virtual float		GetDoorOpenSpeedMult( void );
 	virtual int			GetDoorOpenStyle( void );
 	virtual float		GetDoorOpenActivityDelay( void ) { return 0.3; };
-
+#ifndef USE_NEW_PROFICIENCY_SYSTEM
 	WeaponProficiency_t CalcWeaponProficiency( CBaseCombatWeapon *pWeapon );
-
+#endif
 	// Inputs
 	void InputEnableManhackToss( inputdata_t &inputdata );
 	void InputSetPoliceGoal( inputdata_t &inputdata );

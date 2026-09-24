@@ -1240,8 +1240,7 @@ void CPropCombineBall::OnHitEntity( CBaseEntity *pHitEntity, float flSpeed, int 
 		pHitEntity->DispatchTraceAttack(info, GetAbsVelocity().Normalized(), &tr);
 		ApplyMultiDamage();
 
-		pCombine->NPCVelocityImpulse( GetAbsVelocity().Normalized(), 3.0f );
-
+		DissolveEntity(pHitEntity);
 		DoExplosion();
 		return;
 	}

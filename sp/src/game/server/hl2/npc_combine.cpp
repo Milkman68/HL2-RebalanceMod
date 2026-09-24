@@ -216,7 +216,6 @@ END_DATADESC()
 CNPC_Combine::CNPC_Combine()
 {
 	m_vecTossVelocity = vec3_origin;
-	m_bUsesArmor = false;
 }
 
 
@@ -1596,9 +1595,9 @@ void CNPC_Combine::BuildScheduleTestBits( void )
 	
  	if ( GetEnemy() != NULL && ( IsRunningApproachEnemySchedule() && !IsElite() ) )
 	{
-		if( HasCondition(COND_CAN_RANGE_ATTACK1) /*&& m_flTimeSawEnemyAgain != -1*/ )
+		if( HasCondition(COND_CAN_RANGE_ATTACK1) && m_flTimeSawEnemyAgain != -1 )
 		{
-		//	if( (gpGlobals->curtime - m_flTimeSawEnemyAgain) >= 0.25f )
+			if( (gpGlobals->curtime - m_flTimeSawEnemyAgain) >= 0.5f )
 				SetCustomInterruptCondition( COND_CAN_RANGE_ATTACK1 );
 		}
 	}
@@ -2234,6 +2233,12 @@ int CNPC_Combine::SelectSchedule( void )
 //-----------------------------------------------------------------------------
 int CNPC_Combine::SelectFailSchedule( int failedSchedule, int failedTask, AI_TaskFailureCode_t taskFailCode )
 {
+	if (failedSchedule == SCHED_COMBINE_ESTABLISH_LINE_OF_FIRE)
+	{
+		if (HasCondition(COND_SEE_ENEMY) && HasCondition(COND_CAN_RANGE_ATTACK1))
+			return SCHED_RANGE_ATTACK1;
+	}
+
 	return BaseClass::SelectFailSchedule( failedSchedule, failedTask, taskFailCode );
 }
 
@@ -3539,9 +3544,10 @@ void CNPC_Combine::OnEndMoveAndShoot()
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
+#ifndef USE_NEW_PROFICIENCY_SYSTEM
 WeaponProficiency_t CNPC_Combine::CalcWeaponProficiency( CBaseCombatWeapon *pWeapon )
 {
-/*	if( FClassnameIs( pWeapon, "weapon_ar2" ) )
+	if( FClassnameIs( pWeapon, "weapon_ar2" ) )
 	{
 		if ( IsElite() )
 			return WEAPON_PROFICIENCY_GOOD;
@@ -3579,10 +3585,10 @@ WeaponProficiency_t CNPC_Combine::CalcWeaponProficiency( CBaseCombatWeapon *pWea
 
 		return WEAPON_PROFICIENCY_PERFECT;
 	}
-	*/
+	
 	return BaseClass::CalcWeaponProficiency( pWeapon );
 }
-
+#endif
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 bool CNPC_Combine::HasShotgun()
@@ -3812,7 +3818,9 @@ void CNPC_Combine::TraceAttack( const CTakeDamageInfo &inputInfo, const Vector &
 	CTakeDamageInfo info = inputInfo;
 
 	SetBloodColor( BLOOD_COLOR_RED );
-	if ( UsesArmor() && GetArmorCharge() > 0 )
+
+	CPropCombineBall* pBall = dynamic_cast<CPropCombineBall*>(inputInfo.GetInflictor());
+	if ( UsesArmor() && GetArmorCharge() > 0 && !pBall )
 	{
 		SetBloodColor( DONT_BLEED );
 
@@ -3849,7 +3857,9 @@ int CNPC_Combine::OnTakeDamage_Alive( const CTakeDamageInfo &inputInfo )
 	CTakeDamageInfo info = inputInfo;
 
 	SetBloodColor( BLOOD_COLOR_RED );
-	if ( UsesArmor() && GetArmorCharge() > 0 )
+
+	CPropCombineBall* pBall = dynamic_cast<CPropCombineBall*>(inputInfo.GetInflictor());
+	if ( UsesArmor() && GetArmorCharge() > 0 && !pBall)
 	{
 		if ( inputInfo.GetDamageType() == DMG_CRUSH || UTIL_IsCombineBall( info.GetInflictor() ) )
 		{
@@ -3888,6 +3898,8 @@ void CNPC_Combine::TakeDamageArmor( const CTakeDamageInfo &inputInfo, float flMu
 	{
 		DispatchParticleEffect("hunter_shield_impact", origin, GetAbsAngles());
 		DispatchParticleEffect("warp_shield_impact", origin, GetAbsAngles());
+
+	//	NDebugOverlay::Box(origin, Vector(5, 5, 5), -Vector(5, 5, 5), 255, 0, 0, 255, 2.0f);
 	}
 
 	if (GetArmorCharge() <= 0 && fPrevArmor > 0)

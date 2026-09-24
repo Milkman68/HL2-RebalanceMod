@@ -85,8 +85,10 @@ public:
 
 	virtual int	GetMaxBurst(){ return 4;}
 	
+#ifndef USE_NEW_PROFICIENCY_SYSTEM
 	virtual float	GetMinRestTime(){ return 0.6; };
 	virtual float	GetMaxRestTime(){ return 1.0; };
+#endif
 
 	virtual float GetFireRate( void ) 
 	{
@@ -315,6 +317,8 @@ void CWeaponPistol::SecondaryAttack( void )
 bool CWeaponPistol::Reload()
 {
 	m_flAccuracyPenalty = 0.0f;
+	WeaponSound(RELOAD);
+
 	return BaseClass::Reload();
 }
 //-----------------------------------------------------------------------------

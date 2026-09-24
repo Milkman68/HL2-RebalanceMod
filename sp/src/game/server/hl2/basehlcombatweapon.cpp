@@ -432,19 +432,25 @@ void CHLSelectFireMachineGun::BurstThink( void )
 	// especially if the weapon we're firing has a really fast rate of fire.
 	int iBulletsToFire = 0;
 	float fireRate = GetFireRate();
+	float nextshottime = gpGlobals->curtime;
 
 	// MUST call sound before removing a round from the clip of a CHLMachineGun
-	WeaponSound(SINGLE, m_flNextPrimaryAttack);
+	while ( nextshottime <= gpGlobals->curtime )
+	{
+		WeaponSound(SINGLE, nextshottime);
+		nextshottime = nextshottime + fireRate;
+		iBulletsToFire++;
+	}
+
 	m_flNextPrimaryAttack = m_flNextPrimaryAttack + fireRate;
-	iBulletsToFire++;
 
 	// Make sure we don't fire more than the amount in the clip, if this weapon uses clips
-	if ( UsesClipsForAmmo1() )
+ 	if ( UsesClipsForAmmo1() )
 	{
 		if ( iBulletsToFire > m_iClip1 )
 			iBulletsToFire = m_iClip1;
 		m_iClip1 -= iBulletsToFire;
-	}
+	} 
 
 	m_iPrimaryAttacks++;
 	gamestats->Event_WeaponFired( pPlayer, true, GetClassname() );

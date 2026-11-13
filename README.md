@@ -5,7 +5,7 @@ The HL2R Sourcemod can be found [here](https://www.moddb.com/mods/half-life-2-re
 # Build Instructions:
 HL2R is setup to work with the 2022 version of Visual Studios via the help of [this](https://developer.valvesoftware.com/wiki/Compiling_under_VS2022) guide and will not work with the 2013 version.
 
-Also, HL2R Exposes the VPC macro OUTBINDIR to the lower level client/server base VPC's so that they can automatically appear in a steam-mounted HL2R Sourcemod. Make sure the path is valid before building by changing it to wherever the Sourcemod is located.
+Also, HL2R Exposes the VPC macro "OUTBINDIR" to the lower level client/server base VPC's so that they can automatically appear in a steam-mounted HL2R Sourcemod. Make sure the path is valid before building by changing it to wherever the Sourcemod is located.
 
 
 #### ============Terms of Use:============

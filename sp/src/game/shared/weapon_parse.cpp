@@ -11,6 +11,10 @@
 #include "utldict.h"
 #include "ammodef.h"
 
+#ifndef CLIENT_DLL
+#include "ai_basenpc.h"
+#endif
+
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
@@ -537,7 +541,7 @@ void ParseKeySection( ProficiencyTable_t *table, ProficiencyTableIndex_t *index,
 
 		table->SetValue(index, spreadscale);
 
-		index->valuetype = PROF_SPREAD_BIAS;
+		index->valuetype = PROF_SPREAD_BIAS_SCALE;
 
 		float spreadbias = GetNpcSpreadInfo(pToken).bias;
 		table->SetValue(index, spreadbias);
@@ -545,6 +549,158 @@ void ParseKeySection( ProficiencyTable_t *table, ProficiencyTableIndex_t *index,
 	}
 
 	Error("Shotregulator key [%s] is an unknown keyvalue!", pKeyName);
+}
+#endif
+
+enum eMultiVarTypes
+{
+	TYPE_INT = 0,
+	TYPE_FLOAT,
+	TYPE_VECTOR,
+	TYPE_VIEWPUNCHIMPULSE,
+};
+
+//-----------------------------------------------------------------------------
+// New Weaponscript variables:
+//-----------------------------------------------------------------------------
+char *VarArgsSimple( PRINTF_FORMAT_STRING const char *format, ... )
+{
+#ifdef CLIENT_DLL
+	return VarArgs(format);
+#else
+	return UTIL_VarArgs(format);
+#endif
+}
+
+void ParseMultiVariable( KeyValues *pKeyValuesData, eMultiVarTypes type, int size, void *pVariable, const char *pVariableName )
+{
+	switch( type )
+	{
+	case TYPE_INT:
+		{
+			int *variable = (int *)pVariable;
+			for ( int i = 0; i < size; i++ )
+				variable[i] = pKeyValuesData->GetInt( VarArgsSimple("%s%i", pVariableName, i), -1 );
+		}
+		break;
+
+	case TYPE_FLOAT:
+		{
+			float *variable = (float *)pVariable;
+			for ( int i = 0; i < size; i++ )
+				variable[i] = pKeyValuesData->GetFloat( VarArgsSimple("%s%i", pVariableName, i), -1 );
+		}
+		break;
+
+	case TYPE_VECTOR:
+		{
+			Vector *variable = (Vector *)pVariable;
+			variable->Init();
+
+			for ( int i = 0; i < size; i++ )
+			{
+				char szKeyString[MAX_WEAPON_STRING];
+				strcpy( VarArgsSimple("%s%i", pVariableName, i), pKeyValuesData->GetString());
+
+				int tokenindex = 0;
+				for (char* pszToken = strtok(szKeyString, " \t"); pszToken != NULL; pszToken = strtok(NULL, " \t"))
+				{
+					// X
+					if ( tokenindex == 0 )
+						variable->x = atof(szKeyString);
+
+					// Y
+					if ( tokenindex == 1 )
+						variable->y = atof(szKeyString);
+
+					// Z
+					if ( tokenindex == 2 )
+						variable->z = atof(szKeyString);
+
+					tokenindex++;
+				}
+			}
+		}
+		break;
+
+	case TYPE_VIEWPUNCHIMPULSE:
+		{
+			ViewPunchImpulse_t *variable = (ViewPunchImpulse_t *)pVariable;
+
+			variable->min.Init();
+			variable->max.Init();
+
+			for ( int i = 0; i < size; i++ )
+			{
+				char szKeyString[MAX_WEAPON_STRING];
+				strcpy( VarArgsSimple("%s%i", pVariableName, i), pKeyValuesData->GetString());
+
+				int tokenindex = 0;
+				for (char* pszToken = strtok(szKeyString, " \t"); pszToken != NULL; pszToken = strtok(NULL, " \t"))
+				{
+					// X (min)
+					if ( tokenindex == 0 )
+						variable->min.x = atof(pszToken);
+
+					// Y (min)
+					if ( tokenindex == 1 )
+						variable->min.y = atof(pszToken);
+
+					// Z (min)
+					if ( tokenindex == 2 )
+						variable->min.z = atof(pszToken);
+
+					// Resetscale (min)
+					if ( tokenindex == 3 )
+						variable->min.w = atof(pszToken);
+
+					// X (max)
+					if ( tokenindex == 4 )
+						variable->max.x = atof(pszToken);
+
+					// Y (max)
+					if ( tokenindex == 5 )
+						variable->max.y = atof(pszToken);
+
+					// Z (max)
+					if ( tokenindex == 6 )
+						variable->max.z = atof(pszToken);
+
+					// Resetscale (max)
+					if ( tokenindex == 7 )
+						variable->max.w = atof(pszToken);
+
+					tokenindex++;
+				}
+			}
+		}
+		break;
+	}
+}
+
+
+//-----------------------------------------------------------------------------
+// ActTable
+//-----------------------------------------------------------------------------
+#ifndef CLIENT_DLL
+void ParseActTableKey( KeyValues *pKey, acttable_t *table, int index )
+{
+	table[index].baseAct = CAI_BaseNPC::GetActivityID( pKey->GetName() );
+
+	char szKeyString[MAX_WEAPON_STRING];
+	strcpy(szKeyString, pKey->GetString());
+
+	char* pszToken = strtok(szKeyString, " \t");
+	if ( pszToken == NULL )
+		Error("Could not parse acttable key: [%s]", pKey->GetString());
+
+	table[index].weaponAct = CAI_BaseNPC::GetActivityID( pszToken );
+
+	strtok(szKeyString, " \t");
+	if ( pszToken == NULL )
+		Error("Could not parse acttable key: [%s]", pKey->GetString());
+
+	table[index].required = !Q_stricmp(pszToken, "true");
 }
 #endif
 //-----------------------------------------------------------------------------
@@ -636,6 +792,11 @@ void FileWeaponInfo_t::Parse( KeyValues *pKeyValuesData, const char *szWeaponNam
 	iWeight = pKeyValuesData->GetInt( "weight", 0 );
 
 	iRumbleEffect = pKeyValuesData->GetInt( "rumble", -1 );
+
+	ParseMultiVariable( pKeyValuesData, TYPE_FLOAT, MAX_FIRERATES, flFireRate, "firerate" );
+	ParseMultiVariable( pKeyValuesData, TYPE_INT, MAX_SHOTCOUNTS, iShotCount, "shotcount" );
+	ParseMultiVariable( pKeyValuesData, TYPE_VECTOR, MAX_SPREADCONES, m_SpreadCone, "spreadcone" );
+	ParseMultiVariable( pKeyValuesData, TYPE_VIEWPUNCHIMPULSE, MAX_VIEWPUNCH, m_ViewPuchImpulse, "viewpunch_impulse" );
 	
 	// LAME old way to specify item flags.
 	// Weapon scripts should use the flag names.
@@ -749,7 +910,20 @@ void FileWeaponInfo_t::Parse( KeyValues *pKeyValuesData, const char *szWeaponNam
 			pTemp = pTemp->GetNextKey();
 		}
 	}
-	
+
+#ifndef CLIENT_DLL
+	iNumActivitiesInTable = 0;
+	KeyValues *pActTableSection = pKeyValuesData->FindKey( "ActTable" );
+	if ( pActTableSection  )
+	{
+		for ( KeyValues *sub = pActTableSection->GetFirstSubKey(); sub != NULL; sub = sub->GetNextKey() )
+		{
+			ParseActTableKey( sub, m_acttable, iNumActivitiesInTable );
+			iNumActivitiesInTable++;
+		}
+	}
+#endif
+
 #ifdef	USE_NEW_PROFICIENCY_SYSTEM
 	KeyValues *pShotRegulatorBlock = pKeyValuesData->FindKey( "ShotRegulator" );
 	if (pShotRegulatorBlock)
@@ -775,14 +949,6 @@ void FileWeaponInfo_t::Parse( KeyValues *pKeyValuesData, const char *szWeaponNam
 		initIndex->Initialize();
 
 		ParseShotregulatorBlock( m_ProficiencyValues, initIndex, pShotRegulatorBlock);
-
-
-	//	if (hl2r_debug_weapon_proficiency.GetBool())
-	//	{
-	//		DevMsg("Shotregulator information for weapon [%s]\n", szPrintName);
-	//		m_ProficiencyValues->Debug();
-	//	}
-
 		delete initIndex;
 	}
 #endif

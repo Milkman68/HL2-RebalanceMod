@@ -4623,7 +4623,7 @@ int CNPC_MetroPolice::TranslateSchedule( int scheduleType )
 				return TranslateSchedule( SCHED_RANGE_ATTACK1 );
 			}
 
-			return TranslateSchedule( SCHED_TAKE_COVER_FROM_ENEMY ); 
+			return TranslateSchedule( SCHED_COWER ); 
 			break;
 		}
 		break;

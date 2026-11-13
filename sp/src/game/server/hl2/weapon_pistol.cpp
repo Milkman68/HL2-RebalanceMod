@@ -81,11 +81,9 @@ public:
 		return cone;
 	}
 	
-	virtual int	GetMinBurst(){ return 2;}
-
-	virtual int	GetMaxBurst(){ return 4;}
-	
 #ifndef USE_NEW_PROFICIENCY_SYSTEM
+	virtual int		GetMinBurst(){ return 2;}
+	virtual int		GetMaxBurst(){ return 4;}
 	virtual float	GetMinRestTime(){ return 0.6; };
 	virtual float	GetMaxRestTime(){ return 1.0; };
 #endif

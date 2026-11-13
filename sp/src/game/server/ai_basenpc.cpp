@@ -154,6 +154,7 @@ ConVar	ai_use_think_optimizations( "ai_use_think_optimizations", "0" );
 ConVar	ai_test_moveprobe_ignoresmall( "ai_test_moveprobe_ignoresmall", "0" );
 
 ConVar	hl2r_ai_debug_los_links( "hl2r_ai_debug_los_links", "0" );
+ConVar	hl2r_ai_debug_cover_links( "hl2r_ai_debug_cover_links", "0" );
 
 #ifdef HL2_EPISODIC
 extern ConVar ai_vehicle_avoidance;
@@ -12758,7 +12759,7 @@ float CAI_BaseNPC::GetCoverPositionScore( const Vector &vecThreat, const Vector 
 
 	// Setup our distance metrics.
 	float flCoverToThreat = ( vecThreat - vecCover ).Length();
-	
+
 	float flCoverToThis = ( GetAbsOrigin() - vecCover ).Length();
 	if ( flPathDist != NULL )
 	{
@@ -12873,6 +12874,12 @@ float CAI_BaseNPC::GetLOSPositionScore( const Vector &vecThreat, const Vector &v
 }
 
 //-----------------------------------------------------------------------------
+#define DEBUG_COVER_LINK(pos1, pos2, r, g, b) if ( hl2r_ai_debug_cover_links.GetBool() )\
+{\
+NDebugOverlay::Line( pos1, pos2, r, g, b, true, 10.0 ); \
+NDebugOverlay::Box( pos1, GetHullMins(), GetHullMaxs(), r, g, b, true, 10.0 );\
+NDebugOverlay::Box( pos2, GetHullMins(), GetHullMaxs(), 255 - r, 255 - g, 255 - b, true, 10.0 );\
+}
 
 bool CAI_BaseNPC::IsCoverLinkUsable( const Vector &vecStart, const Vector &vecEnd, const Vector &vecThreat, const Vector &vecThreatEyePos, float flIdealDist )
 {
@@ -12888,17 +12895,41 @@ bool CAI_BaseNPC::IsCoverLinkUsable( const Vector &vecStart, const Vector &vecEn
 	}
 
 	trace_t	tr;
-	AI_TraceLOS(vecEnd + GetViewOffset(), vecThreatEyePos, NULL, &tr);
+	AI_TraceLOS(vecEnd /*+ GetViewOffset()*/, vecThreatEyePos, NULL, &tr);
 
 	// Filter out links that are near our threat and visible.
-	if (flDistToEnemy > flIdealDist * 0.5f || tr.fraction != 1.0f)
-		return true;
+	if (flDistToEnemy < flIdealDist * 0.5f && tr.fraction == 1.0f)
+		return false;
 
-	return false;
+	Vector vecStartToEndDir = ( vecStart - vecEnd );
+	vecStartToEndDir.z = 0;
+	VectorNormalize( vecStartToEndDir );
+
+	Vector vecStartToEnemyDir = ( vecStart - vecThreat );
+	vecStartToEnemyDir.z = 0;
+	VectorNormalize( vecStartToEnemyDir );
+
+	trace_t	tr2;
+	AI_TraceLOS(vecStart /*+ GetViewOffset()*/, vecThreatEyePos, NULL, &tr2);
+
+	// Filter out links where the end is visible and heads directly towards our target
+	float flDot = DotProduct( vecStartToEndDir, -vecStartToEnemyDir );
+	if ( flDot < -0.8 && tr.fraction == 1.0f && tr2.fraction == 1.0f )
+	{
+		DEBUG_COVER_LINK(vecStart, vecEnd, 255, 0, 0);
+		return false;
+	}
+
+	return true;
 }
 
 //-----------------------------------------------------------------------------
-#define DEBUG_LOS_LINK(pos, r, g, b) if ( hl2r_ai_debug_los_links.GetBool() ) NDebugOverlay::Box( pos, GetHullMins(), GetHullMaxs(), r, g, b, true, 10.0 )
+#define DEBUG_LOS_LINK(pos1, pos2, r, g, b) if ( hl2r_ai_debug_los_links.GetBool() )\
+{\
+NDebugOverlay::Line( pos1, pos2, r, g, b, true, 10.0 ); \
+NDebugOverlay::Box( pos1, GetHullMins(), GetHullMaxs(), r, g, b, true, 10.0 );\
+NDebugOverlay::Box( pos2, GetHullMins(), GetHullMaxs(), 255 - r, 255 - g, 255 - b, true, 10.0 );\
+}
 
 bool CAI_BaseNPC::IsLOSLinkUsable( const Vector &vecStart, const Vector &vecEnd, const Vector &vecThreat, const Vector &vecThreatEyePos, float flIdealDist )
 {
@@ -12913,44 +12944,28 @@ bool CAI_BaseNPC::IsLOSLinkUsable( const Vector &vecStart, const Vector &vecEnd,
 	float flDistToEnemy = (vecEnd - vecThreat).Length();
 	if (flDistToEnemy < flIdealDist * 0.5f && tr.fraction == 1.0f)
 	{
-		DEBUG_LOS_LINK(vecEnd, 255, 255, 0 );
+		DEBUG_LOS_LINK(vecStart, vecEnd, 255, 255, 0 );
 		return false;
 	}
 
-	// Avoid nodes in the enemy's viewcode.
-/*	CBaseCombatCharacter *pEnemyCombatCharacter = GetEnemyCombatCharacterPointer();
-	if ( pEnemyCombatCharacter )
+	Vector vecStartToEndDir = ( vecStart - vecEnd );
+	vecStartToEndDir.z = 0;
+	VectorNormalize( vecStartToEndDir );
+
+	Vector vecStartToEnemyDir = ( vecStart - vecThreat );
+	vecStartToEnemyDir.z = 0;
+	VectorNormalize( vecStartToEnemyDir );
+
+	trace_t	tr2;
+	AI_TraceLOS(vecStart /*+ GetViewOffset()*/, vecThreatEyePos, NULL, &tr2);
+
+	// Filter out links where the end is visible and heads directly towards our target
+	float flDot = DotProduct( -vecStartToEndDir, vecStartToEnemyDir );
+	if ( flDot < -0.8 && tr.fraction == 1.0f && tr2.fraction == 1.0f )
 	{
-		Vector nodeorigin = ( vecThreatEyePos - vecEnd );
-		nodeorigin.z = 0;
-		VectorNormalize( nodeorigin );
-
-		Vector facingDir = pEnemyCombatCharacter->EyeDirection2D();
- 		float flDot = DotProduct( nodeorigin, facingDir );
-
-		if ( flDot < -0.98 )
-		{
-			if ( pEnemyCombatCharacter->FVisible(vecEnd) )
-			{
-				DEBUG_LOS_LINK(vecEnd, 255, 0, 0 );
-				return false;
-			}
-		}
-
-		nodeorigin = ( vecThreatEyePos - vecStart );
-		nodeorigin.z = 0;
-		VectorNormalize( nodeorigin );
-
- 		flDot = DotProduct( nodeorigin, facingDir );
-		if ( flDot < -0.98 )
-		{
-			if ( pEnemyCombatCharacter->FVisible(vecStart) )
-			{
-				DEBUG_LOS_LINK(vecStart, 255, 0, 255 );
-				return false;
-			}
-		}
-	}*/
+		DEBUG_LOS_LINK(vecStart, vecEnd, 255, 0, 0);
+		return false;
+	}
 
 	return true;
 }

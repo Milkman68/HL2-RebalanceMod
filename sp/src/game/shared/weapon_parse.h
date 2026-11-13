@@ -62,6 +62,59 @@ int GetWeaponSoundFromString( const char *pszString );
 class CHudTexture;
 class KeyValues;
 
+
+#define MAX_FIRERATES	4
+#define MAX_SHOTCOUNTS	4
+#define MAX_SPREADCONES	4
+#define MAX_VIEWPUNCH	4
+#define MAX_ACTIVITIES	48
+
+enum WpnData_FireRateIndex_t
+{
+	WPNDATA_FIRERATE_1 = 0,
+	WPNDATA_FIRERATE_2,
+	WPNDATA_FIRERATE_3,
+	WPNDATA_FIRERATE_4
+};
+
+enum WpnData_ShotCount_t
+{
+	WPNDATA_SHOTCOUNT_1 = 0,
+	WPNDATA_SHOTCOUNT_2,
+	WPNDATA_SHOTCOUNT_3,
+	WPNDATA_SHOTCOUNT_4
+};
+
+enum WpnData_SpreadIndex_t
+{
+	WPNDATA_SPREAD_1 = 0,
+	WPNDATA_SPREAD_2,
+	WPNDATA_SPREAD_3,
+	WPNDATA_SPREAD_4
+};
+
+enum WpnData_ViewPunchTypes_t
+{
+	WPNDATA_VIEWPUNCH_1 = 0,
+	WPNDATA_VIEWPUNCH_2,
+	WPNDATA_VIEWPUNCH_3,
+	WPNDATA_VIEWPUNCH_4
+};
+
+struct ViewPunchImpulse_t
+{
+	// X Y Z Resetscale
+	Vector4D min;
+	Vector4D max;
+};
+
+typedef struct
+{
+	int			baseAct;
+	int			weaponAct;
+	bool		required;
+} acttable_t;
+
 //-----------------------------------------------------------------------------
 // Purpose: Contains the data read from the weapon's script file. 
 // It's cached so we only read each weapon's script file once.
@@ -91,6 +144,18 @@ public:
 	char					szAnimationPrefix[MAX_WEAPON_PREFIX];	// Prefix of the animations that should be used by the player carrying this weapon
 	int						iSlot;									// inventory slot.
 	int						iPosition;								// position in the inventory slot.
+
+	char					szTracerType[MAX_WEAPON_STRING];
+	float					flFireRate[MAX_FIRERATES];
+	int						iShotCount[MAX_SHOTCOUNTS];
+	Vector					m_SpreadCone[MAX_SPREADCONES];
+	ViewPunchImpulse_t		m_ViewPuchImpulse[MAX_VIEWPUNCH];
+
+#ifndef CLIENT_DLL
+	acttable_t				*m_acttable;
+	int						iNumActivitiesInTable;
+#endif
+
 	int						iMaxClip1;								// max primary clip size (-1 if no clip)
 	int						iMaxClip2;								// max secondary clip size (-1 if no clip)
 	int						iDefaultClip1;							// amount of primary ammo in the gun when it's created

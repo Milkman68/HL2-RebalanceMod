@@ -2576,6 +2576,19 @@ int CNPC_Combine::TranslateSchedule( int scheduleType )
 
 			return SCHED_COMBINE_SUPPRESS;
 		}
+
+	case SCHED_COMBINE_TAKECOVER_FAILED:
+		{
+			if ( HasCondition( COND_CAN_RANGE_ATTACK1 ) && CanOccupyAttackSlot() )
+			{
+				return TranslateSchedule( SCHED_RANGE_ATTACK1 );
+			}
+
+			return TranslateSchedule( SCHED_COWER ); 
+			break;
+		}
+		break;
+
 	case SCHED_FAIL:
 		{
 			if ( GetEnemy() != NULL )

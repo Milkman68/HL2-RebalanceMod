@@ -202,14 +202,12 @@ public:
 	CCampaignEditPanel(CCampaignListPanel *parent, const char *name);
 
 	void SetCampaign( CAMPAIGN_HANDLE campaign );
-	MESSAGE_FUNC_INT( ItemSelected, "ItemSelected", itemID );
-	MESSAGE_FUNC_INT( ItemDoubleLeftClick, "ItemDoubleLeftClick", itemID ){ SetStartingMap(itemID); }
-
-
 	void OnCommand(const char* pcCommand);
 	void ApplySchemeSettings(IScheme *pScheme);
 
-	MESSAGE_FUNC( OnTextChanged, "TextChanged" ) { CheckApplyButton(); }
+	MESSAGE_FUNC_INT( ItemDoubleLeftClick, "ItemDoubleLeftClick", itemID ){ /*SetStartingMap(itemID);*/ } // Double clicking now does nothing.
+	MESSAGE_FUNC_INT( ItemSelected, "ItemSelected", itemID ) { CheckApplyButton(); }; // For selections in m_MapListPanel
+	MESSAGE_FUNC( OnTextChanged, "TextChanged" ) { CheckApplyButton(); } // This covers both boxbuttons and nameentry's
 
 private:
 	void SetPageState( EPageState type);
@@ -250,6 +248,7 @@ private:
 
 	Color	m_TextDisabledColor;
 	Color	m_TextEnabledColor;
+	Color	m_TextArmedColor;
 
 	char		m_pPrevName[CAMPAIGN_NAME_LENGTH];
 	int			m_iPrevGame;
@@ -279,6 +278,7 @@ CCampaignEditPanel::CCampaignEditPanel(CCampaignListPanel *parent, const char *n
 
 	m_ApplyButton = new Button(this, "ApplyButton", "");
 	m_ApplyButton->SetCommand("applychanges");
+	m_ApplyButton->SetText("#hl2r_editpanel_applybutton_label");
 
 	m_StartingMapButton = new Button(this, "StartingMapButton", "");
 	m_StartingMapButton->SetCommand("setstartmap");
@@ -376,10 +376,10 @@ void CCampaignEditPanel::OnCommand(const char* pcCommand)
 			engine->ClientCmd("_restart");
 		}
 	}
-	if ( !stricmp(pcCommand, "setstartmap") )
+/*	if ( !stricmp(pcCommand, "setstartmap") )
 	{
 		SetStartingMap( m_MapListPanel->GetSelectedItem() );
-	}
+	}*/
 	BaseClass::OnCommand(pcCommand);
 }
 //-----------------------------------------------------------------------------
@@ -398,30 +398,13 @@ void CCampaignEditPanel::SetStartingMap(int selecteditemID)
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CCampaignEditPanel::ItemSelected(int itemID)
-{
-	if (itemID != -1)
-	{
-		m_StartingMapButton->SetEnabled(itemID != m_iPrevStartMap);
-		m_BackgroundMapButton->SetEnabled(itemID != m_iPrevBgMap);
-	}
-	else
-	{
-		m_StartingMapButton->SetEnabled(false);
-		m_BackgroundMapButton->SetEnabled(false);
-
-		return;
-	}
-}
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
 void CCampaignEditPanel::ApplySchemeSettings(IScheme* pScheme)
 {
 	BaseClass::ApplySchemeSettings(pScheme);
 
 	m_TextDisabledColor = GetSchemeColor("Label.TextDullColor", pScheme);
 	m_TextEnabledColor = GetSchemeColor("Label.TextBrightColor", pScheme);
+	m_TextArmedColor = COLOR_BLUE; // HARDCODING THIS CAUSE 
 
 	m_EditBoxBackground->SetFillColor(GetSchemeColor("AchievementsLightGrey", pScheme));
 }
@@ -430,6 +413,7 @@ void CCampaignEditPanel::ApplySchemeSettings(IScheme* pScheme)
 //-----------------------------------------------------------------------------
 void CCampaignEditPanel::ResetPage( void )
 {
+	m_MapListPanel->ClearSelection();
 	m_MapListPanel->RemoveAll();
 
 	V_strcpy(m_pPrevName, "");
@@ -451,7 +435,9 @@ void CCampaignEditPanel::ResetPage( void )
 //-----------------------------------------------------------------------------
 void CCampaignEditPanel::RefreshMapList( void )
 {
+	m_MapListPanel->ClearSelection();
 	m_MapListPanel->RemoveAll();
+
 	CreateMapList();
 
 	m_StartingMapButton->SetEnabled(false);
@@ -467,36 +453,43 @@ void CCampaignEditPanel::CreateMapList( void )
 	m_MapListPanelTitle->SetText("#hl2r_editpanel_maplist_title_1");
 	m_MapListPanelTitleMapname->SetText("");
 
+	// Populate our map list
 	for (int i = 0; i < db->GetCampaign(m_Campaign)->maplist.Count(); i++ )
 	{
+		// For every map in our maplist create a key to insert into our list.
 		KeyValues *pMap = new KeyValues("map");
 		if ( !pMap )
 			continue;
 
+		// Check if this map is already set as this campaign's starting map.
 		char szMapLabel[CAMPAIGN_NAME_LENGTH];
 		if ( db->GetCampaign(m_Campaign)->startingmap == i )
 		{
+			// If we find an already mounted map, give this map the - [Starting Map] label at the end of its name.
 			char szStartingMapString[64];
 			wchar_t *pLocalizedStartingMapLabel = g_pVGuiLocalize->Find("hl2r_startmap_label");
 
 			g_pVGuiLocalize->ConvertUnicodeToANSI( pLocalizedStartingMapLabel, szStartingMapString, sizeof(szStartingMapString) );
 			V_sprintf_safe( szMapLabel, "%s%s", db->GetCampaign(m_Campaign)->maplist[i], szStartingMapString);
 
-			m_MapListPanelTitle->SetText("#hl2r_editpanel_maplist_title_2");
-			m_MapListPanelTitle->SetFgColor(m_TextEnabledColor);
-
-			m_MapListPanelTitleMapname->SetText(db->GetCampaign(m_Campaign)->maplist[i]);
+			// REMOVED FOR SIMPLICITY!
+			// Change the title label as well.
+		//	m_MapListPanelTitle->SetText("#hl2r_editpanel_maplist_title_2");
+		//	m_MapListPanelTitleMapname->SetText(db->GetCampaign(m_Campaign)->maplist[i]);
 		}
 		else
 		{
+			// Otherwise just insert its mapname name unedited.
 			V_sprintf_safe( szMapLabel, "%s", db->GetCampaign(m_Campaign)->maplist[i]);
 		}
 
+		// Add the key to our listpanel.
 		pMap->SetString("map", szMapLabel);
 		int itemID = m_MapListPanel->AddItem(0, pMap );
 
+		// Color it blue if its mounted.
 		if ( db->GetCampaign(m_Campaign)->startingmap == i )
-			m_MapListPanel->SetItemFgColor(itemID, COLOR_BLUE);
+			m_MapListPanel->SetItemFgColor(itemID, m_TextArmedColor);
 	}
 
 }
@@ -510,7 +503,8 @@ void CCampaignEditPanel::SetPageState( EPageState state)
 	if ( state == NO_CAMPAIGN_SELECTED )
 	{
 		m_CampaignInfoLabel->SetFgColor(m_TextDisabledColor);
-		m_MapListPanelTitle->SetFgColor(m_TextDisabledColor);
+		m_MapListPanelTitle->SetVisible(false);
+		m_MapListPanel->SetVisible(false);
 
 		m_EditBoxBackground->SetVisible(true);
 		m_CampaignIDLabel->SetText("");
@@ -523,7 +517,8 @@ void CCampaignEditPanel::SetPageState( EPageState state)
 		bEditControlsVisible = true;
 
 		m_CampaignInfoLabel->SetFgColor(m_TextEnabledColor);
-		m_MapListPanelTitle->SetFgColor(m_TextEnabledColor);
+		m_MapListPanelTitle->SetVisible(true);
+		m_MapListPanel->SetVisible(true);
 
 		m_EditBoxBackground->SetVisible(false);
 
@@ -539,32 +534,64 @@ void CCampaignEditPanel::SetPageState( EPageState state)
 	m_pGameSelectBoxLabel->SetVisible(bEditControlsVisible);
 }
 //-----------------------------------------------------------------------------
-// Purpose: 
+// Purpose: Checks if a request to enable the apply button is valid or not
 //-----------------------------------------------------------------------------
 void CCampaignEditPanel::CheckApplyButton( void )
 {
-	m_ApplyButton->SetEnabled(true);
-	m_ApplyButton->SetText("#hl2r_editpanel_applybutton_label");
-	m_ApplyButton->SetCommand("applychanges");
-
-	char nameEntry[CAMPAIGN_NAME_LENGTH];
-	m_pNameEntry->GetText(nameEntry, CAMPAIGN_NAME_LENGTH);
-
 	CCampaignManager* db = GetCampaignManager();
-	if ( m_pGameSelectBox->GetActiveItem() == m_iPrevGame )
-	{
-		if ( !Q_stricmp(nameEntry, m_pPrevName) )
-			m_ApplyButton->SetEnabled(false);
-	}
-	else
+
+	bool bGameTypeChanged = false;
+	bool bNameChanged = false;
+	bool bStartMapChanged = false;
+
+	// Has the gametype changed?
+	if ( m_pGameSelectBox->GetActiveItem() != m_iPrevGame )
 	{
 		if ( db->GetCampaign(m_Campaign)->mounted )
 		{
 			m_ApplyButton->SetText("#hl2r_editpanel_applybutton_mounted_label");
 			m_ApplyButton->SetCommand("applychangesmounted");
 		}
+		else
+		{
+			m_ApplyButton->SetCommand("applychanges");
+			m_ApplyButton->SetText("#hl2r_editpanel_applybutton_label");
+		}
+
+		bGameTypeChanged = true;
 	}
 
+	// Has the name changed?
+	char nameEntry[CAMPAIGN_NAME_LENGTH];
+	m_pNameEntry->GetText(nameEntry, CAMPAIGN_NAME_LENGTH);
+	if ( Q_stricmp(nameEntry, m_pPrevName) )
+	{
+		bNameChanged = true;
+	}
+
+	// Has the starting map changed?
+	int iSelectedMap = m_MapListPanel->GetSelectedItem();
+	if ( iSelectedMap != m_iPrevStartMap )
+	{
+		if ( iSelectedMap != -1 )
+		{
+			bStartMapChanged = true;
+
+			// Change our label
+			m_MapListPanelTitle->SetText("#hl2r_editpanel_maplist_title_3");
+			m_MapListPanelTitleMapname->SetText(db->GetCampaign(m_Campaign)->maplist[iSelectedMap]);
+
+			m_MapListPanelTitleMapname->SetVisible(true);
+			m_MapListPanelTitleMapname->SetFgColor(m_TextDisabledColor);
+		}
+	}
+	else
+	{
+		// Clear the selection if we've selected a mounted campaign
+		RefreshMapList();
+	}
+
+	m_ApplyButton->SetEnabled(bGameTypeChanged || bNameChanged || bStartMapChanged);
 }
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -574,6 +601,7 @@ bool CCampaignEditPanel::ApplyChanges( void )
 	char entrytext[CAMPAIGN_NAME_LENGTH];
 	m_pNameEntry->GetText(entrytext, CAMPAIGN_NAME_LENGTH);
 
+	// Before applying changes, make sure this campaign doesn't have the same name as another campaign.
 	CCampaignManager* db = GetCampaignManager();
 	for (int i = 0; i < db->GetCampaignCount(); i++)
 	{
@@ -589,8 +617,15 @@ bool CCampaignEditPanel::ApplyChanges( void )
 		}
 	}
 
+	// Copy our new name from our entry to the campaign. If empty, set as undefined.
 	V_strcpy(db->GetCampaign(m_Campaign)->name, !stricmp(entrytext, "") ? "undefined" : entrytext);
+
+	// Set our new gametype if we selected one.
 	db->GetCampaign(m_Campaign)->game = m_pGameSelectBox->GetActiveItem();
+
+	// Set our new starting map if we have one selected. 
+	if ( m_MapListPanel->GetSelectedItem() != -1 )
+		SetStartingMap(m_MapListPanel->GetSelectedItem());
 
 	db->SortCampaignList(db->GetSortType(), db->GetSortDir());
 	db->WriteListToScript();

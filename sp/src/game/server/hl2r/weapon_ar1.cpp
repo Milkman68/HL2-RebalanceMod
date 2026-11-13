@@ -26,13 +26,10 @@ public:
 
 	DECLARE_SERVERCLASS();
 	
-	void	BurstThink( void );
 	void	AddViewKick( void );
 	void	SecondaryAttack( void );
 
-	float	GetFireRate( void ) { return 0.07f; }
-	float 	GetBurstCycleRate(void) { return 0.0f; }
-	int		GetBurstSize(void) { return 2; }
+	float	GetFireRate( void ) { return 0.1f; }
 
 	int		CapabilitiesGet( void ) { return bits_CAP_WEAPON_RANGE_ATTACK1; }
 	const char* GetTracerType(void) { return "AR2Tracer"; }
@@ -40,7 +37,7 @@ public:
 
 	virtual const Vector& GetBulletSpread( void )
 	{
-		static const Vector cone = VECTOR_CONE_3DEGREES;
+		static const Vector cone = VECTOR_CONE_4DEGREES;
 		return cone;
 	}
 	
@@ -122,7 +119,6 @@ CWeaponAR1::CWeaponAR1( )
 {
 	m_fMinRange1		= 0;
 	m_fMaxRange1		= 1000;
-	m_iFireMode			= FIREMODE_3RNDBURST;
 
 	m_bAltFiresUnderwater = true;
 }
@@ -186,104 +182,6 @@ void CWeaponAR1::Operator_HandleAnimEvent( animevent_t *pEvent, CBaseCombatChara
 		}
 		break;
 	};
-}
-extern ConVar hl2r_bullet_tracer_freq;
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-// Purpose: 
-//
-//
-//-----------------------------------------------------------------------------
-void CWeaponAR1::BurstThink( void )
-{
-	// Only the player fires this way so we can cast
-	CBasePlayer *pPlayer = ToBasePlayer( GetOwner() );
-	if (!pPlayer)
-		return;
-	
-	// Abort here to handle burst and auto fire modes
-	if ( (UsesClipsForAmmo1() && m_iClip1 == 0) || ( !UsesClipsForAmmo1() && !pPlayer->GetAmmoCount(m_iPrimaryAmmoType[INDEX_CARRY]) ) )
-	{
-		m_iBurstSize = 0;
-		return;
-	}
-
-	m_nShotsFired++;
-
-	pPlayer->DoMuzzleFlash();
-
-	// To make the firing framerate independent, we may have to fire more than one bullet here on low-framerate systems, 
-	// especially if the weapon we're firing has a really fast rate of fire.
-	int iBulletsToFire = 0;
-	float fireRate = GetFireRate();
-	float nextshottime = gpGlobals->curtime;
-
-	// MUST call sound before removing a round from the clip of a CHLMachineGun
-	while ( nextshottime <= gpGlobals->curtime )
-	{
-		WeaponSound(SINGLE, nextshottime);
-		nextshottime = nextshottime + fireRate;
-
-		iBulletsToFire++;
-		m_iShotCount++;
-
-		if ( m_iShotCount % 2 )	
-			m_iClip1--;
-
-		if ( m_iClip1 <= 0 )
-			break;
-	}
-
-	m_flNextPrimaryAttack = m_flNextPrimaryAttack + fireRate;
-
-	m_iPrimaryAttacks++;
-	gamestats->Event_WeaponFired( pPlayer, true, GetClassname() );
-	
-	Vector vecSpread = pPlayer->GetAttackSpread( this );
-
-	// Fire the bullets
-	FireBulletsInfo_t info;
-	info.m_iShots = iBulletsToFire;
-	info.m_vecSrc = pPlayer->Weapon_ShootPosition( );
-	info.m_vecDirShooting = pPlayer->GetAutoaimVector( AUTOAIM_SCALE_DEFAULT );
-	info.m_vecSpread = RandomVector( -vecSpread.x, vecSpread.x );;
-	info.m_flDistance = MAX_TRACE_LENGTH;
-	info.m_iAmmoType = m_iPrimaryAmmoType[INDEX_BASE];
-	info.m_iTracerFreq = hl2r_bullet_tracer_freq.GetInt();
-	FireBullets( info );
-
-	//Factor in the view kick
-	AddViewKick();
-
-	CSoundEnt::InsertSound( SOUND_COMBAT, GetAbsOrigin(), SOUNDENT_VOLUME_MACHINEGUN, 0.2, pPlayer );
-	
-	if (!m_iClip1 && pPlayer->GetAmmoCount(m_iPrimaryAmmoType[INDEX_CARRY]) <= 0)
-	{
-		// HEV suit - indicate out of ammo condition
-		pPlayer->SetSuitUpdate("!HEV_AMO0", FALSE, 0); 
-	}
-
-	SendWeaponAnim( GetPrimaryAttackActivity() );
-	pPlayer->SetAnimation( PLAYER_ATTACK1 );
-
-	// Register a muzzleflash for the AI
-	pPlayer->SetMuzzleFlashTime( gpGlobals->curtime + 0.5 );
-
-	m_iBurstSize--;
-
-	if( m_iBurstSize == 0 )
-	{
-		// The burst is over!
-		SetThink(NULL);
-
-		// idle immediately to stop the firing animation
-		SetWeaponIdleTime( gpGlobals->curtime );
-		return;
-	}
-
-	SetNextThink( gpGlobals->curtime + GetFireRate() );
 }
 //-----------------------------------------------------------------------------
 // Purpose: 

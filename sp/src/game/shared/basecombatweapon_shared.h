@@ -77,13 +77,21 @@ class CUserCmd;
 	acttable_t *className::ActivityList( void ) { return m_acttable; } \
 	int className::ActivityListCount( void ) { return ARRAYSIZE(m_acttable); } \
 
+
+#define DECLARE_SCRIPT_ACTTABLE() acttable_t *ActivityList( void );\
+	int ActivityListCount( void );
+
+#define IMPLEMENT_SCRIPT_ACTTABLE(className) \
+	acttable_t *className::ActivityList( void ) { return GetWpnData().m_acttable; } \
+	int className::ActivityListCount( void ) { return GetWpnData().iNumActivitiesInTable; } \
+/*
 typedef struct
 {
 	int			baseAct;
 	int			weaponAct;
 	bool		required;
 } acttable_t;
-
+*/
 class CHudTexture;
 class Color;
 
@@ -316,7 +324,7 @@ public:
 
 	virtual float			GetNpcFireRate()	{ return GetFireRate() * GetProficiencyValue(PROF_FIRERATE_SCALE,	1.0); }
 	virtual Vector			GetNpcSpread()		{ return GetBulletSpread() * GetProficiencyValue(PROF_SPREAD_SCALE, 1.0); }
-	virtual float			GetNpcBias()		{ return GetProficiencyValue(PROF_SPREAD_BIAS,						1.0); }
+	virtual float			GetNpcBias()		{ return GetSpreadBias() *  GetProficiencyValue(PROF_SPREAD_BIAS_SCALE,	1.0); }
 #endif
 
 	virtual int				GetRandomBurst() { return random->RandomInt( GetMinBurst(), GetMaxBurst() ); }
@@ -325,6 +333,17 @@ public:
 #ifndef USE_NEW_PROFICIENCY_SYSTEM
 	virtual const WeaponProficiencyInfo_t *GetProficiencyValues();
 #endif
+
+	virtual float			GetScriptFireRate( WpnData_FireRateIndex_t index ) { return GetWpnData().flFireRate[index]; }
+	virtual int				GetScriptShotCount( WpnData_ShotCount_t index ) { return GetWpnData().iShotCount[index]; }
+	virtual Vector			GetScriptBulletSpread( WpnData_SpreadIndex_t index ) { return GetWpnData().m_SpreadCone[index]; }
+
+	virtual QAngle			ViewPunchImpulse( WpnData_ViewPunchTypes_t index );
+	virtual QAngle			ViewPunchImpulseProgressive( WpnData_ViewPunchTypes_t index1, WpnData_ViewPunchTypes_t index2, float perc );
+
+	virtual float			ViewPunchResetScale( WpnData_ViewPunchTypes_t index );
+	virtual float			ViewPunchResetScaleProgressive( WpnData_ViewPunchTypes_t index1, WpnData_ViewPunchTypes_t index2, float perc );
+
 
 	// Autoaim
 	virtual float			GetMaxAutoAimDeflection() { return 0.99f; }
@@ -367,7 +386,6 @@ public:
 	virtual int				GetSkinOverride() const { return -1; }
 
 public:
-
 	// Weapon info accessors for data in the weapon's data file
 	const FileWeaponInfo_t	&GetWpnData( void ) const;
 	virtual const char		*GetViewModel( int viewmodelindex = 0 ) const;

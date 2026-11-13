@@ -134,6 +134,7 @@ const char *szGameFolders[NUM_GAME_FOLDERS] =
 	"cfg",
 	"scripts",
 	"resource",
+	"maps",
 };
 
 bool CGameManager::TransferGameFiles( int gametype )

@@ -42,7 +42,7 @@ enum ProficiencyValues_t
 	PROF_MAX_SHOT_COUNT,
 	PROF_FIRERATE_SCALE,
 	PROF_SPREAD_SCALE,
-	PROF_SPREAD_BIAS,
+	PROF_SPREAD_BIAS_SCALE,
 
 	PROF_LAST_VALUE
 };
@@ -79,14 +79,6 @@ public:
 
 	// Copies all members from a index table
 	void Copy(ProficiencyTableIndex_t* newindex);
-
-	// This if for accessing the value of a specified index.
-	// All values in the table must point to a specific index or else we fail.
-	bool ValidForGetValue();
-
-	// This if for setting the value of one or more indecies.
-	// Only the valuetype must be specified, leaving any other values invalid means we apply the new value to all indecies in that column.
-	bool ValidForSetValue();
 };
 
 class ProficiencyTable_t
@@ -99,13 +91,13 @@ public:
 	// Leaving a parameter as -1 selects all indecies in that column
 	void SetValue(ProficiencyTableIndex_t* index, float newvalue);
 
-	// Prints out a full list of all indecies in the table to the console
-	void Debug(void);
-
 private:
 	// A 4D array of all possible variable types, tiers, difficulty types, and npc types.
 	float	m_flValues[PROF_LAST_VALUE][PROF_MAX_TIER][PROF_MAX_SKILL][PROF_NPC_TYPES];
 };
+
+const char* GetProficiencyValueName(ProficiencyValues_t value);
+void PrintProficiencyTableIndex( ProficiencyTable_t *table, ProficiencyTableIndex_t index );
 
 #endif
 #endif // WEAPON_PROFICIENCY_H

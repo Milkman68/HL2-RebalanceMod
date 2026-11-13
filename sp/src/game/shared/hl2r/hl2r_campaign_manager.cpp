@@ -1142,6 +1142,9 @@ CON_COMMAND(campaign_flush_nodegraph, "Clears all .ain  files from our mounted c
 	if ( !manager )
 		return;
 
+	if ( !IsWorkshopCampaignMounted() )
+		return;
+
 	manager->FlushCampaignGraphs(manager->GetMountedCampaign()->id);
 }
 #endif

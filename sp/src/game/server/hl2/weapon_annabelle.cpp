@@ -44,8 +44,10 @@ public:
 		return cone;
 	}
 
+#ifndef USE_NEW_PROFICIENCY_SYSTEM
 	virtual int				GetMinBurst() { return 1; }
 	virtual int				GetMaxBurst() { return 3; }
+#endif
 
 	void ItemHolsterFrame( void );
 	bool StartReload( void );

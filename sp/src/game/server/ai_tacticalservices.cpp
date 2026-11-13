@@ -372,6 +372,7 @@ int CAI_TacticalServices::FindCoverNode(const Vector &vNearPos, const Vector &vT
 
 	// mark start as visited
 	list.Insert( AI_NearNode_t(iMyNode, 0.0f) ); 
+
 	//wasVisited.Set( iMyNode );
 	float flMinDistSqr = flMinDist*flMinDist;
 	float flMaxDistSqr = flMaxDist*flMaxDist;
@@ -468,6 +469,8 @@ int CAI_TacticalServices::FindCoverNode(const Vector &vNearPos, const Vector &vT
 					{
 						float flPathDist = flAccumulatedDist + ( vecNewNodeOrigin - nodeOrigin ).Length();
 						list.Insert( AI_NearNode_t(newID, flPathDist) );
+
+					//	NDebugOverlay::Text(vecNewNodeOrigin + Vector(0, 0, 64), UTIL_VarArgs("DIST: %f", flPathDist), true, 10.0f);
 					}
 				}
 

@@ -348,6 +348,62 @@ const char *CBaseCombatWeapon::GetPrintName( void ) const
 {
 	return GetWpnData().szPrintName;
 }
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+float CBaseCombatWeapon::ViewPunchResetScale( WpnData_ViewPunchTypes_t index )
+{
+	Vector4D impulseMin = GetWpnData().m_ViewPuchImpulse[index].min;
+	Vector4D impulseMax = GetWpnData().m_ViewPuchImpulse[index].max;
+
+	return random->RandomFloat(impulseMin.w, impulseMax.w);
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+#define RandomFloatProgressive(perc, val1, val2, val3, val4) Lerp( perc, random->RandomFloat(val1, val2), random->RandomFloat(val3, val4) )
+float CBaseCombatWeapon::ViewPunchResetScaleProgressive( WpnData_ViewPunchTypes_t index1, WpnData_ViewPunchTypes_t index2, float perc )
+{
+	Vector4D impulseMinMin = GetWpnData().m_ViewPuchImpulse[index1].min;
+	Vector4D impulseMinMax = GetWpnData().m_ViewPuchImpulse[index1].max;
+
+	Vector4D impulseMaxMin = GetWpnData().m_ViewPuchImpulse[index2].min;
+	Vector4D impulseMaxMax = GetWpnData().m_ViewPuchImpulse[index2].max;
+
+	return RandomFloatProgressive(perc, impulseMinMin.w, impulseMinMax.w, impulseMaxMin.w, impulseMaxMax.w);
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+QAngle CBaseCombatWeapon::ViewPunchImpulse( WpnData_ViewPunchTypes_t index )
+{
+	Vector4D impulseMin = GetWpnData().m_ViewPuchImpulse[index].min;
+	Vector4D impulseMax = GetWpnData().m_ViewPuchImpulse[index].max;
+
+	return QAngle( 
+		random->RandomFloat(impulseMin.x, impulseMax.x),
+		random->RandomFloat(impulseMin.y, impulseMax.y),
+		random->RandomFloat(impulseMin.z, impulseMax.z) );
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+QAngle CBaseCombatWeapon::ViewPunchImpulseProgressive( WpnData_ViewPunchTypes_t index1, WpnData_ViewPunchTypes_t index2, float perc )
+{
+	Vector4D impulseMinMin = GetWpnData().m_ViewPuchImpulse[index1].min;
+	Vector4D impulseMinMax = GetWpnData().m_ViewPuchImpulse[index1].max;
+
+	Vector4D impulseMaxMin = GetWpnData().m_ViewPuchImpulse[index2].min;
+	Vector4D impulseMaxMax = GetWpnData().m_ViewPuchImpulse[index2].max;
+
+	return QAngle( 
+		RandomFloatProgressive(perc, impulseMinMin.x, impulseMinMax.x, impulseMaxMin.x, impulseMaxMax.x),
+		RandomFloatProgressive(perc, impulseMinMin.y, impulseMinMax.y, impulseMaxMin.y, impulseMaxMax.y),
+		RandomFloatProgressive(perc, impulseMinMin.z, impulseMinMax.z, impulseMaxMin.z, impulseMaxMax.z) );
+}
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -810,28 +866,35 @@ void CBaseCombatWeapon::OnPickedUp( CBaseCombatCharacter *pNewOwner )
 extern ConVar hl2r_debug_weapon_proficiency;
 float CBaseCombatWeapon::GetProficiencyValue(ProficiencyValues_t value, float flDefaultValue = 1.0f )
 {
-	// Make sure we have a proficiency table in out wpndata
+	// Make sure we have a proficiency table in our wpndata
 	if( GetWpnData().m_ProficiencyValues == NULL )
-		return flDefaultValue
+	{
+		Warning( "Missing Proficiency data entry for: (%s)\n", GetClassname() );
+		return flDefaultValue;
+	}
 ;
 	// Do we have an npc-owner?
 	CBaseCombatCharacter *pOwner = GetOwner()->MyCombatCharacterPointer();
 	if ( pOwner == NULL )
+	{
+		Warning( "(%s) Proficiency data table missing Value: (%s) Is this intentional?\n", GetClassname(), GetProficiencyValueName(value) );
 		return flDefaultValue;
-
-	if (hl2r_debug_weapon_proficiency.GetBool())
-		DevMsg("Getting Proficiency value for weapon: [%s]\n", GetPrintName() );
-
-#ifdef CLIENT_DLL
-	int iType = PROF_NPC_TYPE_ENEMY;
-	int iTier = PROF_NPC_TIER_1;
-#else
-	int iType = pOwner->IsPlayerEnemy() ? PROF_NPC_TYPE_ENEMY : PROF_NPC_TYPE_ALLY;
-	int iTier = pOwner->GetProficiencyTier();
-#endif
+	}
 
 	ConVarRef skill("skill");
-	return GetWpnData().m_ProficiencyValues->GetValue( {value, iTier, skill.GetInt(), iType} );
+#ifndef CLIENT_DLL
+	ProficiencyTableIndex_t index = {value, pOwner->GetProficiencyTier(), skill.GetInt(), pOwner->IsPlayerEnemy() ? PROF_NPC_TYPE_ENEMY : PROF_NPC_TYPE_ALLY};
+#else
+	ProficiencyTableIndex_t index = {value, PROF_NPC_TIER_1, skill.GetInt(), PROF_NPC_TYPE_ENEMY};
+#endif
+
+	if (hl2r_debug_weapon_proficiency.GetBool())
+	{
+		DevMsg("Getting Proficiency value for weapon: (%s)\n", GetPrintName() );
+		PrintProficiencyTableIndex(GetWpnData().m_ProficiencyValues, index);
+	}
+
+	return GetWpnData().m_ProficiencyValues->GetValue(index);
 }
 #endif
 //-----------------------------------------------------------------------------
